@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres #pgvector/pgvector:pg18-trixie
+    container_name: gspot
+    restart: always
+    environment:
+      POSTGRES_DB: gspot_db
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+
+volumes:
+  db-data:

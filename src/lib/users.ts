@@ -1,0 +1,12 @@
+import pool from '@/lib/db';
+
+export async function getUserIdByAlias(userName: string) {
+  try {
+    if (!userName) return null;
+    const res = await pool.query('SELECT id FROM users WHERE alias = $1', [userName]);
+    return res.rows.length > 0 ? res.rows[0].id : null;
+  } catch (err) {
+    console.error('getUserIdByAlias error', err);
+    return null;
+  }
+}
