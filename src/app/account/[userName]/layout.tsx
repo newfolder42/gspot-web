@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import React from 'react';
-import { getUserTokenAndValidate } from '@/lib/session';
 import { getUserIdByAlias } from '@/lib/users';
 
 type Props = {
@@ -10,14 +9,6 @@ type Props = {
 
 export default async function UserLayout({ children, params }: Props) {
     const { userName } = await params;
-
-    let currentUserId: number | null = null;
-    try {
-        const payload = await getUserTokenAndValidate();
-        currentUserId = payload?.userId ?? null;
-    } catch (e) {
-        currentUserId = null;
-    }
     const targetId = await getUserIdByAlias(userName);
 
     if (!targetId) {

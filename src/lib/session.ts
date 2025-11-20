@@ -36,11 +36,6 @@ export function getUserIdFromRequest(req: NextRequest): number | string {
   return payload.userId;
 }
 
-export async function getUserToken(): Promise<string | null> {
-  const ck = await cookies();
-  return (ck.get && ck.get('user_token')?.value) ?? null;
-}
-
 export async function getUserTokenAndValidate(): Promise<TokenPayload> {
   const ck = await cookies();
   const token = (ck.get && ck.get('user_token')?.value);

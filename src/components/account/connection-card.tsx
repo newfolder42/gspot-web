@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useState } from 'react';
 import FollowButton from './follow-button';
 
@@ -36,7 +37,7 @@ export default function ConnectionCard({ alias, name, profilePhoto, onUnfollow, 
       <Link href={`/account/${alias}`} className="flex items-center gap-3 flex-1">
         <div className="h-12 w-12 rounded-md overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {photoUrl ? (
-            <img src={photoUrl} alt={alias} className="h-12 w-12 object-cover" />
+            <Image src={photoUrl} alt={alias} width={48} height={48} className="h-12 w-12 object-cover" />
           ) : (
             <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{(name || alias).charAt(0).toUpperCase()}</span>
           )}

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       currentUserId, type, publicUrl, JSON.stringify(meta)
     );
 
-    return NextResponse.json({ uploadUrl, contentId: res });
+    return NextResponse.json({ uploadUrl, contentId: res?.id });
   } catch (err) {
     console.error('upload-photo error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

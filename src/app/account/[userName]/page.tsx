@@ -1,7 +1,7 @@
-import OwnerView from '@/components/account/OwnerView';
-import PublicView from '@/components/account/PublicView';
+import OwnerView from '@/components/account/account-owner-view';
+import PublicView from '@/components/account/account-public-view';
 import { getAccountByAlias } from '@/lib/account';
-import { getUserToken, getUserTokenAndValidate } from '@/lib/session';
+import { getUserTokenAndValidate } from '@/lib/session';
 import { notFound } from 'next/navigation';
 
 export default async function AccountPage({ params }: { params: Promise<{ userName?: string }> }) {
@@ -9,11 +9,8 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
 
   let currentUserId = 0;
   try {
-    const token = await getUserToken();
-    if (token) {
-      const payload = await getUserTokenAndValidate();
-      currentUserId = payload.userId as number;
-    }
+    const payload = await getUserTokenAndValidate();
+    currentUserId = payload.userId as number;
   } catch (err) {
   }
 

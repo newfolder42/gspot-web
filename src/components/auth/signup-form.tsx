@@ -103,7 +103,7 @@ export default function SignupForm() {
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Join GSpot — upload photos and let others guess where they were taken.</p>
 
                     <div className="mt-6 grid gap-3">
-                        <button
+                        {/* <button
                             type="button"
                             onClick={handleGoogle}
                             className="flex w-full items-center justify-center gap-3 rounded-md border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
@@ -118,7 +118,7 @@ export default function SignupForm() {
                             <div className="relative flex justify-center text-sm">
                                 <span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or sign up with email</span>
                             </div>
-                        </div>
+                        </div> */}
 
                         <form onSubmit={handleSubmit} className="grid gap-3">
                             <div>
