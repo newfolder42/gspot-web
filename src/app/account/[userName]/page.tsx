@@ -4,7 +4,7 @@ import { getAccountByAlias } from '@/lib/account';
 import { getUserTokenAndValidate } from '@/lib/session';
 import { notFound } from 'next/navigation';
 
-export default async function AccountPage({ params }: { params: Promise<{ userName?: string }> }) {
+export default async function AccountPage({ params }: { params: Promise<{ userName: string }> }) {
   const { userName } = await params;
 
   let currentUserId = 0;
@@ -14,7 +14,7 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   } catch (err) {
   }
 
-  const data = await getAccountByAlias(userName ?? '', currentUserId);
+  const data = await getAccountByAlias(userName, currentUserId);
   if (!data) return notFound();
 
   return (

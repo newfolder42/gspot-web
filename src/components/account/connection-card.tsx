@@ -1,36 +1,16 @@
-"use client";
 import Link from 'next/link';
 import Image from 'next/image';
-import React, { useState } from 'react';
 import FollowButton from './follow-button';
 
 type Props = {
   alias: string;
   name?: string | null;
   profilePhoto?: { url?: string | null } | null;
-  onUnfollow?: () => void;
   canUnfollow?: boolean;
 };
 
-export default function ConnectionCard({ alias, name, profilePhoto, onUnfollow, canUnfollow = false }: Props) {
-  const [loading, setLoading] = useState(false);
+export default function ConnectionCard({ alias, name, profilePhoto, canUnfollow = false }: Props) {
   const photoUrl = profilePhoto?.url || null;
-
-  async function handleUnfollow(e: React.MouseEvent) {
-    e.preventDefault();
-    if (!canUnfollow) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/account/${encodeURIComponent(alias)}/connections`, { method: 'DELETE' });
-      if (res.ok) {
-        onUnfollow && onUnfollow();
-      }
-    } catch (err) {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="flex items-center gap-4 p-3 border rounded-md bg-white dark:bg-zinc-900">

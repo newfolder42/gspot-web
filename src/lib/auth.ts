@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from 'bcrypt';
-import pool from "@/lib/db";
+import { query } from "@/lib/db";
 import AppError from './errors';
 import { User, UserToRegister } from '@/types/user';
 
@@ -22,11 +22,11 @@ export async function signup(user: UserToRegister) {
     if (typeof password !== 'string' || password.length < 6) throw new AppError('Password too short', 'INVALID_PASSWORD');
 
     try {
-        const existing = await pool.query('SELECT id FROM users WHERE email = $1 OR alias = $2', [email, alias]);
+        const existing = await query('SELECT id FROM users WHERE email = $1 OR alias = $2', [email, alias]);
         if (existing.rows.length > 0) throw new AppError('Email or username already taken', 'USER_EXISTS');
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const result = await pool.query(
+        const result = await query(
             'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, email, alias, created_at',
             [name, alias, email, passwordHash]
         );
@@ -43,7 +43,7 @@ export async function login(email: string, password: string) : Promise<User> {
     if (typeof password !== 'string' || password.length === 0) throw new AppError('Password required', 'INVALID_PASSWORD');
 
     try {
-        const res = await pool.query('SELECT id, alias, name, email, password_hash, created_at FROM users WHERE email = $1', [email]);
+        const res = await query('SELECT id, alias, name, email, password_hash, created_at FROM users WHERE email = $1', [email]);
         if (res.rows.length === 0) throw new AppError('User not found', 'USER_NOT_FOUND');
 
         const user = res.rows[0];
@@ -61,7 +61,7 @@ export async function login(email: string, password: string) : Promise<User> {
 }
 
 export async function createSessionRecord(userId: number | string, loginAt: Date = new Date()) {
-  const res = await pool.query(
+  const res = await query(
     'INSERT INTO user_sessions (user_id, login_at) VALUES ($1, $2) RETURNING id',
     [userId, loginAt]
   );
@@ -69,7 +69,7 @@ export async function createSessionRecord(userId: number | string, loginAt: Date
 }
 
 export async function endSessionById(sessionId: number | string) {
-  const res = await pool.query(
+  const res = await query(
     'UPDATE user_sessions SET logout_at = NOW() WHERE id = $1 AND logout_at IS NULL RETURNING id, logout_at',
     [sessionId]
   );
@@ -77,7 +77,7 @@ export async function endSessionById(sessionId: number | string) {
 }
 
 export async function endSessionByUserId(userId: number | string) {
-  const res = await pool.query(
+  const res = await query(
     'UPDATE user_sessions SET logout_at = NOW() WHERE user_id = $1 AND logout_at IS NULL RETURNING id, logout_at',
     [userId]
   );
@@ -85,9 +85,9 @@ export async function endSessionByUserId(userId: number | string) {
 }
 
 export async function userAliasTaken(userAlias: string) {    
-  const res = await pool.query(
-    'SELECT 1 FROM users WHERE alias = $1',
+  const res = await query(
+    'SELECT COUNT(1) as count FROM users WHERE alias = $1',
     [userAlias]
   );
-  return res.rows.count > 0;
+  return res.rows[0].count > 0;
 }

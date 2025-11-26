@@ -1,6 +1,8 @@
-"use client";
-import React, { useState } from 'react';
+"use client"
+
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearToken } from '@/lib/session';
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -9,7 +11,7 @@ export default function LogoutButton() {
   async function handleSignOut() {
     setLoading(true);
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await clearToken();
       router.push('/');
     } catch (e) {
       setLoading(false);
@@ -23,7 +25,7 @@ export default function LogoutButton() {
         disabled={loading}
         className="inline-flex items-center px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
       >
-        {loading ? 'Signing out...' : 'Sign out'}
+        {loading ? 'მიმდინარეობს...' : 'გასვლა'}
       </button>
     </div>
   );

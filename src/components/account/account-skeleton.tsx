@@ -1,4 +1,3 @@
-"use client";
 export default function AccountSkeleton() {
   return (
     <div className="space-y-4">

@@ -1,9 +1,12 @@
-"use client";
+"use client"
 
 import { useState, useRef } from 'react';
 import exifr from 'exifr';
 import Link from 'next/link';
 import { createPost } from '@/lib/posts';
+import { storeContent } from '@/lib/content';
+import { v4 } from 'uuid';
+import { generateFileUrl } from '@/lib/s3';
 
 interface UploadedPhoto {
     key?: string;
@@ -22,7 +25,7 @@ type PhotoUploadProps = {
     showCreate?: boolean;
 };
 
-export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
+export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -33,14 +36,14 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
         if (!file) return;
 
         // Validate file type
-        if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
-            setError('Only PNG, JPEG, GIF, and WebP images are allowed');
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+            setError('ხმოლოდ PNG, JPEG, და WebP ფოტო-სურათებია ნებადართული');
             return;
         }
 
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 15 * 1024 * 1024;
         if (file.size > maxSize) {
-            setError('File size must be less than 5MB');
+            setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
             return;
         }
 
@@ -60,7 +63,7 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                 }
             }
             if (lat == null || lon == null) {
-                setError('No GPS data found in image.');
+                setError('სურათზე არ მოიძებნა GPS თაგები.');
                 return;
             }
         } catch (exifErr) {
@@ -71,33 +74,11 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
         setUploading(true);
 
         try {
-            // Step 1: Request a signed URL from your backend
-            const signUrlResponse = await fetch('/api/account/upload-content', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename: file.name,
-                    type: 'gps-photo',
-                    contentType: file.type,
-                    fileSize: file.size,
-                    coordinates: {
-                        lat,
-                        lon
-                    }
-                }),
+            const signUrl = await generateFileUrl({
+                key: `gps-photo/${v4()}`,
+                contentType: file.type,
             });
-
-            if (!signUrlResponse.ok) {
-                const errData = await signUrlResponse.json();
-                throw new Error(errData.error || 'Failed to get signed URL');
-            }
-
-            const signData = await signUrlResponse.json();
-            const uploadUrl = signData.uploadUrl || signData.url || signData.uploadUrl;
-            const contentId = signData.contentId ?? signData.content_id ?? null;
-
-            // Step 2: Upload file directly to S3 using the signed URL
-            const uploadResponse = await fetch(uploadUrl, {
+            const uploadResponse = await fetch(signUrl, {
                 method: 'PUT',
                 headers: { 'Content-Type': file.type },
                 body: file,
@@ -106,14 +87,28 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
             if (!uploadResponse.ok) {
                 throw new Error('Failed to upload file to S3');
             }
+            const uploadUrl = signUrl.split('?')[0];
+            const content = await storeContent(
+                uploadUrl,
+                'gps-photo',
+                {
+                    originalFileName: file.name,
+                    fileSize: file.size,
+                    coordinates: {
+                        lat,
+                        lon
+                    }
+                }
+            );
 
-            // Step 3: Add photo to list (in production, save to your DB)
-            const publicUrl = `${uploadUrl.split('?')[0]}`;
+            if (content == null) {
+                throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
+            }
 
             const newPhoto: UploadedPhoto = {
                 key: undefined,
-                contentId: contentId,
-                url: publicUrl,
+                contentId: content.id,
+                url: `${uploadUrl}`,
                 filename: file.name,
                 size: file.size,
                 uploadedAt: new Date().toLocaleString(),
@@ -130,9 +125,8 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
             }
 
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Upload failed';
+            const message = err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა';
             setError(message);
-            // eslint-disable-next-line no-console
             console.error('Upload error:', err);
         } finally {
             setUploading(false);
@@ -154,12 +148,17 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                         type="button"
                         className="px-3 py-2 border rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                     >
-                        Add Photo
+                        <svg
+                            className="w-5 h-5 text-blue-500 flex-shrink-0"
+                            fill="currentColor"
+                        >
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+                        </svg>
                     </button>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Post title"
+                        placeholder="სათაური"
                         className="flex-1 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm"
                     />
                     <button
@@ -172,25 +171,16 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                             setCreating(true);
                             try {
                                 await createPost({ title: title.trim(), contentId: first.contentId });
-                                // const res = await fetch('/api/posts', {
-                                //     method: 'POST',
-                                //     headers: { 'Content-Type': 'application/json' },
-                                //     body: JSON.stringify({ title: title.trim(), contentId: first.contentId }),
-                                // });
-                                // if (!res.ok) {
-                                //     const data = await res.json().catch(() => ({}));
-                                //     throw new Error(data?.error || 'Failed to create post');
-                                // }
                                 window.location.reload();
                             } catch (err) {
-                                setLocalError(err instanceof Error ? err.message : 'Create post failed');
+                                setLocalError(err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
                             } finally {
                                 setCreating(false);
                             }
                         }}
                         className={`px-4 py-2 rounded-md text-sm text-white ${disabled ? 'bg-zinc-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                     >
-                        {creating ? 'Creating...' : 'Create Post'}
+                        {creating ? 'მიმდინარეობს...' : 'ატვირთვა'}
                     </button>
                 </div>
                 {localError && <p className="text-sm text-red-600 mt-2">{localError}</p>}
@@ -201,7 +191,7 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
     const MapPreview = ({ coordinates }: { coordinates: UploadedPhoto['coordinates'] }) => {
         if (!coordinates) return null;
         const { latitude, longitude } = coordinates;
-        const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+        const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=18&output=embed&&maptype=satellite&hl=ka`;
         return (
             <div className="mt-2 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
                 <iframe
@@ -255,7 +245,7 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                                                 {photo.filename}
                                             </p>
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                                {(photo.size / 1024).toFixed(2)} KB • {photo.coordinates ? `Lat: ${photo.coordinates.latitude.toFixed(4)}, Lon: ${photo.coordinates.longitude.toFixed(4)}` : 'No GPS data'}
+                                                {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude.toFixed(4)}, გრძედი: ${photo.coordinates.longitude.toFixed(4)}` : 'No GPS data'}
                                             </p>
                                         </div>
                                     </div>
@@ -266,7 +256,7 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                                             rel="noopener noreferrer"
                                             className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition"
                                         >
-                                            View
+                                            ნახვა
                                         </Link>
                                         <button
                                             onClick={() => {
@@ -274,7 +264,7 @@ export default function PhotoUpload({ showCreate }: PhotoUploadProps = {}) {
                                             }}
                                             className="px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition"
                                         >
-                                            Remove
+                                            წაშლა
                                         </button>
                                     </div>
                                 </div>

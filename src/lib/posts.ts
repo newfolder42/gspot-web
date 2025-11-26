@@ -1,11 +1,11 @@
-'use server';
+"use server";
 
-import pool from '@/lib/db';
+import { query } from '@/lib/db';
 import { getUserTokenAndValidate } from './session';
 
 export async function getRecentPosts(limit = 20) {
     try {
-        const res = await pool.query(
+        const res = await query(
             `select p.id, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url
 from posts p
 join post_content pc on p.id = pc.post_id
@@ -31,8 +31,7 @@ limit $1`,
 
 export async function getPostById(id: number) {
     try {
-        console.log('Fetching post with id:', typeof (id), id);
-        const res = await pool.query(
+        const res = await query(
             `select p.id, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.id as content_id
 from posts p
 join post_content pc on p.id = pc.post_id
@@ -65,22 +64,24 @@ export async function createPost({ title, contentId }: { title?: string; content
     const payload = await getUserTokenAndValidate();
     const currentUserId = payload.userId as number;
 
-    const postRes = await pool.query(
+    const postRes = await query(
         `INSERT INTO posts (user_id, type, title) VALUES ($1, $2, $3) RETURNING id`,
         [currentUserId, 'photo', title || null]
     );
 
     const postId = postRes.rows[0].id;
 
-    await pool.query(
+    await query(
         `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
         [postId, contentId, 0]
     );
+
+    //emitAsyncEvent({ type: 'post-created', payload: { userId: currentUserId, type: 'photo', postId } });
 }
 
 export async function getPostGuesses(postId: number) {
     try {
-        const data = await pool.query(
+        const data = await query(
             `select pg.id, post_id, user_id, type, details, pg.created_at, u.alias as author_alias
 from post_guesses pg
 join users u on pg.user_id = u.id
@@ -112,7 +113,7 @@ export async function createPostGuess({ postId, coordinates, score }: { postId: 
         const payload = await getUserTokenAndValidate();
         const userId = payload.userId;
 
-        const data = await pool.query(
+        const data = await query(
             `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,
             [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, score: score ?? null })]
         );

@@ -9,13 +9,8 @@ export default function Footer() {
 
           {/* Column 1: Social + Brand */}
           <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-4">Follow Us</h3>
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-4">კიდევ სხვა</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="https://twitter.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
-                  Twitter
-                </Link>
-              </li>
               <li>
                 <Link href="https://github.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
                   GitHub
@@ -27,7 +22,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="mailto:hello@gspot.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
+                <Link href="mailto:hello@gspot.ge" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
                   Email
                 </Link>
               </li>
@@ -40,7 +35,7 @@ export default function Footer() {
           {/* Footer bottom: logo/brand + copyright */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 md:mb-0">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-50">G-Spot</span> © 2025. All rights reserved.
+              <span className="font-semibold text-zinc-900 dark:text-zinc-50">G'Spot</span> © 2025. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
               <Link href="/sitemap" className="hover:text-zinc-900 dark:hover:text-white transition">

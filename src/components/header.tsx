@@ -3,7 +3,7 @@ import Link from "next/link";
 import SignInButton from "./common/signin-button";
 import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
-import { getUserTokenAndValidate, verifyToken } from "@/lib/session";
+import { getUserTokenAndValidate } from "@/lib/session";
 
 type HeaderProps = {
   image: {
@@ -36,7 +36,7 @@ const Header = async ({ image, headers }: HeaderProps) => {
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-3">
               <Image src={image?.url} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
-              <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">G-Spot</span>
+              <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">G'Spot</span>
             </Link>
           </div>
 
@@ -58,10 +58,10 @@ const Header = async ({ image, headers }: HeaderProps) => {
               <div className="relative flex-1">
                 <input
                   aria-label="Search"
-                  placeholder="Search photos, users, places..."
+                  placeholder="მოძებნა ფოტო-სურათი, მომხმარებელი..."
                   className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#00c8ff]"
                 />
-                <button className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-sm text-zinc-600 dark:text-zinc-300">Search</button>
+                <button className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-sm text-zinc-600 dark:text-zinc-300">ძებნა</button>
               </div>
             </div>
           </div>

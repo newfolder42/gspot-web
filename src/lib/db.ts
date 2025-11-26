@@ -1,3 +1,5 @@
+"use server";
+
 import { Pool } from 'pg';
 
 const pool = new Pool({
@@ -8,4 +10,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-export default pool;
+export async function query(text: string, params?: any[]) {
+  return pool.query(text, params);
+}

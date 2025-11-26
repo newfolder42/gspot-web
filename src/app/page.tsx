@@ -1,3 +1,5 @@
+"use server";
+
 import { getUserTokenAndValidate } from "@/lib/session";
 import AuthTabs from "@/components/auth/AuthTabs";
 import Feed from "@/components/feed";
@@ -13,18 +15,17 @@ export default async function Page() {
 
   if (!user) {
     return (
-      <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-        <h1 className="text-4xl font-bold mb-4 text-center">Welcome to G-Spot</h1>
-        <p className="text-lg text-zinc-600 dark:text-zinc-300 mb-8 text-center max-w-xl">Share and discover amazing photos with the world. Sign up to create your own posts, follow others, and join the community.</p>
+      <main className="flex flex-col items-center mt-16 min-h-screen">
+        <h1 className="text-4xl font-bold mb-4 text-center">კეთილი იყოს შენი მაუსი G'Spot-ზე</h1>
+        <p className="text-lg text-zinc-600 dark:text-zinc-300 mb-8 text-center max-w-xl">გააზიარე საქართველოს სურათები, აღმოაჩინე და გამოიცანი სადაა გადაღებული. შემოგვიერთდი!</p>
         <AuthTabs />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+    <main className="min-h-screen">
       <div className="max-w-4xl mx-auto py-2">
-        {/* <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-zinc-50">Feed</h1> */}
         <Feed />
       </div>
     </main>

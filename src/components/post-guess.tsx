@@ -1,5 +1,3 @@
-"use client";
-
 export type PostGuess = {
     id: number;
     postId: number;
@@ -16,7 +14,7 @@ export default function PostGuess({ guess }: { guess: PostGuess }) {
                 <div className="text-sm font-medium">{guess.author || 'Anonymous'}</div>
                 <div className="text-xs text-zinc-400">{new Date(guess.created_at).toLocaleString()}</div>
             </div>
-            {typeof guess.score === 'number' && <div className="mt-2 text-xs text-zinc-600">Score: <strong>{guess.score}</strong></div>}
+            {typeof guess.score === 'number' && <div className="mt-2 text-xs text-zinc-600">ქულა: <strong>{guess.score}</strong></div>}
         </div>
     );
 }

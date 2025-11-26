@@ -1,6 +1,6 @@
-"use client";
+"use client"
+
 import { useState, useEffect } from 'react';
-import { useRef } from 'react';
 import PostGuess from './post-guess';
 import { createPostGuess, getPostGuesses } from '@/lib/posts';
 
@@ -48,7 +48,7 @@ export default function PostGuessList({ postId }: { postId: number }) {
         <div className="mt-6">
             <div className="mt-4 space-y-3">
                 {loading ? (
-                    <div>Loading...</div>
+                    <div>იტვირთება...</div>
                 ) : (
                     guesses.map((c) => (
                         <PostGuess key={c.id} guess={c} />
@@ -57,10 +57,10 @@ export default function PostGuessList({ postId }: { postId: number }) {
             </div>
 
             <form onSubmit={submit} className="mt-4 grid gap-2">
-                <textarea value={guessText} onChange={(e) => setGuessText(e.target.value)} placeholder="Your guess..." rows={3} className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
-                <input value={score === null ? '' : String(score)} onChange={(e) => setScore(e.target.value === '' ? null : Number(e.target.value))} placeholder="Score" className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
+                <textarea value={guessText} onChange={(e) => setGuessText(e.target.value)} placeholder="შენი აზრით..." rows={3} className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
+                <input value={score === null ? '' : String(score)} onChange={(e) => setScore(e.target.value === '' ? null : Number(e.target.value))} placeholder="ქულა" className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
                 <div>
-                    <button type="submit" className="px-4 py-2 rounded-md bg-blue-600 text-white">Submit Guess</button>
+                    <button type="submit" className="px-4 py-2 rounded-md bg-blue-600 text-white">ცდა</button>
                 </div>
             </form>
         </div>

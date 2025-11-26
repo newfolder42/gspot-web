@@ -1,11 +1,11 @@
-import pool from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function getAccountByAlias(userName: string, currentUserId: number) {
     try {
         if (!userName) return null;
 
-        const userRes = await pool.query(
-            `SELECT u.id, u.alias, u.name, u.email, u.created_at,
+        const userRes = await query(
+            `SELECT u.id, u.alias, u.name, u.email, u.created_at, CURRENT_DATE::date - u.created_at::date as age,
        upp.id as profile_photo_id, upp.public_url as profile_photo_url,
        ucon.id as connection_id, ucon.created_at as connection_created_at
 FROM users u
@@ -26,6 +26,7 @@ WHERE u.alias = $1`,
                 alias: user.alias,
                 name: user.name,
                 email: user.email,
+                age: user.age,
                 created_at: user.created_at,
             },
             profilePhoto: user.profile_photo_id ? {

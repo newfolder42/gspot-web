@@ -1,10 +1,13 @@
-"use client";
+"use client"
+
 import React, { useState } from 'react';
+import { followUnfollow } from '@/lib/follow-actions';
 
 type Props = {
     alias: string;
     initialConnected?: boolean;
 };
+
 
 export default function FollowButton({ alias, initialConnected = false }: Props) {
     const [connected, setConnected] = useState(Boolean(initialConnected));
@@ -16,18 +19,12 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
         if (loading) return;
         setLoading(true);
         setError(null);
-
         try {
-            const res = await fetch(`/api/account/${encodeURIComponent(alias)}/connections`, {
-                method: connected ? 'DELETE' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (!res.ok) {
-                const body = await res.json().catch(() => null);
-                setError(body?.error || 'Failed to follow');
-            } else {
+            const result = await followUnfollow(alias, connected);
+            if (result.success) {
                 setConnected(!connected);
+            } else {
+                setError(result.error || 'Network error');
             }
         } catch (err) {
             setError('Network error');
@@ -43,7 +40,7 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
                 disabled={loading}
                 className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm transition ${loading ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
-                {loading ? 'Following...' : connected ? 'Unfollow' : 'Follow'}
+                {loading ? 'მიმდინარეობს...' : connected ? 'გამოწერის გაუქმება' : 'გამოწერა'}
             </button>
             {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
         </div>

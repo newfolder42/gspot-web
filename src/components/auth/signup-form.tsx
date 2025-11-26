@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { signup, userAliasTaken } from "@/lib/auth";
 
 export default function SignupForm() {
     const [name, setName] = useState("");
@@ -30,24 +30,23 @@ export default function SignupForm() {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/auth/registration", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, alias, email, password }),
-            });
+            await signup({ name, alias, email, password });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                setError(data?.error || `Registration failed (${res.status})`);
-            } else {
-                setSuccess("Account created - please check your email (if applicable).");
-                setName("");
-                setAlias("");
-                setEmail("");
-                setPassword("");
-                setAliasStatus(null);
-            }
+            setSuccess("მომხმარებელი შექმნილია");
+            setName("");
+            setAlias("");
+            setEmail("");
+            setPassword("");
+            setAliasStatus(null);
         } catch (err) {
+            if (err instanceof Error && err.message === 'USER_EXISTS') {
+                setError(err.message);
+                return;
+            }
+            if (err instanceof Error && err.message === 'INVALID_INPUT') {
+                setError(err.message);
+                return;
+            }
             setError("Network error — please try again.");
         } finally {
             setLoading(false);
@@ -58,14 +57,12 @@ export default function SignupForm() {
         alert("Google sign-in is not implemented yet.");
     }
 
-    // Debounced alias availability check
     useEffect(() => {
         if (!alias) {
             setAliasStatus(null);
             return;
         }
 
-        // Basic validation
         if (alias.length < 3 || alias.length > 30) {
             setAliasStatus("invalid");
             return;
@@ -80,13 +77,23 @@ export default function SignupForm() {
         const timer = setTimeout(async () => {
             setAliasStatus("checking");
             try {
-                const res = await fetch("/api/auth/check-alias", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ alias }),
-                });
-                const data = await res.json();
-                setAliasStatus(data.available ? "available" : "taken");
+                if (!alias || typeof alias !== "string") {
+                    await setAliasStatus("invalid");
+                    return;
+                }
+
+                if (alias.length < 3 || alias.length > 30) {
+                    await setAliasStatus("invalid");
+                    return;
+                }
+
+                if (!/^[a-z0-9_-]+$/i.test(alias)) {
+                    await setAliasStatus("invalid");
+                    return;
+                }
+                console.log('Checking alias:', alias);
+                const taken = await userAliasTaken(alias);
+                setAliasStatus(!taken ? "available" : "taken");
             } catch (err) {
                 setAliasStatus(null);
             }
@@ -97,44 +104,28 @@ export default function SignupForm() {
 
     return (
         <div className="mx-auto w-full max-w-md">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md ring-1 ring-zinc-100 dark:ring-zinc-800 overflow-hidden">
+            <div className="overflow-hidden">
                 <div className="px-8 py-6">
-                    <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Create your account</h2>
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Join GSpot — upload photos and let others guess where they were taken.</p>
+                    <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">შემოგვი1დი</h2>
+                    {/* <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Join GSpot — upload photos and let others guess where they were taken.</p> */}
 
                     <div className="mt-6 grid gap-3">
-                        {/* <button
-                            type="button"
-                            onClick={handleGoogle}
-                            className="flex w-full items-center justify-center gap-3 rounded-md border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
-                        >
-                            Continue with Google
-                        </button>
-
-                        <div className="relative py-2">
-                            <div className="absolute inset-0 flex items-center" aria-hidden>
-                                <div className="w-full border-t border-zinc-100 dark:border-zinc-800" />
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="bg-white dark:bg-zinc-900 px-2 text-zinc-500">Or sign up with email</span>
-                            </div>
-                        </div> */}
 
                         <form onSubmit={handleSubmit} className="grid gap-3">
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Name</label>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">სახელი</label>
                                 <input
                                     className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                                     id="name"
                                     name="name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Your full name"
+                                    placeholder="შენი სრული სახელი (არსად გამოჩნდება)"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Username</label>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მომხმარებელი</label>
                                 <div className="relative mt-1">
                                     <input
                                         className="block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
@@ -142,7 +133,7 @@ export default function SignupForm() {
                                         name="alias"
                                         value={alias}
                                         onChange={(e) => setAlias(e.target.value.toLowerCase())}
-                                        placeholder="choose-a-username"
+                                        placeholder="უნიკალური სახელი"
                                     />
                                     {alias && (
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -173,13 +164,10 @@ export default function SignupForm() {
                                 {aliasStatus === "taken" && (
                                     <p className="mt-1 text-xs text-red-600 dark:text-red-400">This username is already taken</p>
                                 )}
-                                {aliasStatus === "available" && (
-                                    <p className="mt-1 text-xs text-green-600 dark:text-green-400">This username is available!</p>
-                                )}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Email</label>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მეილი</label>
                                 <input
                                     className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                                     id="email"
@@ -192,7 +180,7 @@ export default function SignupForm() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Password</label>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">პაროლი</label>
                                 <input
                                     className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                                     id="password"
@@ -200,7 +188,7 @@ export default function SignupForm() {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Create a strong password"
+                                    placeholder="პაროლი"
                                 />
                             </div>
 
@@ -212,16 +200,9 @@ export default function SignupForm() {
                                 disabled={loading}
                                 className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
                             >
-                                {loading ? "Creating account..." : "Create account"}
+                                {loading ? "მიმდინარეობს..." : "შექმნა"}
                             </button>
                         </form>
-
-                        <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
-                            Already have an account?{' '}
-                            <Link href="/auth/signin" className="font-medium text-[#00c8ff] hover:underline">
-                                Sign in
-                            </Link>
-                        </p>
                     </div>
                 </div>
             </div>

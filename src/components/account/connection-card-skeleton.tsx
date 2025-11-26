@@ -1,5 +1,3 @@
-"use client";
-
 export default function SkeletonConnectionCard() {
   return (
     <div role="status" aria-hidden="true" className="flex items-center gap-4 p-3 border rounded-md bg-white dark:bg-zinc-900 animate-pulse">
