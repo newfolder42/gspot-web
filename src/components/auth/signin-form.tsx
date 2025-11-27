@@ -76,7 +76,7 @@ export default function SigninForm() {
                                 disabled={loading}
                                 className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
                             >
-                                {loading ? "მიმდინარეობს..." : "შესვლა"}
+                                {loading ? "მიმდინარეობს..." : "ავტორიზაცია"}
                             </button>
                         </form>
                     </div>
