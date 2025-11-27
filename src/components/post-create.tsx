@@ -28,6 +28,7 @@ type PhotoUploadProps = {
 export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,14 +36,12 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file type
         if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
             setError('ხმოლოდ PNG, JPEG, და WebP ფოტო-სურათებია ნებადართული');
             return;
         }
 
-        const maxSize = 15 * 1024 * 1024;
-        if (file.size > maxSize) {
+        if (file.size > 15 * 1024 * 1024) {
             setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
             return;
         }
@@ -72,64 +71,76 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
 
         setError(null);
         setUploading(true);
+        setUploadProgress(0);
 
         try {
             const signUrl = await generateFileUrl({
                 key: `gps-photo/${v4()}`,
                 contentType: file.type,
             });
-            const uploadResponse = await fetch(signUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': file.type },
-                body: file,
-            });
 
-            if (!uploadResponse.ok) {
-                throw new Error('Failed to upload file to S3');
-            }
-            const uploadUrl = signUrl.split('?')[0];
-            const content = await storeContent(
-                uploadUrl,
-                'gps-photo',
-                {
-                    originalFileName: file.name,
-                    fileSize: file.size,
-                    coordinates: {
-                        lat,
-                        lon
+            await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', signUrl, true);
+                xhr.setRequestHeader('Content-Type', file.type);
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        setUploadProgress(Math.round((event.loaded / event.total) * 100));
                     }
-                }
-            );
-
-            if (content == null) {
-                throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
-            }
-
-            const newPhoto: UploadedPhoto = {
-                key: undefined,
-                contentId: content.id,
-                url: `${uploadUrl}`,
-                filename: file.name,
-                size: file.size,
-                uploadedAt: new Date().toLocaleString(),
-                coordinates: lat && lon ? {
-                    latitude: lat,
-                    longitude: lon
-                } : null,
-            };
-
-            setPhotos([newPhoto, ...photos]);
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-
+                };
+                xhr.onload = async () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const uploadUrl = signUrl.split('?')[0];
+                        try {
+                            const content = await storeContent(
+                                uploadUrl,
+                                'gps-photo',
+                                {
+                                    originalFileName: file.name,
+                                    fileSize: file.size,
+                                    coordinates: {
+                                        lat,
+                                        lon
+                                    }
+                                }
+                            );
+                            if (content == null) {
+                                throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
+                            }
+                            const newPhoto: UploadedPhoto = {
+                                key: undefined,
+                                contentId: content.id,
+                                url: `${uploadUrl}`,
+                                filename: file.name,
+                                size: file.size,
+                                uploadedAt: new Date().toLocaleString(),
+                                coordinates: lat && lon ? {
+                                    latitude: lat,
+                                    longitude: lon
+                                } : null,
+                            };
+                            setPhotos([newPhoto, ...photos]);
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                            }
+                            resolve();
+                        } catch (err) {
+                            reject(err);
+                        }
+                    } else {
+                        reject(new Error('Failed to upload file to S3'));
+                    }
+                };
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.send(file);
+            });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა';
             setError(message);
             console.error('Upload error:', err);
         } finally {
             setUploading(false);
+            setUploadProgress(null);
         }
     };
 
@@ -220,6 +231,15 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                 {error && (
                     <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                         <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+                    </div>
+                )}
+                {uploading && uploadProgress !== null && (
+                    <div className="mt-2 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                        <div
+                            className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                            style={{ width: `${uploadProgress}%` }}
+                        />
+                        <div className="text-xs text-center mt-1 text-zinc-600 dark:text-zinc-300">ატვირთვა: {uploadProgress}%</div>
                     </div>
                 )}
             </div>

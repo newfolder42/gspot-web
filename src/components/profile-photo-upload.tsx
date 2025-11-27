@@ -19,8 +19,8 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
       return;
     }
 
-    if (file.size > 15 * 1024 * 1024) {
-      setError('File must be less than 15MB');
+    if (file.size > 5 * 1024 * 1024) {
+      setError('ფაილის ზომა არ უნდა აღემატებოდეს 5 მბს');
       return;
     }
 
@@ -52,8 +52,6 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
           fileSize: file.size
         }
       );
-
-
 
       if (content == null) {
         throw new Error('სურათის ატვირთვა ვერ მოხერხდა');
