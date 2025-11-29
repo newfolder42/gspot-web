@@ -3,6 +3,7 @@ import Link from "next/link";
 import SignInButton from "./common/signin-button";
 import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
+import HeaderSearch from "./header-search";
 import { getUserTokenAndValidate } from "@/lib/session";
 
 type HeaderProps = {
@@ -53,16 +54,8 @@ const Header = async ({ image, headers }: HeaderProps) => {
                 </Link>
               ))}
             </nav>
-
             <div className="flex w-full max-w-lg items-center">
-              <div className="relative flex-1">
-                <input
-                  aria-label="Search"
-                  placeholder="მოძებნა ფოტო-სურათი, მომხმარებელი..."
-                  className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#00c8ff]"
-                />
-                <button className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-sm text-zinc-600 dark:text-zinc-300">ძებნა</button>
-              </div>
+              <HeaderSearch />
             </div>
           </div>
 
