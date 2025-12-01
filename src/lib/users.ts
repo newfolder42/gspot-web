@@ -10,3 +10,14 @@ export async function getUserIdByAlias(userName: string) {
     return null;
   }
 }
+
+export async function getUserIdByEMail(email: string) {
+  try {
+    if (!email) return null;
+    const res = await query('SELECT id, alias, email FROM users WHERE email = $1', [email]);
+    return res.rows.length > 0 ? res.rows[0] : null;
+  } catch (err) {
+    console.error('getUserIdByAlias error', err);
+    return null;
+  }
+}
