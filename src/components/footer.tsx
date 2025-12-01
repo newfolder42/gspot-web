@@ -12,13 +12,13 @@ export default function Footer() {
             <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-4">კიდევ სხვა</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="https://github.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
-                  GitHub
+                <Link href="/about" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
+                  ჩვენს შესახებ
                 </Link>
               </li>
               <li>
-                <Link href="https://discord.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
-                  Discord
+                <Link href="https://github.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
+                  GitHub
                 </Link>
               </li>
               <li>
