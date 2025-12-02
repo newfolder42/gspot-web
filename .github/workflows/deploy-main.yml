@@ -31,6 +31,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
+      - name: Install Lightsail CLI plugin
+        run: |
+          sudo curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o "/usr/local/bin/lightsailctl"
+          sudo chmod +x /usr/local/bin/lightsailctl
+      
       - name: Login to AWS Lightsail
         run: |
           aws lightsail get-container-services --service-name ${{ env.LIGHTSAIL_SERVICE_NAME }}
