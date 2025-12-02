@@ -51,4 +51,3 @@ export const down = (pgm) => {
     pgm.dropTable('post_guesses');
     pgm.dropTable('posts');
 };
-//dotenv -e .env.local -- npx node-pg-migrate up

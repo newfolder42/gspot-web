@@ -8,9 +8,9 @@ const BUCKET = process.env.S3_BUCKET;
 
 const s3client = new S3Client({
     region: REGION,
-    credentials: process.env.AWS_ACCESS_KEY_ID
+    credentials: process.env.AWSS3_ACCESS_KEY_ID
         ? {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            accessKeyId: process.env.AWSS3_ACCESS_KEY_ID,
             secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
         }
         : undefined,

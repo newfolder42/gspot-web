@@ -1,0 +1,10 @@
+{
+    "host": "ls-acc82332064dcb152618fadbde8114e6f7100a63.cduigq40ct8j.eu-central-1.rds.amazonaws.com",
+    "port": 5432,
+    "database": "gspot_db",
+    "user": "gspotwebapp",
+    "password": "so_1ptbqvsi23h_",
+    "ssl": {
+        "rejectUnauthorized": false
+    }
+}

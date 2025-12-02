@@ -1,0 +1,25 @@
+{
+  "containers": {
+    "gspot-web": {
+      "image": ":public.ecr.aws/amazon-lightsail/hello-world",
+      "environment": {
+        "NODE_ENV": "production"
+      },
+      "ports": {
+        "3000": "HTTP"
+      }
+    }
+  },
+  "publicEndpoint": {
+    "containerName": "gspot-web",
+    "containerPort": 3000,
+    "healthCheck": {
+      "healthyThreshold": 2,
+      "unhealthyThreshold": 2,
+      "timeoutSeconds": 5,
+      "intervalSeconds": 10,
+      "path": "/api/health",
+      "successCodes": "200-299"
+    }
+  }
+}

@@ -27,4 +27,3 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => { pgm.dropTable('users'); };
-//dotenv -e .env.local -- npx node-pg-migrate up
