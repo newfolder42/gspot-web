@@ -9,8 +9,8 @@ type PostGuess = {
     postId: number;
     userId?: number | null;
     author?: string | null;
+    type?: string | null;
     score?: number | null;
-    created_at: string;
 };
 
 export default function PostGuessList({ postId }: { postId: number }) {

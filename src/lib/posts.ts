@@ -19,9 +19,10 @@ limit $1`,
         return res.rows.map((r: any) => ({
             id: r.id,
             title: r.title,
-            date: r.created_at,
             author: r.author_alias,
+            date: r.created_at,
             image: r.image_url || null,
+            type: 'photo',
         }));
     } catch (err) {
         console.error('getRecentPosts error', err);
@@ -97,7 +98,6 @@ order by pg.created_at desc`,
                 userId: r.user_id ?? null,
                 author: r.author_alias ?? null,
                 type: r.type ?? null,
-                coordinates: { latitude: r.details?.coordinates?.latitude, longitude: r.details?.coordinates.longitude },
                 createdAt: r.created_at,
                 score: r.details?.score ?? null,
             };
