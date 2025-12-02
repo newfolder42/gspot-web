@@ -20,7 +20,7 @@ export default function PostActions() {
       <button
         aria-label="Post options"
         onClick={() => setOpen((s) => !s)}
-        className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 20 20" fill="currentColor">
           <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" />

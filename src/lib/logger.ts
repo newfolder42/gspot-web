@@ -2,10 +2,11 @@ import {
     CloudWatchLogsClient,
     PutLogEventsCommand,
     CreateLogStreamCommand,
-    DescribeLogStreamsCommand
+    DescribeLogStreamsCommand,
+    CreateLogGroupCommand,
+    DescribeLogGroupsCommand
 } from "@aws-sdk/client-cloudwatch-logs";
 
-const isProduction = process.env.NODE_ENV === 'production';
 const LOG_GROUP_NAME = '/aws/lightsail/containers/gspot-web';
 const LOG_STREAM_NAME = `app-${new Date().toISOString().split('T')[0]}`;
 
@@ -14,7 +15,7 @@ let sequenceToken: string | undefined = undefined;
 let logStreamCreated = false;
 
 function getClient() {
-    if (!client && isProduction) {
+    if (!client) {
         client = new CloudWatchLogsClient({
             region: process.env.AWS_REGION,
             credentials: {
@@ -26,13 +27,32 @@ function getClient() {
     return client;
 }
 
-async function ensureLogStream() {
-    if (logStreamCreated || !isProduction) return;
-
+async function ensureLogGroup() {
     const cwClient = getClient();
     if (!cwClient) return;
-
     try {
+        const describeGroups = new DescribeLogGroupsCommand({
+            logGroupNamePrefix: LOG_GROUP_NAME,
+        });
+        const describeResp = await cwClient.send(describeGroups);
+        if (describeResp.logGroups && describeResp.logGroups.some(g => g.logGroupName === LOG_GROUP_NAME)) {
+            return;
+        }
+        const createGroup = new CreateLogGroupCommand({
+            logGroupName: LOG_GROUP_NAME,
+        });
+        await cwClient.send(createGroup);
+    } catch (error) {
+        console.error('Failed to ensure log group:', error);
+    }
+}
+
+async function ensureLogStream() {
+    if (logStreamCreated) return;
+    const cwClient = getClient();
+    if (!cwClient) return;
+    try {
+        await ensureLogGroup();
         const describeCommand = new DescribeLogStreamsCommand({
             logGroupName: LOG_GROUP_NAME,
             logStreamNamePrefix: LOG_STREAM_NAME,
@@ -65,8 +85,6 @@ async function logToCloudWatch(
 ) {
     const logMessage = `[${level}] ${message} ${metadata ? JSON.stringify(metadata) : ''}`;
     console.log(logMessage);
-
-    if (!isProduction) return;
 
     const cwClient = getClient();
     if (!cwClient) return;
