@@ -16,7 +16,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v4.0.0
         with:
-          context: .
+          context: ./src
           push: false
           tags: gspot-web:${{ github.sha }}
       
