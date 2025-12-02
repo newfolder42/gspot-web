@@ -4,7 +4,7 @@ import { getUserIdByAlias } from '@/lib/users';
 
 type Props = {
     children: React.ReactNode;
-    params: { userName: string };
+    params: Promise<{ userName: string }>;
 };
 
 export default async function UserLayout({ children, params }: Props) {
