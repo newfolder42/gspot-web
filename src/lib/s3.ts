@@ -32,8 +32,6 @@ export async function generateFileUrl(opts: {
     });
 
     const url = await getSignedUrl(s3client, command, { expiresIn });
-    console.log("Generated signed upload URL:", url);
-    console.log("For key:", key);
     return url;
 }
 

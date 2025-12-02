@@ -19,7 +19,6 @@ export default function HeaderSearch() {
             setShowDropdown(false);
             return;
         }
-        console.log("Searching for:", search);
         setLoading(true);
         const timer = setTimeout(async () => {
             try {

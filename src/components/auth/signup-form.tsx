@@ -93,7 +93,6 @@ export default function SignupForm() {
                     await setAliasStatus("invalid");
                     return;
                 }
-                console.log('Checking alias:', alias);
                 const taken = await userAliasTaken(alias);
                 setAliasStatus(!taken ? "available" : "taken");
             } catch (err) {

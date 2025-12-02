@@ -71,6 +71,8 @@ jobs:
                   "S3_BUCKET": "${{ secrets.S3_BUCKET }}",
                   "AWSS3_ACCESS_KEY_ID": "${{ secrets.AWSS3_ACCESS_KEY_ID }}",
                   "AWSS3_SECRET_ACCESS_KEY": "${{ secrets.AWSS3_SECRET_ACCESS_KEY }}",
+                  "AWSCW_ACCESS_KEY_ID": "${{ secrets.AWSCW_ACCESS_KEY_ID }}",
+                  "AWSCW_SECRET_ACCESS_KEY": "${{ secrets.AWSCW_SECRET_ACCESS_KEY }}",
                   "GOOGLE_AUTH_CLIENT_ID": "${{ secrets.GOOGLE_AUTH_CLIENT_ID }}",
                   "GOOGLE_AUTH_CLIENT_SECRET": "${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}",
                   "GOOGLE_AUTH_REDIRECT_URI": "${{ secrets.GOOGLE_AUTH_REDIRECT_URI }}"

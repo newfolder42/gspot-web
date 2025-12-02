@@ -20,7 +20,6 @@ export async function getGoogleAuthUrl() {
             'https://www.googleapis.com/auth/userinfo.email',
         ].join(' '),
     };
-    console.log('google options', options);
     const qs = new URLSearchParams(options);
     return `${rootUrl}?${qs.toString()}`;
 }
@@ -54,7 +53,6 @@ export async function getGoogleTokens(code: string): Promise<GoogleTokens> {
         redirect_uri: GOOGLE_REDIRECT_URI,
         grant_type: 'authorization_code',
     };
-    console.log('google values', values);
 
     const response = await fetch(url, {
         method: 'POST',
