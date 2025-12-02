@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { query } from "@/lib/db";
 import AppError from './errors';
 import { User, UserToRegister } from '@/types/user';
+import { logerror } from './logger';
 
 function isEmail(s: string) {
     return typeof s === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
@@ -33,6 +34,7 @@ export async function signup(user: UserToRegister) {
 
         return result.rows[0];
     } catch (err) {
+        logerror('signup error:' + err);
         if (err instanceof AppError) throw err;
         throw new AppError('Internal error', 'INTERNAL_ERROR');
     }
@@ -54,7 +56,7 @@ export async function login(email: string, password: string) : Promise<User> {
 
         return { id: user.id, alias: user.alias, name: user.name, email: user.email, createdAt: user.created_at, sessionId: sessionId };
     } catch (err) {
-        console.error('Login error:', err);
+        logerror('login error:' + err);
         if (err instanceof AppError) throw err;
         throw new AppError('Internal error', 'INTERNAL_ERROR');
     }

@@ -5,6 +5,7 @@ import AppError from './errors';
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { endSessionById, endSessionByUserId } from './auth';
+import { logerror } from './logger';
 
 type TokenPayload = {
   userId: number;
@@ -27,7 +28,7 @@ function verifyToken(token: string): TokenPayload {
       sessionId: payload.sid as string,
     };
   } catch (err) {
-    console.error('verifyToken error:', err);
+    logerror('verifyToken error:' + err);
     throw new AppError('Invalid or expired token', 'INVALID_TOKEN');
   }
 }
@@ -66,8 +67,8 @@ export async function clearToken() {
       sameSite: 'strict',
       secure: true,
     });
-  } catch (e) {
-    // ignore
+  } catch (err) {
+    logerror('clearToken error:' + err);
   }
 }
 
@@ -94,6 +95,7 @@ export async function setToken(userId: number, alias: string, sessionId: number 
       secure: true,
     });
   } catch (err: any) {
+    logerror('setToken error:' + err);
     throw new AppError(err + ' Internal server error');
   }
 }
