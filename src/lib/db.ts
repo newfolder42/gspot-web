@@ -1,7 +1,7 @@
 "use server";
 
 import { Pool } from 'pg';
-import { logerror, loginfo } from './logger';
+import { logerror } from './logger';
 
 const pool = new Pool({
   database: process.env.POSTGRES_DB,
@@ -9,13 +9,9 @@ const pool = new Pool({
   password: process.env.POSTGRES_PASSWORD,
   host: process.env.POSTGRES_HOST,
   port: 5432,
-});
-
-pool.on('connect', async () => {
-  await loginfo('New database client connected to pool', {
-    database: process.env.POSTGRES_DB,
-    host: process.env.POSTGRES_HOST,
-  });
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 pool.on('error', async (err) => {
@@ -27,28 +23,11 @@ pool.on('error', async (err) => {
   });
 });
 
-pool.on('remove', async () => {
-  await loginfo('Database client removed from pool');
-});
-
 export async function query(text: string, params?: any[]) {
   const startTime = Date.now();
 
   try {
-    await loginfo('Database query started', {
-      query: text.substring(0, 100),
-      paramsCount: params?.length || 0,
-    });
-
-    const result = await pool.query(text, params);
-    const duration = Date.now() - startTime;
-
-    await loginfo('Database query completed', {
-      duration,
-      rowCount: result.rowCount,
-    });
-
-    return result;
+    return await pool.query(text, params);
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
