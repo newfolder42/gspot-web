@@ -61,6 +61,22 @@ limit 1`,
     }
 }
 
+export async function postIsGuessedByUser(id: number, userId: number) {
+    try {
+        const res = await query(
+            `select id from post_guesses pg
+where pg.post_id = $1 and pg.user_id = $2`,
+            [id, userId]
+        );
+
+        if (res.rowCount === 0) return true;
+        return false;
+    } catch (err) {
+        console.error('postIsGuessedByUser error', err);
+        return false;
+    }
+}
+
 export async function createPost({ title, contentId }: { title?: string; contentId: number }) {
     const payload = await getUserTokenAndValidate();
     const currentUserId = payload.userId as number;
@@ -121,6 +137,25 @@ export async function createPostGuess({ postId, coordinates, score }: { postId: 
         return { id: data.rows[0].id };
     } catch (err) {
         console.error('post guesses error', err);
+        return null;
+    }
+}
+
+export async function getPhotoCoordinates({ postId }: { postId: number }) {
+    try {
+        const data = await query(
+            `select details from posts p
+    join post_content pc on p.id = pc.post_id
+         join user_content uc on uc.id = pc.content_id
+where p.id = $1`,
+            [postId]
+        );
+
+        console.log('photoCoordinates data', data.rows[0].details.coordinates);
+
+        return { coordinates: data.rows[0].details.coordinates };
+    } catch (err) {
+        console.error('photoCoordinates error', err);
         return null;
     }
 }

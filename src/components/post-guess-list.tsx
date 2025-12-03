@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import PostGuess from './post-guess';
-import { createPostGuess, getPostGuesses } from '@/lib/posts';
+import { createPostGuess, getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
+import PostGuessSkeleton from './post-guess-skeleton';
+import NewGuess from './new-guess';
+import { getUserTokenAndValidate } from '@/lib/session';
 
 type PostGuess = {
     id: number;
@@ -15,15 +18,24 @@ type PostGuess = {
 
 export default function PostGuessList({ postId }: { postId: number }) {
     const [guesses, setGuesses] = useState<PostGuess[]>([]);
+    const [canGuess, setCanGuess] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [guessText, setGuessText] = useState('');
-    const [score, setScore] = useState<number | null>(null);
-    const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [showForm, setShowForm] = useState(false);
 
     const fetchGuesses = async () => {
         setLoading(true);
         const guesses = await getPostGuesses(postId);
-        setGuesses(guesses || []);
+
+        try {
+            const payload = await getUserTokenAndValidate();
+            const canGuess = await postIsGuessedByUser(postId, payload.userId);
+            setCanGuess(canGuess);
+            console.log('Checking if post is guessed by user', canGuess);
+        } catch (e) {
+            setCanGuess(false);
+        }
+
+        setGuesses(guesses);
         setLoading(false);
     };
 
@@ -31,38 +43,40 @@ export default function PostGuessList({ postId }: { postId: number }) {
         fetchGuesses();
     }, [postId]);
 
-    const submit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await createPostGuess({ postId, coordinates: selectedCoords, score });
-            setGuessText('');
-            setScore(null);
-            setSelectedCoords(null);
-            fetchGuesses();
-        } catch (err) {
-            alert('Failed to post guess');
-        }
+    const onSubmitted = () => {
+        setShowForm(false);
+        fetchGuesses();
     };
 
     return (
         <div className="mt-6">
+            {canGuess && (
+                showForm ? (
+                    <NewGuess postId={postId} onSubmitted={onSubmitted} />
+                ) : (
+                    <div className="mt-4">
+                        <button
+                            type="button"
+                            className="px-4 py-2 rounded-md bg-blue-600 text-white"
+                            onClick={() => setShowForm(true)}
+                        >
+                            სცადე
+                        </button>
+                    </div>
+                )
+            )}
+
             <div className="mt-4 space-y-3">
                 {loading ? (
-                    <div>იტვირთება...</div>
+                    [1, 2, 3].map((c) => (
+                        <PostGuessSkeleton key={c} />
+                    ))
                 ) : (
                     guesses.map((c) => (
                         <PostGuess key={c.id} guess={c} />
                     ))
                 )}
             </div>
-
-            <form onSubmit={submit} className="mt-4 grid gap-2">
-                <textarea value={guessText} onChange={(e) => setGuessText(e.target.value)} placeholder="შენი აზრით..." rows={3} className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
-                <input value={score === null ? '' : String(score)} onChange={(e) => setScore(e.target.value === '' ? null : Number(e.target.value))} placeholder="ქულა" className="rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm" />
-                <div>
-                    <button type="submit" className="px-4 py-2 rounded-md bg-blue-600 text-white">ცდა</button>
-                </div>
-            </form>
         </div>
     );
 }

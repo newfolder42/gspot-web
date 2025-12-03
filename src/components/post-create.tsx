@@ -46,22 +46,22 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             return;
         }
 
-        let lat: number | null = null;
-        let lon: number | null = null;
+        let latitude: number | null = null;
+        let longitude: number | null = null;
 
         try {
             const gps = await exifr.gps(file);
             if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
-                lat = gps.latitude;
-                lon = gps.longitude;
+                latitude = gps.latitude;
+                longitude = gps.longitude;
             } else {
                 const all = await exifr.parse(file);
                 if (all?.GPSLatitude && all?.GPSLongitude) {
-                    lat = all.latitude ?? null;
-                    lon = all.longitude ?? null;
+                    latitude = all.latitude ?? null;
+                    longitude = all.longitude ?? null;
                 }
             }
-            if (lat == null || lon == null) {
+            if (latitude == null || longitude == null) {
                 setError('სურათზე არ მოიძებნა GPS თაგები.');
                 return;
             }
@@ -99,8 +99,8 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                                     originalFileName: file.name,
                                     fileSize: file.size,
                                     coordinates: {
-                                        lat,
-                                        lon
+                                        latitude,
+                                        longitude
                                     }
                                 }
                             );
@@ -114,9 +114,9 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                                 filename: file.name,
                                 size: file.size,
                                 uploadedAt: new Date().toLocaleString(),
-                                coordinates: lat && lon ? {
-                                    latitude: lat,
-                                    longitude: lon
+                                coordinates: latitude && longitude ? {
+                                    latitude: latitude,
+                                    longitude: longitude
                                 } : null,
                             };
                             setPhotos([newPhoto, ...photos]);

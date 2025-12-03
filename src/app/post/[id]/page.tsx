@@ -10,6 +10,7 @@ export default async function Page({ params }: Props) {
     const { id } = await params;
 
     const post = await getPostById(id);
+
     if (!post) return <div className="p-8">Post not found</div>;
 
     return (
@@ -31,7 +32,7 @@ export default async function Page({ params }: Props) {
 
                     {post.image && (
                         <div className="w-full">
-                            <Image src={post.image} alt={post.title || 'post image'} width={1200} height={800} className="w-full max-h-[60vh] object-cover" />
+                            <Image src={post.image} alt={post.title} width={1200} height={800} className="w-full max-h-[60vh] object-cover" />
                         </div>
                     )}
                 </article>
