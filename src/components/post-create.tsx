@@ -131,7 +131,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                         reject(new Error('Failed to upload file to S3'));
                     }
                 };
-                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.onerror = (err) => reject(new Error('' + err));
                 xhr.send(file);
             });
         } catch (err) {
