@@ -24,17 +24,16 @@ export default function PostGuessList({ postId }: { postId: number }) {
 
     const fetchGuesses = async () => {
         setLoading(true);
-        const guesses = await getPostGuesses(postId);
 
         try {
             const payload = await getUserTokenAndValidate();
             const canGuess = await postIsGuessedByUser(postId, payload.userId);
             setCanGuess(canGuess);
-            console.log('Checking if post is guessed by user', canGuess);
         } catch (e) {
             setCanGuess(false);
         }
 
+        const guesses = await getPostGuesses(postId);
         setGuesses(guesses);
         setLoading(false);
     };

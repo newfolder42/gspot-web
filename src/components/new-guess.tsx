@@ -158,10 +158,8 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
                 // Center and zoom on the photo location
                 mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 16 });
             }
-            console.log('calculating distance between', photoCoordinates, 'and', selectedCoords);
 
             const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
-            console.log('calculated distance meters', calculatedDistance);
 
             await createPostGuess({ postId, coordinates: selectedCoords, score: calculatedDistance });
 
@@ -169,8 +167,9 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
             setCountdown(10);
         } catch (err) {
             alert('Failed to post guess' + err);
-        } finally {
             setSubmitting(false);
+        } finally {
+            setSubmitting(true);
         }
     };
 

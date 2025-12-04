@@ -151,8 +151,6 @@ where p.id = $1`,
             [postId]
         );
 
-        console.log('photoCoordinates data', data.rows[0].details.coordinates);
-
         return { coordinates: data.rows[0].details.coordinates };
     } catch (err) {
         console.error('photoCoordinates error', err);

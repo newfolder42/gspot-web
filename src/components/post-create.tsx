@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useRef } from 'react';
-import exifr from 'exifr';
 import Link from 'next/link';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
-import { v4 } from 'uuid';
 import { generateFileUrl } from '@/lib/s3';
+import { convertToWebP, extractGPSCorrdinates } from '@/lib/image';
 
 interface UploadedPhoto {
     key?: string;
@@ -16,8 +15,8 @@ interface UploadedPhoto {
     size: number;
     uploadedAt: string;
     coordinates?: {
-        latitude: number;
-        longitude: number;
+        latitude: number | null;
+        longitude: number | null;
     } | null;
 }
 
@@ -45,50 +44,45 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
             return;
         }
+        const coordinates = await extractGPSCorrdinates(file);
 
-        let latitude: number | null = null;
-        let longitude: number | null = null;
+        if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
+            setError('სურათზე არ მოიძებნა GPS თაგები.');
+            return;
+        }
 
-        try {
-            const gps = await exifr.gps(file);
-            if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
-                latitude = gps.latitude;
-                longitude = gps.longitude;
-            } else {
-                const all = await exifr.parse(file);
-                if (all?.GPSLatitude && all?.GPSLongitude) {
-                    latitude = all.latitude ?? null;
-                    longitude = all.longitude ?? null;
-                }
-            }
-            if (latitude == null || longitude == null) {
-                setError('სურათზე არ მოიძებნა GPS თაგები.');
+        let processedFile = file;
+
+        if (file.type === 'image/png' || file.type === 'image/jpeg') {
+            setUploading(true);
+
+            try {
+                processedFile = await convertToWebP(file);
+            } catch (conversionErr) {
+                setError('ვერ მოხერხდა სურათის WebP ფორმატში გარდაქმნა');
                 return;
             }
-        } catch (exifErr) {
-            console.warn('EXIF parse error', exifErr);
         }
+
+        console.log('original size:', file.size, 'processed size:', processedFile.size);
 
         setError(null);
         setUploading(true);
         setUploadProgress(0);
 
         try {
-            const signUrl = await generateFileUrl({
-                key: `gps-photo/${v4()}`,
-                contentType: file.type,
-            });
+            const signUrl = await generateFileUrl('gps-photo');
 
             await new Promise<void>((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('PUT', signUrl, true);
-                xhr.setRequestHeader('Content-Type', file.type);
+                xhr.setRequestHeader('Content-Type', processedFile.type);
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
                         setUploadProgress(Math.round((event.loaded / event.total) * 100));
                     }
                 };
-                xhr.onload = async () => {
+                xhr.onload = async (e) => {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         const uploadUrl = signUrl.split('?')[0];
                         try {
@@ -96,12 +90,9 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                                 uploadUrl,
                                 'gps-photo',
                                 {
-                                    originalFileName: file.name,
-                                    fileSize: file.size,
-                                    coordinates: {
-                                        latitude,
-                                        longitude
-                                    }
+                                    originalFileName: processedFile.name,
+                                    fileSize: processedFile.size,
+                                    coordinates: coordinates
                                 }
                             );
                             if (content == null) {
@@ -111,13 +102,10 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                                 key: undefined,
                                 contentId: content.id,
                                 url: `${uploadUrl}`,
-                                filename: file.name,
-                                size: file.size,
+                                filename: processedFile.name,
+                                size: processedFile.size,
                                 uploadedAt: new Date().toLocaleString(),
-                                coordinates: latitude && longitude ? {
-                                    latitude: latitude,
-                                    longitude: longitude
-                                } : null,
+                                coordinates: coordinates,
                             };
                             setPhotos([newPhoto, ...photos]);
                             if (fileInputRef.current) {
@@ -132,7 +120,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                     }
                 };
                 xhr.onerror = (err) => reject(new Error('' + err));
-                xhr.send(file);
+                xhr.send(processedFile);
             });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა';
@@ -265,7 +253,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                                                 {photo.filename}
                                             </p>
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                                {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude.toFixed(4)}, გრძედი: ${photo.coordinates.longitude.toFixed(4)}` : 'No GPS data'}
+                                                {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
                                             </p>
                                         </div>
                                     </div>

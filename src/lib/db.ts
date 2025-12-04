@@ -9,9 +9,11 @@ const pool = new Pool({
   password: process.env.POSTGRES_PASSWORD,
   host: process.env.POSTGRES_HOST,
   port: 5432,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ...(process.env.POSTGRES_SSL !== 'false' && {
+    ssl: {
+      rejectUnauthorized: false
+    }
+  })
 });
 
 pool.on('error', async (err) => {

@@ -14,22 +14,17 @@ const s3client = new S3Client({
     },
 });
 
-export async function generateFileUrl(opts: {
-    key: string;
-    contentType?: string;
-    expiresIn?: number;
-}) {
+export async function generateFileUrl(type: string, contentType?: string) {
     if (!BUCKET) throw new Error("S3_BUCKET not configured");
-    const { key, contentType = "application/octet-stream", expiresIn = 900 } = opts;
 
     const command = new PutObjectCommand({
         Bucket: BUCKET,
-        Key: key,
-        ContentType: contentType,
+        Key: `${type}/${crypto.randomUUID()}`,
+        ContentType: "application/octet-stream",
         ACL: "private",
     });
 
-    const url = await getSignedUrl(s3client, command, { expiresIn });
+    const url = await getSignedUrl(s3client, command, { expiresIn: 900 });
     return url;
 }
 

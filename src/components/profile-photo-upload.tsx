@@ -3,7 +3,6 @@
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { useState } from 'react';
-import { v4 } from 'uuid';
 
 export default function ProfilePhotoUpload({ userId }: { userId: number | string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,10 +27,7 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
     setUploading(true);
 
     try {
-      const signUrl = await generateFileUrl({
-        key: `profile-photo/${v4()}`,
-        contentType: file.type,
-      });
+      const signUrl = await generateFileUrl('profile-photo'); //file.type
       const uploadResponse = await fetch(signUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
