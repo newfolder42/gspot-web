@@ -1,17 +1,9 @@
-"use server";
-
-import { getUserTokenAndValidate } from "@/lib/session";
 import AuthTabs from "@/components/auth/AuthTabs";
 import Feed from "@/components/feed";
+import { getCurrentUser } from "@/lib/session";
 
 export default async function Page() {
-  let user: { id?: number; alias?: string } | null = null;
-  try {
-    const payload = await getUserTokenAndValidate();
-    user = { id: payload.userId, alias: payload.alias };
-  } catch (e) {
-    user = null;
-  }
+  const user = await getCurrentUser();
 
   if (!user) {
     return (

@@ -1,6 +1,6 @@
 "use server";
 
-import { createSessionRecord, signup } from '@/lib/auth';
+import { signup } from '@/lib/auth';
 import { getUserIdByEMail } from './users';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_AUTH_CLIENT_ID!;
@@ -119,13 +119,10 @@ export async function handleGoogleCallback(code: string) {
         }
 
         // Create session
-        const session = await createSessionRecord(userId, new Date());
-        const sessionId = session?.id ?? null;
 
         return {
             userId,
             alias,
-            sessionId,
             email: googleUser.email,
             name: googleUser.name,
         };

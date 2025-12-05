@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import PostGuess from './post-guess';
-import { createPostGuess, getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
+import { getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
 import PostGuessSkeleton from './post-guess-skeleton';
 import NewGuess from './new-guess';
-import { getUserTokenAndValidate } from '@/lib/session';
+import { getCurrentUser } from '@/lib/session';
 
 type PostGuess = {
     id: number;
@@ -25,16 +25,13 @@ export default function PostGuessList({ postId }: { postId: number }) {
     const fetchGuesses = async () => {
         setLoading(true);
 
-        try {
-            const payload = await getUserTokenAndValidate();
-            const canGuess = await postIsGuessedByUser(postId, payload.userId);
-            setCanGuess(canGuess);
-        } catch (e) {
-            setCanGuess(false);
-        }
+        const user = await getCurrentUser();
+        const canGuess = user ? await postIsGuessedByUser(postId, user.userId) : true;
+        setCanGuess(canGuess);
 
         const guesses = await getPostGuesses(postId);
         setGuesses(guesses);
+        
         setLoading(false);
     };
 

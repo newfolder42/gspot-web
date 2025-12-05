@@ -40,7 +40,7 @@ export default function PublicView({ data }: { data: any }) {
           <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">Profile</h2>
           <div className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
             <p><strong>სრული სახელი:</strong> {user.name ?? '-'}</p>
-            <p className="mt-1"><strong>მომხმარებელი:</strong> @{user.alias}</p>
+            <p className="mt-1"><strong>თიკუნი:</strong> @{user.alias}</p>
           </div>
         </div>
       </div>

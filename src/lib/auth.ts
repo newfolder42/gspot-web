@@ -3,7 +3,7 @@
 import bcrypt from 'bcrypt';
 import { query } from "@/lib/db";
 import AppError from './errors';
-import { User, UserToRegister } from '@/types/user';
+import { UserToRegister } from '@/types/user';
 import { logerror } from './logger';
 
 function isEmail(s: string) {
@@ -13,8 +13,8 @@ function isEmail(s: string) {
 export async function signup(user: UserToRegister) {
     const name = typeof user.name === 'string' ? user.name.trim() : '';
     const alias = typeof user.alias === 'string' ? user.alias.trim().toLowerCase() : '';
-    const email = user?.email;
-    const password = user?.password;
+    const email = user.email;
+    const password = user.password;
 
     if (!name) throw new AppError('Name is required', 'INVALID_NAME');
     if (!alias) throw new AppError('Username is required', 'INVALID_ALIAS');
@@ -40,56 +40,15 @@ export async function signup(user: UserToRegister) {
     }
 }
 
-export async function login(email: string, password: string) : Promise<User> {
-    if (!isEmail(email)) throw new AppError('Invalid email', 'INVALID_EMAIL');
-    if (typeof password !== 'string' || password.length === 0) throw new AppError('Password required', 'INVALID_PASSWORD');
-
+export async function userAliasTaken(userAlias: string) {
     try {
-        const res = await query('SELECT id, alias, name, email, password_hash, created_at FROM users WHERE email = $1', [email]);
-        if (res.rows.length === 0) throw new AppError('User not found', 'USER_NOT_FOUND');
-
-        const user = res.rows[0];
-        const match = await bcrypt.compare(password, user.password_hash);
-        if (!match) throw new AppError('Invalid credentials', 'INVALID_CREDENTIALS');
-        const session = await createSessionRecord(user.id, new Date());
-        const sessionId = session?.id ?? null;
-
-        return { id: user.id, alias: user.alias, name: user.name, email: user.email, createdAt: user.created_at, sessionId: sessionId };
+        const res = await query(
+            'SELECT COUNT(1) as count FROM users WHERE alias = $1',
+            [userAlias]
+        );
+        return res.rows[0].count > 0;
     } catch (err) {
-        logerror('login error:' + err);
-        if (err instanceof AppError) throw err;
-        throw new AppError('Internal error', 'INTERNAL_ERROR');
+        logerror('alias check:' + err);
+        return true;
     }
-}
-
-export async function createSessionRecord(userId: number | string, loginAt: Date = new Date()) {
-  const res = await query(
-    'INSERT INTO user_sessions (user_id, login_at) VALUES ($1, $2) RETURNING id',
-    [userId, loginAt]
-  );
-  return res.rows[0];
-}
-
-export async function endSessionById(sessionId: number | string) {
-  const res = await query(
-    'UPDATE user_sessions SET logout_at = NOW() WHERE id = $1 AND logout_at IS NULL RETURNING id, logout_at',
-    [sessionId]
-  );
-  return res.rows[0];
-}
-
-export async function endSessionByUserId(userId: number | string) {
-  const res = await query(
-    'UPDATE user_sessions SET logout_at = NOW() WHERE user_id = $1 AND logout_at IS NULL RETURNING id, logout_at',
-    [userId]
-  );
-  return res.rows[0];
-}
-
-export async function userAliasTaken(userAlias: string) {    
-  const res = await query(
-    'SELECT COUNT(1) as count FROM users WHERE alias = $1',
-    [userAlias]
-  );
-  return res.rows[0].count > 0;
 }

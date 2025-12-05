@@ -13,6 +13,7 @@ export default function SignupForm() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [aliasStatus, setAliasStatus] = useState<"checking" | "available" | "taken" | "invalid" | null>(null);
+    const [passwordStatus, setPasswordStatus] = useState<"invalid" | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -20,12 +21,17 @@ export default function SignupForm() {
         setSuccess(null);
 
         if (!email || !password || !name || !alias) {
-            setError("Please fill in all fields.");
+            setError("გთხოვთ შეავსოთ ყველა ველი.");
             return;
         }
 
         if (aliasStatus !== "available") {
-            setError("Please choose an available alias.");
+            setError("გთხოვთ აარჩიოთ თავისუფალი თიკუნი.");
+            return;
+        }
+
+        if (passwordStatus === "invalid") {
+            setError("პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო.");
             return;
         }
 
@@ -48,7 +54,7 @@ export default function SignupForm() {
                 setError(err.message);
                 return;
             }
-            setError("Network error — please try again.");
+            setError("გთხოვთ ხელახლა ცადოთ მოგვიანებით.");
         } finally {
             setLoading(false);
         }
@@ -103,6 +109,19 @@ export default function SignupForm() {
         return () => clearTimeout(timer);
     }, [alias]);
 
+    useEffect(() => {
+        if (!password) {
+            setPasswordStatus(null);
+            return;
+        }
+
+        if (password.length < 6) {
+            setPasswordStatus("invalid");
+        } else {
+            setPasswordStatus(null);
+        }
+    }, [password]);
+
     return (
         <div className="mx-auto w-full max-w-md">
             <div className="overflow-hidden">
@@ -147,7 +166,7 @@ export default function SignupForm() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მომხმარებელი</label>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">თიკუნი</label>
                                 <div className="relative mt-1">
                                     <input
                                         className="block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
@@ -203,15 +222,27 @@ export default function SignupForm() {
 
                             <div>
                                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">პაროლი</label>
-                                <input
-                                    className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="პაროლი"
-                                />
+                                <div className="relative mt-1">
+                                    <input
+                                        className="block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="პაროლი"
+                                    />
+                                    {password && passwordStatus === "invalid" && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
+                                {passwordStatus === "invalid" && password && (
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">Password must be at least 6 characters</p>
+                                )}
                             </div>
 
                             {error && <p className="text-sm text-red-600">{error}</p>}

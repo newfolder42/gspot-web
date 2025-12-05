@@ -4,7 +4,7 @@ import SignInButton from "./common/signin-button";
 import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
 import HeaderSearch from "./header-search";
-import { getUserTokenAndValidate } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 
 type HeaderProps = {
   image: {
@@ -21,13 +21,7 @@ type HeaderProps = {
 };
 
 const Header = async ({ image, headers }: HeaderProps) => {
-  let user: { id?: number, alias?: string } | null = null;
-  try {
-    const payload = await getUserTokenAndValidate();    
-    user = { id: payload.userId, alias: payload.alias };
-  } catch (e) {
-    user = null;
-  }
+  const user = await getCurrentUser();
 
   return (
     <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">

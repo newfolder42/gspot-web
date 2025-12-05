@@ -1,7 +1,7 @@
 "use server";
 
 import { query } from '@/lib/db';
-import { getUserTokenAndValidate } from './session';
+import { getCurrentUser } from './session';
 
 export async function getRecentPosts(limit = 20) {
     try {
@@ -78,8 +78,9 @@ where pg.post_id = $1 and pg.user_id = $2`,
 }
 
 export async function createPost({ title, contentId }: { title?: string; contentId: number }) {
-    const payload = await getUserTokenAndValidate();
-    const currentUserId = payload.userId as number;
+    const user = await getCurrentUser();
+    if (!user) return;
+    const currentUserId = user.userId;
 
     const postRes = await query(
         `INSERT INTO posts (user_id, type, title) VALUES ($1, $2, $3) RETURNING id`,
@@ -126,8 +127,9 @@ order by pg.created_at desc`,
 
 export async function createPostGuess({ postId, coordinates, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; score?: number | null }) {
     try {
-        const payload = await getUserTokenAndValidate();
-        const userId = payload.userId;
+        const user = await getCurrentUser();
+        if (!user) return null;
+        const userId = user.userId;
 
         const data = await query(
             `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,

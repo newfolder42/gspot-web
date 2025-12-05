@@ -1,9 +1,8 @@
 "use client"
 
 import React, { useState } from "react";
-import { login } from "@/lib/auth";
-import { setToken } from "@/lib/session";
 import { getGoogleAuthUrl } from "@/lib/google-auth";
+import { signIn } from "next-auth/react";
 
 export default function SigninForm() {
     const [email, setEmail] = useState("");
@@ -27,8 +26,16 @@ export default function SigninForm() {
 
         setLoading(true);
         try {
-            const user = await login(email, password);
-            await setToken(user.id, user.alias, user.sessionId);
+            const result = await signIn("credentials", {
+                redirect: false,
+                email,
+                password,
+            });
+
+            if (result?.error) {
+                setError("არასწორი მონაცემები ან ქსელის შეცდომა." + result.error);
+                return;
+            }
 
             window.location.href = "/";
 

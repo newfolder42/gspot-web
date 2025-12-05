@@ -1,23 +1,20 @@
 "use client";
 
-import { clearToken } from '@/lib/session';
-import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
 type PageProps = {
   params: Promise<{ userName?: string }>;
 };
 
-export default function SignoutPage({ params }: PageProps){
-  const router = useRouter();
+export default function SignoutPage({ params }: PageProps) {
   const [loading, setLoading] = useState(false);
 
-  async function handleSignOut(){
+  async function handleSignOut() {
     setLoading(true);
-    try{
-      await clearToken();
-      router.push('/');
-    }catch(e){
+    try {
+      await signOut({ callbackUrl: '/' });
+    } catch (e) {
       setLoading(false);
     }
   }

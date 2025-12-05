@@ -1,18 +1,15 @@
 "use client"
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { clearToken } from '@/lib/session';
+import { signOut } from 'next-auth/react';
 
 export default function LogoutButton() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
     setLoading(true);
     try {
-      await clearToken();
-      router.push('/');
+      await signOut({ callbackUrl: '/' });
     } catch (e) {
       setLoading(false);
     }

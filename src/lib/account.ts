@@ -1,6 +1,6 @@
 import { query } from '@/lib/db';
 
-export async function getAccountByAlias(userName: string, currentUserId: number) {
+export async function getAccountByAlias(userName: string, currentUserId: number | null) {
     try {
         if (!userName) return null;
 

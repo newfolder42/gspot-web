@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { clearToken } from "@/lib/session";
+import { signOut } from "next-auth/react";
 
 type Props = {
   user: {
-    id?: number;
-    alias?: string;
+    userId: number;
+    alias: string;
   };
 };
 
@@ -25,8 +25,7 @@ export default function AccountMenu({ user }: Props) {
   }, []);
 
   async function handleSignOut() {
-    await clearToken();
-    window.location.href = '/';
+    await signOut({ callbackUrl: '/' });
   }
 
   return (

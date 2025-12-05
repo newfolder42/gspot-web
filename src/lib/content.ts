@@ -1,21 +1,17 @@
 "use server";
 
 import { query } from '@/lib/db';
-import { getUserTokenAndValidate } from './session';
+import { getCurrentUser } from './session';
 
 export async function storeContent(url: string, type: string, details: any) {
     try {
-        if (!type) {
+        if (!type)
             return null;
-        }
 
-        let currentUserId: number;
-        try {
-            const payload = await getUserTokenAndValidate();
-            currentUserId = payload?.userId;
-        } catch (e) {
+        const user = await getCurrentUser();
+        if (!user)
             return null;
-        }
+        const currentUserId = user?.userId;
 
         try {
             const res = await query(

@@ -1,4 +1,4 @@
-import { getUserTokenAndValidate } from '@/lib/session';
+import { getCurrentUser } from '@/lib/session';
 import ConnectionCard from './connection-card';
 import SkeletonConnectionCard from './connection-card-skeleton';
 import { getConnectionsForUserByAlias } from '@/lib/connections';
@@ -13,13 +13,7 @@ type Conn = {
 export default async function ConnectionsList({ userName }: { userName: string }) {
     const connections: Conn[] | null = await getConnectionsForUserByAlias(userName);
 
-    let user: { id?: number; alias?: string } | null = null;
-    try {
-        const payload = await getUserTokenAndValidate();
-        user = { id: payload.userId, alias: payload.alias };
-    } catch (e) {
-        user = null;
-    }
+    const user = await getCurrentUser();
     const isOwnProfile = user?.alias === userName;
 
     if (!connections) {
