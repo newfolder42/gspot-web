@@ -22,8 +22,9 @@ export async function extractGPSCorrdinates(file: File) {
     let longitude: number | null = null;
     try {
         const gps = await exifr.gps(file);
-        alert('gps tags' + JSON.stringify(gps));
-        if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
+        if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number'
+            && !isNaN(gps.latitude) && !isNaN(gps.longitude)
+        ) {
             latitude = gps.latitude;
             longitude = gps.longitude;
         } else {
