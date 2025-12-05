@@ -20,6 +20,10 @@ export async function convertToWebP(file: File): Promise<File> {
 export async function extractGPSCorrdinates(file: File) {
     let latitude: number | null = null;
     let longitude: number | null = null;
+    navigator.geolocation.getCurrentPosition((position) => {
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+    });
     try {
         const gps = await exifr.gps(file);
         if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number'
