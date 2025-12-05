@@ -12,6 +12,14 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Accept build arguments
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+
+# Set environment variables for build
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+
 # Build the application
 RUN npm run build
 
