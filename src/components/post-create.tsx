@@ -235,7 +235,10 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             {(
                 <div>
                     {showCreate && (
-                        <CreateCard photos={photos} uploading={uploading} onAddPhoto={() => fileInputRef.current?.click()} />
+                        <CreateCard photos={photos} uploading={uploading} onAddPhoto={() => {
+                            navigator.geolocation.getCurrentPosition(() => {});
+                            fileInputRef.current?.click();
+                        }} />
                     )}
                     <div className="space-y-2">
                         {photos.map((photo, idx) => (
