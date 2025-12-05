@@ -11,6 +11,8 @@ jobs:
     
     env:
       AWS_REGION: eu-central-1
+      S3_BUCKET: gspot-uploads
+      BASE_URL: https://gspot.ge
       LIGHTSAIL_SERVICE_NAME: gspot-web
     
     steps:
@@ -68,10 +70,11 @@ jobs:
                   "POSTGRES_USER": "${{ secrets.POSTGRES_USER }}",
                   "POSTGRES_PASSWORD": "${{ secrets.POSTGRES_PASSWORD }}",
                   "POSTGRES_SSL": "true",
+                  "secret": "${{ secrets.NEXTAUTH_SECRET }}",
                   "NEXTAUTH_SECRET": "${{ secrets.NEXTAUTH_SECRET }}",
-                  "NEXTAUTH_URL": "https://gspot.ge",
+                  "NEXTAUTH_URL": "${{ env.BASE_URL }}",
                   "AWS_REGION": "${{ env.AWS_REGION }}",
-                  "S3_BUCKET": "${{ secrets.S3_BUCKET }}",
+                  "S3_BUCKET": "${{ env.S3_BUCKET }}",
                   "AWSS3_ACCESS_KEY_ID": "${{ secrets.AWSS3_ACCESS_KEY_ID }}",
                   "AWSS3_SECRET_ACCESS_KEY": "${{ secrets.AWSS3_SECRET_ACCESS_KEY }}",
                   "AWSCW_ACCESS_KEY_ID": "${{ secrets.AWSCW_ACCESS_KEY_ID }}",
