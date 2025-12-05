@@ -1,5 +1,5 @@
 import exifr from "exifr";
-import { logerror } from "./logger";
+import { logerror, loginfo } from "./logger";
 import imageCompression from "browser-image-compression";
 
 export async function convertToWebP(file: File): Promise<File> {
@@ -28,6 +28,7 @@ export async function extractGPSCorrdinates(file: File) {
             longitude = gps.longitude;
         } else {
             const all = await exifr.parse(file);
+            loginfo('EXIF data', [file.name, all]);
             if (all?.GPSLatitude && all?.GPSLongitude) {
                 latitude = all.GPSLatitude ?? null;
                 longitude = all.GPSLongitude ?? null;
