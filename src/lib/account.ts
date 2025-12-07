@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { logerror } from './logger';
 
 export async function getAccountByAlias(userName: string, currentUserId: number | null) {
     try {
@@ -40,7 +41,7 @@ WHERE u.alias = $1`,
             isOwnProfile,
         };
     } catch (err) {
-        console.error('getAccountByAlias error', err);
+        logerror('getAccountByAlias error', [err]);
         return null;
     }
 }

@@ -125,7 +125,6 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         } catch (err) {
             const message = err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა';
             setError(message);
-            console.error('Upload error:', err);
         } finally {
             setUploading(false);
             setUploadProgress(null);

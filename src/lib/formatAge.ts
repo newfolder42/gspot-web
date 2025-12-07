@@ -1,6 +1,3 @@
-// src/lib/formatAge.ts
-// Returns a formatted string for age in days, like Reddit style (Georgian)
-
 export function formatAge(days: number): string {
   if (days < 0 || isNaN(days)) return '';
   const years = Math.floor(days / 365);

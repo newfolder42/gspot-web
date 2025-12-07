@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react';
-import { followUnfollow } from '@/lib/follow-actions';
+import { followUnfollow } from '@/lib/followActions';
 
 type Props = {
     alias: string;
@@ -24,10 +24,10 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
             if (result.success) {
                 setConnected(!connected);
             } else {
-                setError(result.error || 'Network error');
+                setError('ფიქსირდება ხარვეზი, გთხვოთ ცადოს მოგვაინებით:' + result.error);
             }
         } catch (err) {
-            setError('Network error');
+            setError('ფიქსირდება ხარვეზი, გთხვოთ ცადოს მოგვაინებით');
         } finally {
             setLoading(false);
         }

@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { logerror } from './logger';
 
 export async function getUserIdByAlias(userName: string) {
   try {
@@ -6,7 +7,7 @@ export async function getUserIdByAlias(userName: string) {
     const res = await query('SELECT id FROM users WHERE alias = $1', [userName]);
     return res.rows.length > 0 ? res.rows[0].id : null;
   } catch (err) {
-    console.error('getUserIdByAlias error', err);
+    logerror('getUserIdByAlias error', [err]);
     return null;
   }
 }
@@ -17,7 +18,7 @@ export async function getUserIdByEMail(email: string) {
     const res = await query('SELECT id, alias, email FROM users WHERE email = $1', [email]);
     return res.rows.length > 0 ? res.rows[0] : null;
   } catch (err) {
-    console.error('getUserIdByAlias error', err);
+    logerror('getUserIdByAlias error', [err]);
     return null;
   }
 }

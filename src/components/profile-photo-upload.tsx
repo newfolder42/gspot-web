@@ -14,7 +14,7 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+      setError('გთხოვთ აირჩიოთ მხოლოდ ფოტო-სურათი');
       return;
     }
 
@@ -57,7 +57,7 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
       // Reload page to see new photo
       window.location.reload();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Upload failed';
+      const msg = err instanceof Error ? err.message : 'ატვირთვა დახარვეზდა';
       setError(msg);
     } finally {
       setUploading(false);

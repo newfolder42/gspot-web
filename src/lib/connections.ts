@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { logerror } from './logger';
 
 export async function getConnectionsForUserByAlias(userName: string) {
     try {
@@ -28,7 +29,7 @@ export async function getConnectionsForUserByAlias(userName: string) {
             profilePhoto: r.profile_photo_url ?? null,
         }));
     } catch (err) {
-        console.error('getConnectionsForUserByAlias error', err);
+        logerror('getConnectionsForUserByAlias error', [err]);
         return null;
     }
 }
@@ -39,7 +40,7 @@ export async function connectionExists(userId: number, targetId: number, type = 
             [userId, targetId, type]);
         return res.rows.length > 0 ? res.rows[0].id : null;
     } catch (err) {
-        console.error('connectionExists error', err);
+        logerror('connectionExists error', [err]);
         return null;
     }
 }
@@ -50,7 +51,7 @@ export async function createConnection(userId: number, targetId: number, type = 
             [userId, type, targetId]);
         return res.rows[0] ?? null;
     } catch (err) {
-        console.error('createConnection error', err);
+        logerror('createConnection error', [err]);
         return null;
     }
 }
@@ -61,7 +62,7 @@ export async function deleteConnection(userId: number, targetId: number, type = 
             [userId, targetId, type]);
         return res.rows.length > 0;
     } catch (err) {
-        console.error('deleteConnection error', err);
+        logerror('deleteConnection error', [err]);
         return false;
     }
 }
