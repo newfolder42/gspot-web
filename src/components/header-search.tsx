@@ -14,7 +14,7 @@ export default function HeaderSearch() {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!search) {
+        if (!search || search.length < 3) {
             setResults(null);
             setShowDropdown(false);
             return;

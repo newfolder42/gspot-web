@@ -1,7 +1,9 @@
 "use server";
+
 import { deleteConnection, createConnection, connectionExists } from '@/lib/connections';
 import { getCurrentUser } from '@/lib/session';
 import { getUserIdByAlias } from '@/lib/users';
+import { logerror } from './logger';
 
 export async function followUnfollow(alias: string, currentlyConnected: boolean): Promise<{ success: boolean; error?: string }> {
     try {
@@ -9,7 +11,7 @@ export async function followUnfollow(alias: string, currentlyConnected: boolean)
         const currentUserId = currentUser?.userId ?? null;
         const targetUserId = await getUserIdByAlias(alias);
         if (!currentUserId || !targetUserId) {
-            return { success: false, error: 'User not found' };
+            return { success: false, error: 'მომხმარებელი არ მოიძებნა' };
         }
         if (currentlyConnected) {
             await deleteConnection(currentUserId, targetUserId, 'connection');
@@ -25,6 +27,7 @@ export async function followUnfollow(alias: string, currentlyConnected: boolean)
         }
         return { success: true };
     } catch (err) {
-        return { success: false, error: 'Server error' };
+        logerror('followUnfollow error:', [err]);
+        return { success: false, error: 'გაურკვეველი შეცდომა' };
     }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react";
-import { getGoogleAuthUrl } from "@/lib/google-auth";
+import { getGoogleAuthUrl } from "@/lib/googleAuth";
 import { signIn } from "next-auth/react";
 
 export default function SigninForm() {

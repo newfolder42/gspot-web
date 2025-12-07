@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { signup, userAliasTaken } from "@/lib/auth";
-import { getGoogleAuthUrl } from "@/lib/google-auth";
+import { getGoogleAuthUrl } from "@/lib/googleAuth";
 
 export default function SignupForm() {
     const [name, setName] = useState("");
@@ -47,11 +47,11 @@ export default function SignupForm() {
             setAliasStatus(null);
         } catch (err) {
             if (err instanceof Error && err.message === 'USER_EXISTS') {
-                setError(err.message);
+                setError('მომხმარებელი ამ მეილით ან თიკუნით უკვე არსებობს.');
                 return;
             }
             if (err instanceof Error && err.message === 'INVALID_INPUT') {
-                setError(err.message);
+                setError('არასწორი მონაცემები.');
                 return;
             }
             setError("გთხოვთ ხელახლა ცადოთ მოგვიანებით.");

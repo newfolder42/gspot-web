@@ -3,7 +3,7 @@
 import bcrypt from 'bcrypt';
 import { query } from "@/lib/db";
 import AppError from './errors';
-import { UserToRegister } from '@/types/user';
+import type { UserToRegister } from '@/types/user';
 import { logerror } from './logger';
 
 function isEmail(s: string) {
