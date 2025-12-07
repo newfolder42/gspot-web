@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
@@ -29,15 +29,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isMobile, setIsMobile] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(/Android|webOS|iPhone|IEMobile|Opera Mini/i.test(navigator.userAgent));
-        };
-        checkMobile();
-    }, []);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -140,7 +132,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         }
     };
 
-    const CreateCard = ({ photos, uploading, onTakePhoto, onUploadFile }: { photos: UploadedPhoto[]; uploading: boolean; onTakePhoto: () => void; onUploadFile: () => void }) => {
+    const CreateCard = ({ photos, uploading, onAddPhoto }: { photos: UploadedPhoto[]; uploading: boolean; onAddPhoto: () => void }) => {
         const [title, setTitle] = useState('');
         const [creating, setCreating] = useState(false);
         const [localError, setLocalError] = useState<string | null>(null);
@@ -150,52 +142,18 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         return (
             <div className="mt-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
                 <div className="flex items-center gap-3">
-                    {isMobile ? (
-                        <button
-                            onClick={onTakePhoto}
-                            type="button"
-                            className="px-3 py-2 border rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                    <button
+                        onClick={onAddPhoto}
+                        type="button"
+                        className="px-3 py-2 border rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                    >
+                        <svg
+                            className="w-5 h-5 text-blue-500 flex-shrink-0"
+                            fill="currentColor"
                         >
-                            <svg
-                                className="w-5 h-5 text-blue-500 flex-shrink-0"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                                <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-                            </svg>
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={onTakePhoto}
-                                type="button"
-                                className="px-3 py-2 border rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                title="Take Photo"
-                            >
-                                <svg
-                                    className="w-5 h-5 text-blue-500 flex-shrink-0"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                            <button
-                                onClick={onUploadFile}
-                                type="button"
-                                className="px-3 py-2 border rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                title="Upload File"
-                            >
-                                <svg
-                                    className="w-5 h-5 text-green-500 flex-shrink-0"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-                                </svg>
-                            </button>
-                        </>
-                    )}
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+                        </svg>
+                    </button>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -247,25 +205,13 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         );
     };
 
-    const cameraInputRef = useRef<HTMLInputElement>(null);
-
     return (
         <div className="w-full max-w-4xl mx-auto">
-            {/* Camera capture for mobile */}
-            <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileChange}
-                disabled={uploading}
-                className="hidden"
-            />
-            {/* File picker for desktop */}
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 disabled={uploading}
                 className="hidden"
@@ -290,12 +236,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             {(
                 <div>
                     {showCreate && (
-                        <CreateCard 
-                            photos={photos} 
-                            uploading={uploading} 
-                            onTakePhoto={() => cameraInputRef.current?.click()} 
-                            onUploadFile={() => fileInputRef.current?.click()}
-                        />
+                        <CreateCard photos={photos} uploading={uploading} onAddPhoto={() => fileInputRef.current?.click()} />
                     )}
                     <div className="space-y-2">
                         {photos.map((photo, idx) => (
