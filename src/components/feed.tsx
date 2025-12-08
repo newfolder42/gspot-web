@@ -1,5 +1,5 @@
 import { getRecentPosts } from "@/lib/posts";
-import { PhotoPost } from "./post-gps";
+import { GpsPost } from "./post-gps";
 import CreatePost from "./post-create";
 
 export default async function Feed() {
@@ -14,7 +14,7 @@ export default async function Feed() {
         switch (post.type) {
           case 'gps-photo':
           default:
-            return <PhotoPost key={post.id} post={post} />;
+            return <GpsPost key={post.id} post={post} />;
         }
       })}
     </div>

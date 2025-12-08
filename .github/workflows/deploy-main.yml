@@ -10,10 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      AWS_REGION: eu-central-1
-      S3_BUCKET: gspot-uploads
       BASE_URL: https://gspot.ge
+      AWS_REGION: eu-central-1
       LIGHTSAIL_SERVICE_NAME: gspot-web
+      POSTGRES_SSL: true
+      S3_BUCKET: gspot-uploads
+      EMAIL_PROVIDER: resend
     
     steps:
       - name: Checkout code
@@ -72,9 +74,11 @@ jobs:
                   "POSTGRES_DB": "${{ secrets.POSTGRES_DB }}",
                   "POSTGRES_USER": "${{ secrets.POSTGRES_USER }}",
                   "POSTGRES_PASSWORD": "${{ secrets.POSTGRES_PASSWORD }}",
-                  "POSTGRES_SSL": "true",
+                  "POSTGRES_SSL": "${{ env.POSTGRES_SSL }}",
                   "NEXTAUTH_SECRET": "${{ secrets.NEXTAUTH_SECRET }}",
                   "NEXTAUTH_URL": "${{ env.BASE_URL }}",
+                  "EMAIL_PROVIDER": "${{ env.EMAIL_PROVIDER }}",
+                  "EMAIL_PROVIDER_KEY": "${{ env.EMAIL_PROVIDER_KEY }}",
                   "AWS_REGION": "${{ env.AWS_REGION }}",
                   "S3_BUCKET": "${{ env.S3_BUCKET }}",
                   "AWSS3_ACCESS_KEY_ID": "${{ secrets.AWSS3_ACCESS_KEY_ID }}",

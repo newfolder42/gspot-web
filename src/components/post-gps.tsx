@@ -3,7 +3,7 @@ import Link from "next/link";
 import PostActions from "./post-actions";
 import type { GpsPost } from "@/types/post";
 
-export function PhotoPost({ post }: { post: GpsPost }) {
+export function GpsPost({ post }: { post: GpsPost }) {
   return (
     <article key={post.id} className="relative bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-200 dark:border-zinc-800 overflow-hidden">
       <div className="flex items-start gap-3 px-4 py-3">

@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { signup, userAliasTaken } from "@/lib/auth";
-import { getGoogleAuthUrl } from "@/lib/googleAuth";
+import OTPVerificationForm from "./otp-verification-form";
+import { useRouter } from "next/navigation";
 
 export default function SignupForm() {
+    const router = useRouter();
     const [name, setName] = useState("");
     const [alias, setAlias] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
     const [aliasStatus, setAliasStatus] = useState<"checking" | "available" | "taken" | "invalid" | null>(null);
     const [passwordStatus, setPasswordStatus] = useState<"invalid" | null>(null);
+    const [showOTPVerification, setShowOTPVerification] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState("");
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
-        setSuccess(null);
 
         if (!email || !password || !name || !alias) {
             setError("გთხოვთ შეავსოთ ყველა ველი.");
@@ -39,12 +41,8 @@ export default function SignupForm() {
         try {
             await signup({ name, alias, email, password });
 
-            setSuccess("მომხმარებელი შექმნილია");
-            setName("");
-            setAlias("");
-            setEmail("");
-            setPassword("");
-            setAliasStatus(null);
+            setRegisteredEmail(email);
+            setShowOTPVerification(true);
         } catch (err) {
             if (err instanceof Error && err.message === 'USER_EXISTS') {
                 setError('მომხმარებელი ამ მეილით ან თიკუნით უკვე არსებობს.');
@@ -60,10 +58,18 @@ export default function SignupForm() {
         }
     }
 
-    async function handleGoogle() {
-        const rootUrl = await getGoogleAuthUrl();
-        window.location.href = rootUrl;
-    }
+    const handleOTPSuccess = () => {
+        router.push("/auth/signin");
+    };
+
+    const handleOTPBack = () => {
+        setShowOTPVerification(false);
+        setName("");
+        setAlias("");
+        setEmail("");
+        setPassword("");
+        setAliasStatus(null);
+    };
 
     useEffect(() => {
         if (!alias) {
@@ -81,22 +87,21 @@ export default function SignupForm() {
             return;
         }
 
-        // Check availability (debounced)
         const timer = setTimeout(async () => {
             setAliasStatus("checking");
             try {
                 if (!alias || typeof alias !== "string") {
-                    await setAliasStatus("invalid");
+                    setAliasStatus("invalid");
                     return;
                 }
 
                 if (alias.length < 3 || alias.length > 30) {
-                    await setAliasStatus("invalid");
+                    setAliasStatus("invalid");
                     return;
                 }
 
                 if (!/^[a-z0-9_-]+$/i.test(alias)) {
-                    await setAliasStatus("invalid");
+                    setAliasStatus("invalid");
                     return;
                 }
                 const taken = await userAliasTaken(alias);
@@ -121,6 +126,16 @@ export default function SignupForm() {
             setPasswordStatus(null);
         }
     }, [password]);
+
+    if (showOTPVerification && registeredEmail) {
+        return (
+            <OTPVerificationForm
+                email={registeredEmail}
+                onSuccess={handleOTPSuccess}
+                onBack={handleOTPBack}
+            />
+        );
+    }
 
     return (
         <div className="mx-auto w-full max-w-md">
@@ -200,10 +215,10 @@ export default function SignupForm() {
                                     )}
                                 </div>
                                 {aliasStatus === "invalid" && alias && (
-                                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">Username must be 3-30 chars, letters/numbers/hyphens/underscores only</p>
+                                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">უნდა შედგებოდეს 3-30 სიმბოლოსგან (დასაშვები სიმბოლოები: რიცხვები, ასოები, ქვედატირე)</p>
                                 )}
                                 {aliasStatus === "taken" && (
-                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">This username is already taken</p>
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">დაკავებულია</p>
                                 )}
                             </div>
 
@@ -246,7 +261,6 @@ export default function SignupForm() {
                             </div>
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
-                            {success && <p className="text-sm text-green-600">{success}</p>}
 
                             <button
                                 type="submit"
