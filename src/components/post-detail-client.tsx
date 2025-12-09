@@ -56,7 +56,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
           )}
         </article>
 
-        <PostGuessList postId={post.id} />
+        <PostGuessList postId={post.id} postAuthor={post.author} />
       </div>
     </main>
   );

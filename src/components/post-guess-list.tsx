@@ -17,7 +17,7 @@ type PostGuess = {
     score?: number | null;
 };
 
-export default function PostGuessList({ postId }: { postId: number }) {
+export default function PostGuessList({ postId, postAuthor }: { postId: number; postAuthor: string }) {
     const [guesses, setGuesses] = useState<PostGuessType[]>([]);
     const [canGuess, setCanGuess] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -27,12 +27,22 @@ export default function PostGuessList({ postId }: { postId: number }) {
         setLoading(true);
 
         const user = await getCurrentUser();
+
+        // Don't allow guessing on own posts
+        if (user?.alias === postAuthor) {
+            setCanGuess(false);
+            const guesses = await getPostGuesses(postId);
+            setGuesses(guesses);
+            setLoading(false);
+            return;
+        }
+
         const canGuess = user ? await postIsGuessedByUser(postId, user.userId) : true;
         setCanGuess(canGuess);
 
         const guesses = await getPostGuesses(postId);
         setGuesses(guesses);
-        
+
         setLoading(false);
     };
 
