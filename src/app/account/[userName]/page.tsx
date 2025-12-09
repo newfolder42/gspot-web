@@ -1,5 +1,4 @@
-import OwnerView from '@/components/account/account-owner-view';
-import PublicView from '@/components/account/account-public-view';
+import Feed from '@/components/feed';
 import { getAccountByAlias } from '@/lib/account';
 import { getCurrentUser } from '@/lib/session';
 import { notFound } from 'next/navigation';
@@ -15,7 +14,9 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
 
   return (
     <div className="px-4">
-      {data.isOwnProfile ? <OwnerView data={data} /> : <PublicView data={data} />}
+      {currentUserId && (<Feed type='account-feed'
+        userId={currentUserId}
+        accountUserId={data.user.id} />)}
     </div>
   );
 }

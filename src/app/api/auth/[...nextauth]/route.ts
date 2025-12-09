@@ -1,4 +1,4 @@
-import NextAuth, { type NextAuthOptions, type Session } from 'next-auth';
+import NextAuth, { User, type NextAuthOptions, type Session } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { JWT } from 'next-auth/jwt';
 import bcrypt from 'bcrypt';
@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
                 email: { label: 'Email', type: 'email' },
                 password: { label: 'Password', type: 'password' }
             },
-            authorize: async (credentials?: Record<string, string>): Promise<any> => {
+            authorize: async (credentials?: Record<string, string>): Promise<User | null> => {
                 if (!credentials?.email || !credentials?.password) return null;
 
                 try {
@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
                         alias: user.alias,
                         name: user.name,
                         email: user.email,
-                    } as any;
+                    };
                 } catch (err) {
                     await logerror('NextAuth authorize error', { error: String(err) });
                     return null;
@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
         strategy: 'jwt'
     },
     callbacks: {
-        async jwt({ token, user }: { token: JWT; user?: any }) {
+        async jwt({ token, user }: { token: JWT; user?: User }) {
             if (user) {
                 token.id = user.id;
                 token.alias = user.alias;

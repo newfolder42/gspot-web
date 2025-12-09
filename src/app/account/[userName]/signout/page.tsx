@@ -3,18 +3,14 @@
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
-type PageProps = {
-  params: Promise<{ userName?: string }>;
-};
-
-export default function SignoutPage({ params }: PageProps) {
+export default function SignoutPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
     setLoading(true);
     try {
       await signOut({ callbackUrl: '/' });
-    } catch (e) {
+    } catch {
       setLoading(false);
     }
   }

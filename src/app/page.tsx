@@ -1,4 +1,4 @@
-import AuthTabs from "@/components/auth/AuthTabs";
+import AuthTabs from "@/components/auth/auth-tabs";
 import Feed from "@/components/feed";
 import { getCurrentUser } from "@/lib/session";
 
@@ -18,7 +18,8 @@ export default async function Page() {
   return (
     <main className="min-h-screen">
       <div className="max-w-4xl mx-auto py-2">
-        <Feed />
+        <Feed type="global-feed"
+          userId={user.userId} />
       </div>
     </main>
   );

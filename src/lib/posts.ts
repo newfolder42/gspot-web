@@ -3,9 +3,66 @@
 import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { logerror } from './logger';
-import type { GpsPost, Post } from '@/types/post';
+import type { GpsPostType } from '@/types/post';
 
-export async function getRecentPosts(limit = 20): Promise<(GpsPost)[]> {
+export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
+    try {
+        const res = await query(
+            `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url
+from user_connections ucn
+join posts p on ucn.connection_id = p.user_id
+join post_content pc on p.id = pc.post_id
+join users u on u.id = p.user_id
+join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
+where ucn.user_id = $2
+order by p.created_at desc
+limit $1`,
+            [limit, accountUserId]
+        );
+
+        return res.rows.map((r) => ({
+            id: r.id,
+            type: r.type,
+            title: r.title,
+            author: r.author_alias,
+            date: r.created_at,
+            image: r.image_url,
+        }));
+    } catch (err) {
+        logerror('getConnectionsPosts error', [err]);
+        return [];
+    }
+}
+
+export async function getAccountPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
+    try {
+        const res = await query(
+            `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url
+from posts p
+join post_content pc on p.id = pc.post_id
+join users u on u.id = p.user_id
+join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
+where p.user_id = $2
+order by p.created_at desc
+limit $1`,
+            [limit, userId]
+        );
+
+        return res.rows.map((r) => ({
+            id: r.id,
+            type: r.type,
+            title: r.title,
+            author: r.author_alias,
+            date: r.created_at,
+            image: r.image_url,
+        }));
+    } catch (err) {
+        logerror('getAccountPosts error', [err]);
+        return [];
+    }
+}
+
+export async function getGlobalPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
     try {
         const res = await query(
             `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url
@@ -27,12 +84,12 @@ limit $1`,
             image: r.image_url,
         }));
     } catch (err) {
-        logerror('getRecentPosts error', [err]);
+        logerror('getGlobalPosts error', [err]);
         return [];
     }
 }
 
-export async function getPostById(id: number): Promise<GpsPost | null> {
+export async function getPostById(id: number): Promise<GpsPostType | null> {
     try {
         const res = await query(
             `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url

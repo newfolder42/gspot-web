@@ -7,6 +7,7 @@ import { useState } from 'react';
 export default function ProfilePhotoUpload({ userId }: { userId: number | string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,20 +26,31 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
 
     setError(null);
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       const signUrl = await generateFileUrl('profile-photo'); //file.type
-      const uploadResponse = await fetch(signUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to S3');
-      }
-
       const uploadUrl = signUrl.split('?')[0];
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', signUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error('Failed to upload file to S3'));
+          }
+        };
+        xhr.onerror = (err) => reject(new Error(String(err)));
+        xhr.send(file);
+      });
 
       const content = await storeContent(
         uploadUrl.split('?')[0],
@@ -61,6 +73,7 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
       setError(msg);
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -101,6 +114,18 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
                 </p>
               </label>
             </div>
+
+            {uploading && uploadProgress !== null && (
+              <div className="mt-4">
+                <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <div className="text-xs text-center mt-1 text-zinc-600 dark:text-zinc-300">ატვირთვა: {uploadProgress}%</div>
+              </div>
+            )}
 
             {error && (
               <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">

@@ -1,6 +1,12 @@
-import Link from 'next/link';
+import Image from 'next/image';
 import React from 'react';
-import { getUserIdByAlias } from '@/lib/users';
+import AccountTabs from '@/components/account/account-tabs';
+import FollowButton from '@/components/account/follow-button';
+import ProfilePhotoUpload from '@/components/profile-photo-upload';
+import { getAccountByAlias } from '@/lib/account';
+import { formatAge } from '@/lib/formatAge';
+import { getLevelFromXp } from '@/lib/xp';
+import { getCurrentUser } from '@/lib/session';
 
 type Props = {
     children: React.ReactNode;
@@ -8,10 +14,10 @@ type Props = {
 };
 
 export default async function UserLayout({ children, params }: Props) {
-    const { userName } = await params;
-    const targetId = await getUserIdByAlias(userName);
+    const [{ userName }, currentUser] = await Promise.all([params, getCurrentUser()]);
+    const account = await getAccountByAlias(userName, currentUser?.userId ?? null);
 
-    if (!targetId) {
+    if (!account) {
         return (
             <div className="max-w-4xl mx-auto px-4 py-10">
                 <div className="bg-white dark:bg-zinc-900 rounded-md p-6 border border-zinc-200 dark:border-zinc-800 flex gap-6">
@@ -21,43 +27,66 @@ export default async function UserLayout({ children, params }: Props) {
         );
     }
 
+    const { user, profilePhoto, connection, isOwnProfile } = account;
     const tabs = [
         { id: 'overview', label: 'ძირითადი', href: `/account/${userName}` },
         { id: 'connections', label: 'კავშირები', href: `/account/${userName}/connections` },
     ];
 
-    function TabsNav() {
-        return (
-            <nav className="flex flex-col space-y-1">
-                {tabs.map((t) => {
-                    const selected = false;
-                    return (
-                        <Link
-                            key={t.id}
-                            href={t.href}
-                            className={
-                                `block px-3 py-2 rounded-md text-sm ` +
-                                (selected
-                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 font-semibold'
-                                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800')
-                            }
-                        >
-                            {t.label}
-                        </Link>
-                    );
-                })}
-            </nav>
-        );
-    }
+    const initials = ((user.name || user.alias || '') as string)
+        .split(' ')
+        .map((s: string) => s[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+    const hasProfilePhoto = Boolean(profilePhoto?.url);
+    const joinedLabel = user.created_at
+        ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '-';
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-10">
-            <div className="bg-white dark:bg-zinc-900 rounded-md p-6 border border-zinc-200 dark:border-zinc-800 flex gap-6">
-                <aside className="w-48 hidden sm:block">
-                    <TabsNav />
-                </aside>
+            <div className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div className="p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="relative flex items-center">
+                            <div className="relative h-20 w-20 rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-2xl font-semibold text-zinc-700 dark:text-zinc-200">
+                                {hasProfilePhoto ? (
+                                    <Image src={profilePhoto!.url} alt={`${user.alias} profile photo`} fill className="object-cover" sizes="80px" />
+                                ) : (
+                                    <span>{initials}</span>
+                                )}
+                            </div>
+                            {isOwnProfile && (
+                                <div className="absolute -bottom-2 -right-2">
+                                    <ProfilePhotoUpload userId={user.id} />
+                                </div>
+                            )}
+                        </div>
 
-                <main className="flex-1">
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">'{user.alias}</h1>
+                            <div className="mt-1 space-y-1 text-xs text-zinc-500 dark:text-zinc-500">
+                                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">ასაკი: {formatAge(user.age)}</p>
+                                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">დონე: {getLevelFromXp(4000).level}</p>
+                            </div>
+                        </div>
+
+                        {!isOwnProfile && (
+                            <div className="flex items-start">
+                                <FollowButton alias={user.alias} initialConnected={Boolean(connection?.id)} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="px-6 border-b border-zinc-200 dark:border-zinc-800">
+                    <AccountTabs tabs={tabs} />
+                </div>
+
+                <main className="p-6">
                     {children}
                 </main>
             </div>

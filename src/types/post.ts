@@ -1,4 +1,4 @@
-export type Post = {
+export type PostType = {
     id: number;
     type: string;
     title: string;
@@ -6,6 +6,6 @@ export type Post = {
     date: string;
 };
 
-export type GpsPost = Post & {
+export type GpsPostType = PostType & {
     image: string;
 }
