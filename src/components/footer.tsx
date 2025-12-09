@@ -33,8 +33,8 @@ export default function Footer() {
         {/* Divider */}
         <div className="border-t border-zinc-200 dark:border-zinc-800 pt-8 mt-8">
           {/* Footer bottom: logo/brand + copyright */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 md:mb-0">
+          <div className="flex flex-col flex-row items-center justify-between">
+            <div className="text-sm text-zinc-600 dark:text-zinc-400">
               <span className="font-semibold text-zinc-900 dark:text-zinc-50">G'Spot</span> © 2025. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">

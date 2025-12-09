@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import FollowButton from './follow-button';
+import { getInitials } from '@/lib/getInitials';
 
 type Props = {
   alias: string;
@@ -19,7 +20,7 @@ export default function ConnectionCard({ alias, name, profilePhoto, canUnfollow 
           {photoUrl ? (
             <Image src={photoUrl} alt={alias} width={48} height={48} className="h-12 w-12 object-cover" />
           ) : (
-            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{(name || alias).charAt(0).toUpperCase()}</span>
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{getInitials(alias)}</span>
           )}
         </div>
         <div className="truncate">

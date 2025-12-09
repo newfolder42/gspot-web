@@ -17,7 +17,7 @@ export default async function Page() {
 
   return (
     <main className="min-h-screen">
-      <div className="max-w-4xl mx-auto py-2">
+      <div className="max-w-4xl mx-auto md:py-2">
         <Feed type="global-feed"
           userId={user.userId} />
       </div>

@@ -57,7 +57,6 @@ export default function HeaderSearch() {
             <input
                 ref={inputRef}
                 aria-label="Search"
-                placeholder="მოძებნა ფოტო-სურათი, მომხმარებელი..."
                 className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#00c8ff]"
                 value={search}
                 onChange={e => setSearch(e.target.value)}

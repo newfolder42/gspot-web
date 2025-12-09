@@ -110,7 +110,7 @@ export default function ProfilePhotoUpload({ userId }: { userId: number | string
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {uploading ? 'იტვირთება...' : 'Click to select or drag a file'}
+                  {uploading ? 'იტვირთება...' : 'აირჩიე ფოტო-სურათი'}
                 </p>
               </label>
             </div>

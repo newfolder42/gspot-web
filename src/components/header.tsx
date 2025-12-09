@@ -67,14 +67,6 @@ const Header = async ({ image, headers }: HeaderProps) => {
                 </div>
               </>
             )}
-            {/* mobile menu toggle (visual only) */}
-            <div className="md:hidden">
-              <button aria-label="Open menu" className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-700 dark:text-zinc-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
       </div>
