@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { logerror } from './logger';
 import type { GpsPostType } from '@/types/post';
+import type { PostGuessType } from '@/types/post-guess';
 
 export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
     try {
@@ -158,7 +159,7 @@ export async function createPost({ title, contentId }: { title?: string; content
     }
 }
 
-export async function getPostGuesses(postId: number) {
+export async function getPostGuesses(postId: number): Promise<PostGuessType[]> {
     try {
         const data = await query(
             `select pg.id, post_id, user_id, type, details, pg.created_at, u.alias as author_alias
@@ -169,24 +170,23 @@ order by pg.created_at desc`,
             [postId]
         );
 
-        return data.rows.map((r: any) => {
-            return {
-                id: r.id,
-                postId: r.post_id,
-                userId: r.user_id ?? null,
-                author: r.author_alias ?? null,
-                type: r.type ?? null,
-                createdAt: r.created_at,
-                score: r.details?.score ?? null,
-            };
-        });
+        return data.rows.map((r) => ({
+            id: r.id,
+            postId: r.post_id,
+            userId: r.user_id,
+            author: r.author_alias,
+            type: r.type,
+            createdAt: r.created_at,
+            distance: r.details?.distance ?? null,
+            score: r.details?.score ?? null,
+        }));
     } catch (err) {
         logerror('get guesses error', [err]);
         return [];
     }
 }
 
-export async function createPostGuess({ postId, coordinates, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; score?: number | null }) {
+export async function createPostGuess({ postId, coordinates, distance, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; distance: number, score: number }) {
     try {
         const user = await getCurrentUser();
         if (!user) return null;
@@ -194,7 +194,7 @@ export async function createPostGuess({ postId, coordinates, score }: { postId: 
 
         const data = await query(
             `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,
-            [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, score: score ?? null })]
+            [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
         );
 
         return { id: data.rows[0].id };

@@ -20,7 +20,6 @@ export default function AccountTabs({ tabs }: Props) {
     <nav className="flex flex-wrap gap-6">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
-        console.log(pathname, tab.href, isActive);
 
         return (
           <Link

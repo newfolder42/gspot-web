@@ -64,8 +64,6 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             }
         }
 
-        console.log('original size:', file.size, 'processed size:', processedFile.size);
-
         setError(null);
         setUploading(true);
         setUploadProgress(0);

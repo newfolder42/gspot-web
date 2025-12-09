@@ -235,7 +235,7 @@ export default function SignupForm() {
                                     )}
                                 </div>
                                 {passwordStatus === "invalid" && password && (
-                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">Password must be at least 6 characters</p>
+                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო</p>
                                 )}
                             </div>
 

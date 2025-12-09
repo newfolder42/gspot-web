@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
+import { calculateGuessScore } from '@/lib/gpsPhotoGuessScore';
 
 declare global {
     interface Window {
@@ -161,7 +162,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
 
             const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
 
-            await createPostGuess({ postId, coordinates: selectedCoords, score: calculatedDistance });
+            await createPostGuess({ postId, coordinates: selectedCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
 
             setDistance(calculatedDistance);
             setCountdown(10);

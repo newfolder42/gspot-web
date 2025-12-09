@@ -6,6 +6,7 @@ import { getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
 import PostGuessSkeleton from './post-guess-skeleton';
 import NewGuess from './new-guess';
 import { getCurrentUser } from '@/lib/session';
+import type { PostGuessType } from '@/types/post-guess';
 
 type PostGuess = {
     id: number;
@@ -17,7 +18,7 @@ type PostGuess = {
 };
 
 export default function PostGuessList({ postId }: { postId: number }) {
-    const [guesses, setGuesses] = useState<PostGuess[]>([]);
+    const [guesses, setGuesses] = useState<PostGuessType[]>([]);
     const [canGuess, setCanGuess] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
