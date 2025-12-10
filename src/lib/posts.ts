@@ -220,3 +220,65 @@ where p.id = $1`,
         return null;
     }
 }
+
+export async function updatePostTitle(postId: number, newTitle: string) {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return false;
+
+        const res = await query(
+            `update posts set title = $1 where id = $2 and user_id = $3 returning id`,
+            [newTitle, postId, user.userId]
+        );
+
+        return res.rowCount === 1;
+    } catch (err) {
+        logerror('updatePostTitle error', [err]);
+        return false;
+    }
+}
+
+export async function deletePost(postId: number) {
+    try {
+        await query('BEGIN');
+
+        const pcRes = await query(`select content_id from post_content where post_id = $1`, [postId]);
+        const contentIds = pcRes.rows.map((r) => r.content_id).filter(Boolean);
+
+        for (const cid of contentIds) {
+            try {
+                const uc = await query(`select public_url from user_content where id = $1`, [cid]);
+                const ucRowCount = uc?.rowCount ?? 0;
+                if (ucRowCount > 0) {
+                    const publicUrl = uc.rows[0].public_url;
+                    if (publicUrl) {
+                        try {
+                            const key = new URL(publicUrl).pathname.replace(/^\//, '');
+                            const { deleteObject } = await import('./s3');
+                            await deleteObject(key);
+                        } catch (s3Err) {
+                            logerror('deletePost s3 delete error', [s3Err, publicUrl]);
+                        }
+                    }
+                }
+            } catch (err) {
+                logerror('deletePost fetch user_content error', [err, cid]);
+            }
+        }
+
+        await query(`delete from post_content where post_id = $1`, [postId]);
+
+        if (contentIds.length > 0) {
+            await query(`delete from user_content where id = any($1::bigint[])`, [contentIds]);
+        }
+
+        const res = await query(`delete from posts where id = $1 returning id`, [postId]);
+
+        await query('COMMIT');
+
+        return res.rowCount === 1;
+    } catch (err) {
+        logerror('deletePost error', [err]);
+        return false;
+    }
+}

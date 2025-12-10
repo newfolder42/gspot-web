@@ -15,7 +15,7 @@ export function GpsPost({ post }: { post: GpsPostType }) {
           <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
         </div>
         <div className="flex-shrink-0">
-          <PostActions />
+          <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
         </div>
       </div>
       <Link href={`/post/${post.id}`} className="block w-full">

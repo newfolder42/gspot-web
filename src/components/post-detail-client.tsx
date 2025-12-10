@@ -24,7 +24,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
               <div className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{post.title}</div>
             </div>
             <div className="flex-shrink-0">
-              <PostActions />
+              <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
             </div>
           </div>
 
