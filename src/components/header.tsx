@@ -5,6 +5,7 @@ import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
 import HeaderSearch from "./header-search";
 import { getCurrentUser } from "@/lib/session";
+import { APP_NAME } from "@/lib/constants";
 
 type HeaderProps = {
   image: {
@@ -31,7 +32,7 @@ const Header = async ({ image, headers }: HeaderProps) => {
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-3">
               <Image src={image?.url} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
-              <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">G'Spot</span>
+              <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span>
             </Link>
           </div>
 

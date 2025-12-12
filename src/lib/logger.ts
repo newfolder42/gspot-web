@@ -1,10 +1,10 @@
 import {
-    CloudWatchLogsClient,
-    PutLogEventsCommand,
-    CreateLogStreamCommand,
-    DescribeLogStreamsCommand,
-    CreateLogGroupCommand,
-    DescribeLogGroupsCommand
+  CloudWatchLogsClient,
+  PutLogEventsCommand,
+  CreateLogStreamCommand,
+  DescribeLogStreamsCommand,
+  CreateLogGroupCommand,
+  DescribeLogGroupsCommand
 } from "@aws-sdk/client-cloudwatch-logs";
 
 const LOG_GROUP_NAME = '/aws/lightsail/containers/gspot-web';
@@ -15,110 +15,110 @@ let sequenceToken: string | undefined = undefined;
 let logStreamCreated = false;
 
 function getClient() {
-    if (!client) {
-        client = new CloudWatchLogsClient({
-            region: process.env.AWS_REGION,
-            credentials: {
-                accessKeyId: process.env.AWSCW_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWSCW_SECRET_ACCESS_KEY!,
-            }
-        });
-    }
-    return client;
+  if (!client) {
+    client = new CloudWatchLogsClient({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWSCW_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWSCW_SECRET_ACCESS_KEY!,
+      }
+    });
+  }
+  return client;
 }
 
 async function ensureLogGroup() {
-    const cwClient = getClient();
-    if (!cwClient) return;
-    try {
-        const describeGroups = new DescribeLogGroupsCommand({
-            logGroupNamePrefix: LOG_GROUP_NAME,
-        });
-        const describeResp = await cwClient.send(describeGroups);
-        if (describeResp.logGroups && describeResp.logGroups.some(g => g.logGroupName === LOG_GROUP_NAME)) {
-            return;
-        }
-        const createGroup = new CreateLogGroupCommand({
-            logGroupName: LOG_GROUP_NAME,
-        });
-        await cwClient.send(createGroup);
-    } catch (error) {
-        console.error('Failed to ensure log group:', error);
+  const cwClient = getClient();
+  if (!cwClient) return;
+  try {
+    const describeGroups = new DescribeLogGroupsCommand({
+      logGroupNamePrefix: LOG_GROUP_NAME,
+    });
+    const describeResp = await cwClient.send(describeGroups);
+    if (describeResp.logGroups && describeResp.logGroups.some(g => g.logGroupName === LOG_GROUP_NAME)) {
+      return;
     }
+    const createGroup = new CreateLogGroupCommand({
+      logGroupName: LOG_GROUP_NAME,
+    });
+    await cwClient.send(createGroup);
+  } catch (error) {
+    console.error('Failed to ensure log group:', error);
+  }
 }
 
 async function ensureLogStream() {
-    if (logStreamCreated) return;
-    const cwClient = getClient();
-    if (!cwClient) return;
-    try {
-        await ensureLogGroup();
-        const describeCommand = new DescribeLogStreamsCommand({
-            logGroupName: LOG_GROUP_NAME,
-            logStreamNamePrefix: LOG_STREAM_NAME,
-        });
+  if (logStreamCreated) return;
+  const cwClient = getClient();
+  if (!cwClient) return;
+  try {
+    await ensureLogGroup();
+    const describeCommand = new DescribeLogStreamsCommand({
+      logGroupName: LOG_GROUP_NAME,
+      logStreamNamePrefix: LOG_STREAM_NAME,
+    });
 
-        const describeResponse = await cwClient.send(describeCommand);
+    const describeResponse = await cwClient.send(describeCommand);
 
-        if (describeResponse.logStreams && describeResponse.logStreams.length > 0) {
-            sequenceToken = describeResponse.logStreams[0].uploadSequenceToken;
-            logStreamCreated = true;
-            return;
-        }
-
-        const createCommand = new CreateLogStreamCommand({
-            logGroupName: LOG_GROUP_NAME,
-            logStreamName: LOG_STREAM_NAME,
-        });
-
-        await cwClient.send(createCommand);
-        logStreamCreated = true;
-    } catch (error) {
-        console.error('Failed to ensure log stream:', error);
+    if (describeResponse.logStreams && describeResponse.logStreams.length > 0) {
+      sequenceToken = describeResponse.logStreams[0].uploadSequenceToken;
+      logStreamCreated = true;
+      return;
     }
+
+    const createCommand = new CreateLogStreamCommand({
+      logGroupName: LOG_GROUP_NAME,
+      logStreamName: LOG_STREAM_NAME,
+    });
+
+    await cwClient.send(createCommand);
+    logStreamCreated = true;
+  } catch (error) {
+    console.error('Failed to ensure log stream:', error);
+  }
 }
 
 async function logToCloudWatch(
-    level: 'INFO' | 'WARN' | 'ERROR',
-    message: string,
-    metadata?: Record<string, any>
+  level: 'INFO' | 'WARN' | 'ERROR',
+  message: string,
+  metadata?: Record<string, unknown>
 ) {
-    const logMessage = `[${level}] ${message} ${metadata ? JSON.stringify(metadata) : ''}`;
-    console.log(logMessage);
+  const logMessage = `[${level}] ${message} ${metadata ? JSON.stringify(metadata) : ''}`;
+  console.log(logMessage);
 
-    const cwClient = getClient();
-    if (!cwClient) return;
+  const cwClient = getClient();
+  if (!cwClient) return;
 
-    try {
-        await ensureLogStream();
+  try {
+    await ensureLogStream();
 
-        const logEvent = {
-            message: JSON.stringify({
-                timestamp: new Date().toISOString(),
-                level,
-                message,
-                metadata: metadata || {},
-            }),
-            timestamp: Date.now(),
-        };
+    const logEvent = {
+      message: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level,
+        message,
+        metadata: metadata || {},
+      }),
+      timestamp: Date.now(),
+    };
 
-        const command = new PutLogEventsCommand({
-            logGroupName: LOG_GROUP_NAME,
-            logStreamName: LOG_STREAM_NAME,
-            logEvents: [logEvent],
-            sequenceToken,
-        });
+    const command = new PutLogEventsCommand({
+      logGroupName: LOG_GROUP_NAME,
+      logStreamName: LOG_STREAM_NAME,
+      logEvents: [logEvent],
+      sequenceToken,
+    });
 
-        const response = await cwClient.send(command);
-        sequenceToken = response.nextSequenceToken;
-    } catch (error) {
-        console.error('Failed to log to CloudWatch:', error);
-    }
+    const response = await cwClient.send(command);
+    sequenceToken = response.nextSequenceToken;
+  } catch (error) {
+    console.error('Failed to log to CloudWatch:', error);
+  }
 }
 
 export async function loginfo(message: string, metadata?: Record<string, any>) {
-    await logToCloudWatch('INFO', message, metadata);
+  await logToCloudWatch('INFO', message, metadata);
 }
 export async function logerror(message: string, metadata?: Record<string, any>) {
-    await logToCloudWatch('ERROR', message, metadata);
+  await logToCloudWatch('ERROR', message, metadata);
 }

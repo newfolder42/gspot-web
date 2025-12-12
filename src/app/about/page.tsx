@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/lib/constants";
+
 export const dynamic = "force-static";
 
 export default function AboutPage() {
@@ -38,11 +40,11 @@ export default function AboutPage() {
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
       <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">G'Spot-ის შესახებ</h1>
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}-ის შესახებ</h1>
         </div>
         <div className="px-6 py-4">
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            G'Spot არის ქართული გასართობი პორტალი ფოტო-სურათების გეო ლოკაციის გამოსაცნობად. საიტზე რეგისტრაციის შემდგომ შეგიძლია ატვირთო ფოტო-სურათი რომელსაც აქვს გეო ლოკაციის თაგი, და სხვას მისცე საშუალება გამოიცნოს სადაა გადაღებული.
+            {APP_NAME} არის ქართული გასართობი პორტალი ფოტო-სურათების გეო ლოკაციის გამოსაცნობად. საიტზე რეგისტრაციის შემდგომ შეგიძლია ატვირთო ფოტო-სურათი რომელსაც აქვს გეო ლოკაციის თაგი, და სხვას მისცე საშუალება გამოიცნოს სადაა გადაღებული.
           </p>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             საიტის დეველოპმენტი ხორციელდება სწავლისა და გამოცდილების გაზრდის მიზნით, მისი კომერციალიზაცია არ იგეგმება.

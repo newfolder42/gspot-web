@@ -10,7 +10,7 @@ export default function LogoutButton() {
     setLoading(true);
     try {
       await signOut({ callbackUrl: '/' });
-    } catch (e) {
+    } catch {
       setLoading(false);
     }
   }

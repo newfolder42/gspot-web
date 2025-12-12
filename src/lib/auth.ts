@@ -10,107 +10,107 @@ import { sendOTPEmail } from './email';
 const PENDING_REGISTRATION_EXPIRY_HOURS = 24;
 
 function isEmail(s: string) {
-    return typeof s === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
+  return typeof s === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
 }
 
 async function cleanupExpiredPendingRegistrations() {
-    try {
-        await query(
-            `DELETE FROM pending_registrations 
+  try {
+    await query(
+      `DELETE FROM pending_registrations 
              WHERE created_at < NOW() - INTERVAL '${PENDING_REGISTRATION_EXPIRY_HOURS} hours'`
-        );
-    } catch (err) {
-        logerror('cleanup expired pending registrations error:', [err]);
-    }
+    );
+  } catch (err) {
+    logerror('cleanup expired pending registrations error:', [err]);
+  }
 }
 
 async function isEmailOrAliasInUsers(email: string, alias: string): Promise<boolean> {
-    try {
-        const result = await query(
-            'SELECT id FROM users WHERE LOWER(email) = $1 OR LOWER(alias) = $2',
-            [email.toLowerCase(), alias.toLowerCase()]
-        );
-        return result.rows.length > 0;
-    } catch (err) {
-        logerror('isEmailOrAliasInUsers error:', [err]);
-        throw err;
-    }
+  try {
+    const result = await query(
+      'SELECT id FROM users WHERE LOWER(email) = $1 OR LOWER(alias) = $2',
+      [email.toLowerCase(), alias.toLowerCase()]
+    );
+    return result.rows.length > 0;
+  } catch (err) {
+    logerror('isEmailOrAliasInUsers error:', [err]);
+    throw err;
+  }
 }
 
 async function createOrUpdatePendingRegistration(
-    email: string,
-    alias: string,
-    name: string,
-    passwordHash: string
+  email: string,
+  alias: string,
+  name: string,
+  passwordHash: string
 ) {
-    try {
-        const existingAlias = await query(
-            'SELECT id FROM pending_registrations WHERE LOWER(alias) = $1 AND LOWER(email) != $2',
-            [alias.toLowerCase(), email.toLowerCase()]
-        );
+  try {
+    const existingAlias = await query(
+      'SELECT id FROM pending_registrations WHERE LOWER(alias) = $1 AND LOWER(email) != $2',
+      [alias.toLowerCase(), email.toLowerCase()]
+    );
 
-        if (existingAlias.rows.length > 0) {
-            throw new Error('ALIAS_EXISTS');
-        }
-
-        await query('DELETE FROM pending_registrations WHERE LOWER(email) = $1', [email.toLowerCase()]);
-
-        const result = await query(
-            'INSERT INTO pending_registrations (email, alias, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, email',
-            [email.toLowerCase(), alias, name, passwordHash]
-        );
-
-        return result.rows[0];
-    } catch (err) {
-        logerror('createOrUpdatePendingRegistration error:', [err]);
-        throw err;
+    if (existingAlias.rows.length > 0) {
+      throw new Error('ALIAS_EXISTS');
     }
+
+    await query('DELETE FROM pending_registrations WHERE LOWER(email) = $1', [email.toLowerCase()]);
+
+    const result = await query(
+      'INSERT INTO pending_registrations (email, alias, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, email',
+      [email.toLowerCase(), alias, name, passwordHash]
+    );
+
+    return result.rows[0];
+  } catch (err) {
+    logerror('createOrUpdatePendingRegistration error:', [err]);
+    throw err;
+  }
 }
 
 export async function signup(user: UserToRegister) {
-    const name = typeof user.name === 'string' ? user.name.trim() : '';
-    const alias = typeof user.alias === 'string' ? user.alias.trim().toLowerCase() : '';
-    const email = user.email.toLowerCase();
-    const password = user.password;
+  const name = typeof user.name === 'string' ? user.name.trim() : '';
+  const alias = typeof user.alias === 'string' ? user.alias.trim().toLowerCase() : '';
+  const email = user.email.toLowerCase();
+  const password = user.password;
 
-    if (!name || !alias) throw new Error('INVALID_INPUT');
-    if (!/^[a-z0-9_-]+$/.test(alias) || alias.length < 3 || alias.length > 30) throw new Error('INVALID_INPUT');
-    if (!isEmail(email)) throw new Error('INVALID_INPUT');
-    if (typeof password !== 'string' || password.length < 6) throw new Error('INVALID_INPUT');
+  if (!name || !alias) throw new Error('INVALID_INPUT');
+  if (!/^[a-z0-9_-]+$/.test(alias) || alias.length < 3 || alias.length > 30) throw new Error('INVALID_INPUT');
+  if (!isEmail(email)) throw new Error('INVALID_INPUT');
+  if (typeof password !== 'string' || password.length < 6) throw new Error('INVALID_INPUT');
+
+  try {
+    await cleanupExpiredPendingRegistrations();
+
+    const userExists = await isEmailOrAliasInUsers(email, alias);
+    if (userExists) throw new Error('USER_EXISTS');
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await createOrUpdatePendingRegistration(email, alias, name, passwordHash);
 
     try {
-        await cleanupExpiredPendingRegistrations();
-
-        const userExists = await isEmailOrAliasInUsers(email, alias);
-        if (userExists) throw new Error('USER_EXISTS');
-
-        const passwordHash = await bcrypt.hash(password, 10);
-
-        const pendingReg = await createOrUpdatePendingRegistration(email, alias, name, passwordHash);
-
-        try {
-            const otpCode = await createOTP(email);
-            await sendOTPEmail(email, otpCode);
-        } catch (otpErr) {
-            logerror('OTP email error:', [otpErr]);
-        }
-    } catch (err) {
-        logerror('signup error:', [err]);
-        throw err;
+      const otpCode = await createOTP(email);
+      await sendOTPEmail(email, otpCode);
+    } catch (otpErr) {
+      logerror('OTP email error:', [otpErr]);
     }
+  } catch (err) {
+    logerror('signup error:', [err]);
+    throw err;
+  }
 }
 
 export async function userAliasTaken(userAlias: string) {
-    try {
-        const res = await query(
-            `SELECT COUNT(1) as count FROM users WHERE LOWER(alias) = $1 
+  try {
+    const res = await query(
+      `SELECT COUNT(1) as count FROM users WHERE LOWER(alias) = $1 
              UNION ALL
              SELECT COUNT(1) as count FROM pending_registrations WHERE LOWER(alias) = $1`,
-            [userAlias.toLowerCase()]
-        );
-        return res.rows.some(row => parseInt(row.count) > 0);
-    } catch (err) {
-        logerror('alias check:', [err]);
-        return true;
-    }
+      [userAlias.toLowerCase()]
+    );
+    return res.rows.some(row => parseInt(row.count) > 0);
+  } catch (err) {
+    logerror('alias check:', [err]);
+    return true;
+  }
 }

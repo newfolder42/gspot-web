@@ -9,7 +9,6 @@ import type { GpsPostType } from '@/types/post';
 
 export default function PostDetailClient({ post }: { post: GpsPostType }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 py-10">

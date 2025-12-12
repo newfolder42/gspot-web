@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants";
 import Link from "next/link";
 
 export default function Footer() {
@@ -35,7 +36,7 @@ export default function Footer() {
           {/* Footer bottom: logo/brand + copyright */}
           <div className="flex flex-col flex-row items-center justify-between">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-50">G'Spot</span> © 2025. All rights reserved.
+              <span className="font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span> © 2025. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
               <Link href="/sitemap" className="hover:text-zinc-900 dark:hover:text-white transition">

@@ -37,9 +37,6 @@ export default async function UserLayout({ children, params }: Props) {
   const initials = getInitials(user.alias);
 
   const hasProfilePhoto = Boolean(profilePhoto?.url);
-  const joinedLabel = user.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : '-';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -55,14 +52,14 @@ export default async function UserLayout({ children, params }: Props) {
                 )}
                 {isOwnProfile && (
                   <div className="absolute bottom-1 right-1 sm:bottom-1 sm:right-1">
-                    <ProfilePhotoUpload userId={user.id} />
+                    <ProfilePhotoUpload />
                   </div>
                 )}
               </div>
             </div>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">'{user.alias}</h1>
+              <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">&apos;{user.alias}</h1>
               <div className="mt-1 space-y-1 text-xs text-zinc-500 dark:text-zinc-500">
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">ასაკი: {formatAge(user.age)}</p>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">დონე: {getLevelFromXp(4000).level}</p>

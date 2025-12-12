@@ -4,7 +4,7 @@ import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { useState } from 'react';
 
-export default function ProfilePhotoUpload({ userId }: { userId: number | string }) {
+export default function ProfilePhotoUpload() {
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
