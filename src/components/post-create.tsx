@@ -51,6 +51,13 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
       return;
     }
 
+    const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
+    
+    if (!isInGeorgia) {
+      setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
+      return;
+    }
+
     let processedFile = file;
 
     if (file.type === 'image/png' || file.type === 'image/jpeg') {
