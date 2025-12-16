@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
-import { convertToWebP, extractGPSCorrdinates } from '@/lib/image';
+import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
 
 interface UploadedPhoto {
   key?: string;
@@ -45,6 +45,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
       return;
     }
     const coordinates = await extractGPSCorrdinates(file);
+    const dateTaken = await extractDateTaken(file);
 
     if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
       setError('სურათზე არ მოიძებნა GPS თაგები.');
@@ -87,7 +88,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             setUploadProgress(Math.round((event.loaded / event.total) * 100));
           }
         };
-        xhr.onload = async (_) => {
+        xhr.onload = async () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             const uploadUrl = signUrl.split('?')[0];
             try {
@@ -97,7 +98,8 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                 {
                   originalFileName: processedFile.name,
                   fileSize: processedFile.size,
-                  coordinates: coordinates
+                  coordinates: coordinates,
+                  dateTaken: dateTaken ? dateTaken.toISOString() : null,
                 }
               );
               if (content == null) {

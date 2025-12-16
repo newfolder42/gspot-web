@@ -21,7 +21,7 @@ export default async function Feed({ userId, accountUserId, type }: FeedProps) {
       posts = await getConnectionsPosts(userId, accountUserId!, 20);
       break;
     case "account-feed":
-      posts = await getAccountPosts(accountUserId!, 20);
+      posts = await getAccountPosts(userId, accountUserId!, 20);
       break;
     case "global-feed":
       posts = await getGlobalPosts(userId, 20);

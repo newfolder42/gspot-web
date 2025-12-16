@@ -98,7 +98,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [selectedCoords]);
 
   function haversineMeters(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
     const toRad = (x: number) => x * Math.PI / 180;

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PostGuess from './post-guess';
 import { getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
 import PostGuessSkeleton from './post-guess-skeleton';
@@ -17,42 +17,43 @@ type PostGuess = {
   score?: number | null;
 };
 
+const loadGuessesData = async (postId: number, postAuthor: string) => {
+  const user = await getCurrentUser();
+  const isAuthor = user?.alias === postAuthor;
+  const userCanGuess = user ? await postIsGuessedByUser(postId, user.userId) : true;
+  const guesses = await getPostGuesses(postId);
+  
+  return { isAuthor, userCanGuess, guesses };
+};
+
 export default function PostGuessList({ postId, postAuthor }: { postId: number; postAuthor: string }) {
   const [guesses, setGuesses] = useState<PostGuessType[]>([]);
   const [canGuess, setCanGuess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  const fetchGuesses = async () => {
-    setLoading(true);
-
-    const user = await getCurrentUser();
-
-    if (user?.alias === postAuthor) {
-      setCanGuess(false);
-      const guesses = await getPostGuesses(postId);
+  useEffect(() => {
+    const loadGuesses = async () => {
+      setLoading(true);
+      const { isAuthor, userCanGuess, guesses } = await loadGuessesData(postId, postAuthor);
+      
+      setCanGuess(!isAuthor && userCanGuess);
       setGuesses(guesses);
       setLoading(false);
-      return;
-    }
+    };
 
-    const canGuess = user ? await postIsGuessedByUser(postId, user.userId) : true;
-    setCanGuess(canGuess);
+    loadGuesses();
+  }, [postId, postAuthor]);
 
-    const guesses = await getPostGuesses(postId);
-    setGuesses(guesses);
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchGuesses();
-  }, [postId]);
-
-  const onSubmitted = () => {
+  const onSubmitted = useCallback(async () => {
     setShowForm(false);
-    fetchGuesses();
-  };
+    setLoading(true);
+    const { isAuthor, userCanGuess, guesses } = await loadGuessesData(postId, postAuthor);
+    
+    setCanGuess(!isAuthor && userCanGuess);
+    setGuesses(guesses);
+    setLoading(false);
+  }, [postId, postAuthor]);
 
   return (
     <div className="mt-6">

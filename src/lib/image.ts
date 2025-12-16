@@ -43,3 +43,21 @@ export async function extractGPSCorrdinates(file: File) {
   }
   return { latitude, longitude };
 }
+
+export async function extractDateTaken(file: File): Promise<Date | null> {
+  try {
+    const exif = await exifr.parse(file);
+    const dateTaken = exif?.DateTimeOriginal || exif?.DateTime;
+    
+    if (dateTaken instanceof Date) {
+      return dateTaken;
+    }
+    if (typeof dateTaken === 'string') {
+      return new Date(dateTaken);
+    }
+    return null;
+  } catch (err) {
+    console.log('extractDateTaken error', err);
+    return null;
+  }
+}

@@ -13,6 +13,7 @@ export function GpsPost({ post }: { post: GpsPostType }) {
             <time className="text-xs text-zinc-400">{new Date(post.date).toLocaleString()}</time>
           </div>
           <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
+          {post.dateTaken && <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">გადაღებულია: {new Date(post.dateTaken).toLocaleString()}</div>}
         </div>
         <div className="flex-shrink-0">
           <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
