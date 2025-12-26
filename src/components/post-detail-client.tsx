@@ -18,7 +18,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
             <div className="flex-1">
               <div className="flex items-baseline gap-2">
                 <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
-                <time className="text-xs text-zinc-400">{new Date(post.date).toLocaleString()}</time>
+                <time className="text-xs text-zinc-400">{new Date(post.date).toLocaleString('ka-GE')}</time>
               </div>
               <div className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{post.title}</div>
             </div>

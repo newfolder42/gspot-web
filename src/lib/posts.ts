@@ -5,11 +5,12 @@ import { getCurrentUser } from './session';
 import { logerror } from './logger';
 import type { GpsPostType } from '@/types/post';
 import type { PostGuessType } from '@/types/post-guess';
+import { createNotification } from './notifications';
 
 export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url
+      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
 join post_content pc on p.id = pc.post_id
@@ -27,6 +28,7 @@ limit $1`,
       title: r.title,
       author: r.author_alias,
       date: r.created_at,
+      userId: r.user_id,
       image: r.image_url,
     }));
   } catch (err) {
@@ -38,7 +40,7 @@ limit $1`,
 export async function getAccountPosts(userId: number, accountUserId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -55,6 +57,7 @@ limit $1`,
       title: r.title,
       author: r.author_alias,
       date: r.created_at,
+      userId: r.user_id,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
     }));
@@ -67,7 +70,7 @@ limit $1`,
 export async function getGlobalPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -83,6 +86,7 @@ limit $1`,
       title: r.title,
       author: r.author_alias,
       date: r.created_at,
+      userId: r.user_id,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
     }));
@@ -95,7 +99,7 @@ limit $1`,
 export async function getPostById(id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -113,6 +117,7 @@ limit 1`,
       type: r.type,
       title: r.title,
       date: r.created_at,
+      userId: r.user_id,
       author: r.author_alias,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
@@ -195,10 +200,19 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     if (!user) return null;
     const userId = user.userId;
 
+    const post = await getPostById(postId);
+
     const data = await query(
       `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,
       [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
     );
+
+    await createNotification(post!.userId, "gps-guess", {
+      postId: postId,
+      userId: userId,
+      userAlias: user.alias,
+      score: score,
+    });
 
     return { id: data.rows[0].id };
   } catch (err) {

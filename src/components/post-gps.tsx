@@ -10,10 +10,10 @@ export function GpsPost({ post }: { post: GpsPostType }) {
         <div className="flex-1">
           <div className="flex items-baseline gap-2">
             <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
-            <time className="text-xs text-zinc-400">{new Date(post.date).toLocaleString()}</time>
+            <div className="text-xs text-zinc-400">{new Date(post.date).toLocaleString('ka-GE')}</div>
           </div>
           <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
-          {post.dateTaken && <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">გადაღებულია: {new Date(post.dateTaken).toLocaleString()}</div>}
+          {post.dateTaken && <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">გადაღებულია: {new Date(post.dateTaken).toLocaleString('ka-GE')}</div>}
         </div>
         <div className="flex-shrink-0">
           <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />

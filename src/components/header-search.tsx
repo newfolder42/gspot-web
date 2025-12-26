@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { formatAge } from "@/lib/formatAge";
+import { formatAge } from "@/lib/dates";
 import { searchUsersAndPosts } from "@/lib/search";
 import type { SearchedPost, SearchedUser } from "@/types/searched";
 

@@ -4,6 +4,7 @@ import SignInButton from "./common/signin-button";
 import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
 import HeaderSearch from "./header-search";
+import NotificationDropdown from "./notification-dropdown";
 import { getCurrentUser } from "@/lib/session";
 import { APP_NAME } from "@/lib/constants";
 
@@ -57,7 +58,10 @@ const Header = async ({ image, headers }: HeaderProps) => {
           {/* Right: Auth buttons */}
           <div className="flex items-center gap-3">
             {user ? (
-              <AccountMenu user={user} />
+              <>
+                <NotificationDropdown user={user}/>
+                <AccountMenu user={user} />
+              </>
             ) : (
               <>
                 <div className="hidden sm:block">
