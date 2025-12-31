@@ -20,7 +20,8 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
   const [countdown, setCountdown] = useState<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const guessMarkerRef = useRef<any>(null);
+  const photoMarkerRef = useRef<any>(null);
 
   // Handle countdown timer
   useEffect(() => {
@@ -69,12 +70,12 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
         zoom: 12,
       });
 
-      markerRef.current = new window.mapboxgl.Marker({ draggable: true })
+      guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
         .setLngLat([selectedCoords.longitude, selectedCoords.latitude])
         .addTo(map);
 
-      markerRef.current.on('dragend', () => {
-        const lngLat = markerRef.current!.getLngLat();
+      guessMarkerRef.current.on('dragend', () => {
+        const lngLat = guessMarkerRef.current!.getLngLat();
         setSelectedCoords({
           latitude: lngLat.lat,
           longitude: lngLat.lng,
@@ -82,7 +83,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
       });
 
       map.on('click', (e: any) => {
-        markerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        guessMarkerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
         setSelectedCoords({
           latitude: e.lngLat.lat,
           longitude: e.lngLat.lng,
@@ -98,7 +99,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
         mapInstanceRef.current = null;
       }
     };
-  }, [selectedCoords]);
+  }, []);
 
   function haversineMeters(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
     const toRad = (x: number) => x * Math.PI / 180;
@@ -145,19 +146,26 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
 
         const [lng, lat] = normalizeToLngLat(photoCoordinates);
 
-        // Move existing marker to photo location
-        if (markerRef.current) {
-          markerRef.current.setLngLat([lng, lat]);
-          markerRef.current.setDraggable(false);
+        // Add or move photo marker (red)
+        if (photoMarkerRef.current) {
+          photoMarkerRef.current.setLngLat([lng, lat]);
         } else {
-          // Safety: if no marker exists, create one
-          markerRef.current = new window.mapboxgl.Marker({ draggable: false })
+          photoMarkerRef.current = new window.mapboxgl.Marker({ draggable: false, color: '#ef4444' })
             .setLngLat([lng, lat])
             .addTo(mapInstanceRef.current);
         }
 
-        // Center and zoom on the photo location
-        mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 16 });
+        // Keep guess marker (blue) at user-selected point
+        if (guessMarkerRef.current) {
+          guessMarkerRef.current.setDraggable(false);
+          guessMarkerRef.current.setLngLat([selectedCoords.longitude, selectedCoords.latitude]);
+        }
+
+        // Fit both markers in view
+        const bounds = new window.mapboxgl.LngLatBounds();
+        bounds.extend([lng, lat]);
+        bounds.extend([selectedCoords.longitude, selectedCoords.latitude]);
+        mapInstanceRef.current.fitBounds(bounds, { padding: 40, maxZoom: 16 });
       }
 
       const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
@@ -170,7 +178,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
       alert('Failed to post guess' + err);
       setSubmitting(false);
     } finally {
-      setSubmitting(true);
+      setSubmitting(false);
     }
   };
 

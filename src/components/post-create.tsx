@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
@@ -13,19 +13,15 @@ interface UploadedPhoto {
   url: string;
   filename: string;
   size: number;
-  uploadedAt: string;
+  uploadedAt: Date;
   coordinates?: {
     latitude: number | null;
     longitude: number | null;
   } | null;
 }
 
-type PhotoUploadProps = {
-  showCreate?: boolean;
-};
-
-export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
-  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+export default function CreatePost() {
+  const [photo, setPhoto] = useState<UploadedPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +49,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     }
 
     const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
-    
+
     if (!isInGeorgia) {
       setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
       return;
@@ -111,10 +107,10 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
                 url: `${uploadUrl}`,
                 filename: processedFile.name,
                 size: processedFile.size,
-                uploadedAt: new Date().toLocaleString(),
+                uploadedAt: new Date(),
                 coordinates: coordinates,
               };
-              setPhotos([newPhoto, ...photos]);
+              setPhoto(newPhoto);
               if (fileInputRef.current) {
                 fileInputRef.current.value = '';
               }
@@ -138,16 +134,17 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     }
   };
 
-  const CreateCard = ({ photos, uploading, onAddPhoto }: { photos: UploadedPhoto[]; uploading: boolean; onAddPhoto: () => void }) => {
+  const CreateCard = ({ photo, uploading, onAddPhoto }: { photo: UploadedPhoto | null; uploading: boolean; onAddPhoto: () => void }) => {
     const [title, setTitle] = useState('');
     const [creating, setCreating] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [showInfo, setShowInfo] = useState(false);
 
-    const disabled = creating || uploading || photos.length === 0 || title.trim() === '';
+    const disabled = creating || uploading || !photo || title.trim() === '';
 
     return (
-      <div className="mt-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
-        <div className="flex items-center gap-3">
+      <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+        <div className="flex items-center gap-2">
           <button
             onClick={onAddPhoto}
             type="button"
@@ -160,6 +157,17 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
               <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            type="button"
+            className="px-2 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+            aria-label="ინფორმაცია"
+            title="ატვირთვის მოთხოვნები"
+          >
+            <svg className="w-5 h-5 text-blue-500" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1.25a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM7.25 4.5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Zm2 7a.75.75 0 0 1-1.5 0V8.25a.75.75 0 0 1 0-1.5h.25a.75.75 0 0 1 .75.75V11.5Z" />
+            </svg>
+          </button>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -170,12 +178,11 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             disabled={disabled}
             onClick={async () => {
               setLocalError(null);
-              if (photos.length === 0) return setLocalError('No uploaded photo');
-              const first = photos[0];
-              if (!first.contentId) return setLocalError('Uploaded photo missing content id');
+              if (!photo) return setLocalError('No uploaded photo');
+              if (!photo.contentId) return setLocalError('Uploaded photo missing content id');
               setCreating(true);
               try {
-                await createPost({ title: title.trim(), contentId: first.contentId });
+                await createPost({ title: title.trim(), contentId: photo.contentId });
                 window.location.reload();
               } catch (err) {
                 setLocalError(err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
@@ -188,6 +195,15 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
             {creating ? 'მიმდინარეობს...' : 'ატვირთვა'}
           </button>
         </div>
+        {showInfo && (
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-md text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
+            <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
+            <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
+            <p>• GPS თაგები სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
+            <p>• არ გამოიყენოთ გადაზუმული ან შემთხვევითი ფოტო - უნდა ჩანს ამოსაცნობი ადგილი.</p>
+            <p>• უპირატესობა მიანიჭე გრძივად გადაღებულ სურათებს.</p>
+          </div>
+        )}
         {localError && <p className="text-sm text-red-600 mt-2">{localError}</p>}
       </div>
     );
@@ -198,7 +214,7 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
     const { latitude, longitude } = coordinates;
     const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=18&output=embed&&maptype=satellite&hl=ka`;
     return (
-      <div className="mt-2 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
         <iframe
           title={`map-${latitude}-${longitude}`}
           src={src}
@@ -222,76 +238,82 @@ export default function CreatePost({ showCreate }: PhotoUploadProps = {}) {
         disabled={uploading}
         className="hidden"
       />
-      <div className="mb-4">
+      <div className="">
         {error && (
-          <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
             <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
           </div>
         )}
         {uploading && uploadProgress !== null && (
-          <div className="mt-2 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
             <div
               className="bg-blue-500 h-3 rounded-full transition-all duration-200"
               style={{ width: `${uploadProgress}%` }}
             />
-            <div className="text-xs text-center mt-1 text-zinc-600 dark:text-zinc-300">ატვირთვა: {uploadProgress}%</div>
+            <div className="text-xs text-center text-zinc-600 dark:text-zinc-300">ატვირთვა: {uploadProgress}%</div>
           </div>
         )}
       </div>
 
       {(
         <div>
-          {showCreate && (
-            <CreateCard photos={photos} uploading={uploading} onAddPhoto={() => fileInputRef.current?.click()} />
-          )}
-          <div className="space-y-2">
-            {photos.map((photo, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <svg
-                      className="w-5 h-5 text-blue-500 flex-shrink-0"
-                      fill="currentColor"
-                    >
-                      <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-                    </svg>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                        {photo.filename}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0 ml-2">
-                    <Link
-                      href={photo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition"
-                    >
-                      ნახვა
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setPhotos(photos.filter((_, i) => i !== idx));
-                      }}
-                      className="px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition"
-                    >
-                      წაშლა
-                    </button>
+          {
+            <CreateCard photo={photo} uploading={uploading} onAddPhoto={() => fileInputRef.current?.click()} />
+          }
+          {photo && (
+            <div className="space-y-2 mt-2">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <svg
+                    className="w-5 h-5 text-blue-500 flex-shrink-0"
+                    fill="currentColor"
+                  >
+                    <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                      {photo.filename}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
+                    </p>
                   </div>
                 </div>
-
-                {photo.coordinates && (
-                  <div className="">
-                    <MapPreview coordinates={photo.coordinates} />
-                  </div>
-                )}
+                <div className="flex">
+                  <button
+                    onClick={() => {
+                      setPhoto(null);
+                    }}
+                    className="px-3 py-1 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-md transition flex items-center gap-1"
+                    aria-label="წაშლა"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 overflow-hidden">
+                <div className="relative w-full h-[320px] bg-zinc-50 dark:bg-zinc-900">
+                  <Image
+                    src={photo.url}
+                    alt={`Uploaded photo ${photo.filename}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+
+              {photo.coordinates && (
+                <div className="">
+                  <MapPreview coordinates={photo.coordinates} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

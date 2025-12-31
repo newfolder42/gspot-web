@@ -12,8 +12,12 @@ export function GpsPost({ post }: { post: GpsPostType }) {
             <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
             <div className="text-xs text-zinc-400">{new Date(post.date).toLocaleString('ka-GE')}</div>
           </div>
-          <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
-          {post.dateTaken && <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">გადაღებულია: {new Date(post.dateTaken).toLocaleString('ka-GE')}</div>}
+          <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
+          {post.dateTaken && (
+            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+              გადაღებულია: {new Date(post.dateTaken).toLocaleDateString('ka-GE')}
+            </div>
+          )}
         </div>
         <div className="flex-shrink-0">
           <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
@@ -21,7 +25,7 @@ export function GpsPost({ post }: { post: GpsPostType }) {
       </div>
       <Link href={`/post/${post.id}`} className="block w-full">
         <div className="w-full">
-          <Image src={post.image} alt={post.title} width={1200} height={700} className="w-full h-96 object-cover" priority={false} />
+          <Image src={post.image} alt={post.title} width={1200} height={800} className="w-full h-full object-cover" priority={false} />
         </div>
       </Link>
     </article>

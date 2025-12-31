@@ -10,21 +10,11 @@ export default function Footer() {
 
           {/* Column 1: Social + Brand */}
           <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-4">კიდევ სხვა</h3>
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-4">დამატებითი ინფორმაცია</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/about" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
                   ჩვენს შესახებ
-                </Link>
-              </li>
-              <li>
-                <Link href="https://github.com" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
-                  GitHub
-                </Link>
-              </li>
-              <li>
-                <Link href="mailto:hello@gspot.ge" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
-                  Email
                 </Link>
               </li>
             </ul>
@@ -38,11 +28,11 @@ export default function Footer() {
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               <span className="font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span> © 2025. All rights reserved.
             </div>
-            <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
+            {/* <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
               <Link href="/sitemap" className="hover:text-zinc-900 dark:hover:text-white transition">
                 Sitemap
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

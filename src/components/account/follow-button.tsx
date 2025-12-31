@@ -8,13 +8,13 @@ type Props = {
   initialConnected?: boolean;
 };
 
-const PersonAddSvg = () => (
+const RemoveSvg = () => (
   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
     <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.751.751 0 0 0-.018-1.042.751.751 0 0 0-1.042-.018L6.75 9.19 5.28 7.72a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042l2 2a.75.75 0 0 0 1.06 0Z"></path>
   </svg>
 );
 
-const PersonCheckSvg = () => (
+const CheckSvg = () => (
   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
     <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
   </svg>
@@ -60,8 +60,8 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
           }`}
       >
         {loading && <LoadingSvg />}
-        {!loading && !connected && <PersonAddSvg />}
-        {!loading && connected && <PersonCheckSvg />}
+        {!loading && !connected && <RemoveSvg />}
+        {!loading && connected && <CheckSvg />}
       </button>
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>

@@ -29,18 +29,21 @@ export default async function Feed({ userId, accountUserId, type }: FeedProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 space-y-8">
+    <div className="max-w-4xl mx-auto">
       {
         showCreate &&
-        <div>
-          <CreatePost showCreate={true} />
-        </div>
+        <CreatePost />
       }
-      {posts.map((post) => {
+      {posts.map((post, idx) => {
+        const spacing = idx === 0 ? 'mt-2' : 'mt-8';
         switch (post.type) {
           case 'gps-photo':
           default:
-            return <GpsPost key={post.id} post={post as GpsPostType} />;
+            return (
+              <div key={post.id} className={spacing}>
+                <GpsPost post={post as GpsPostType} />
+              </div>
+            );
         }
       })}
     </div>
