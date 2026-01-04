@@ -34,7 +34,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
                 alt={post.title}
                 width={1200}
                 height={800}
-                className={`w-full ${isFullscreen ? 'max-h-screen' : 'max-h-[60vh]'} object-contain bg-zinc-100 dark:bg-zinc-800 transition-all`}
+                className={`w-full ${isFullscreen ? 'h-full' : 'h-[60vh]'} object-contain bg-zinc-100 dark:bg-zinc-800 transition-all`}
               />
               <button
                 onClick={() => setIsFullscreen(!isFullscreen)}

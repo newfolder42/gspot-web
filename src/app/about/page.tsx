@@ -17,6 +17,13 @@ export default function AboutPage() {
 
   const changelog = [
     {
+      version: "v0.3.2",
+      date: "2026-01-04",
+      items: [
+        "გამომწერის პოსტის შექმნის ნოთიფიკაცია",
+      ],
+    },
+    {
       version: "v0.3.1",
       date: "2025-12-31",
       items: [

@@ -6,6 +6,10 @@ import { logerror } from './logger';
 import type { GpsPostType } from '@/types/post';
 import type { PostGuessType } from '@/types/post-guess';
 import { createNotification } from './notifications';
+import { getConnecters } from './connections';
+import { PostCreatedEvent } from '@/types/events/post-created';
+import { eventBus } from './eventBus';
+import { PostGuessedEvent } from '@/types/events/post-guessed';
 
 export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
   try {
@@ -161,6 +165,32 @@ export async function createPost({ title, contentId }: { title?: string; content
       `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
       [postId, contentId, 0]
     );
+
+    const connections = await getConnecters(currentUserId);
+
+    console.log('connections', connections);
+
+    for (const connection of connections) {
+      await createNotification(connection.id, "connection-created-gps-post", {
+        postId: postId,
+        authorId: user.userId,
+        authorAlias: user.alias,
+        postType: 'gps-photo',
+        title: title || '',
+      });
+    }
+
+    const event: PostCreatedEvent = {
+      type: "PostCreated",
+      postId,
+      postType: 'gps-photo',
+      postTitle: title || '',
+      authorId: user.userId,
+      authorAlias: user.alias,
+      createdAt: new Date(),
+    };
+
+    await eventBus.publish(event);
   } catch (err) {
     logerror('createPost error', [err]);
     return false;
@@ -213,6 +243,20 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
       userAlias: user.alias,
       score: score,
     });
+
+    const event: PostGuessedEvent = {
+      type: "PostGuessed",
+      postId,
+      guessType: 'gps-guess',
+      authorId: post!.userId,
+      authorAlias: post!.author,
+      userId: user.userId,
+      userAlias: user.alias,
+      score,
+      createdAt: new Date(),
+    };
+
+    await eventBus.publish(event);
 
     return { id: data.rows[0].id };
   } catch (err) {

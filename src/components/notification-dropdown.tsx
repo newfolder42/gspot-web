@@ -5,9 +5,11 @@ import NotificationItemGpsGuess from "./notification-item-gps-guess";
 import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread } from "@/actions/notifications";
 import { formatRelative } from "@/lib/dates";
+import NotificationItemConnectionPost from "./notification-item-connection-post";
 
 type Notification = {
   id: string;
+  type: 'gps-guess' | 'connection-created-gps-post';
   user: {
     userId: number;
     alias: string;
@@ -36,8 +38,9 @@ export default function NotificationDropdown({ user }: Props) {
   const getNotifications = useCallback(async (): Promise<Notification[]> => {
     try {
       const notifications = await loadNotifications(user.userId);
-      return notifications.map((n: any) => ({
+      return notifications.map((n) => ({
         id: n.id,
+        type: n.type,
         user: {
           userId: n.userId ?? 0,
           alias: n.userAlias || "User",
@@ -45,7 +48,7 @@ export default function NotificationDropdown({ user }: Props) {
         details: n.details,
         timestamp: formatRelative(n.createdAt || undefined),
         seen: n.seen,
-      }))
+      }as Notification))
     } catch (err) {
       console.error("Failed to load notifications", err);
       return [];
@@ -230,13 +233,22 @@ export default function NotificationDropdown({ user }: Props) {
                     {!notification.seen && (
                       <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-blue-600 z-10" />
                     )}
-                    <NotificationItemGpsGuess
+
+                    {notification.type == "gps-guess" && <NotificationItemGpsGuess
                       id={notification.id}
                       user={notification.user}
                       details={notification.details}
                       timestamp={notification.timestamp}
                       onClick={handleNotificationClick}
-                    />
+                    />}
+                    
+                    {notification.type == "connection-created-gps-post" && <NotificationItemConnectionPost
+                      id={notification.id}
+                      user={notification.user}
+                      details={notification.details}
+                      timestamp={notification.timestamp}
+                      onClick={handleNotificationClick}
+                    />}
                     {/* Three-dots action trigger moved into dropdown wrapper */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMenuToggle(notification.id); }}

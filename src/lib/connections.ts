@@ -35,6 +35,30 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
   }
 }
 
+export async function getConnecters(userId: number): Promise<ClientConnection[]> {
+  try {
+    const res = await query(
+      `SELECT u.id, u.alias, u.name
+FROM user_connections ucx
+JOIN users u on u.id = ucx.user_id
+WHERE ucx.connection_id = $1
+ORDER BY ucx.created_at DESC
+      `,
+      [userId]
+    );
+
+    return res.rows.map((r) => ({
+      id: r.id,
+      alias: r.alias,
+      name: r.name,
+      profilePhoto: null,
+    }));
+  } catch (err) {
+    logerror('getUserConnections error', [err]);
+    return [];
+  }
+}
+
 export async function connectionExists(userId: number, targetId: number, type = 'connection') {
   try {
     const res = await query('SELECT id FROM user_connections WHERE user_id = $1 AND connection_id = $2 AND type = $3',

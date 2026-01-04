@@ -4,6 +4,7 @@ import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen }
 
 export type NotificationPayload = {
   id: string;
+  type: string;
   userId: number;
   userAlias: string;
   details: string;
@@ -26,6 +27,7 @@ export async function loadNotifications(userId: number, limit = 10): Promise<Not
 
           return {
             id: String(row.id),
+            type: row.type,
             userId: Number(row.userId),
             userAlias: row.userAlias || "User",
             details: detailsText,
