@@ -1,7 +1,4 @@
-import { BaseEvent } from "./base";
-
-export interface PostGuessedEvent extends BaseEvent {
-  type: "PostGuessed";
+export interface PostGuessedEvent {
   postId: number;
   guessType: string;
   authorId: number;
@@ -9,5 +6,4 @@ export interface PostGuessedEvent extends BaseEvent {
   userId: number;
   userAlias: string;
   score: number;
-  createdAt: Date;
 }

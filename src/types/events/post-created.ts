@@ -1,11 +1,7 @@
-import { BaseEvent } from "./base";
-
-export interface PostCreatedEvent extends BaseEvent {
-  type: "PostCreated";
+export interface PostCreatedEvent {
   postId: number;
   postType: string;
   postTitle: string;
   authorId: number;
   authorAlias: string;
-  createdAt: Date;
 }

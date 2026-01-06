@@ -75,6 +75,7 @@ jobs:
                   "POSTGRES_USER": "${{ secrets.POSTGRES_USER }}",
                   "POSTGRES_PASSWORD": "${{ secrets.POSTGRES_PASSWORD }}",
                   "POSTGRES_SSL": "${{ env.POSTGRES_SSL }}",
+                  "REDIS_URL": "${{ secrets.REDIS_URL }}",
                   "NEXTAUTH_SECRET": "${{ secrets.NEXTAUTH_SECRET }}",
                   "NEXTAUTH_URL": "${{ env.BASE_URL }}",
                   "EMAIL_PROVIDER": "${{ env.EMAIL_PROVIDER }}",

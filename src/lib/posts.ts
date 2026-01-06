@@ -159,38 +159,20 @@ export async function createPost({ title, contentId }: { title?: string; content
       [currentUserId, 'gps-photo', title || null]
     );
 
-    const postId = postRes.rows[0].id;
+    const postId = Number(postRes.rows[0].id);
 
     await query(
       `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
       [postId, contentId, 0]
     );
 
-    const connections = await getConnecters(currentUserId);
-
-    console.log('connections', connections);
-
-    for (const connection of connections) {
-      await createNotification(connection.id, "connection-created-gps-post", {
-        postId: postId,
-        authorId: user.userId,
-        authorAlias: user.alias,
-        postType: 'gps-photo',
-        title: title || '',
-      });
-    }
-
-    const event: PostCreatedEvent = {
-      type: "PostCreated",
+    await eventBus.publish('post', 'created', {
       postId,
       postType: 'gps-photo',
       postTitle: title || '',
       authorId: user.userId,
       authorAlias: user.alias,
-      createdAt: new Date(),
-    };
-
-    await eventBus.publish(event);
+    } as PostCreatedEvent);
   } catch (err) {
     logerror('createPost error', [err]);
     return false;
@@ -237,26 +219,15 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
       [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
     );
 
-    await createNotification(post!.userId, "gps-guess", {
-      postId: postId,
-      userId: userId,
-      userAlias: user.alias,
-      score: score,
-    });
-
-    const event: PostGuessedEvent = {
-      type: "PostGuessed",
-      postId,
-      guessType: 'gps-guess',
-      authorId: post!.userId,
-      authorAlias: post!.author,
-      userId: user.userId,
-      userAlias: user.alias,
-      score,
-      createdAt: new Date(),
-    };
-
-    await eventBus.publish(event);
+    await eventBus.publish('post', 'guessed', {
+        postId,
+        guessType: 'gps-guess',
+        authorId: post!.userId,
+        authorAlias: post!.author,
+        userId: user.userId,
+        userAlias: user.alias,
+        score,
+      } as PostGuessedEvent);
 
     return { id: data.rows[0].id };
   } catch (err) {
