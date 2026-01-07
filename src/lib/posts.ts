@@ -214,20 +214,28 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
 
     const post = await getPostById(postId);
 
+    const exists = await query(
+      `select id from post_guesses where post_id = $1 and user_id = $2 limit 1`,
+      [postId, userId]
+    );
+    if (exists?.rowCount ?? 0 > 0) {
+      return { id: exists.rows[0].id };
+    }
+
     const data = await query(
       `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,
       [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
     );
 
     await eventBus.publish('post', 'guessed', {
-        postId,
-        guessType: 'gps-guess',
-        authorId: post!.userId,
-        authorAlias: post!.author,
-        userId: user.userId,
-        userAlias: user.alias,
-        score,
-      } as PostGuessedEvent);
+      postId,
+      guessType: 'gps-guess',
+      authorId: post!.userId,
+      authorAlias: post!.author,
+      userId: user.userId,
+      userAlias: user.alias,
+      score,
+    } as PostGuessedEvent);
 
     return { id: data.rows[0].id };
   } catch (err) {

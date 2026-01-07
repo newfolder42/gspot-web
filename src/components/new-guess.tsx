@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
-import { calculateGuessScore } from '@/lib/gpsPhotoGuessScore';
+import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 
 declare global {
   interface Window {
@@ -30,6 +30,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
     const timer = setTimeout(() => {
       if (countdown === 1) {
         setCountdown(null);
+        setSubmitting(false);
         onSubmitted?.();
       } else {
         setCountdown(countdown - 1);
@@ -101,26 +102,13 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
     };
   }, []);
 
-  function haversineMeters(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
-    const toRad = (x: number) => x * Math.PI / 180;
-    const R = 6371000; // meters
-    const dLat = toRad(b.latitude - a.latitude);
-    const dLon = toRad(b.longitude - a.longitude);
-    const lat1 = toRad(a.latitude);
-    const lat2 = toRad(b.latitude);
-    const sinDLat = Math.sin(dLat / 2);
-    const sinDLon = Math.sin(dLon / 2);
-    const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon;
-    const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-    return Math.round(R * c);
-  }
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const res = await getPhotoCoordinates({ postId });
       if (res === null || !res.coordinates) {
+        setSubmitting(false);
         return;
       }
       const photoCoordinates = res.coordinates;
@@ -161,11 +149,13 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
           guessMarkerRef.current.setLngLat([selectedCoords.longitude, selectedCoords.latitude]);
         }
 
-        // Fit both markers in view
-        const bounds = new window.mapboxgl.LngLatBounds();
-        bounds.extend([lng, lat]);
-        bounds.extend([selectedCoords.longitude, selectedCoords.latitude]);
-        mapInstanceRef.current.fitBounds(bounds, { padding: 40, maxZoom: 16 });
+        // Fit both markers in view — build explicit SW/NE arrays to avoid
+        // LngLatLike coercion issues across mapbox versions.
+        const coordsA: [number, number] = [Number(lng), Number(lat)];
+        const coordsB: [number, number] = [Number(selectedCoords.longitude), Number(selectedCoords.latitude)];
+        const sw: [number, number] = [Math.min(coordsA[0], coordsB[0]), Math.min(coordsA[1], coordsB[1])];
+        const ne: [number, number] = [Math.max(coordsA[0], coordsB[0]), Math.max(coordsA[1], coordsB[1])];
+        mapInstanceRef.current.fitBounds([sw, ne], { padding: 40, maxZoom: 16 });
       }
 
       const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
@@ -175,9 +165,8 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
       setDistance(calculatedDistance);
       setCountdown(10);
     } catch (err) {
-      alert('Failed to post guess' + err);
-      setSubmitting(false);
-    } finally {
+      alert('შეცდომა დაფიქსირდა, გთხოვ დაარეფრეშო გვერდი');
+      console.error('Error submitting guess', err);
       setSubmitting(false);
     }
   };
@@ -206,7 +195,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
             <span className="ml-3 font-semibold text-blue-600 dark:text-blue-400">
               მანძილი: {distance} მ
               {countdown !== null && (
-                <span className="ml-2 text-zinc-400">({countdown}s)</span>
+                <span className="ml-2 text-zinc-400">({countdown}წ)</span>
               )}
             </span>
           )}
