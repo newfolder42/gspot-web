@@ -159,7 +159,7 @@ export async function createPost({ title, contentId }: { title?: string; content
       [currentUserId, 'gps-photo', title || null]
     );
 
-    const postId = Number(postRes.rows[0].id);
+    const postId = postRes.rows[0].id;
 
     await query(
       `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
@@ -167,10 +167,10 @@ export async function createPost({ title, contentId }: { title?: string; content
     );
 
     await eventBus.publish('post', 'created', {
-      postId,
+      postId: +postId,
       postType: 'gps-photo',
       postTitle: title || '',
-      authorId: user.userId,
+      authorId: +user.userId,
       authorAlias: user.alias,
     } as PostCreatedEvent);
   } catch (err) {
@@ -228,11 +228,11 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     );
 
     await eventBus.publish('post', 'guessed', {
-      postId,
+      postId: +postId,
       guessType: 'gps-guess',
-      authorId: post!.userId,
+      authorId: +post!.userId,
       authorAlias: post!.author,
-      userId: user.userId,
+      userId: +user.userId,
       userAlias: user.alias,
       score,
     } as PostGuessedEvent);
