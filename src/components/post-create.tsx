@@ -18,7 +18,13 @@ interface UploadedPhoto {
     latitude: number | null;
     longitude: number | null;
   } | null;
+  processingGPS?: boolean;
 }
+
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
 
 export default function CreatePost() {
   const [photo, setPhoto] = useState<UploadedPhoto | null>(null);
@@ -40,24 +46,30 @@ export default function CreatePost() {
       setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
       return;
     }
-    const coordinates = await extractGPSCorrdinates(file);
+
+    const isMobile = isMobileDevice();
+    let coordinates = null;
     const dateTaken = await extractDateTaken(file);
 
-    if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
-      setError('სურათზე არ მოიძებნა GPS თაგები.');
-      return;
-    }
+    if (!isMobile) {
+      coordinates = await extractGPSCorrdinates(file);
 
-    const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
+      if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
+        setError('სურათზე არ მოიძებნა GPS თაგები.');
+        return;
+      }
 
-    if (!isInGeorgia) {
-      setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
-      return;
+      const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
+
+      if (!isInGeorgia) {
+        setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
+        return;
+      }
     }
 
     let processedFile = file;
 
-    if (file.type === 'image/png' || file.type === 'image/jpeg') {
+    if (!isMobile && (file.type === 'image/png' || file.type === 'image/jpeg')) {
       setUploading(true);
 
       try {
@@ -101,6 +113,7 @@ export default function CreatePost() {
               if (content == null) {
                 throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
               }
+              
               const newPhoto: UploadedPhoto = {
                 key: undefined,
                 contentId: content.id,
@@ -109,7 +122,9 @@ export default function CreatePost() {
                 size: processedFile.size,
                 uploadedAt: new Date(),
                 coordinates: coordinates,
+                processingGPS: isMobile,
               };
+
               setPhoto(newPhoto);
               if (fileInputRef.current) {
                 fileInputRef.current.value = '';
@@ -182,7 +197,8 @@ export default function CreatePost() {
               if (!photo.contentId) return setLocalError('Uploaded photo missing content id');
               setCreating(true);
               try {
-                await createPost({ title: title.trim(), contentId: photo.contentId });
+                const status = photo.processingGPS ? 'processing' : 'published';
+                await createPost({ title: title.trim(), contentId: photo.contentId, status });
                 window.location.reload();
               } catch (err) {
                 setLocalError(err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
@@ -275,7 +291,7 @@ export default function CreatePost() {
                       {photo.filename}
                     </p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
+                      {(photo.size / 1024).toFixed(2)} კბ • {photo.processingGPS ? '🔄 GPS-ის ამოღება...' : photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
                     </p>
                   </div>
                 </div>

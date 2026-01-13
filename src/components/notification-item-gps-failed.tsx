@@ -1,6 +1,6 @@
 "use client";
 
-import { NotificationGpsGuessDetailsType, NotificationType } from "@/actions/notifications";
+import { NotificationGpsPostPublishFailedDetailsType, NotificationType } from "@/actions/notifications";
 import { useRouter } from "next/navigation";
 
 type NotificationItemProps = {
@@ -10,13 +10,13 @@ type NotificationItemProps = {
 
 const MAX_DETAIL_LENGTH = 80;
 
-export default function NotificationItemGpsGuess({
+export default function NotificationItemGpsPostFailed({
   notification,
   onClick,
 }: NotificationItemProps) {
   const router = useRouter();
-  const details = notification.details as NotificationGpsGuessDetailsType;
-  const formattedMessage = `შენს პოსტზე სცადეს გამოცნობა (${details.score} ქულა)`;
+  const details = notification.details as NotificationGpsPostPublishFailedDetailsType;
+  const formattedMessage = `შენს პოსტი "${details.title}" ვერ განთავსდა (${details.reason}`;
   const truncatedDetails =
     formattedMessage.length > MAX_DETAIL_LENGTH
       ? formattedMessage.slice(0, MAX_DETAIL_LENGTH) + "..."

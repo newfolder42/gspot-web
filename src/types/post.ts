@@ -5,6 +5,7 @@ export type PostType = {
   userId: number;
   author: string;
   date: string;
+  status: 'processing' | 'published' | 'failed';
 };
 
 export enum DifficultyLevel {

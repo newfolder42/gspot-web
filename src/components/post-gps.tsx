@@ -11,6 +11,16 @@ export function GpsPost({ post }: { post: GpsPostType }) {
           <div className="flex items-baseline gap-2">
             <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
             <div className="text-xs text-zinc-400">{new Date(post.date).toLocaleString('ka-GE')}</div>
+                {post.status === 'failed' && (
+                  <svg
+                    className="w-3 h-3 text-rose-600"
+                    viewBox="0 0 12 12"
+                    aria-label="Post failed"
+                    role="img"
+                  >
+                    <circle cx="6" cy="6" r="5.5" fill="currentColor" />
+                  </svg>
+                )}
           </div>
           <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
           {post.dateTaken && (

@@ -29,7 +29,6 @@ export async function extractGPSCorrdinates(file: File) {
       longitude = gps.longitude;
     } else {
       const all = await exifr.parse(file);
-      alert('all tags' + JSON.stringify(all));
       if (all?.GPSLatitude && all?.GPSLongitude) {
         latitude = all.GPSLatitude ?? null;
         longitude = all.GPSLongitude ?? null;

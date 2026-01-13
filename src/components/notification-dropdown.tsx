@@ -3,21 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import NotificationItemGpsGuess from "./notification-item-gps-guess";
 import NotificationSkeleton from "./notification-skeleton";
-import { loadNotifications, markAsRead, markAsUnread } from "@/actions/notifications";
-import { formatRelative } from "@/lib/dates";
+import { loadNotifications, markAsRead, markAsUnread, NotificationType } from "@/actions/notifications";
 import NotificationItemConnectionPost from "./notification-item-connection-post";
-
-type Notification = {
-  id: string;
-  type: 'gps-guess' | 'connection-created-gps-post';
-  user: {
-    userId: number;
-    alias: string;
-  };
-  details: string;
-  timestamp?: string;
-  seen: boolean;
-};
+import NotificationItemGpsPostFailed from "./notification-item-gps-failed";
 
 type Props = {
   user: {
@@ -29,26 +17,14 @@ type Props = {
 export default function NotificationDropdown({ user }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
   const [badgeLoading, setBadgeLoading] = useState(false);
 
-  // Load notifications (fetch + map) and return data
-  const getNotifications = useCallback(async (): Promise<Notification[]> => {
+  const getNotifications = useCallback(async (): Promise<NotificationType[]> => {
     try {
-      const notifications = await loadNotifications(user.userId);
-      return notifications.map((n) => ({
-        id: n.id,
-        type: n.type,
-        user: {
-          userId: n.userId ?? 0,
-          alias: n.userAlias || "User",
-        },
-        details: n.details,
-        timestamp: formatRelative(n.createdAt || undefined),
-        seen: n.seen,
-      }as Notification))
+      return await loadNotifications(user.userId);
     } catch (err) {
       console.error("Failed to load notifications", err);
       return [];
@@ -132,7 +108,6 @@ export default function NotificationDropdown({ user }: Props) {
   };
 
   const handleNotificationClick = async (notificationId: string) => {
-    // Mark as read if not already seen
     const notification = notifications.find(n => n.id === notificationId);
     if (notification && !notification.seen) {
       await handleMarkAsRead(notificationId);
@@ -149,7 +124,6 @@ export default function NotificationDropdown({ user }: Props) {
     try {
       const res = await markAsRead(user.userId, notificationId);
       if (res.ok) {
-        // Update local state to mark as read
         setNotifications((prev) =>
           prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n))
         );
@@ -235,18 +209,17 @@ export default function NotificationDropdown({ user }: Props) {
                     )}
 
                     {notification.type == "gps-guess" && <NotificationItemGpsGuess
-                      id={notification.id}
-                      user={notification.user}
-                      details={notification.details}
-                      timestamp={notification.timestamp}
+                      notification={notification}
                       onClick={handleNotificationClick}
                     />}
                     
                     {notification.type == "connection-created-gps-post" && <NotificationItemConnectionPost
-                      id={notification.id}
-                      user={notification.user}
-                      details={notification.details}
-                      timestamp={notification.timestamp}
+                      notification={notification}
+                      onClick={handleNotificationClick}
+                    />}
+                    
+                    {notification.type == "gps-post-failed" && <NotificationItemGpsPostFailed
+                      notification={notification}
                       onClick={handleNotificationClick}
                     />}
                     {/* Three-dots action trigger moved into dropdown wrapper */}

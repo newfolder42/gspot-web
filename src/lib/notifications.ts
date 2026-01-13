@@ -6,7 +6,7 @@ export type NotificationRecord = {
   userId: number;
   userAlias?: string;
   type: string;
-  details: any;
+  details: string;
   createdAt: Date;
   seen: number | null;
   seenAt: Date | null;

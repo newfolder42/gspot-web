@@ -5,8 +5,6 @@ import { getCurrentUser } from './session';
 import { logerror } from './logger';
 import type { GpsPostType } from '@/types/post';
 import type { PostGuessType } from '@/types/post-guess';
-import { createNotification } from './notifications';
-import { getConnecters } from './connections';
 import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
@@ -14,13 +12,13 @@ import { PostGuessedEvent } from '@/types/events/post-guessed';
 export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where ucn.user_id = $2
+where ucn.user_id = $2 and p.status in ('published')
 order by p.created_at desc
 limit $1`,
       [limit, accountUserId]
@@ -34,6 +32,7 @@ limit $1`,
       date: r.created_at,
       userId: r.user_id,
       image: r.image_url,
+      status: r.status,
     }));
   } catch (err) {
     logerror('getConnectionsPosts error', [err]);
@@ -44,7 +43,7 @@ limit $1`,
 export async function getAccountPosts(userId: number, accountUserId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -64,6 +63,7 @@ limit $1`,
       userId: r.user_id,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
+      status: r.status,
     }));
   } catch (err) {
     logerror('getAccountPosts error', [err]);
@@ -74,11 +74,12 @@ limit $1`,
 export async function getGlobalPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
+where p.status = 'published'
 order by p.created_at desc
 limit $1`,
       [limit]
@@ -93,6 +94,7 @@ limit $1`,
       userId: r.user_id,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
+      status: r.status,
     }));
   } catch (err) {
     logerror('getGlobalPosts error', [err]);
@@ -100,7 +102,40 @@ limit $1`,
   }
 }
 
-export async function getPostById(id: number): Promise<GpsPostType | null> {
+export async function getPostForView(userId: number, id: number): Promise<GpsPostType | null> {
+  try {
+    const res = await query(
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
+from posts p
+join post_content pc on p.id = pc.post_id
+join users u on u.id = p.user_id
+join user_content uc on uc.id = pc.content_id
+where p.id = $1 and ($2 = p.user_id or p.status in ('published'))
+order by pc.sort
+limit 1`,
+      [id, userId]
+    );
+
+    if (res.rowCount === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      date: r.created_at,
+      userId: r.user_id,
+      author: r.author_alias,
+      image: r.image_url || null,
+      dateTaken: r.details?.dateTaken || null,
+      status: r.status,
+    };
+  } catch (err) {
+    logerror('getPostForView error', [err]);
+    return null;
+  }
+}
+
+async function getPostById(id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
@@ -108,7 +143,7 @@ from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.id = pc.content_id
-where p.id = $1
+where p.id = $1 and p.status in ('published')
 order by pc.sort
 limit 1`,
       [id]
@@ -125,6 +160,7 @@ limit 1`,
       author: r.author_alias,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
+      status: r.status,
     };
   } catch (err) {
     logerror('getPostById error', [err]);
@@ -148,15 +184,15 @@ where pg.post_id = $1 and pg.user_id = $2`,
   }
 }
 
-export async function createPost({ title, contentId }: { title?: string; contentId: number }) {
+export async function createPost({ title, contentId, status = 'published' }: { title?: string; contentId: number; status?: 'processing' | 'published' | 'failed' }) {
   try {
     const user = await getCurrentUser();
     if (!user) return;
     const currentUserId = user.userId;
 
     const postRes = await query(
-      `INSERT INTO posts (user_id, type, title) VALUES ($1, $2, $3) RETURNING id`,
-      [currentUserId, 'gps-photo', title || null]
+      `INSERT INTO posts (user_id, type, title, status) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [currentUserId, 'gps-photo', title || null, status]
     );
 
     const postId = postRes.rows[0].id;
@@ -166,7 +202,7 @@ export async function createPost({ title, contentId }: { title?: string; content
       [postId, contentId, 0]
     );
 
-    await eventBus.publish('post', 'created', {
+    await eventBus.publish('post', status, {
       postId: +postId,
       postType: 'gps-photo',
       postTitle: title || '',
