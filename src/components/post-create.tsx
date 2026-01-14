@@ -249,7 +249,6 @@ export default function CreatePost() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileChange}
         disabled={uploading}
         className="hidden"
