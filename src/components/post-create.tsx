@@ -48,28 +48,29 @@ export default function CreatePost() {
     }
 
     const isMobile = isMobileDevice();
-    let coordinates = null;
+
+    const coordinates = await extractGPSCorrdinates(file);
     const dateTaken = await extractDateTaken(file);
 
-    if (!isMobile) {
-      coordinates = await extractGPSCorrdinates(file);
-
-      if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
+    if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
+      if (isMobile) {
+        setError('სურათზე არ მოიძებნა GPS თაგები. გამოიყენეთ კამერა გადასაღებად, არა გალერეა. (მობილური ბრაუზერი შლის GPS მონაცემებს დაცვის მიზნით)');
+      } else {
         setError('სურათზე არ მოიძებნა GPS თაგები.');
-        return;
       }
+      return;
+    }
 
-      const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
+    const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
 
-      if (!isInGeorgia) {
-        setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
-        return;
-      }
+    if (!isInGeorgia) {
+      setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
+      return;
     }
 
     let processedFile = file;
 
-    if (!isMobile && (file.type === 'image/png' || file.type === 'image/jpeg')) {
+    if (file.type === 'image/png' || file.type === 'image/jpeg') {
       setUploading(true);
 
       try {
@@ -122,7 +123,6 @@ export default function CreatePost() {
                 size: processedFile.size,
                 uploadedAt: new Date(),
                 coordinates: coordinates,
-                processingGPS: isMobile,
               };
 
               setPhoto(newPhoto);
@@ -155,7 +155,7 @@ export default function CreatePost() {
     const [localError, setLocalError] = useState<string | null>(null);
     const [showInfo, setShowInfo] = useState(false);
 
-    const disabled = creating || uploading || !photo || title.trim() === '';
+    const disabled = creating || uploading || !photo || title.trim() === '' || !photo.coordinates;
 
     return (
       <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
@@ -195,10 +195,10 @@ export default function CreatePost() {
               setLocalError(null);
               if (!photo) return setLocalError('No uploaded photo');
               if (!photo.contentId) return setLocalError('Uploaded photo missing content id');
+              if (!photo.coordinates) return setLocalError('GPS coordinates required');
               setCreating(true);
               try {
-                const status = photo.processingGPS ? 'processing' : 'published';
-                await createPost({ title: title.trim(), contentId: photo.contentId, status });
+                await createPost({ title: title.trim(), contentId: photo.contentId });
                 window.location.reload();
               } catch (err) {
                 setLocalError(err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
@@ -216,6 +216,7 @@ export default function CreatePost() {
             <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
             <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
             <p>• GPS თაგები სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
+            <p>• <strong>მობილურზე:</strong> გამოიყენეთ კამერა, არა გალერეა - ბრაუზერი შლის GPS მონაცემებს!</p>
             <p>• არ გამოიყენოთ გადაზუმული ან შემთხვევითი ფოტო - უნდა ჩანს ამოსაცნობი ადგილი.</p>
             <p>• უპირატესობა მიანიჭე გრძივად გადაღებულ სურათებს.</p>
           </div>
@@ -249,6 +250,7 @@ export default function CreatePost() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         onChange={handleFileChange}
         disabled={uploading}
         className="hidden"
@@ -290,7 +292,7 @@ export default function CreatePost() {
                       {photo.filename}
                     </p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {(photo.size / 1024).toFixed(2)} კბ • {photo.processingGPS ? '🔄 GPS-ის ამოღება...' : photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
+                      {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
                     </p>
                   </div>
                 </div>
