@@ -4,12 +4,13 @@ import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen }
 
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed';
+  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following';
   user: {
     userId: number;
     alias: string;
   };
-  details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType | NotificationGpsPostPublishFailedDetailsType;
+  details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType
+  | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType;
   timestamp: string | null;
   seen: boolean;
 };
@@ -36,6 +37,12 @@ export type NotificationGpsPostPublishFailedDetailsType = {
   postType: string,
   title: string,
   reason: string,
+}
+
+export type NotificationUserStartedFollowingDetailsType = {
+  id: number,
+  followerId: number,
+  followerAlias: string,
 }
 
 // Normalize `details` to a plain object regardless of input shape.
@@ -66,7 +73,7 @@ export async function loadNotifications(userId: number, limit = 10): Promise<Not
     const mapped = rows.map((row) => {
       const notif = {
         id: String(row.id),
-        type: row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed',
+        type: row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following',
         user: {
           userId: row.userId,
           alias: row.userAlias || "User",

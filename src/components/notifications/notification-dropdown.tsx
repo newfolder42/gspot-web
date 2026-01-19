@@ -6,6 +6,7 @@ import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread, NotificationType } from "@/actions/notifications";
 import NotificationItemConnectionPost from "./notification-item-connection-post";
 import NotificationItemGpsPostFailed from "./notification-item-gps-failed";
+import NotificationItemUserStartedFollowing from "./notification-item-user-started-following";
 
 type Props = {
   user: {
@@ -212,13 +213,18 @@ export default function NotificationDropdown({ user }: Props) {
                       notification={notification}
                       onClick={handleNotificationClick}
                     />}
-                    
+
                     {notification.type == "connection-created-gps-post" && <NotificationItemConnectionPost
                       notification={notification}
                       onClick={handleNotificationClick}
                     />}
-                    
+
                     {notification.type == "gps-post-failed" && <NotificationItemGpsPostFailed
+                      notification={notification}
+                      onClick={handleNotificationClick}
+                    />}
+
+                    {notification.type == "user-started-following" && <NotificationItemUserStartedFollowing
                       notification={notification}
                       onClick={handleNotificationClick}
                     />}

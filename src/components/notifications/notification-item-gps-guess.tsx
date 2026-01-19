@@ -24,7 +24,7 @@ export default function NotificationItemGpsGuess({
 
   const handleClick = () => {
     router.push(`/post/${details.postId}`);
-    onClick?.(details.postId.toString());
+    onClick?.(notification.id.toString());
   };
 
   return (

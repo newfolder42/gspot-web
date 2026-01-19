@@ -1,6 +1,6 @@
 "use client";
 
-import { NotificationGpsPostPublishFailedDetailsType, NotificationType } from "@/actions/notifications";
+import { NotificationType, NotificationUserStartedFollowingDetailsType } from "@/actions/notifications";
 import { useRouter } from "next/navigation";
 
 type NotificationItemProps = {
@@ -10,21 +10,21 @@ type NotificationItemProps = {
 
 const MAX_DETAIL_LENGTH = 80;
 
-export default function NotificationItemGpsPostFailed({
+export default function NotificationItemGpsGuess({
   notification,
   onClick,
 }: NotificationItemProps) {
   const router = useRouter();
-  const details = notification.details as NotificationGpsPostPublishFailedDetailsType;
-  const formattedMessage = `შენს პოსტი "${details.title}" ვერ განთავსდა (${details.reason}`;
+  const details = notification.details as NotificationUserStartedFollowingDetailsType;
+  const formattedMessage = `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი ${details.followerAlias}`;
   const truncatedDetails =
     formattedMessage.length > MAX_DETAIL_LENGTH
       ? formattedMessage.slice(0, MAX_DETAIL_LENGTH) + "..."
       : formattedMessage;
 
   const handleClick = () => {
-    router.push(`/post/${details.postId}`);
-    onClick?.(details.postId.toString());
+    router.push(`/account/${details.followerAlias}`);
+    onClick?.(notification.id.toString());
   };
 
   return (
@@ -33,10 +33,10 @@ export default function NotificationItemGpsPostFailed({
       className="group p-2 px-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
     >
       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 group-hover:text-zinc-950 dark:group-hover:text-white">
-        {details.userAlias}
+        {details.followerAlias}
       </p>
       <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 mt-1 line-clamp-2">
-        {truncatedDetails}
+        {formattedMessage}
       </p>
       {notification.timestamp && (
         <p className="text-xs text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 mt-1">

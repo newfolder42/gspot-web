@@ -4,7 +4,7 @@ import SignInButton from "./common/signin-button";
 import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
 import HeaderSearch from "./header-search";
-import NotificationDropdown from "./notification-dropdown";
+import NotificationDropdown from "./notifications/notification-dropdown";
 import { getCurrentUser } from "@/lib/session";
 import { APP_NAME } from "@/lib/constants";
 

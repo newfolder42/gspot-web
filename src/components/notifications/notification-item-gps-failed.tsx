@@ -1,6 +1,6 @@
 "use client";
 
-import { NotificationConnectionPublishedGpsPostDetailsType, NotificationType } from "@/actions/notifications";
+import { NotificationGpsPostPublishFailedDetailsType, NotificationType } from "@/actions/notifications";
 import { useRouter } from "next/navigation";
 
 type NotificationItemProps = {
@@ -10,24 +10,13 @@ type NotificationItemProps = {
 
 const MAX_DETAIL_LENGTH = 80;
 
-const formatConnectionPostMessage = (details: string): string => {
-  try {
-    const parsed = JSON.parse(details);
-    const { authorAlias, title } = parsed;
-
-    return `${authorAlias}-მა დაპოსტა: ${title}`;
-  } catch {
-    return details;
-  }
-};
-
-export default function NotificationItemConnectionPost({
+export default function NotificationItemGpsPostFailed({
   notification,
   onClick,
 }: NotificationItemProps) {
   const router = useRouter();
-  const details = notification.details as NotificationConnectionPublishedGpsPostDetailsType;
-  const formattedMessage = `${details.userAlias}-მა დაპოსტა: ${details.title}`;
+  const details = notification.details as NotificationGpsPostPublishFailedDetailsType;
+  const formattedMessage = `შენს პოსტი "${details.title}" ვერ განთავსდა (${details.reason}`;
   const truncatedDetails =
     formattedMessage.length > MAX_DETAIL_LENGTH
       ? formattedMessage.slice(0, MAX_DETAIL_LENGTH) + "..."
@@ -35,7 +24,7 @@ export default function NotificationItemConnectionPost({
 
   const handleClick = () => {
     router.push(`/post/${details.postId}`);
-    onClick?.(details.postId.toString());
+    onClick?.(notification.id.toString());
   };
 
   return (

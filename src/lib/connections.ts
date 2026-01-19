@@ -1,6 +1,8 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
 import type { ClientConnection } from '@/types/client-connection';
+import { eventBus } from './eventBus';
+import { UserConnectionCreatedEvent } from '@/types/events/user-connection-created';
 
 export async function getConnectionsForUserByAlias(userName: string): Promise<ClientConnection[]> {
   try {
@@ -74,6 +76,14 @@ export async function createConnection(userId: number, targetId: number, type = 
   try {
     const res = await query('INSERT INTO user_connections (user_id, type, connection_id) VALUES ($1, $2, $3) RETURNING id',
       [userId, type, targetId]);
+
+    await eventBus.publish('user_connection', 'created', {
+      id: +res.rows[0].id,
+      type: type,
+      userId: +userId,
+      connectionId: +targetId,
+    } as UserConnectionCreatedEvent);
+    
     return res.rows[0] ?? null;
   } catch (err) {
     logerror('createConnection error', [err]);
