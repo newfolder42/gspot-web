@@ -59,8 +59,8 @@ const Header = async ({ image, headers }: HeaderProps) => {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <NotificationDropdown user={user}/>
                 <AccountMenu user={user} />
+                <NotificationDropdown user={user}/>
               </>
             ) : (
               <>

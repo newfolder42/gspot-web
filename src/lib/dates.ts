@@ -19,9 +19,9 @@ export function formatAge(days: number): string {
   return `${remDays}დღე`;
 }
 
-export function formatRelative(iso?: string): string {
+export function formatTimePassed(iso: string | Date | null): string {
   if (!iso) return "";
-  const date = new Date(iso);
+  const date = iso instanceof Date ? iso : new Date(iso);
   const diff = Date.now() - date.getTime();
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return "ახლახანს";

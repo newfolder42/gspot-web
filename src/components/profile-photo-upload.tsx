@@ -92,7 +92,7 @@ export default function ProfilePhotoUpload() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 w-96 border border-zinc-200 dark:border-zinc-700">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">პროფილის სურათის შეცვლა</h2>
 

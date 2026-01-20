@@ -1,12 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import NotificationItemGpsGuess from "./notification-item-gps-guess";
+import { useRouter } from "next/navigation";
 import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread, NotificationType } from "@/actions/notifications";
-import NotificationItemConnectionPost from "./notification-item-connection-post";
-import NotificationItemGpsPostFailed from "./notification-item-gps-failed";
-import NotificationItemUserStartedFollowing from "./notification-item-user-started-following";
+import { formatTimePassed } from "@/lib/dates";
 
 type Props = {
   user: {
@@ -16,12 +14,14 @@ type Props = {
 };
 
 export default function NotificationDropdown({ user }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
   const [badgeLoading, setBadgeLoading] = useState(false);
+  const unseenCount = notifications.reduce((acc, n) => acc + (n.seen ? 0 : 1), 0);
 
   const getNotifications = useCallback(async (): Promise<NotificationType[]> => {
     try {
@@ -62,37 +62,6 @@ export default function NotificationDropdown({ user }: Props) {
       cancelled = true;
     };
   }, [getNotifications]);
-
-  // Refresh notifications every minute only when tab is visible
-  // useEffect(() => {
-  //   const refresh = () => {
-  //     setBadgeLoading(true);
-  //     getNotifications()
-  //       .then(setNotifications)
-  //       .finally(() => setBadgeLoading(false));
-  //   };
-
-  //   const refreshIfVisible = () => {
-  //     if (document.visibilityState === "visible") {
-  //       refresh();
-  //     }
-  //   };
-
-  //   // Refresh immediately when tab becomes visible
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === "visible") {
-  //       refresh();
-  //     }
-  //   };
-
-  //   const id = window.setInterval(refreshIfVisible, 60_000);
-  //   document.addEventListener("visibilitychange", handleVisibilityChange);
-
-  //   return () => {
-  //     clearInterval(id);
-  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
-  //   };
-  // }, []);
 
   // Simulate loading notifications
   const handleOpen = () => {
@@ -139,7 +108,7 @@ export default function NotificationDropdown({ user }: Props) {
     try {
       const res = await markAsUnread(user.userId, notificationId);
       if (res.ok) {
-        // Update local state to mark as read
+        // Update local state to mark as unread
         setNotifications((prev) =>
           prev.map((n) => (n.id === notificationId ? { ...n, seen: false } : n))
         );
@@ -175,15 +144,12 @@ export default function NotificationDropdown({ user }: Props) {
 
         {/* Notification badge / loading spinner */}
         {loading || badgeLoading ? (
-          <span className="absolute top-1 right-1 h-3 w-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin transform translate-x-1/2 -translate-y-1/2" />
-        ) : (() => {
-          const unseenCount = notifications.filter(n => !n.seen).length;
-          return unseenCount > 0 ? (
-            <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-              {unseenCount > 9 ? "9+" : unseenCount}
-            </span>
-          ) : null;
-        })()}
+          <span className="absolute top-1 right-1 h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin transform translate-x-1/2 -translate-y-1/2" />
+        ) : unseenCount > 0 ? (
+          <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-blue-600 rounded-full">
+            {unseenCount > 9 ? "9+" : unseenCount}
+          </span>
+        ) : null}
       </button>
 
       {/* Notification Dropdown Panel */}
@@ -203,35 +169,37 @@ export default function NotificationDropdown({ user }: Props) {
             ) : notifications.length > 0 ? (
               <div className="space-y-2">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="relative">
+                  <div key={notification.id} className="relative group p-2 px-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
                       <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-blue-600 z-10" />
                     )}
 
-                    {notification.type == "gps-guess" && <NotificationItemGpsGuess
-                      notification={notification}
-                      onClick={handleNotificationClick}
-                    />}
+                    <div
+                      onClick={() => {
+                        const route = notification.getRoute();
+                        if (route) {
+                          router.push(route);
+                        }
+                        handleNotificationClick(notification.id);
+                      }}
+                    >
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 mt-1 line-clamp-2">
+                        {notification.getContent()}
+                      </p>
+                    </div>
 
-                    {notification.type == "connection-created-gps-post" && <NotificationItemConnectionPost
-                      notification={notification}
-                      onClick={handleNotificationClick}
-                    />}
+                    {/* Timestamp */}
+                    {notification.timestamp && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                        {formatTimePassed(notification.timestamp)}
+                      </p>
+                    )}
 
-                    {notification.type == "gps-post-failed" && <NotificationItemGpsPostFailed
-                      notification={notification}
-                      onClick={handleNotificationClick}
-                    />}
-
-                    {notification.type == "user-started-following" && <NotificationItemUserStartedFollowing
-                      notification={notification}
-                      onClick={handleNotificationClick}
-                    />}
                     {/* Three-dots action trigger moved into dropdown wrapper */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMenuToggle(notification.id); }}
-                      className="absolute right-2 top-2 p-1 rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer z-20"
+                      className="absolute right-2 top-2 p-1 rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer z-20"
                       aria-label="notification menu"
                     >
                       <svg

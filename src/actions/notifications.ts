@@ -2,7 +2,7 @@
 
 import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen } from "@/lib/notifications";
 
-export type NotificationType = {
+export interface NotificationType {
   id: string;
   type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following';
   user: {
@@ -11,9 +11,11 @@ export type NotificationType = {
   };
   details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType
   | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType;
-  timestamp: string | null;
+  timestamp: Date | null;
   seen: boolean;
-};
+  getContent(): string;
+  getRoute(): string | null;
+}
 
 export type NotificationGpsGuessDetailsType = {
   postId: number,
@@ -71,26 +73,76 @@ export async function loadNotifications(userId: number, limit = 10): Promise<Not
     const rows = await getNotificationsForUser(userId, limit);
 
     const mapped = rows.map((row) => {
-      const notif = {
+      const type = row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following';
+      const details = normalizeDetails(row.details);
+
+      const notif: NotificationType = {
         id: String(row.id),
-        type: row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following',
+        type,
         user: {
           userId: row.userId,
           alias: row.userAlias || "User",
         },
-        timestamp: row.createdAt ? new Date(row.createdAt).toISOString() : new Date().toISOString(),
+        timestamp: row.createdAt ? row.createdAt : new Date(),
         seen: row.seen === 1,
+        details,
+        getContent: () => getNotificationContentMessage(type, details),
+        getRoute: () => getNotificationRoute(type, details),
       };
 
-      // Treat details uniformly; components can discriminate by `type`
-      const details = normalizeDetails(row.details);
-      return { ...notif, details };
+      return notif;
     });
 
     return mapped;
   }
   catch {
     return [];
+  }
+}
+
+function getNotificationContentMessage(type: NotificationType['type'], details: NotificationType['details']): string {
+  switch (type) {
+    case 'gps-guess': {
+      const d = details as NotificationGpsGuessDetailsType;
+      return `შენს პოსტზე სცადეს გამოცნობა (${d.score} ქულა)`;
+    }
+    case 'connection-created-gps-post': {
+      const d = details as NotificationConnectionPublishedGpsPostDetailsType;
+      return `${d.userAlias}-მა დაპოსტა: ${d.title}`;
+    }
+    case 'gps-post-failed': {
+      const d = details as NotificationGpsPostPublishFailedDetailsType;
+      return `შენს პოსტი "${d.title}" ვერ განთავსდა (${d.reason}`;
+    }
+    case 'user-started-following': {
+      const d = details as NotificationUserStartedFollowingDetailsType;
+      return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი ${d.followerAlias}`;
+    }
+    default:
+      return "ახალი შეტყობინება";
+  }
+}
+
+function getNotificationRoute(type: NotificationType['type'], details: NotificationType['details']): string | null {
+  switch (type) {
+    case 'gps-guess': {
+      const d = details as NotificationGpsGuessDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'connection-created-gps-post': {
+      const d = details as NotificationConnectionPublishedGpsPostDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'gps-post-failed': {
+      const d = details as NotificationGpsPostPublishFailedDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'user-started-following': {
+      const d = details as NotificationUserStartedFollowingDetailsType;
+      return `/account/${d.followerAlias}`;
+    }
+    default:
+      return null;
   }
 }
 
