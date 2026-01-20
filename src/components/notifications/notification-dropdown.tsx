@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificationSkeleton from "./notification-skeleton";
-import { loadNotifications, markAsRead, markAsUnread, NotificationType } from "@/actions/notifications";
+import { loadNotifications, markAsRead, markAsUnread } from "@/actions/notifications";
 import { formatTimePassed } from "@/lib/dates";
+import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
 
 type Props = {
   user: {
@@ -177,7 +178,7 @@ export default function NotificationDropdown({ user }: Props) {
 
                     <div
                       onClick={() => {
-                        const route = notification.getRoute();
+                        const route = getNotificationRoute(notification.type, notification.details);
                         if (route) {
                           router.push(route);
                         }
@@ -185,7 +186,7 @@ export default function NotificationDropdown({ user }: Props) {
                       }}
                     >
                       <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 mt-1 line-clamp-2">
-                        {notification.getContent()}
+                        {getNotificationContentMessage(notification.type, notification.details)}
                       </p>
                     </div>
 
