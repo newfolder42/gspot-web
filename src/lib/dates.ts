@@ -31,3 +31,15 @@ export function formatTimePassed(iso: string | Date | null): string {
   const days = Math.floor(hours / 24);
   return `${days}დღის წინ`;
 };
+
+export function formatActionDate(iso: string | Date | null): string {
+  if (!iso) return '';
+  const date = iso instanceof Date ? iso : new Date(iso);
+  return date.toLocaleString('ka-GE', { timeZone: 'Asia/Tbilisi' });
+}
+
+export function formatPhotoTakenDate(iso: string | Date | null): string {
+  if (!iso) return '';
+  const date = iso instanceof Date ? iso : new Date(iso);
+  return date.toLocaleDateString('ka-GE')
+}

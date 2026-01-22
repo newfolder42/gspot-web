@@ -7,21 +7,8 @@ import { logerror } from './logger';
 import { createOTP } from './otp';
 import { sendOTPEmail } from './email';
 
-const PENDING_REGISTRATION_EXPIRY_HOURS = 24;
-
 function isEmail(s: string) {
   return typeof s === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
-}
-
-async function cleanupExpiredPendingRegistrations() {
-  try {
-    await query(
-      `DELETE FROM pending_registrations 
-             WHERE created_at < NOW() - INTERVAL '${PENDING_REGISTRATION_EXPIRY_HOURS} hours'`
-    );
-  } catch (err) {
-    logerror('cleanup expired pending registrations error:', [err]);
-  }
 }
 
 async function isEmailOrAliasInUsers(email: string, alias: string): Promise<boolean> {
@@ -79,8 +66,6 @@ export async function signup(user: UserToRegister) {
   if (typeof password !== 'string' || password.length < 6) throw new Error('INVALID_INPUT');
 
   try {
-    await cleanupExpiredPendingRegistrations();
-
     const userExists = await isEmailOrAliasInUsers(email, alias);
     if (userExists) throw new Error('USER_EXISTS');
 

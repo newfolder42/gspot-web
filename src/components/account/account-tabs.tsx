@@ -26,7 +26,7 @@ export default function AccountTabs({ tabs }: Props) {
             key={tab.id}
             href={tab.href}
             aria-current={isActive ? 'page' : undefined}
-            className="group relative inline-flex items-center px-1 py-3 text-sm font-medium"
+            className="group inline-flex items-center px-1 py-3 text-sm font-medium"
           >
             <span
               className={

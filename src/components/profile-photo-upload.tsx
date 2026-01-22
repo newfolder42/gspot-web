@@ -2,13 +2,14 @@
 
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 export default function ProfilePhotoUpload() {
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,7 +93,13 @@ export default function ProfilePhotoUpload() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div
+          ref={overlayRef}
+          onMouseDown={(e) => {
+            if (overlayRef.current && e.target === overlayRef.current) setIsOpen(false);
+          }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+        >
           <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 w-96 border border-zinc-200 dark:border-zinc-700">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">პროფილის სურათის შეცვლა</h2>
 
@@ -137,7 +144,7 @@ export default function ProfilePhotoUpload() {
               <button
                 onClick={() => setIsOpen(false)}
                 disabled={uploading}
-                className="flex-1 px-4 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-60"
+                className="flex-1 px-4 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-60 cursor-pointer"
               >
                 გაუქმება
               </button>

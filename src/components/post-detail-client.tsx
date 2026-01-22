@@ -6,6 +6,7 @@ import { useState } from 'react';
 import PostActions from './post-actions';
 import PostGuessList from './post-guess-list';
 import type { GpsPostType } from '@/types/post';
+import { formatActionDate } from '@/lib/dates';
 
 export default function PostDetailClient({ post }: { post: GpsPostType }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -18,7 +19,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
             <div className="flex-1">
               <div className="flex items-baseline gap-2">
                 <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
-                <time className="text-xs text-zinc-400">{new Date(post.date).toLocaleString('ka-GE')}</time>
+                <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
                 {post.status === 'failed' && (
                   <svg
                     className="w-3 h-3 text-rose-600"
