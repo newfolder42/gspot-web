@@ -23,30 +23,23 @@ export default function AccountTabs({ tabs }: Props) {
 
         return (
           <Link
-            key={tab.id}
-            href={tab.href}
-            aria-current={isActive ? 'page' : undefined}
-            className="group inline-flex items-center px-1 py-3 text-sm font-medium"
-          >
-            <span
-              className={
-                `transition-colors ` +
-                (isActive
-                  ? 'text-zinc-900 dark:text-zinc-50'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100')
-              }
+              key={tab.id}
+              href={tab.href}
+              aria-current={isActive ? 'page' : undefined}
+              className="group inline-flex flex-col items-center px-1 py-3 text-sm font-medium"
             >
-              {tab.label}
-            </span>
-            <span
-              className={
-                `absolute left-0 right-0 -bottom-[1px] h-0.5 rounded-full transition-all duration-200 ` +
-                (isActive
-                  ? 'bg-blue-600'
-                  : 'bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-600')
-              }
-            />
-          </Link>
+              <span
+                className={
+                  `transition-colors ` +
+                  (isActive
+                    ? 'text-zinc-900 dark:text-zinc-50'
+                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100')
+                }
+              >
+                {tab.label}
+              </span>
+              <span aria-hidden className={`mt-1 block h-0.5 w-full rounded ${isActive ? 'bg-blue-600' : 'bg-transparent'}`} />
+            </Link>
         );
       })}
     </nav>
