@@ -56,7 +56,7 @@ const Header = async ({ image, headers }: HeaderProps) => {
           </div>
 
           {/* Right: Auth buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 <AccountMenu user={user} />

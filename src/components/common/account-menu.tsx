@@ -30,10 +30,10 @@ export default function AccountMenu({ user }: Props) {
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div ref={ref}>
       <button
         onClick={() => setOpen((s) => !s)}
-        className="flex items-center gap-2 rounded-md px-3 py-1 text-sm bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        className="flex items-center gap-2 rounded-md px-2 py-1 text-sm bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
       >
         <span className="inline-block h-8 w-8 rounded-md bg-zinc-200 dark:bg-zinc-700 text-sm leading-8 text-center text-zinc-700 dark:text-zinc-100">{getInitials(user?.alias || 'U')}</span>
         <span className="hidden sm:inline text-sm text-zinc-700 dark:text-zinc-200">{user.alias}</span>

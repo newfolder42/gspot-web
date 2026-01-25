@@ -1,11 +1,17 @@
 "use client"
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
+
+declare global {
+  interface Window {
+    mapboxgl: any;
+  }
+}
 
 interface UploadedPhoto {
   key?: string;
@@ -18,80 +24,185 @@ interface UploadedPhoto {
     latitude: number | null;
     longitude: number | null;
   } | null;
-  processingGPS?: boolean;
+  dateTaken?: Date | null;
 }
 
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coordinates'] | undefined | null; onChange: (c: { latitude: number; longitude: number }) => void }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+  useEffect(() => {
+    if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
+      const link = document.createElement('link');
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+
+    // Only add the script if it's not already present to avoid multiple loads/costs
+    if (!document.querySelector('script[src*="mapbox-gl-js"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
+      script.onload = () => initMap();
+      document.head.appendChild(script);
+    } else if (typeof window.mapboxgl !== 'undefined') {
+      // If script already loaded, initialize immediately
+      initMap();
+    }
+
+    function initMap() {
+      if (!mapRef.current || mapInstanceRef.current) return;
+      window.mapboxgl.accessToken = 'pk.eyJ1IjoibmV3Zm9sZGVyNDIiLCJhIjoiY21pcTNxa2RxMDEweDR2czgxZ3JjY3ltNSJ9.0R65cn75XdOhjO-_VoLqFQ';
+
+      const defaultCenter = coordinates && coordinates.latitude != null && coordinates.longitude != null
+        ? [coordinates.longitude, coordinates.latitude]
+        : [44.8271, 41.7151];
+
+      const map = new window.mapboxgl.Map({
+        container: mapRef.current,
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        center: defaultCenter,
+        zoom: 12,
+        renderWorldCopies: false,
+        // restrict map to Georgia bounding box: [west, south], [east, north]
+        maxBounds: [[39.4, 40.8], [46.9, 43.8]],
+        maxZoom: 18,
+      });
+
+      const startLng = coordinates && coordinates.longitude != null ? coordinates.longitude : defaultCenter[0];
+      const startLat = coordinates && coordinates.latitude != null ? coordinates.latitude : defaultCenter[1];
+
+      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
+        .setLngLat([startLng, startLat])
+        .addTo(map);
+
+      markerRef.current.on('dragend', () => {
+        const lngLat = markerRef.current!.getLngLat();
+        onChangeRef.current({ latitude: lngLat.lat, longitude: lngLat.lng });
+      });
+
+      map.on('click', (e: any) => {
+        markerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        onChangeRef.current({ latitude: e.lngLat.lat, longitude: e.lngLat.lng });
+      });
+
+      mapInstanceRef.current = map;
+    }
+
+    return () => {
+      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
+      markerRef.current = null;
+    };
+  // Run only once on mount — do not reinitialize the whole map when `coordinates` change.
+  }, []);
+
+  useEffect(() => {
+    if (!markerRef.current) return;
+    if (coordinates && coordinates.latitude != null && coordinates.longitude != null) {
+      markerRef.current.setLngLat([coordinates.longitude, coordinates.latitude]);
+    }
+  }, [coordinates]);
+
+  return (
+    <div className="relative rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="absolute left-2 top-2 z-10 text-xs text-zinc-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-sm px-2 py-1 rounded border border-zinc-100 dark:border-zinc-800">
+        {coordinates ? `${coordinates.latitude?.toFixed(6)}, ${coordinates.longitude?.toFixed(6)}` : 'No GPS data — მონიშნე რუკაზე'}
+      </div>
+      <div ref={mapRef} className="w-full h-[240px] bg-zinc-100 dark:bg-zinc-800" />
+    </div>
+  );
 };
 
 export default function CreatePost() {
   const [photo, setPhoto] = useState<UploadedPhoto | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelStep, setPanelStep] = useState<0 | 1 | 2 | 3>(0); // 0=select,1=preview,2=map,3=meta
+  const [coords, setCoords] = useState<{ latitude: number | null; longitude: number | null } | null>(null);
+  const [dateTaken, setDateTaken] = useState<Date | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    setError(null);
+    const f = e.target.files?.[0];
+    if (!f) return;
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) {
       setError('ხმოლოდ PNG, JPEG, და WebP ფოტო-სურათებია ნებადართული');
       return;
     }
 
-    if (file.size > 15 * 1024 * 1024) {
+    if (f.size > 15 * 1024 * 1024) {
       setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
       return;
     }
 
-    const isMobile = isMobileDevice();
+    const extractedCoords = await extractGPSCorrdinates(f);
+    const extractedDate = await extractDateTaken(f);
+    setCoords(extractedCoords ?? null);
+    setDateTaken(extractedDate ?? null);
 
-    const coordinates = await extractGPSCorrdinates(file);
-    const dateTaken = await extractDateTaken(file);
-
-    if (coordinates == null || coordinates.latitude == null || coordinates.longitude == null) {
-      if (isMobile) {
-        setError('სურათზე არ მოიძებნა GPS თაგები. გამოიყენეთ კამერა გადასაღებად, არა გალერეა. (მობილური ბრაუზერი შლის GPS მონაცემებს დაცვის მიზნით)');
-      } else {
-        setError('სურათზე არ მოიძებნა GPS თაგები.');
-      }
-      return;
+    // prepare preview
+    if (previewUrlRef.current) {
+      try { URL.revokeObjectURL(previewUrlRef.current); } catch { }
+      previewUrlRef.current = null;
     }
 
-    const isInGeorgia = coordinates.latitude >= 41.0 && coordinates.latitude <= 43.5 && coordinates.longitude >= 40.0 && coordinates.longitude <= 46.5;
-
-    if (!isInGeorgia) {
-      setError('სურათი უნდა იყოს გადაღებული საქართველოში.');
-      return;
-    }
-
-    let processedFile = file;
-
-    if (file.type === 'image/png' || file.type === 'image/jpeg') {
+    let fileToUse = f;
+    if (f.type === 'image/png' || f.type === 'image/jpeg') {
       setUploading(true);
-
       try {
-        processedFile = await convertToWebP(file);
-      } catch {
+        fileToUse = await convertToWebP(f);
+      } catch (err) {
+        console.error(err);
         setError('ვერ მოხერხდა სურათის WebP ფორმატში გარდაქმნა');
+        setUploading(false);
         return;
+      } finally {
+        setUploading(false);
       }
     }
 
+    const preview = URL.createObjectURL(fileToUse);
+    previewUrlRef.current = preview;
+    setSelectedFile(fileToUse);
+    setPhoto({
+      key: undefined,
+      contentId: undefined,
+      url: preview,
+      filename: fileToUse.name,
+      size: fileToUse.size,
+      uploadedAt: new Date(),
+      coordinates: extractedCoords ?? null,
+      dateTaken: extractedDate ?? null,
+    });
+
+    // move to preview step
+    setPanelStep(1);
+    setPanelOpen(true);
+  };
+
+  const uploadAndCreate = async (finalCoords: { latitude: number; longitude: number }) => {
     setError(null);
+    if (!selectedFile) return setError('ფაილი არ არის არჩეული');
     setUploading(true);
     setUploadProgress(0);
-
     try {
       const signUrl = await generateFileUrl('gps-photo');
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', signUrl, true);
-        xhr.setRequestHeader('Content-Type', processedFile.type);
+        xhr.setRequestHeader('Content-Type', selectedFile.type);
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             setUploadProgress(Math.round((event.loaded / event.total) * 100));
@@ -105,30 +216,19 @@ export default function CreatePost() {
                 uploadUrl,
                 'gps-photo',
                 {
-                  originalFileName: processedFile.name,
-                  fileSize: processedFile.size,
-                  coordinates: coordinates,
+                  originalFileName: selectedFile.name,
+                  fileSize: selectedFile.size,
+                  coordinates: finalCoords,
                   dateTaken: dateTaken ? dateTaken.toISOString() : null,
                 }
               );
               if (content == null) {
                 throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
               }
-              
-              const newPhoto: UploadedPhoto = {
-                key: undefined,
-                contentId: content.id,
-                url: `${uploadUrl}`,
-                filename: processedFile.name,
-                size: processedFile.size,
-                uploadedAt: new Date(),
-                coordinates: coordinates,
-              };
 
-              setPhoto(newPhoto);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
+              await createPost({ title: title.trim() || '', contentId: content.id });
+              window.location.reload();
+
               resolve();
             } catch (err) {
               reject(err);
@@ -138,10 +238,10 @@ export default function CreatePost() {
           }
         };
         xhr.onerror = (err) => reject(new Error('' + err));
-        xhr.send(processedFile);
+        xhr.send(selectedFile);
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა';
+      const message = err instanceof Error ? err.message : 'ვერ მოხდა ფოტო-სურათის ატვირთვა';
       setError(message);
     } finally {
       setUploading(false);
@@ -149,188 +249,235 @@ export default function CreatePost() {
     }
   };
 
-  const CreateCard = ({ photo, uploading, onAddPhoto }: { photo: UploadedPhoto | null; uploading: boolean; onAddPhoto: () => void }) => {
-    const [title, setTitle] = useState('');
-    const [creating, setCreating] = useState(false);
-    const [localError, setLocalError] = useState<string | null>(null);
-    const [showInfo, setShowInfo] = useState(false);
-
-    const disabled = creating || uploading || !photo || title.trim() === '' || !photo.coordinates;
-
-    return (
-      <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onAddPhoto}
-            type="button"
-            className="px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-          >
-            <svg
-              className="w-5 h-5 text-blue-500 flex-shrink-0"
-              fill="currentColor"
-            >
-              <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            type="button"
-            className="px-2 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            aria-label="ინფორმაცია"
-            title="ატვირთვის მოთხოვნები"
-          >
-            <svg className="w-5 h-5 text-blue-500" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 1.25a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM7.25 4.5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Zm2 7a.75.75 0 0 1-1.5 0V8.25a.75.75 0 0 1 0-1.5h.25a.75.75 0 0 1 .75.75V11.5Z" />
-            </svg>
-          </button>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="სათაური"
-            className="flex-1 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-sm"
-          />
-          <button
-            disabled={disabled}
-            onClick={async () => {
-              setLocalError(null);
-              if (!photo) return setLocalError('No uploaded photo');
-              if (!photo.contentId) return setLocalError('Uploaded photo missing content id');
-              if (!photo.coordinates) return setLocalError('GPS coordinates required');
-              setCreating(true);
-              try {
-                await createPost({ title: title.trim(), contentId: photo.contentId });
-                window.location.reload();
-              } catch (err) {
-                setLocalError(err instanceof Error ? err.message : 'ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
-              } finally {
-                setCreating(false);
-              }
-            }}
-            className={`px-4 py-2 rounded-md text-sm text-white ${disabled ? 'bg-zinc-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {creating ? 'მიმდინარეობს...' : 'ატვირთვა'}
-          </button>
-        </div>
-        {showInfo && (
-          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-md text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
-            <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
-            <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
-            <p>• GPS თაგები სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
-            <p>• <strong>მობილურზე:</strong> გამოიყენეთ კამერა, არა გალერეა - ბრაუზერი შლის GPS მონაცემებს!</p>
-            <p>• არ გამოიყენოთ გადაზუმული ან შემთხვევითი ფოტო - უნდა ჩანს ამოსაცნობი ადგილი.</p>
-            <p>• უპირატესობა მიანიჭე გრძივად გადაღებულ სურათებს.</p>
-          </div>
-        )}
-        {localError && <p className="text-sm text-red-600 mt-2">{localError}</p>}
-      </div>
-    );
+  const formatDateForInput = (d: Date | null) => {
+    if (!d) return '';
+    const tzOffset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - tzOffset * 60000);
+    return local.toISOString().slice(0, 16);
   };
 
-  const MapPreview = ({ coordinates }: { coordinates: UploadedPhoto['coordinates'] }) => {
-    if (!coordinates) return null;
-    const { latitude, longitude } = coordinates;
-    const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=18&output=embed&&maptype=satellite&hl=ka`;
-    return (
-      <div className="rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
-        <iframe
-          title={`map-${latitude}-${longitude}`}
-          src={src}
-          width="100%"
-          height={180}
-          loading="lazy"
-          className="block"
-        />
-      </div>
-    );
+  const formatDateOnly = (d: Date | null) => {
+    if (!d) return '';
+    const tzOffset = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - tzOffset * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const parseDateOnly = (dateVal: string) => {
+    if (!dateVal) return null;
+    const [y, m, day] = dateVal.split('-').map((s) => parseInt(s, 10));
+    const local = new Date(y, m - 1, day); // local midnight
+    const tzOffset = new Date().getTimezoneOffset();
+    return new Date(local.getTime() + tzOffset * 60000);
+  };
+
+  const validateDateTaken = (d: Date | null) => {
+    if (!d) return null;
+    const today = new Date();
+    // normalize dates to compare only date portion
+    const y = d.getFullYear();
+    const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const tOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (dOnly.getTime() > tOnly.getTime()) return 'თარიღი არ უნდა იყოს მომავალში';
+    if (y < 2012) return 'თარიღი არ შეიძლება იყოს 2012 წელზე ადრე';
+    return null;
+  };
+
+  const isInGeorgia = (lat: number, lng: number) => {
+    // Approximate bounding box for Georgia (country)
+    // latitude roughly between 40.8 and 43.8, longitude between 39.4 and 46.9
+    return lat >= 40.8 && lat <= 43.8 && lng >= 39.4 && lng <= 46.9;
   };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileChange}
-        disabled={uploading}
-        className="hidden"
-      />
-      <div className="">
-        {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-            <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
-        {uploading && uploadProgress !== null && (
-          <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
-            <div
-              className="bg-blue-500 h-3 rounded-full transition-all duration-200"
-              style={{ width: `${uploadProgress}%` }}
-            />
-            <div className="text-xs text-center text-zinc-600 dark:text-zinc-300">ატვირთვა: {uploadProgress}%</div>
-          </div>
-        )}
-      </div>
-
+      {error && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+        </div>
+      )}
       {(
         <div>
-          {
-            <CreateCard photo={photo} uploading={uploading} onAddPhoto={() => fileInputRef.current?.click()} />
-          }
-          {photo && (
-            <div className="space-y-2 mt-2">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <svg
-                    className="w-5 h-5 text-blue-500 flex-shrink-0"
-                    fill="currentColor"
-                  >
-                    <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-                  </svg>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                      {photo.filename}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {(photo.size / 1024).toFixed(2)} კბ • {photo.coordinates ? `განედი: ${photo.coordinates.latitude?.toFixed(4)}, გრძედი: ${photo.coordinates.longitude?.toFixed(4)}` : 'No GPS data'}
-                    </p>
+          <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setPanelOpen(true); setPanelStep(0); }}
+                type="button"
+                className="px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer inline-flex items-center"
+              >
+                <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+                </svg>
+                <span className="ml-2">ატვირთვა</span>
+              </button>
+            </div>
+
+            {/* panel */}
+            {panelOpen && (
+              <div className="mt-3 p-4 border border-zinc-100 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-900">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium">ფოტოს ატვირთვა</h3>
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="text-sm px-2 py-1 text-red-600 cursor-pointer" onClick={() => {
+                      // cancel panel
+                      setPanelOpen(false);
+                      setPanelStep(0);
+                      setSelectedFile(null);
+                      setPhoto(null);
+                      setCoords(null);
+                      setDateTaken(null);
+                      setTitle('');
+                      setError(null);
+                      if (previewUrlRef.current) { try { URL.revokeObjectURL(previewUrlRef.current); } catch { } previewUrlRef.current = null; }
+                    }}>გაუქმება</button>
                   </div>
                 </div>
-                <div className="flex">
-                  <button
-                    onClick={() => {
-                      setPhoto(null);
-                    }}
-                    className="px-3 py-1 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-md transition flex items-center gap-1"
-                    aria-label="წაშლა"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
-              <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 overflow-hidden">
-                <div className="relative w-full h-[320px] bg-zinc-50 dark:bg-zinc-900">
-                  <Image
-                    src={photo.url}
-                    alt={`Uploaded photo ${photo.filename}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 768px"
-                    className="object-contain"
-                    priority
+                {panelStep === 0 && (
+                  <div className="mt-3 p-3 border rounded-md text-xs text-zinc-700 dark:text-zinc-300">
+                    <div className="space-y-1 mb-3">
+                      <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
+                      <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
+                      <p>• GPS ლოკაციის მითითება სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
+                      <p>• <strong>მობილურზე:</strong> ბრაუზერი შლის GPS მონაცემებს და ლოკაცია მიუთითეთ თქვენით რუკაზე.</p>
+                      <p>• არ გამოიყენოთ დაზუმილი ან შემთხვევითი ფოტო - უნდა ჩანდეს ამოსაცნობი ადგილი.</p>
+                      <p>• უპირატესობა მიანიჭე ფორთრეითში გადაღებულ სურათს.</p>
+                    </div>
+
+                    <div>
+                      <label className="w-full block p-4 border border-dashed border-zinc-200 rounded-md text-center cursor-pointer bg-zinc-50 dark:bg-zinc-800">
+                        <div className="inline-flex items-center gap-2">
+                          <span>აირჩიე ან გადაიღე ფოტო</span>
+                        </div>
+                        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} disabled={uploading} className="hidden" aria-hidden="true" />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {panelStep === 1 && photo && (
+                  <div>
+                    <div className="mb-3">
+                      <div className="relative w-full h-[320px] bg-zinc-50 dark:bg-zinc-900 rounded overflow-hidden">
+                        <Image src={photo.url} alt={photo.filename} fill sizes="(max-width: 768px) 100vw, 768px" className="object-contain" priority />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>შემდეგი</button>
+                    </div>
+                  </div>
+                )}
+
+                {panelStep === 2 && (
+                  <div>
+                    <MapPreview
+                      coordinates={coords ?? photo?.coordinates ?? null}
+                      onChange={(c) => {
+                        setCoords({ latitude: c.latitude, longitude: c.longitude });
+                        setPhoto((p) => p ? { ...p, coordinates: { latitude: c.latitude, longitude: c.longitude } } : p);
+                        setError(null);
+                      }}
+                    />
+
+                    <div className="flex justify-between mt-3">
+                      <div>
+                        <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(1)}>უკან</button>
+                      </div>
+                      <div className="flex gap-2">
+                        {(() => {
+                          const final = coords ?? photo?.coordinates ?? null;
+                          const hasCoords = final && final.latitude != null && final.longitude != null;
+                          const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
+                          const disabled = !hasCoords || !inGeorgia;
+                          return (
+                            <button
+                              className={`px-3 py-1 rounded-md text-white ${disabled ? 'bg-blue-300 cursor-not-allowed opacity-60' : 'bg-blue-600 cursor-pointer'}`}
+                              onClick={async () => {
+                                const finalCoords = coords ?? photo?.coordinates;
+                                if (!finalCoords || finalCoords.latitude == null || finalCoords.longitude == null) {
+                                  setError('GPS კოორდინატები სავალდებულოა');
+                                  return;
+                                }
+                                if (!isInGeorgia(finalCoords.latitude, finalCoords.longitude)) {
+                                  setError('ლოკაცია უნდა იყოს საქართველოში');
+                                  return;
+                                }
+                                setError(null);
+                                setPanelStep(3);
+                              }}
+                              disabled={disabled}
+                            >შემდეგი</button>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {panelStep === 3 && (
+                  <div>
+                    <div className="space-y-3">
+                      <label className="block text-sm">
+                        სათაური:
+                        <input
+                          className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="სათაური (არასავალდებულო)"
+                        />
+                      </label>
+
+                      <label className="block text-sm">
+                        გადაღებულია:
+                        <input
+                          type="date"
+                          className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
+                          value={formatDateOnly(dateTaken)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const parsed = parseDateOnly(e.target.value);
+                            setDateTaken(parsed);
+                            const err = validateDateTaken(parsed);
+                            setError(err);
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="flex justify-between mt-3">
+                      <div>
+                        <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>უკან</button>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer"
+                          onClick={async () => {
+                            const final = coords ?? photo?.coordinates;
+                            if (!final || final.latitude == null || final.longitude == null) return setError('GPS coordinates required');
+                            const dateErr = validateDateTaken(dateTaken);
+                            if (dateErr) return setError(dateErr);
+                            await uploadAndCreate({ latitude: final.latitude, longitude: final.longitude });
+                          }}
+                        >ატვირთვა</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {uploading && uploadProgress !== null && (
+              <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                    style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
               </div>
+            )}
 
-              {photo.coordinates && (
-                <div className="">
-                  <MapPreview coordinates={photo.coordinates} />
-                </div>
-              )}
-            </div>
-          )}
+            {/* photo panels handle preview/map/upload flow now */}
+          </div>
         </div>
       )}
     </div>

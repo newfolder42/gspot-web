@@ -17,6 +17,13 @@ export default function AboutPage() {
 
   const changelog = [
     {
+      version: "v0.5.1",
+      date: "2026-01-25",
+      items: [
+        "ატვირთვის ახალი დიზაინი",
+      ],
+    },
+    {
       version: "v0.5.0",
       date: "2026-01-19",
       items: [

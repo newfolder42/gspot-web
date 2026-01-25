@@ -69,6 +69,10 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [selectedCoords.longitude, selectedCoords.latitude],
         zoom: 12,
+        renderWorldCopies: false,
+        // restrict map to Georgia bounding box: [west, south], [east, north]
+        maxBounds: [[39.4, 40.8], [46.9, 43.8]],
+        maxZoom: 18,
       });
 
       guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import PostActions from './post-actions';
 import PostGuessList from './post-guess-list';
 import type { GpsPostType } from '@/types/post';
-import { formatActionDate } from '@/lib/dates';
+import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 
 export default function PostDetailClient({ post }: { post: GpsPostType }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -32,6 +32,11 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
                 )}
               </div>
               <div className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{post.title}</div>
+              {post.dateTaken && (
+                <div className="text-sm text-zinc-700 dark:text-zinc-300">
+                  გადაღებულია: {formatPhotoTakenDate(post.dateTaken)}
+                </div>
+              )}
             </div>
             <div className="flex-shrink-0">
               <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />

@@ -36,7 +36,14 @@ export function GpsPost({ post }: { post: GpsPostType }) {
       </div>
       <Link href={`/post/${post.id}`} className="block w-full">
         <div className="w-full">
-          <Image src={post.image} alt={post.title} width={1200} height={800} className="w-full h-full object-cover" priority={false} />
+          <Image
+            src={post.image}
+            alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+            width={1200}
+            height={800}
+            className="w-full h-full object-cover"
+            priority={false}
+          />
         </div>
       </Link>
     </article>
