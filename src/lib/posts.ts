@@ -12,7 +12,8 @@ import { PostGuessedEvent } from '@/types/events/post-guessed';
 export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url,
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
 join post_content pc on p.id = pc.post_id
@@ -33,6 +34,7 @@ limit $1`,
       userId: r.user_id,
       image: r.image_url,
       status: r.status,
+      guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
     logerror('getConnectionsPosts error', [err]);
@@ -43,7 +45,8 @@ limit $1`,
 export async function getAccountPosts(userId: number, accountUserId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -64,6 +67,7 @@ limit $1`,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
+      guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
     logerror('getAccountPosts error', [err]);
@@ -74,7 +78,8 @@ limit $1`,
 export async function getGlobalPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -95,6 +100,7 @@ limit $1`,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
+      guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
     logerror('getGlobalPosts error', [err]);
@@ -105,7 +111,8 @@ limit $1`,
 export async function getPostForView(userId: number, id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -128,6 +135,7 @@ limit 1`,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
+      guessCount: r.guesses_count ?? 0,
     };
   } catch (err) {
     logerror('getPostForView error', [err]);
@@ -138,7 +146,8 @@ limit 1`,
 async function getPostById(id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details
+      `select p.id, p.type, p.title, p.created_at, p.user_id, u.alias as author_alias, uc.public_url as image_url, uc.details,
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
@@ -161,6 +170,7 @@ limit 1`,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
+      guessCount: r.guesses_count ?? 0,
     };
   } catch (err) {
     logerror('getPostById error', [err]);
