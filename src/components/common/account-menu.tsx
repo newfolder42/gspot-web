@@ -30,7 +30,7 @@ export default function AccountMenu({ user }: Props) {
   }
 
   return (
-    <div ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((s) => !s)}
         className="flex items-center gap-2 rounded-md px-2 py-1 text-sm bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
