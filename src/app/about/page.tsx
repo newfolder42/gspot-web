@@ -32,7 +32,7 @@ export default function AboutPage() {
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             უკუკავშირისთვის გადადით (
             <a
-              href="https://github.com/newfolder42/gspot-services/issues"
+              href="https://github.com/newfolder42/gspot-web/issues"
               target="_blank"
               rel="noopener noreferrer"
               className="text-zinc-800 dark:text-zinc-100 hover:underline"
