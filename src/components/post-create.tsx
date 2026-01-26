@@ -349,7 +349,7 @@ export default function CreatePost() {
                         <div className="inline-flex items-center gap-2">
                           <span>აირჩიე ან გადაიღე ფოტო</span>
                         </div>
-                        <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} disabled={uploading} className="hidden" aria-hidden="true" />
+                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="hidden" aria-hidden="true" />
                       </label>
                     </div>
                   </div>
