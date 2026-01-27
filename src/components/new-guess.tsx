@@ -16,6 +16,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
     longitude: 44.8271
   });
   const [submitting, setSubmitting] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -66,7 +67,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: 'mapbox://styles/mapbox/standard-satellite',
         center: [selectedCoords.longitude, selectedCoords.latitude],
         zoom: 12,
         renderWorldCopies: false,
@@ -169,16 +170,78 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
       setDistance(calculatedDistance);
       setCountdown(10);
     } catch (err) {
-      alert('შეცდომა დაფიქსირდა, გთხოვ დაარეფრეშო გვერდი');
-      console.error('Error submitting guess', err);
       setSubmitting(false);
     }
   };
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = Number(pos?.coords?.latitude);
+        const lng = Number(pos?.coords?.longitude);
+        if (!isFinite(lat) || !isFinite(lng)) {
+          console.error('Invalid geolocation coords', pos);
+          setGettingLocation(false);
+          return;
+        }
+
+        setSelectedCoords({ latitude: lat, longitude: lng });
+
+        if (mapInstanceRef.current) {
+          try {
+            mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 12 });
+          } catch (e) {
+            mapInstanceRef.current.setCenter([lng, lat]);
+          }
+        }
+
+        if (guessMarkerRef.current) {
+          try {
+            guessMarkerRef.current.setLngLat([lng, lat]);
+            // ensure marker is draggable so user can nudge it
+            if (typeof guessMarkerRef.current.setDraggable === 'function') {
+              guessMarkerRef.current.setDraggable(true);
+            }
+          } catch (e) {
+            // ignore marker errors
+          }
+        }
+
+        setGettingLocation(false);
+      },
+      (err) => {
+        console.error('Geolocation error', err);
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   return (
     <form onSubmit={submit} className="mt-4 grid gap-3">
-      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 relative">
         <div ref={mapRef} className="w-full h-[400px] bg-zinc-100 dark:bg-zinc-800" />
+
+        <div className="absolute top-3 right-3">
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={gettingLocation}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+            aria-label="მომხმარებლის ლოკაცია"
+            title="გამოიყენე ჩემი ლოკაცია"
+          >
+            {gettingLocation && (
+              <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            )}
+            <span className="text-xs">ჩემი ლოკაცია</span>
+          </button>
+        </div>
       </div>
 
       <div className="text-xs text-zinc-600 dark:text-zinc-400">

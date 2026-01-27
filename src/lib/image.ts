@@ -17,7 +17,7 @@ export async function convertToWebP(file: File): Promise<File> {
   }
 }
 
-export async function extractGPSCorrdinates(file: File): Promise<{latitude: number, longitude: number} | null> {
+export async function extractGPSCorrdinates(file: File): Promise<{ latitude: number, longitude: number } | null> {
   try {
     const gps = await exifr.gps(file);
     if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number'
@@ -33,7 +33,6 @@ export async function extractGPSCorrdinates(file: File): Promise<{latitude: numb
       }
     }
   } catch (err) {
-    alert('all tags' + JSON.stringify(err));
     return null;
   }
   return null;

@@ -20,9 +20,9 @@ type PostGuess = {
 const loadGuessesData = async (postId: number, postAuthor: string) => {
   const user = await getCurrentUser();
   const isAuthor = user?.alias === postAuthor;
-  const userCanGuess = user ? await postIsGuessedByUser(postId, user.userId) : true;
+  const userCanGuess = user ? await postIsGuessedByUser(postId, user.userId) : false;
   const guesses = await getPostGuesses(postId);
-  
+
   return { isAuthor, userCanGuess, guesses };
 };
 
@@ -36,7 +36,7 @@ export default function PostGuessList({ postId, postAuthor }: { postId: number; 
     const loadGuesses = async () => {
       setLoading(true);
       const { isAuthor, userCanGuess, guesses } = await loadGuessesData(postId, postAuthor);
-      
+
       setCanGuess(!isAuthor && userCanGuess);
       setGuesses(guesses);
       setLoading(false);
@@ -49,7 +49,7 @@ export default function PostGuessList({ postId, postAuthor }: { postId: number; 
     setShowForm(false);
     setLoading(true);
     const { isAuthor, userCanGuess, guesses } = await loadGuessesData(postId, postAuthor);
-    
+
     setCanGuess(!isAuthor && userCanGuess);
     setGuesses(guesses);
     setLoading(false);

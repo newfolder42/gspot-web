@@ -42,7 +42,6 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
 
   const handleSaveEdit = async () => {
     if (!editTitle.trim()) {
-      alert('სათაური ცარიელი არ შეიძლება იყოს');
       return;
     }
 
@@ -53,8 +52,6 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
     if (success) {
       setShowEditModal(false);
       window.location.reload();
-    } else {
-      alert('სათაურის განახლება ვერ მოხერხდა');
     }
   };
 
@@ -66,8 +63,6 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
     if (success) {
       setShowDeleteModal(false);
       window.location.reload();
-    } else {
-      alert('პოსტის წაშლა ვერ მოხერხდა');
     }
   };
 

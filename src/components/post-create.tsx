@@ -31,6 +31,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
@@ -64,7 +65,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: 'mapbox://styles/mapbox/standard-satellite',
         center: defaultCenter,
         zoom: 12,
         renderWorldCopies: false,
@@ -97,7 +98,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
       if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
       markerRef.current = null;
     };
-  // Run only once on mount — do not reinitialize the whole map when `coordinates` change.
+    // Run only once on mount — do not reinitialize the whole map when `coordinates` change.
   }, []);
 
   useEffect(() => {
@@ -109,6 +110,46 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
 
   return (
     <div className="relative rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+      <div className="absolute top-3 right-3 z-10">
+        <button
+          type="button"
+          onClick={() => {
+            if (!navigator.geolocation) { return; }
+            setGettingLocation(true);
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const lat = Number(pos?.coords?.latitude);
+                const lng = Number(pos?.coords?.longitude);
+                if (!isFinite(lat) || !isFinite(lng)) {
+                  console.error('Invalid geolocation coords', pos);
+                  setGettingLocation(false);
+                  return;
+                }
+
+                onChangeRef.current({ latitude: lat, longitude: lng });
+                if (mapInstanceRef.current) {
+                  try { mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 12 }); } catch (e) { mapInstanceRef.current.setCenter([lng, lat]); }
+                }
+                if (markerRef.current) {
+                  try { markerRef.current.setLngLat([lng, lat]); if (typeof markerRef.current.setDraggable === 'function') markerRef.current.setDraggable(true); } catch (e) { }
+                }
+                setGettingLocation(false);
+              },
+              (err) => { console.error('Geolocation error', err); setGettingLocation(false); },
+              { enableHighAccuracy: true, timeout: 10000 }
+            );
+          }}
+          disabled={gettingLocation}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+          aria-label="მომხმარებლის ლოკაცია"
+          title="გამოიყენე ჩემი ლოკაცია"
+        >
+          {gettingLocation && (
+            <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          )}
+          <span className="text-xs">ჩემი ლოკაცია</span>
+        </button>
+      </div>
       <div className="absolute left-2 top-2 z-10 text-xs text-zinc-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-sm px-2 py-1 rounded border border-zinc-100 dark:border-zinc-800">
         {coordinates ? `${coordinates.latitude?.toFixed(6)}, ${coordinates.longitude?.toFixed(6)}` : 'No GPS data — მონიშნე რუკაზე'}
       </div>

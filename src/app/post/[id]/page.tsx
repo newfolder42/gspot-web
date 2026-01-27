@@ -17,8 +17,11 @@ export default async function Page({ params }: Props) {
   return <PostDetailClient post={post} />;
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const id = Number(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id: idStr } = await params;
+  const id = Number(idStr);
+  if (!isFinite(id)) return {};
+
   const post = await getPostForView(0, id);
   if (!post) return {};
 
