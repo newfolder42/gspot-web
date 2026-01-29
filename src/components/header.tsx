@@ -5,6 +5,7 @@ import SignUpButton from "./common/signup-button";
 import AccountMenu from "./common/account-menu";
 import HeaderSearch from "./header-search";
 import NotificationDropdown from "./notifications/notification-dropdown";
+import LeftPanel from "./left-panel";
 import { getCurrentUser } from "@/lib/session";
 import { APP_NAME } from "@/lib/constants";
 
@@ -26,11 +27,12 @@ const Header = async ({ image, headers }: HeaderProps) => {
   const user = await getCurrentUser();
 
   return (
-    <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
           {/* Left: Logo + Brand */}
           <div className="flex items-center gap-4">
+            <LeftPanel />
             <Link href="/" className="flex items-center gap-3">
               <Image src={image?.url} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
               <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span>
@@ -60,7 +62,7 @@ const Header = async ({ image, headers }: HeaderProps) => {
             {user ? (
               <>
                 <AccountMenu user={user} />
-                <NotificationDropdown user={user}/>
+                <NotificationDropdown user={user} />
               </>
             ) : (
               <>

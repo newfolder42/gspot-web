@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Serif_Georgian } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import LeftPanel from "@/components/left-panel";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -76,7 +77,10 @@ export default function RootLayout({
         <Header image={{
           url: "/gspot.svg"
         }} headers={[]} />
-        <main className="flex-1 bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+
+        <LeftPanel />
+
+        <main className="flex-1 pt-14 md:pl-56 bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
           {children}
         </main>
         <Footer />

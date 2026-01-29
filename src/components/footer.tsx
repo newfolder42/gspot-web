@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 mt-16 py-4">
+    <footer className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 md:pl-56 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Footer content grid */}
         <div className="grid grid-cols-1 md:grid-cols-1 gap-8 mb-8">
@@ -26,7 +26,7 @@ export default function Footer() {
           {/* Footer bottom: logo/brand + copyright */}
           <div className="flex flex-col flex-row items-center justify-between">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span> © 2025. All rights reserved.
+              <span className="font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span> © 2026. All rights reserved.
             </div>
             {/* <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
               <Link href="/sitemap" className="hover:text-zinc-900 dark:hover:text-white transition">

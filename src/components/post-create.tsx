@@ -339,7 +339,7 @@ export default function CreatePost() {
       )}
       {(
         <div>
-          <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+          <div className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setPanelOpen(true); setPanelStep(0); }}
