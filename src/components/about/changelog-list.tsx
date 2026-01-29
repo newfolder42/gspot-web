@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
     {
+        version: "v0.5.2",
+        date: "2026-01-29",
+        items: [
+            "ლიდერბორდი და ახალი მომხმარებლის გვერდები",
+        ],
+    },
+    {
         version: "v0.5.1",
         date: "2026-01-25",
         items: [

@@ -81,6 +81,11 @@ export default function LeftPanel() {
                     ლიდერბორდი
                   </Link>
                 </li>
+                <li>
+                  <Link href="/new-users" className="block px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => setOpen(false)}>
+                    მომხმარებლები
+                  </Link>
+                </li>
               </ul>
             </nav>
           </aside>
