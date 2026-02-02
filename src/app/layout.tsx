@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   description:
     "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
   metadataBase: new URL("https://gspot.ge"),
+  icons: {
+    icon: "/favicon.ico",
+  },
   openGraph: {
     title: "Gspot | გამოიცანი სადაა გადაღებული!",
     description:
@@ -42,14 +45,6 @@ export const metadata: Metadata = {
     ],
     locale: "ka_GE",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "G'spot | გამოიცანი სადაა გადაღებული!",
-    description:
-      "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
-    site: "@gspotge",
-    images: ["/og-image.png"],
   },
   keywords: [
     "geo guessing",

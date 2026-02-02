@@ -4,6 +4,20 @@ import { getNewUsers } from '@/lib/users';
 import { formatTimePassed } from '@/lib/dates';
 import { NewUser } from '@/types/user';
 import { getInitials } from '@/lib/getInitials';
+import type { Metadata } from 'next';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+
+export const metadata: Metadata = {
+  title: `ახალი მომხმარებლები | ${APP_NAME}`,
+  description: `აღმოაჩინე ${APP_NAME}-ზე ბოლოს დარეგისტრირებული მომხმარებლები.`,
+  openGraph: {
+    title: `ახალი მომხმარებლები | ${APP_NAME}`,
+    description: `აღმოაჩინე ${APP_NAME}-ზე ბოლოს დარეგისტრირებული მომხმარებლები.`,
+    type: 'website',
+    url: `https://${PUBLIC_SITE_URL}/new-users`,
+    siteName: APP_NAME,
+  },
+};
 
 export default async function NewUsersPage() {
   const entries: NewUser[] = await getNewUsers(10, 0);

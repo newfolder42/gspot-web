@@ -1,6 +1,20 @@
 import { getLeaderboard } from '@/lib/leaderboard';
 import Link from 'next/link';
 import type { LeaderboardEntry } from '@/types/leaderboard';
+import type { Metadata } from 'next';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+
+export const metadata: Metadata = {
+  title: `ლიდერბორდი | ${APP_NAME}`,
+  description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
+  openGraph: {
+    title: `ლიდერბორდი - საუკეთესო მოთამაშეები | ${APP_NAME}`,
+    description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
+    type: 'website',
+    url: `https://${PUBLIC_SITE_URL}/leaderboard`,
+    siteName: APP_NAME,
+  },
+};
 
 export default async function LeaderboardsPage() {
   const entries: LeaderboardEntry[] = await getLeaderboard('gps-guessers', 10, 0);
