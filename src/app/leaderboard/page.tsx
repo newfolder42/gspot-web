@@ -19,11 +19,11 @@ export default async function LeaderboardsPage() {
                   <span className="text-sm font-medium">
                     <span className={
                       i === 0
-                        ? 'text-amber-400 dark:text-amber-300 font-bold'
+                        ? 'inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-400 dark:bg-amber-300 text-zinc-900 font-bold'
                         : i === 1
-                          ? 'text-slate-300 dark:text-slate-400 font-bold'
+                          ? 'inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-300 dark:bg-slate-400 text-zinc-900 font-bold'
                           : i === 2
-                            ? 'text-[#b87333] dark:text-[#b87333] font-bold'
+                            ? 'inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#b87333] dark:bg-[#b87333] text-white font-bold'
                             : 'text-zinc-900 dark:text-zinc-100'
                     }>{`#${i + 1}`}</span>
                     <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{e.alias}</span>
