@@ -2,11 +2,11 @@ import { getLeaderboard } from '@/lib/leaderboard';
 import Link from 'next/link';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 
-export default async function NewUsersPage() {
+export default async function LeaderboardsPage() {
   const entries: LeaderboardEntry[] = await getLeaderboard('gps-guessers', 10, 0);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
+    <div className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
       <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 p-6">
         <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-3">ლიდერბორდი</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">ყველაზე შედეგიანი მომხმარებლები გამოცნობილი ქულების მიხედვით</p>
@@ -26,7 +26,7 @@ export default async function NewUsersPage() {
                             ? 'text-[#b87333] dark:text-[#b87333] font-bold'
                             : 'text-zinc-900 dark:text-zinc-100'
                     }>{`#${i + 1}`}</span>
-                    <span className="ml-1 text-zinc-900 dark:text-zinc-100">{e.alias}</span>
+                    <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{e.alias}</span>
                   </span>
                 </div>
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">{e.rating}</div>

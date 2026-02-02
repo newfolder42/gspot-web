@@ -12,7 +12,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 pt-2">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
       <div className="max-w-4xl mx-auto">
         <article className="bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           <div className="flex items-start gap-3 px-4 py-3">

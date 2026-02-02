@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import LeftPanel from "@/components/left-panel";
+import { getCurrentUser } from "@/lib/session";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -64,11 +65,13 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en">
       <body
@@ -76,11 +79,11 @@ export default function RootLayout({
       >
         <Header image={{
           url: "/gspot.svg"
-        }} headers={[]} />
+        }} headers={[]} user={user} />
 
         <LeftPanel />
 
-        <main className="flex-1 pt-14 md:pl-56 bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+        <main className="flex-1 pt-14 md:pl-56 bg-zinc-950 dark:db-zinc-100">
           {children}
         </main>
         <Footer />

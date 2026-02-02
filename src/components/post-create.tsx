@@ -6,6 +6,7 @@ import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
+import { formatCoordinates } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -151,7 +152,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         </button>
       </div>
       <div className="absolute left-2 top-2 z-10 text-xs text-zinc-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-sm px-2 py-1 rounded border border-zinc-100 dark:border-zinc-800">
-        {coordinates ? `${coordinates.latitude?.toFixed(6)}, ${coordinates.longitude?.toFixed(6)}` : 'No GPS data — მონიშნე რუკაზე'}
+        {formatCoordinates(coordinates?.latitude, coordinates?.longitude, 'No GPS data — მონიშნე რუკაზე')}
       </div>
       <div ref={mapRef} className="w-full h-[240px] bg-zinc-100 dark:bg-zinc-800" />
     </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
+import { formatCoordinates } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -257,7 +258,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
           {submitting ? 'მიმდინარეობს...' : 'ცდა'}
         </button>
         <div className="text-xs text-zinc-500">
-          {selectedCoords.latitude.toFixed(6)}, {selectedCoords.longitude.toFixed(6)}
+          {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
           {distance !== null && (
             <span className="ml-3 font-semibold text-blue-600 dark:text-blue-400">
               მანძილი: {distance} მ
