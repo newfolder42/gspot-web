@@ -20,8 +20,8 @@ export type NotificationGpsGuessDetailsType = {
 
 export type NotificationConnectionPublishedGpsPostDetailsType = {
   postId: number,
-  userId: number,
-  userAlias: string,
+  authorId: number,
+  authorAlias: string,
   postType: string,
   title: string,
 }
@@ -70,11 +70,17 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'connection-created-gps-post': {
       const d = details as NotificationConnectionPublishedGpsPostDetailsType;
-      return `${d.userAlias}-მა დაპოსტა: ${d.title}`;
+      const title = d.title?.trim();
+      return title 
+        ? `${d.authorAlias}-მა გამოაქვეყნა: ${title}`
+        : `${d.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
     }
     case 'gps-post-failed': {
       const d = details as NotificationGpsPostPublishFailedDetailsType;
-      return `შენს პოსტი "${d.title}" ვერ განთავსდა (${d.reason}`;
+      const title = d.title?.trim();
+      return title
+        ? `შენს პოსტი "${title}" ვერ განთავსდა (${d.reason}`
+        : `შენს პოსტი ვერ განთავსდა (${d.reason}`;
     }
     case 'user-started-following': {
       const d = details as NotificationUserStartedFollowingDetailsType;
