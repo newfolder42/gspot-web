@@ -5,7 +5,6 @@ import FollowButton from '@/components/account/follow-button';
 import ProfilePhotoUpload from '@/components/profile-photo-upload';
 import { getAccountByAlias } from '@/lib/account';
 import { formatAge } from '@/lib/dates';
-import { getLevelFromXp } from '@/lib/xp';
 import { getCurrentUser } from '@/lib/session';
 import { getInitials } from '@/lib/getInitials';
 
@@ -78,7 +77,7 @@ export default async function UserLayout({ children, params }: Props) {
           <AccountTabs tabs={tabs} />
         </div>
 
-        <main className="p-6">
+        <main className="p-2">
           {children}
         </main>
       </div>

@@ -9,8 +9,21 @@ import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
 
-export async function getConnectionsPosts(userId: number, accountUserId: number, limit: number): Promise<(GpsPostType)[]> {
+export async function getConnectionsPosts(
+  userId: number,
+  accountUserId: number,
+  limit: number,
+  cursor?: { date: string; id: number }
+): Promise<(GpsPostType)[]> {
   try {
+    const cursorCondition = cursor
+      ? `and (p.created_at < $3 or (p.created_at = $3 and p.id < $4))`
+      : '';
+    
+    const params = cursor
+      ? [limit, accountUserId, cursor.date, cursor.id]
+      : [limit, accountUserId];
+
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
@@ -19,10 +32,10 @@ join posts p on ucn.connection_id = p.user_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where ucn.user_id = $2 and p.status in ('published')
-order by p.created_at desc
+where ucn.user_id = $2 and p.status in ('published') ${cursorCondition}
+order by p.created_at desc, p.id desc
 limit $1`,
-      [limit, accountUserId]
+      params
     );
 
     return res.rows.map((r) => ({
@@ -42,8 +55,21 @@ limit $1`,
   }
 }
 
-export async function getAccountPosts(userId: number, accountUserId: number, limit = 20): Promise<(GpsPostType)[]> {
+export async function getAccountPosts(
+  userId: number,
+  accountUserId: number,
+  limit = 20,
+  cursor?: { date: string; id: number }
+): Promise<(GpsPostType)[]> {
   try {
+    const cursorCondition = cursor
+      ? `and (p.created_at < $3 or (p.created_at = $3 and p.id < $4))`
+      : '';
+    
+    const params = cursor
+      ? [limit, accountUserId, cursor.date, cursor.id]
+      : [limit, accountUserId];
+
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
@@ -51,10 +77,10 @@ from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where p.user_id = $2
-order by p.created_at desc
+where p.user_id = $2 ${cursorCondition}
+order by p.created_at desc, p.id desc
 limit $1`,
-      [limit, accountUserId]
+      params
     );
 
     return res.rows.map((r) => ({
@@ -75,8 +101,20 @@ limit $1`,
   }
 }
 
-export async function getGlobalPosts(userId: number, limit = 20): Promise<(GpsPostType)[]> {
+export async function getGlobalPosts(
+  userId: number,
+  limit = 20,
+  cursor?: { date: string; id: number }
+): Promise<(GpsPostType)[]> {
   try {
+    const cursorCondition = cursor
+      ? `and (p.created_at < $2 or (p.created_at = $2 and p.id < $3))`
+      : '';
+    
+    const params = cursor
+      ? [limit, cursor.date, cursor.id]
+      : [limit];
+
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
@@ -84,10 +122,10 @@ from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where p.status = 'published'
-order by p.created_at desc
+where p.status = 'published' ${cursorCondition}
+order by p.created_at desc, p.id desc
 limit $1`,
-      [limit]
+      params
     );
 
     return res.rows.map((r) => ({

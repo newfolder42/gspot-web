@@ -60,14 +60,21 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
       if (!mapRef.current || mapInstanceRef.current) return;
       window.mapboxgl.accessToken = 'pk.eyJ1IjoibmV3Zm9sZGVyNDIiLCJhIjoiY21pcTNxa2RxMDEweDR2czgxZ3JjY3ltNSJ9.0R65cn75XdOhjO-_VoLqFQ';
 
-      const defaultCenter = coordinates && coordinates.latitude != null && coordinates.longitude != null
-        ? [coordinates.longitude, coordinates.latitude]
-        : [44.8271, 41.7151];
+      const hasValidCoords = coordinates && 
+        typeof coordinates.latitude === 'number' && 
+        typeof coordinates.longitude === 'number' &&
+        isFinite(coordinates.latitude) && 
+        isFinite(coordinates.longitude);
+
+      const defaultCenter: [number, number] = [44.8271, 41.7151];
+      const mapCenter: [number, number] = hasValidCoords
+        ? [coordinates!.longitude!, coordinates!.latitude!]
+        : defaultCenter;
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: defaultCenter,
+        center: mapCenter,
         zoom: 12,
         renderWorldCopies: false,
         // restrict map to Georgia bounding box: [west, south], [east, north]
@@ -75,8 +82,8 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         maxZoom: 18,
       });
 
-      const startLng = coordinates && coordinates.longitude != null ? coordinates.longitude : defaultCenter[0];
-      const startLat = coordinates && coordinates.latitude != null ? coordinates.latitude : defaultCenter[1];
+      const startLng = hasValidCoords ? coordinates!.longitude! : defaultCenter[0];
+      const startLat = hasValidCoords ? coordinates!.latitude! : defaultCenter[1];
 
       markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
         .setLngLat([startLng, startLat])
@@ -104,8 +111,12 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
 
   useEffect(() => {
     if (!markerRef.current) return;
-    if (coordinates && coordinates.latitude != null && coordinates.longitude != null) {
-      markerRef.current.setLngLat([coordinates.longitude, coordinates.latitude]);
+    if (coordinates && 
+        typeof coordinates.latitude === 'number' && 
+        typeof coordinates.longitude === 'number' &&
+        isFinite(coordinates.latitude) && 
+        isFinite(coordinates.longitude)) {
+      markerRef.current.setLngLat([coordinates.longitude!, coordinates.latitude!]);
     }
   }, [coordinates]);
 

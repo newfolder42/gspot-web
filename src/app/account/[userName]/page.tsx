@@ -47,7 +47,7 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   if (!data) return notFound();
 
   return (
-    <div className="px-4">
+    <div>
       {currentUserId && (<Feed type='account-feed'
         userId={currentUserId}
         accountUserId={data.user.id} />)}

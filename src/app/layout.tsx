@@ -78,7 +78,7 @@ export default async function RootLayout({
 
         <LeftPanel />
 
-        <main className="flex-1 pt-14 md:pl-56 bg-zinc-50 dark:bg-zinc-950">
+        <main className="flex-1 pt-14 p-2 md:pl-56 bg-zinc-50 dark:bg-zinc-950">
           {children}
         </main>
         <Footer />

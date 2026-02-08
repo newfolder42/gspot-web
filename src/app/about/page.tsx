@@ -17,7 +17,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+    <div className="max-w-4xl mx-auto px-2 py-10 space-y-6">
       <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}-ის შესახებ</h1>
