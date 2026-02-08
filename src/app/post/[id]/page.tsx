@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const image = post.image ?? undefined;
 
   const defaultTitle = `გამოიცანი ${post.author}-ის ფოტო-სურათის მდებარეობა ${APP_NAME}-ზე`;
-  const seoTitle = post.title && post.title.length > 20
+  const seoTitle = post.title && post.title.length <= 20
     ? `${post.title} | ${defaultTitle}`
     : defaultTitle;
 
@@ -39,12 +39,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: seoTitle,
     description: seoDescription,
+    alternates: {
+      canonical: `https://${PUBLIC_SITE_URL}/post/${post.id}`,
+    },
     openGraph: {
       type: 'article',
       title: seoTitle,
       siteName: PUBLIC_SITE_URL,
       description: seoDescription,
-      url: `${PUBLIC_SITE_URL}/post/${post.id}`,
+      url: `https://${PUBLIC_SITE_URL}/post/${post.id}`,
       images: image ? [{
         url: image,
         alt: post.title || `${post.author}-ის სურათის | ` + post.title,
@@ -53,6 +56,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       }] : undefined,
       publishedTime: post.date,
       authors: post.author ? [`${PUBLIC_SITE_URL}/account/${post.author}`] : undefined,
+      section: 'გეოგრაფიული გამოცნობა',
+      tags: ['გამოიცანი', 'გეოგრაფია', 'საქართველო', 'ფოტო', 'ლოკაცია'],
     }
   };
 }

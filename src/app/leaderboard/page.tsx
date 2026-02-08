@@ -7,6 +7,9 @@ import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
 export const metadata: Metadata = {
   title: `ლიდერბორდი | ${APP_NAME}`,
   description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
+  alternates: {
+    canonical: `https://${PUBLIC_SITE_URL}/leaderboard`,
+  },
   openGraph: {
     title: `ლიდერბორდი - საუკეთესო მოთამაშეები | ${APP_NAME}`,
     description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,

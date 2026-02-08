@@ -8,7 +8,7 @@ import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
 export async function generateMetadata({ params }: { params: Promise<{ userName: string }> }): Promise<Metadata> {
   const { userName } = await params;
   const data = await getAccountByAlias(userName, null);
-  
+
   if (!data) return {};
 
   const { user, profilePhoto } = data;
@@ -17,6 +17,9 @@ export async function generateMetadata({ params }: { params: Promise<{ userName:
   return {
     title: `'${user.alias} | ${APP_NAME}`,
     description: `${user.alias}-ის პროფილი ${APP_NAME}-ზე.`,
+    alternates: {
+      canonical: `https://${PUBLIC_SITE_URL}/account/${user.alias}`,
+    },
     openGraph: {
       type: 'profile',
       title: `'${user.alias} (@${user.alias})`,
