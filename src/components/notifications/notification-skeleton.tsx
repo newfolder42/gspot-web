@@ -8,17 +8,17 @@ export default function NotificationSkeleton() {
         >
           <div className="flex items-start gap-3">
             {/* Avatar skeleton */}
-            <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-600 flex-shrink-0" />
+            <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex-shrink-0" />
             
             {/* Content skeleton */}
             <div className="flex-1 min-w-0">
-              <div className="h-4 w-24 rounded bg-zinc-200 dark:bg-zinc-600 mb-2" />
-              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-600 mb-1" />
-              <div className="h-3 w-4/5 rounded bg-zinc-200 dark:bg-zinc-600" />
+              <div className="h-4 w-24 rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
+              <div className="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-700 mb-1" />
+              <div className="h-3 w-4/5 rounded bg-zinc-200 dark:bg-zinc-700" />
             </div>
 
             {/* Menu skeleton */}
-            <div className="h-5 w-5 rounded bg-zinc-200 dark:bg-zinc-600 flex-shrink-0" />
+            <div className="h-5 w-5 rounded bg-zinc-200 dark:bg-zinc-700 flex-shrink-0" />
           </div>
         </div>
       ))}

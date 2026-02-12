@@ -88,7 +88,8 @@ jobs:
                   "AWSCW_SECRET_ACCESS_KEY": "${{ secrets.AWSCW_SECRET_ACCESS_KEY }}",
                   "GOOGLE_AUTH_CLIENT_ID": "${{ secrets.GOOGLE_AUTH_CLIENT_ID }}",
                   "GOOGLE_AUTH_CLIENT_SECRET": "${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}",
-                  "GOOGLE_AUTH_REDIRECT_URI": "${{ secrets.GOOGLE_AUTH_REDIRECT_URI }}"
+                  "GOOGLE_AUTH_REDIRECT_URI": "${{ secrets.GOOGLE_AUTH_REDIRECT_URI }}",
+                  "MAPBOX_ACCESS_TOKEN": "${{ secrets.MAPBOX_ACCESS_TOKEN }}"
                 },
                 "ports": {
                   "3000": "HTTP"

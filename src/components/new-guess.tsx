@@ -64,7 +64,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
     function initMap() {
       if (!mapRef.current || mapInstanceRef.current) return;
 
-      window.mapboxgl.accessToken = 'pk.eyJ1IjoibmV3Zm9sZGVyNDIiLCJhIjoiY21pcTNxa2RxMDEweDR2czgxZ3JjY3ltNSJ9.0R65cn75XdOhjO-_VoLqFQ';
+      window.mapboxgl.accessToken = process.env.MAPBOX_ACCESS_TOKEN;
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,

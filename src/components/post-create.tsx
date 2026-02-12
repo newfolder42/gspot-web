@@ -58,7 +58,8 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
 
     function initMap() {
       if (!mapRef.current || mapInstanceRef.current) return;
-      window.mapboxgl.accessToken = 'pk.eyJ1IjoibmV3Zm9sZGVyNDIiLCJhIjoiY21pcTNxa2RxMDEweDR2czgxZ3JjY3ltNSJ9.0R65cn75XdOhjO-_VoLqFQ';
+
+      window.mapboxgl.accessToken = process.env.MAPBOX_ACCESS_TOKEN;
 
       const hasValidCoords = coordinates && 
         typeof coordinates.latitude === 'number' && 
@@ -165,7 +166,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
       <div className="absolute left-2 top-2 z-10 text-xs text-zinc-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-sm px-2 py-1 rounded border border-zinc-100 dark:border-zinc-800">
         {formatCoordinates(coordinates?.latitude, coordinates?.longitude, 'No GPS data — მონიშნე რუკაზე')}
       </div>
-      <div ref={mapRef} className="w-full h-[240px] bg-zinc-100 dark:bg-zinc-800" />
+      <div ref={mapRef} className="w-full h-[400px] bg-zinc-100 dark:bg-zinc-800" />
     </div>
   );
 };

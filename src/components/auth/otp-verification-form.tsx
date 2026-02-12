@@ -176,7 +176,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         <button
           onClick={() => handleVerify()}
           disabled={loading || code.some((d) => !d)}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-700 
+          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 
                    text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
         >
           {loading ? "მუშავდება..." : "დადასტურება"}

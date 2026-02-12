@@ -6,7 +6,7 @@ export default function Loading() {
       <section
         role="status"
         aria-hidden="true"
-        className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 p-6 animate-pulse"
+        className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-800 p-6 animate-pulse"
       >
         <div className="h-5 w-28 rounded bg-zinc-200 dark:bg-zinc-700 mb-3" />
         <div className="h-4 w-64 rounded bg-zinc-200 dark:bg-zinc-700 mb-4" />

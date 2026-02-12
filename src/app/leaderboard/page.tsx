@@ -24,14 +24,14 @@ export default async function LeaderboardsPage() {
 
   return (
     <div className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
-      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 p-6">
+      <section className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-800 p-6">
         <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-3">ლიდერბორდი</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">ყველაზე შედეგიანი მომხმარებლები გამოცნობილი ქულების მიხედვით</p>
 
         <ol className="space-y-2">
           {entries.map((e, i) => (
             <li key={e.userId}>
-              <Link href={`/account/${e.alias}`} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800">
+              <Link href={`/account/${e.alias}`} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-700">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">
                     <span className={

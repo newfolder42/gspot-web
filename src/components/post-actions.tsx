@@ -99,13 +99,13 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 mb-4"
+              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 mb-4"
               placeholder="პოსტის სათაური"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 px-3 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                className="flex-1 px-3 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 disabled={isLoading}
               >
                 გაუქმება
@@ -130,7 +130,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
             <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-3 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                className="flex-1 px-3 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 disabled={isLoading}
               >
                 გაუქმება
