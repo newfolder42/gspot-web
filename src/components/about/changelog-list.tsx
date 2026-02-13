@@ -93,8 +93,8 @@ export default function ChangelogList() {
     return (
         <ul className="px-6 py-4 space-y-2">
             {visible.map((rel) => (
-                <div key={rel.version} className="border border-zinc-200 dark:border-zinc-800 rounded-md">
-                    <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 dark:bg-zinc-800">
+                <div key={rel.version} className="border border-zinc-200 dark:border-zinc-700 rounded-md">
+                    <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 dark:bg-zinc-900">
                         <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{rel.version}</span>
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">{rel.date}</span>
                     </div>
