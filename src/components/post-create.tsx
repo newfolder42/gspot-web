@@ -59,7 +59,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
     function initMap() {
       if (!mapRef.current || mapInstanceRef.current) return;
 
-      window.mapboxgl.accessToken = process.env.MAPBOX_ACCESS_TOKEN;
+      window.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
       const hasValidCoords = coordinates && 
         typeof coordinates.latitude === 'number' && 

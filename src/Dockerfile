@@ -15,12 +15,10 @@ COPY . .
 # Accept build arguments
 ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
-ARG MAPBOX_ACCESS_TOKEN
 
 # Set environment variables for build
 ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
-ENV MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}
 
 # Build the application
 RUN npm run build

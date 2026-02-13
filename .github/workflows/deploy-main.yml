@@ -30,7 +30,7 @@ jobs:
           build-args: |
             NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
             NEXTAUTH_URL=${{ env.BASE_URL }}
-            MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}
+            NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -90,7 +90,7 @@ jobs:
                   "GOOGLE_AUTH_CLIENT_ID": "${{ secrets.GOOGLE_AUTH_CLIENT_ID }}",
                   "GOOGLE_AUTH_CLIENT_SECRET": "${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}",
                   "GOOGLE_AUTH_REDIRECT_URI": "${{ secrets.GOOGLE_AUTH_REDIRECT_URI }}",
-                  "MAPBOX_ACCESS_TOKEN": "${{ secrets.MAPBOX_ACCESS_TOKEN }}"
+                  "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN": "${{ secrets.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}"
                 },
                 "ports": {
                   "3000": "HTTP"
