@@ -20,7 +20,7 @@ export default function PasswordChangeForm() {
     setMessage(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setMessage({ type: 'error', text: "გთხოვთ შეავსოთ ყველა ველი" });
+      setMessage({ type: 'error', text: "გთხოვ შეავსე ყველა ველი" });
       return;
     }
 
@@ -100,14 +100,14 @@ export default function PasswordChangeForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">გაიმეორეთ ახალი პაროლი</label>
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">გაიმეორე ახალი პაროლი</label>
         <div className="relative mt-1">
           <input
             className={inputClasses}
             type={showConfirm ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="გაიმეორეთ ახალი პაროლი"
+            placeholder="გაიმეორე ახალი პაროლი"
             disabled={loading}
           />
           <button

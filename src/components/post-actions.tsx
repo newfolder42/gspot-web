@@ -125,7 +125,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">გსურთ პოსტის წაშლა?</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">გსურს პოსტის წაშლა?</h2>
 
             <div className="flex gap-2">
               <button

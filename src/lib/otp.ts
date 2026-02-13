@@ -166,7 +166,7 @@ export async function resendOTP(email: string): Promise<{ success: boolean; erro
       if (timeSinceLastOTP < 60000) {
         return {
           success: false,
-          error: 'გთხოვთ მოიცადოთ სანამ ახალი კოდის გაგზავნას შეძლებთ (1 წუთი).'
+          error: 'გთხოვ მოიცადე სანამ ახალი კოდის გაგზავნას შეძლებ (1 წუთი).'
         };
       }
     }

@@ -84,7 +84,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'user-started-following': {
       const d = details as NotificationUserStartedFollowingDetailsType;
-      return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი ${d.followerAlias}`;
+      return `გილოცავ, შენ შეგეძინა ახალი ფოლოვერი ${d.followerAlias}`;
     }
     default:
       return "ახალი შეტყობინება";

@@ -99,7 +99,7 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
             <p class="warning">⚠️ თუ ეს კოდი შენ არ გამოგიგზავნია, დააიგნორე / If you didn't request this code, please ignore this email.</p>
           </div>
           <div class="footer">
-            <p>ესე მესიჯი არის ავტომატურად გენერირებული, გთხვოთ არ გამოიყენოთ პასუხის გასაცემად / This is an automated message, please do not reply.</p>
+            <p>ესე მესიჯი არის ავტომატურად გენერირებული, გთხოვ არ გამოიყენო პასუხის გასაცემად / This is an automated message, please do not reply.</p>
             <p>&copy; ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.</p>
           </div>
         </div>

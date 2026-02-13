@@ -30,7 +30,7 @@ export default function AboutPage() {
             საიტის დეველოპმენტი ხორციელდება სწავლისა და გამოცდილების გაზრდის მიზნით, მისი კომერციალიზაცია არ იგეგმება.
           </p>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            უკუკავშირისთვის გადადით (
+            უკუკავშირისთვის გადადი (
             <a
               href="https://github.com/newfolder42/gspot-web/issues"
               target="_blank"

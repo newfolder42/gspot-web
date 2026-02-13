@@ -51,12 +51,12 @@ export default function NotificationSettingsForm({ initialEmailEnabled }: Props)
             იმეილით შეტყობინებები
           </div>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-            12 საათის წაუკთხავი შეტყობინებები მოგივათ მეილზე
+            12 საათის წაუკთხავი შეტყობინებები მოგივა მეილზე
           </p>
         </div>
       </div>
 
-      {message && (
+      {message && message.type === 'error' && (
         <div className={`text-sm font-medium ${message.type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
           {message.text}
         </div>

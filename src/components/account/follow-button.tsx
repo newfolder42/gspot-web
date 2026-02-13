@@ -41,7 +41,7 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
     if (result.success) {
       setConnected(!connected);
     } else {
-      setError('ფიქსირდება ხარვეზი, გთხვოთ ცადოს მოგვაინებით:' + result.error);
+      setError('ფიქსირდება ხარვეზი, გთხოვ ცადე მოგვაინებით:' + result.error);
     }
 
     setLoading(false);

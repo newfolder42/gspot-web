@@ -9,7 +9,7 @@ export async function updatePassword(currentPassword: string, newPassword: strin
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return { success: false, message: "არ ხართ ავტორიზებული" };
+      return { success: false, message: "არ ხარ ავტორიზებული" };
     }
 
     const result = await query('SELECT password_hash FROM users WHERE id = $1', [user.userId]);
@@ -40,7 +40,7 @@ export async function updateEmailNotifications(enabled: boolean): Promise<{ succ
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return { success: false, message: "არ ხართ ავტორიზებული" };
+      return { success: false, message: "არ ხარ ავტორიზებული" };
     }
 
     const existingResult = await query(

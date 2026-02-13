@@ -15,7 +15,7 @@ export default function SigninForm() {
     setError(null);
 
     if (!email || !password) {
-      setError("მიუთითეთ მეილი და პაროლი.");
+      setError("მიუთითე მეილი და პაროლი.");
       return;
     }
 

@@ -67,7 +67,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
     const otpCode = codeToVerify || code.join("");
 
     if (otpCode.length !== 6) {
-      setError("გთხოვთ შეიყვანოთ 6-ნიშნა კოდი");
+      setError("გთხოვ შეიყვანე 6-ნიშნა კოდი");
       return;
     }
 
@@ -97,7 +97,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         inputRefs.current[0]?.focus();
       }
     } catch {
-      setError("დაფიქსირდა შეცდომა. გთხოვთ ხელახლა სცადოთ.");
+      setError("დაფიქსირდა შეცდომა. გთხოვ ხელახლა სცადე.");
       setCode(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
@@ -122,7 +122,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         setError(result.error || "კოდის გაგზავნა ვერ მოხერხდა");
       }
     } catch {
-      setError("დაფიქსირდა შეცდომა. გთხოვთ ხელახლა სცადოთ.");
+      setError("დაფიქსირდა შეცდომა. გთხოვ ხელახლა სცადო.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
           მეილის დადასტურება
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          გთხოვთ შეიყვანოთ 6-ნიშნა კოდი რომელიც გამოგზავნილია მისამართზე:
+          გთხოვ შეიყვანე 6-ნიშნა კოდი რომელიც გამოგზავნილია მისამართზე:
         </p>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mt-1">
           {email}

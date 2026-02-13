@@ -24,12 +24,12 @@ export default function SignupForm() {
     setError(null);
 
     if (!email || !password || !name || !alias) {
-      setError("გთხოვთ შეავსოთ ყველა ველი.");
+      setError("გთხოვ შეავსე ყველა ველი.");
       return;
     }
 
     if (aliasStatus !== "available") {
-      setError("გთხოვთ აარჩიოთ თავისუფალი თიკუნი.");
+      setError("გთხოვ აარჩიე თავისუფალი თიკუნი.");
       return;
     }
 
@@ -53,7 +53,7 @@ export default function SignupForm() {
         setError('არასწორი მონაცემები.');
         return;
       }
-      setError("გთხოვთ ხელახლა ცადოთ მოგვიანებით.");
+      setError("გთხოვ ხელახლა ცადე მოგვიანებით.");
     } finally {
       setLoading(false);
     }

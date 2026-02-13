@@ -16,7 +16,7 @@ export default function ProfilePhotoUpload() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('გთხოვთ აირჩიოთ მხოლოდ ფოტო-სურათი');
+      setError('გთხოვ აირჩიე მხოლოდ ფოტო-სურათი');
       return;
     }
 
