@@ -103,10 +103,14 @@ export async function completePendingRegistration(email: string): Promise<{ succ
 
     const pending = pendingResult.rows[0];
 
-    await query(
-      'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW())',
+    const createdUser = await query(
+      'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id',
       [pending.name, pending.alias, normalizedEmail, pending.password_hash]
     );
+
+    if (createdUser.rows[0]?.id) {
+      await query('INSERT INTO user_options (user_id) VALUES ($1)', [createdUser.rows[0].id]);
+    }
 
     await query(
       'DELETE FROM pending_registrations WHERE id = $1',
