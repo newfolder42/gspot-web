@@ -1,12 +1,12 @@
 import { createClient, RedisClientType } from "redis";
-import { logerror } from "./logger";
+import { logerror, loginfo } from "./logger";
 
 class EventBus {
   private redisPub?: RedisClientType;
   private initialized = false;
 
   async publish<T>(resource: string, action: string, payload: T) {
-    console.log("publishing event:", resource, action, payload);
+    await loginfo(`Publishing event: ${resource}:${action}`, { payload });
     await this.init();
 
     if (this.redisPub) {
@@ -18,7 +18,7 @@ class EventBus {
           payload
         }));
       } catch (err) {
-        logerror("eventBus: failed to publish to redis", [err]);
+        await logerror("eventBus: failed to publish to redis", [err]);
       }
     }
   }
@@ -29,17 +29,15 @@ class EventBus {
 
     this.redisPub = createClient({ url });
 
-    this.redisPub.on("error", (err: unknown) => {
-      console.error("redis pub error", err);
-      logerror("redis pub error", [err]);
+    this.redisPub.on("error", async (err: unknown) => {
+      await logerror("redis pub error", [err]);
     });
 
     try {
       await this.redisPub.connect();
       this.initialized = true;
     } catch (err) {
-      console.error("eventBus: failed to connect to redis", err);
-      logerror("eventBus: failed to connect to redis", [err]);
+      await logerror("eventBus: failed to connect to redis", [err]);
       // Clean up partially-initialized client
       try {
         await (this.redisPub as any)?.disconnect?.();

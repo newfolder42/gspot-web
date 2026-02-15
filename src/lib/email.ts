@@ -61,7 +61,7 @@ async function sendEmail(options: EmailOptions): Promise<boolean> {
         }
         return true;
     } catch (err) {
-        logerror('sendEmail error', [err]);
+        await logerror('sendEmail error', [err]);
         return false;
     }
 }

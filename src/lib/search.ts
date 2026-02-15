@@ -32,7 +32,7 @@ export async function searchUsersAndPosts(q: string): Promise<{ users: SearchedU
       posts: postsRes.rows,
     };
   } catch (err) {
-    logerror('searchUsersAndPosts error', [err]);
+    await logerror('searchUsersAndPosts error', [err]);
     return { users: [], posts: [] };
   }
 }

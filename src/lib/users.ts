@@ -8,7 +8,7 @@ export async function getUserIdByAlias(userName: string) {
     const res = await query('SELECT id FROM users WHERE alias = $1', [userName]);
     return res.rows.length > 0 ? res.rows[0].id : null;
   } catch (err) {
-    logerror('getUserIdByAlias error', [err]);
+    await logerror('getUserIdByAlias error', [err]);
     return null;
   }
 }
@@ -19,7 +19,7 @@ export async function getUserIdByEMail(email: string) {
     const res = await query('SELECT id, alias, email FROM users WHERE email = $1', [email]);
     return res.rows.length > 0 ? res.rows[0] : null;
   } catch (err) {
-    logerror('getUserIdByAlias error', [err]);
+    await logerror('getUserIdByAlias error', [err]);
     return null;
   }
 }
@@ -42,7 +42,7 @@ export async function getNewUsers(limit = 20, offset = 0): Promise<NewUser[]> {
       profilePhoto: r.profile_photo_url ? { url: r.profile_photo_url } : null,
     }));
   } catch (err) {
-    logerror('getNewUsers error', [err]);
+    await logerror('getNewUsers error', [err]);
     return [];
   }
 }

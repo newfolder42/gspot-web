@@ -19,7 +19,7 @@ async function isEmailOrAliasInUsers(email: string, alias: string): Promise<bool
     );
     return result.rows.length > 0;
   } catch (err) {
-    logerror('isEmailOrAliasInUsers error:', [err]);
+    await logerror('isEmailOrAliasInUsers error:', [err]);
     throw err;
   }
 }
@@ -49,7 +49,7 @@ async function createOrUpdatePendingRegistration(
 
     return result.rows[0];
   } catch (err) {
-    logerror('createOrUpdatePendingRegistration error:', [err]);
+    await logerror('createOrUpdatePendingRegistration error:', [err]);
     throw err;
   }
 }
@@ -77,10 +77,10 @@ export async function signup(user: UserToRegister) {
       const otpCode = await createOTP(email);
       await sendOTPEmail(email, otpCode);
     } catch (otpErr) {
-      logerror('OTP email error:', [otpErr]);
+      await logerror('OTP email error:', [otpErr]);
     }
   } catch (err) {
-    logerror('signup error:', [err]);
+    await logerror('signup error:', [err]);
     throw err;
   }
 }
@@ -95,7 +95,7 @@ export async function userAliasTaken(userAlias: string) {
     );
     return res.rows.some(row => parseInt(row.count) > 0);
   } catch (err) {
-    logerror('alias check:', [err]);
+    await logerror('alias check:', [err]);
     return true;
   }
 }

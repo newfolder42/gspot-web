@@ -50,7 +50,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
-    logerror('getConnectionsPosts error', [err]);
+    await logerror('getConnectionsPosts error', [err]);
     return [];
   }
 }
@@ -96,7 +96,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
-    logerror('getAccountPosts error', [err]);
+    await logerror('getAccountPosts error', [err]);
     return [];
   }
 }
@@ -141,7 +141,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
     }));
   } catch (err) {
-    logerror('getGlobalPosts error', [err]);
+    await logerror('getGlobalPosts error', [err]);
     return [];
   }
 }
@@ -176,7 +176,7 @@ limit 1`,
       guessCount: r.guesses_count ?? 0,
     };
   } catch (err) {
-    logerror('getPostForView error', [err]);
+    await logerror('getPostForView error', [err]);
     return null;
   }
 }
@@ -211,7 +211,7 @@ limit 1`,
       guessCount: r.guesses_count ?? 0,
     };
   } catch (err) {
-    logerror('getPostById error', [err]);
+    await logerror('getPostById error', [err]);
     return null;
   }
 }
@@ -227,7 +227,7 @@ where pg.post_id = $1 and pg.user_id = $2`,
     if (res.rowCount === 0) return true;
     return false;
   } catch (err) {
-    logerror('postIsGuessedByUser error', [err]);
+    await logerror('postIsGuessedByUser error', [err]);
     return false;
   }
 }
@@ -258,7 +258,7 @@ export async function createPost({ title, contentId, status = 'published' }: { t
       authorAlias: user.alias,
     } as PostCreatedEvent);
   } catch (err) {
-    logerror('createPost error', [err]);
+    await logerror('createPost error', [err]);
     return false;
   }
 }
@@ -285,7 +285,7 @@ order by pg.created_at desc`,
       score: r.details?.score ?? null,
     }));
   } catch (err) {
-    logerror('get guesses error', [err]);
+    await logerror('get guesses error', [err]);
     return [];
   }
 }
@@ -323,7 +323,7 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
 
     return { id: data.rows[0].id };
   } catch (err) {
-    logerror('createPostGuess error', [err]);
+    await logerror('createPostGuess error', [err]);
     return null;
   }
 }
@@ -340,7 +340,7 @@ where p.id = $1`,
 
     return { coordinates: data.rows[0].details.coordinates };
   } catch (err) {
-    logerror('getPhotoCoordinates error', [err]);
+    await logerror('getPhotoCoordinates error', [err]);
     return null;
   }
 }
@@ -357,7 +357,7 @@ export async function updatePostTitle(postId: number, newTitle: string) {
 
     return res.rowCount === 1;
   } catch (err) {
-    logerror('updatePostTitle error', [err]);
+    await logerror('updatePostTitle error', [err]);
     return false;
   }
 }
@@ -381,12 +381,12 @@ export async function deletePost(postId: number) {
               const { deleteObject } = await import('./s3');
               await deleteObject(key);
             } catch (s3Err) {
-              logerror('deletePost s3 delete error', [s3Err, publicUrl]);
+              await logerror('deletePost s3 delete error', [s3Err, publicUrl]);
             }
           }
         }
       } catch (err) {
-        logerror('deletePost fetch user_content error', [err, cid]);
+        await logerror('deletePost fetch user_content error', [err, cid]);
       }
     }
 
@@ -402,7 +402,7 @@ export async function deletePost(postId: number) {
 
     return res.rowCount === 1;
   } catch (err) {
-    logerror('deletePost error', [err]);
+    await logerror('deletePost error', [err]);
     return false;
   }
 }

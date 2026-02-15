@@ -23,7 +23,7 @@ export async function getLeaderboard(type: string, limit = 50, offset = 0): Prom
       lastModifiedAt: r.last_modified_at || null,
     }));
   } catch (err) {
-    logerror('getLeaderboard error', [err]);
+    await logerror('getLeaderboard error', [err]);
     return [];
   }
 }

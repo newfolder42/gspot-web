@@ -34,7 +34,7 @@ export async function followUnfollow(alias: string, currentlyConnected: boolean)
 
     return { success: true };
   } catch (err) {
-    logerror('followUnfollow error:', [err]);
+    await logerror('followUnfollow error:', [err]);
     return { success: false, error: 'გაურკვეველი შეცდომა' };
   }
 }

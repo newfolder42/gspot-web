@@ -31,7 +31,7 @@ export async function updatePassword(currentPassword: string, newPassword: strin
 
     return { success: true, message: "პაროლი წარმატებით შეიცვალა" };
   } catch (err) {
-    logerror('updatePassword error:', [err]);
+    await logerror('updatePassword error:', [err]);
     return { success: false, message: "პაროლის განახლებისას მოხდა შეცდომა" };
   }
 }
@@ -65,7 +65,7 @@ export async function updateEmailNotifications(enabled: boolean): Promise<{ succ
 
     return { success: true, message: null };
   } catch (err) {
-    logerror('updateEmailNotifications error:', [err]);
+    await logerror('updateEmailNotifications error:', [err]);
     return { success: false, message: "პარამეტრების განახლებისას მოხდა შეცდომა" };
   }
 }
@@ -91,7 +91,7 @@ export async function getNotificationSettings(): Promise<{ emailNotificationsEna
       emailNotificationsEnabled: notifications?.email ?? true,
     };
   } catch (err) {
-    logerror('getNotificationSettings error:', [err]);
+    await logerror('getNotificationSettings error:', [err]);
     return null;
   }
 }

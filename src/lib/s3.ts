@@ -27,7 +27,7 @@ export async function generateFileUrl(type: string) {
         const url = await getSignedUrl(s3client, command, { expiresIn: 900 });
         return url;
     } catch (err) {
-        logerror('generateFileUrl error', [err]);
+        await logerror('generateFileUrl error', [err]);
         throw err;
     }
 }
@@ -37,6 +37,6 @@ export async function deleteObject(key: string) {
         const cmd = new DeleteObjectCommand({ Bucket: BUCKET, Key: key });
         return s3client.send(cmd);
     } catch (err) {
-        logerror('deleteObject error', [err]);
+        await logerror('deleteObject error', [err]);
     }
 }

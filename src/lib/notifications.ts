@@ -36,7 +36,7 @@ export async function getNotificationsForUser(userId: number, limit = 10): Promi
 
     return res.rows;
   } catch (err) {
-    logerror('getNotificationsForUser error', [err]);
+    await logerror('getNotificationsForUser error', [err]);
     return [];
   }
 }
@@ -55,7 +55,7 @@ export async function markNotificationSeen(notificationId: number, userId: numbe
 
     return res.rows.length > 0;
   } catch (err) {
-    logerror('markNotificationSeen error', [err]);
+    await logerror('markNotificationSeen error', [err]);
     return false;
   }
 }
@@ -74,7 +74,7 @@ export async function markNotificationUnseen(notificationId: number, userId: num
 
     return res.rows.length > 0;
   } catch (err) {
-    logerror('markNotificationUnseen error', [err]);
+    await logerror('markNotificationUnseen error', [err]);
     return false;
   }
 }
@@ -96,7 +96,7 @@ export async function createNotification(
 
     return res.rows.length > 0 ? res.rows[0].id : null;
   } catch (err) {
-    logerror('createNotification error', [err]);
+    await logerror('createNotification error', [err]);
     return null;
   }
 }

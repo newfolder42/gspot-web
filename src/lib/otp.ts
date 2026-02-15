@@ -32,7 +32,7 @@ export async function createOTP(email: string): Promise<string> {
 
     return code;
   } catch (err) {
-    logerror('createOTP error', [err]);
+    await logerror('createOTP error', [err]);
     throw err;
   }
 }
@@ -83,7 +83,7 @@ LIMIT 1`,
 
     return { success: true };
   } catch (err) {
-    logerror('verifyOTP error', [err]);
+    await logerror('verifyOTP error', [err]);
     return { success: false, error: 'SERVER_ERROR' };
   }
 }
@@ -116,12 +116,12 @@ export async function completePendingRegistration(email: string): Promise<{ succ
     try {
       await sendWelcomeEmail(normalizedEmail, pending.alias);
     } catch (err) {
-      logerror('Welcome email error', [err]);
+      await logerror('Welcome email error', [err]);
     }
 
     return { success: true };
   } catch (err) {
-    logerror('completePendingRegistration error', [err]);
+    await logerror('completePendingRegistration error', [err]);
     return { success: false, error: 'SERVER_ERROR' };
   }
 }
@@ -134,7 +134,7 @@ export async function hasPendingRegistration(email: string): Promise<boolean> {
     );
     return result.rows.length > 0;
   } catch (err) {
-    logerror('hasPendingRegistration error', [err]);
+    await logerror('hasPendingRegistration error', [err]);
     return false;
   }
 }
@@ -176,7 +176,7 @@ export async function resendOTP(email: string): Promise<{ success: boolean; erro
 
     return { success: true };
   } catch (err) {
-    logerror('resendOTP error', [err]);
+    await logerror('resendOTP error', [err]);
     return { success: false, error: 'გაურკვეველი ხარვეზი' };
   }
 }

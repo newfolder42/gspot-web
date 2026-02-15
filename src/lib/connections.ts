@@ -32,7 +32,7 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
       profilePhoto: r.profile_photo_url ?? null,
     }));
   } catch (err) {
-    logerror('getConnectionsForUserByAlias error', [err]);
+    await logerror('getConnectionsForUserByAlias error', [err]);
     return [];
   }
 }
@@ -56,7 +56,7 @@ ORDER BY ucx.created_at DESC
       profilePhoto: null,
     }));
   } catch (err) {
-    logerror('getUserConnections error', [err]);
+    await logerror('getUserConnections error', [err]);
     return [];
   }
 }
@@ -67,7 +67,7 @@ export async function connectionExists(userId: number, targetId: number, type = 
       [userId, targetId, type]);
     return res.rows.length > 0 ? res.rows[0].id : null;
   } catch (err) {
-    logerror('connectionExists error', [err]);
+    await logerror('connectionExists error', [err]);
     return null;
   }
 }
@@ -86,7 +86,7 @@ export async function createConnection(userId: number, targetId: number, type = 
     
     return res.rows[0] ?? null;
   } catch (err) {
-    logerror('createConnection error', [err]);
+    await logerror('createConnection error', [err]);
     return null;
   }
 }
@@ -97,7 +97,7 @@ export async function deleteConnection(userId: number, targetId: number, type = 
       [userId, targetId, type]);
     return res.rows.length > 0;
   } catch (err) {
-    logerror('deleteConnection error', [err]);
+    await logerror('deleteConnection error', [err]);
     return false;
   }
 }
