@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getNotificationSettings } from "@/actions/settings";
-import PasswordChangeForm from "@/components/settings/password-change-form";
 import NotificationSettingsForm from "@/components/settings/notification-settings-form";
 import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/constants";
