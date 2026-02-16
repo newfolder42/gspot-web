@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { verifyOTP, resendOTP, completePendingRegistration } from "@/lib/otp";
+import { verifyOTP, resendOTP } from "@/lib/otp";
+import { completePendingRegistration } from "@/lib/auth";
 
 interface OTPVerificationFormProps {
   email: string;
