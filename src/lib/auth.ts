@@ -5,7 +5,7 @@ import { query } from "@/lib/db";
 import type { UserToRegister } from '@/types/user';
 import { logerror } from './logger';
 import { createOTP } from './otp';
-import { sendOTPEmail } from './email';
+import { sendOTPEmail, sendWelcomeEmail } from './email';
 
 function isEmail(s: string) {
   return typeof s === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
@@ -97,5 +97,47 @@ export async function userAliasTaken(userAlias: string) {
   } catch (err) {
     await logerror('alias check:', [err]);
     return true;
+  }
+}
+
+export async function completePendingRegistration(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const normalizedEmail = email.toLowerCase();
+
+    const pendingResult = await query(
+      'SELECT id, name, alias, password_hash FROM pending_registrations WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
+    if (pendingResult.rows.length === 0) {
+      return { success: false, error: 'NO_PENDING_REGISTRATION' };
+    }
+
+    const pending = pendingResult.rows[0];
+
+    const createdUser = await query(
+      'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id',
+      [pending.name, pending.alias, normalizedEmail, pending.password_hash]
+    );
+
+    if (createdUser.rows[0]?.id) {
+      await query('INSERT INTO user_options (user_id) VALUES ($1)', [createdUser.rows[0].id]);
+    }
+
+    await query(
+      'DELETE FROM pending_registrations WHERE id = $1',
+      [pending.id]
+    );
+
+    try {
+      await sendWelcomeEmail(normalizedEmail, pending.alias);
+    } catch (err) {
+      await logerror('Welcome email error', [err]);
+    }
+
+    return { success: true };
+  } catch (err) {
+    await logerror('completePendingRegistration error', [err]);
+    return { success: false, error: 'SERVER_ERROR' };
   }
 }
