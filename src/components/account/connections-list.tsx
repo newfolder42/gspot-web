@@ -26,7 +26,7 @@ export default async function ConnectionsList({ userName }: { userName: string }
         <ConnectionCard
           key={c.alias}
           alias={c.alias}
-          name={c.name}
+          createdAt={c.createdAt}
           profilePhoto={c.profilePhoto ? { url: c.profilePhoto } : null}
           canUnfollow={isOwnProfile}
         />

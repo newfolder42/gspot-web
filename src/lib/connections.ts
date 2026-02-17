@@ -14,7 +14,7 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
     const userId = userRes.rows[0].id;
 
     const res = await query(
-      `SELECT u.id, u.alias, u.name,
+      `SELECT u.id, u.alias, ucx.created_at,
        upp.public_url as profile_photo_url
        FROM user_connections ucx
        JOIN users u on u.id = ucx.connection_id
@@ -28,7 +28,7 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
     return res.rows.map((r) => ({
       id: r.id,
       alias: r.alias,
-      name: r.name,
+      createdAt: r.created_at,
       profilePhoto: r.profile_photo_url ?? null,
     }));
   } catch (err) {
@@ -40,7 +40,7 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
 export async function getConnecters(userId: number): Promise<ClientConnection[]> {
   try {
     const res = await query(
-      `SELECT u.id, u.alias, u.name
+      `SELECT u.id, u.alias, ucx.created_at
 FROM user_connections ucx
 JOIN users u on u.id = ucx.user_id
 WHERE ucx.connection_id = $1
@@ -52,7 +52,7 @@ ORDER BY ucx.created_at DESC
     return res.rows.map((r) => ({
       id: r.id,
       alias: r.alias,
-      name: r.name,
+      createdAt: r.created_at,
       profilePhoto: null,
     }));
   } catch (err) {

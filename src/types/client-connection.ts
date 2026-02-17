@@ -1,6 +1,6 @@
 export type ClientConnection = {
   id: number;
   alias: string;
-  name?: string | null;
+  createdAt: string;
   profilePhoto?: string | null;
 }

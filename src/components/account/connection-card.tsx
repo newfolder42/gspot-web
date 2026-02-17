@@ -2,15 +2,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import FollowButton from './follow-button';
 import { getInitials } from '@/lib/getInitials';
+import { formatTimePassed } from '@/lib/dates';
 
 type Props = {
   alias: string;
-  name?: string | null;
   profilePhoto?: { url?: string | null } | null;
+  createdAt: string;
   canUnfollow?: boolean;
 };
 
-export default function ConnectionCard({ alias, name, profilePhoto, canUnfollow = false }: Props) {
+export default function ConnectionCard({ alias, profilePhoto, createdAt, canUnfollow = false }: Props) {
   const photoUrl = profilePhoto?.url || null;
 
   return (
@@ -24,8 +25,10 @@ export default function ConnectionCard({ alias, name, profilePhoto, canUnfollow 
           )}
         </div>
         <div className="truncate">
-          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{name ?? alias}</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">@{alias}</div>
+          <div className="text-sm font-medium">
+            <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{alias}</span>
+          </div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(createdAt)}</div>
         </div>
       </Link>
       {canUnfollow && (
