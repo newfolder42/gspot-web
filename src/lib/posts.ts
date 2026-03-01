@@ -232,6 +232,42 @@ where pg.post_id = $1 and pg.user_id = $2`,
   }
 }
 
+export async function canUserGuessPost(postId: number): Promise<{ canGuess: boolean; reason?: string }> {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      return { canGuess: false, reason: 'not_logged_in' };
+    }
+
+    const postRes = await query(
+      `select user_id from posts where id = $1`,
+      [postId]
+    );
+
+    if (postRes.rowCount === 0) {
+      return { canGuess: false, reason: 'post_not_found' };
+    }
+
+    const postAuthorId = postRes.rows[0].user_id;
+    
+    if (postAuthorId === user.userId) {
+      return { canGuess: false, reason: 'is_author' };
+    }
+
+    const userCanGuess = await postIsGuessedByUser(postId, user.userId);
+    
+    if (!userCanGuess) {
+      return { canGuess: false, reason: 'already_guessed' };
+    }
+
+    return { canGuess: true };
+  } catch (err) {
+    await logerror('canUserGuessPost error', [err]);
+    return { canGuess: false, reason: 'error' };
+  }
+}
+
 export async function createPost({ title, contentId, status = 'published' }: { title?: string; contentId: number; status?: 'processing' | 'published' | 'failed' }) {
   try {
     const user = await getCurrentUser();

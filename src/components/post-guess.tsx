@@ -4,7 +4,7 @@ import { formatActionDate } from "@/lib/dates";
 
 export default function PostGuess({ guess }: { guess: PostGuessType }) {
   return (
-    <div className="p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
+    <div className="p-2 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700">
       <div className="flex items-baseline gap-2">
         <Link href={`/account/${guess.author}`} className="text-sm font-medium hover:underline text-zinc-900 dark:text-zinc-50">
           {guess.author}

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
@@ -11,15 +12,16 @@ declare global {
   }
 }
 
-export default function NewGuess({ postId, onSubmitted }: { postId: number; onSubmitted?: () => void }) {
+export default function NewGuess({ postId, onSubmitted, postImage, postTitle, onClose }: { postId: number; onSubmitted?: () => void; postImage?: string; postTitle?: string; onClose?: () => void }) {
   const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number }>({
     latitude: 41.7151,
     longitude: 44.8271
   });
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<null | "submitting" | "success" | "error">(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showMapOrImage, setShowMapOrImage] = useState<"image" | "map">("map");
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const guessMarkerRef = useRef<any>(null);
@@ -32,7 +34,7 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
     const timer = setTimeout(() => {
       if (countdown === 1) {
         setCountdown(null);
-        setSubmitting(false);
+        setSubmitting('success');
         onSubmitted?.();
       } else {
         setCountdown(countdown - 1);
@@ -102,19 +104,35 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
 
     return () => {
       if (mapInstanceRef.current) {
+        // Clean up line layer and source
+        if (mapInstanceRef.current.getLayer('distance-line')) {
+          mapInstanceRef.current.removeLayer('distance-line');
+        }
+        if (mapInstanceRef.current.getSource('distance-line')) {
+          mapInstanceRef.current.removeSource('distance-line');
+        }
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
   }, []);
 
+  // Resize map when layout orientation changes
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current?.resize();
+      }, 0);
+    }
+  }, [showMapOrImage]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSubmitting('submitting');
     try {
       const res = await getPhotoCoordinates({ postId });
       if (res === null || !res.coordinates) {
-        setSubmitting(false);
+        setSubmitting('error');
         return;
       }
       const photoCoordinates = res.coordinates;
@@ -155,6 +173,37 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
           guessMarkerRef.current.setLngLat([selectedCoords.longitude, selectedCoords.latitude]);
         }
 
+        // Add distance line between markers
+        const lineData = {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: [
+              [lng, lat],
+              [selectedCoords.longitude, selectedCoords.latitude]
+            ]
+          }
+        };
+
+        if (!mapInstanceRef.current.getSource('distance-line')) {
+          mapInstanceRef.current.addSource('distance-line', {
+            type: 'geojson',
+            data: lineData
+          });
+          mapInstanceRef.current.addLayer({
+            id: 'distance-line',
+            type: 'line',
+            source: 'distance-line',
+            paint: {
+              'line-color': '#fbbf24',
+              'line-width': 2,
+              'line-dasharray': [4, 4]
+            }
+          });
+        } else {
+          (mapInstanceRef.current.getSource('distance-line') as any).setData(lineData);
+        }
+
         // Fit both markers in view — build explicit SW/NE arrays to avoid
         // LngLatLike coercion issues across mapbox versions.
         const coordsA: [number, number] = [Number(lng), Number(lat)];
@@ -169,9 +218,10 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
       await createPostGuess({ postId, coordinates: selectedCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
 
       setDistance(calculatedDistance);
+      setSubmitting('success');
       setCountdown(10);
     } catch (err) {
-      setSubmitting(false);
+      setSubmitting('error');
     }
   };
 
@@ -224,53 +274,105 @@ export default function NewGuess({ postId, onSubmitted }: { postId: number; onSu
   };
 
   return (
-    <form onSubmit={submit} className="mt-4 grid gap-3">
-      <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 relative">
-        <div ref={mapRef} className="w-full h-[400px] bg-zinc-100 dark:bg-zinc-800" />
+    <>
+      {postImage && postTitle && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
+          {/* Control buttons header */}
+          <div className="flex items-center justify-end gap-2 px-4 py-3">
+            <button
+              onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
+              className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
+              title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
+              aria-label="Toggle between image and map"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </button>
 
-        <div className="absolute top-3 right-3">
-          <button
-            type="button"
-            onClick={useMyLocation}
-            disabled={gettingLocation}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
-            aria-label="მომხმარებლის ლოკაცია"
-            title="გამოიყენე ჩემი ლოკაცია"
-          >
-            {gettingLocation && (
-              <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            )}
-            <span className="text-xs">ჩემი ლოკაცია</span>
-          </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
+              title="დახურვა"
+              aria-label="დახურვა"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Panels container */}
+          <div className="flex-1 flex flex-row">
+            {/* Image Panel */}
+            <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} relative flex items-center justify-center overflow-hidden`}>
+              <div className="relative w-full h-full">
+                <Image
+                  src={postImage}
+                  alt={postTitle}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Map Panel */}
+            <div className={`${showMapOrImage === "map" ? 'w-full h-full' : 'hidden'} relative flex flex-col overflow-hidden`}>
+              <form onSubmit={submit} className="h-full flex flex-col p-4 gap-3">
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 relative flex-1">
+                  <div ref={mapRef} className={`w-full h-full bg-zinc-100 dark:bg-zinc-800 ${submitting !== null ? 'pointer-events-none' : ''}`} />
+
+                  <div className="absolute top-3 right-3 flex items-center gap-2">
+                    {/* Distance Info */}
+                    {distance !== null && (
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm text-xs">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          {distance} მ
+                        </span>
+                        {countdown !== null && (
+                          <span className="text-zinc-400">({countdown}წ)</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Coordinates */}
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm text-xs">
+                      {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
+                    </div>
+                    
+                    {/* Get Location Button */}
+                    <button
+                      type="button"
+                      onClick={useMyLocation}
+                      disabled={gettingLocation}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+                      aria-label="მომხმარებლის ლოკაცია"
+                      title="გამოიყენე ჩემი ლოკაცია"
+                    >
+                      {gettingLocation && (
+                        <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      )}
+                      <span className="text-xs">ჩემი ლოკაცია</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 items-center justify-start">
+                  <button
+                    type="submit"
+                    disabled={submitting !== null}
+                    hidden={submitting === 'success' || submitting === 'error'}
+                    className="px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-50"
+                  >
+                    {submitting ? 'მიმდინარეობს...' : 'ცდა'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="text-xs text-zinc-600 dark:text-zinc-400">
-        მონიშნე ადგილი რუკაზე
-      </div>
-
-      <div className="flex gap-2 items-center">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-50"
-        >
-          {submitting ? 'მიმდინარეობს...' : 'ცდა'}
-        </button>
-        <div className="text-xs text-zinc-500">
-          {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
-          {distance !== null && (
-            <span className="ml-3 font-semibold text-blue-600 dark:text-blue-400">
-              მანძილი: {distance} მ
-              {countdown !== null && (
-                <span className="ml-2 text-zinc-400">({countdown}წ)</span>
-              )}
-            </span>
-          )}
-        </div>
-      </div>
-
-
-    </form>
+      )}
+    </>
   );
 }

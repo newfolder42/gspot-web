@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
     {
+        version: "v0.5.25",
+        date: "2026-03-01",
+        items: [
+            "ახალი გამოცნობის ინტერფეისი, რუკის მთელს ეკრანზე ჩატვირთვა",
+        ],
+    },
+    {
         version: "v0.5.16",
         date: "2026-02-08",
         items: [
