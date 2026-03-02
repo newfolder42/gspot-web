@@ -1,4 +1,4 @@
-import { getPostForView } from '@/lib/posts';
+import { getPostForView, getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
 import type { Metadata } from 'next';
 import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
@@ -14,7 +14,11 @@ export default async function Page({ params }: Props) {
 
   if (!post) return NotFound();
 
-  return <PostDetailClient post={post} />;
+  const guesses = await getPostGuesses(post.id);
+
+  const alreadyGuessed = currentUser ? await postIsGuessedByUser(id, currentUser.userId) : false;
+
+  return <PostDetailClient post={post} guesses={guesses} currentUser={currentUser?.alias || ''} alreadyGuessed={alreadyGuessed} />;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

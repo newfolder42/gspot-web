@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
+import type { PostGuessType } from '@/types/post-guess';
 
 declare global {
   interface Window {
@@ -12,7 +13,8 @@ declare global {
   }
 }
 
-export default function NewGuess({ postId, onSubmitted, postImage, postTitle, onClose }: { postId: number; onSubmitted?: () => void; postImage?: string; postTitle?: string; onClose?: () => void }) {
+export default function NewGuess({ postId, postImage, postTitle, onClose, onSubmitted }:
+  { postId: number; postImage?: string; postTitle?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
   const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number }>({
     latitude: 41.7151,
     longitude: 44.8271
@@ -20,29 +22,11 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
   const [submitting, setSubmitting] = useState<null | "submitting" | "success" | "error">(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [showMapOrImage, setShowMapOrImage] = useState<"image" | "map">("map");
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const guessMarkerRef = useRef<any>(null);
   const photoMarkerRef = useRef<any>(null);
-
-  // Handle countdown timer
-  useEffect(() => {
-    if (countdown === null || countdown <= 0) return;
-
-    const timer = setTimeout(() => {
-      if (countdown === 1) {
-        setCountdown(null);
-        setSubmitting('success');
-        onSubmitted?.();
-      } else {
-        setCountdown(countdown - 1);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [countdown, onSubmitted]);
 
   useEffect(() => {
     // Load Mapbox CSS
@@ -215,11 +199,13 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
 
       const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
 
-      await createPostGuess({ postId, coordinates: selectedCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
+      const createdGuess = await createPostGuess({ postId, coordinates: selectedCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
 
       setDistance(calculatedDistance);
       setSubmitting('success');
-      setCountdown(10);
+      if (createdGuess) {
+        onSubmitted?.(createdGuess);
+      }
     } catch (err) {
       setSubmitting('error');
     }
@@ -306,15 +292,14 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
           <div className="flex-1 flex flex-row">
             {/* Image Panel */}
             <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} relative flex items-center justify-center overflow-hidden`}>
-              <div className="relative w-full h-full">
-                <Image
-                  src={postImage}
-                  alt={postTitle || ''}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
+              <Image
+                src={postImage}
+                alt={postTitle || ''}
+                width={1200}
+                height={800}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
 
             {/* Map Panel */}
@@ -330,9 +315,6 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
                           {distance} მ
                         </span>
-                        {countdown !== null && (
-                          <span className="text-zinc-400">({countdown}წ)</span>
-                        )}
                       </div>
                     )}
 
@@ -358,7 +340,7 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
                   </div>
                 </div>
 
-                <div className="flex gap-2 items-center justify-start">
+                <div className="flex gap-2 items-center justify-end">
                   <button
                     type="submit"
                     disabled={submitting !== null}

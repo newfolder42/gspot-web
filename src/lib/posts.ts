@@ -224,8 +224,8 @@ where pg.post_id = $1 and pg.user_id = $2`,
       [id, userId]
     );
 
-    if (res.rowCount === 0) return true;
-    return false;
+    if (res.rowCount === 0) return false;
+    return true;
   } catch (err) {
     await logerror('postIsGuessedByUser error', [err]);
     return false;
@@ -326,7 +326,7 @@ order by pg.created_at desc`,
   }
 }
 
-export async function createPostGuess({ postId, coordinates, distance, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; distance: number, score: number }) {
+export async function createPostGuess({ postId, coordinates, distance, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; distance: number, score: number }): Promise<PostGuessType | null> {
   try {
     const user = await getCurrentUser();
     if (!user) return null;
@@ -335,15 +335,28 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     const post = await getPostById(postId);
 
     const exists = await query(
-      `select id from post_guesses where post_id = $1 and user_id = $2 limit 1`,
+      `select pg.id, pg.post_id, pg.user_id, pg.type, pg.details, pg.created_at, u.alias as author_alias
+       from post_guesses pg
+       join users u on pg.user_id = u.id
+       where pg.post_id = $1 and pg.user_id = $2 limit 1`,
       [postId, userId]
     );
     if (exists?.rowCount ?? 0 > 0) {
-      return { id: exists.rows[0].id };
+      const r = exists.rows[0];
+      return {
+        id: r.id,
+        postId: r.post_id,
+        userId: r.user_id,
+        author: r.author_alias,
+        type: r.type,
+        createdAt: r.created_at,
+        distance: r.details?.distance ?? null,
+        score: r.details?.score ?? null,
+      };
     }
 
     const data = await query(
-      `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id`,
+      `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id, created_at`,
       [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
     );
 
@@ -357,7 +370,16 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
       score,
     } as PostGuessedEvent);
 
-    return { id: data.rows[0].id };
+    return {
+      id: data.rows[0].id,
+      postId: postId,
+      userId: userId,
+      author: user.alias,
+      type: 'gps-guess',
+      createdAt: data.rows[0].created_at,
+      distance: distance,
+      score: score,
+    };
   } catch (err) {
     await logerror('createPostGuess error', [err]);
     return null;

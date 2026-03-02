@@ -8,16 +8,35 @@ import PostGuessList from './post-guess-list';
 import NewGuess from './new-guess';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
+import type { PostGuessType } from '@/types/post-guess';
 
-export default function PostDetailClient({ post }: { post: GpsPostType }) {
+type PostDetailClientProps = {
+  post: GpsPostType;
+  guesses: PostGuessType[];
+  currentUser: string;
+  alreadyGuessed: boolean;
+};
+
+export default function PostDetailClient({ post, guesses, currentUser, alreadyGuessed }: PostDetailClientProps) {
+  const isAuthor = currentUser === post.author;
+  const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
+
   const [showGuessModal, setShowGuessModal] = useState(false);
-  const [onGuessSubmitted, setOnGuessSubmitted] = useState<(() => void) | null>(null);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [canGuess, setCanGuess] = useState(userCanGuess);
+  const [guessesList, setGuessesList] = useState<PostGuessType[]>(guesses);
+  const [guessCount, setGuessCount] = useState(Number(post.guessCount) || 0);
+
+  const handleGuessSubmitted = (newGuess: PostGuessType) => {
+    setCanGuess(false);
+    setGuessesList(prev => [newGuess, ...prev]);
+    setGuessCount(prev => prev + 1);
+  };
 
   return (
     <main className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
       <article className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-start gap-3 px-4 py-3">
+        <div className="flex items-start px-4 py-2">
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
               <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
@@ -59,22 +78,33 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
           />
         )}
 
-        <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
+        <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
           <Link href="#guesses" className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300" title="View guesses">
             <svg className="w-5 h-5 text-zinc-500 dark:text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span className="font-medium">{post.guessCount ?? '—'}</span>
+            <span className="font-medium">{guessCount}</span>
           </Link>
+
+          {canGuess &&
+            (
+              <div className="flex flex-col">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+                  onClick={() => setShowGuessModal(true)}
+                >
+                  სცადე
+                </button>
+              </div>
+            )
+          }
         </div>
       </article>
 
       <div id="guesses">
         <PostGuessList
-          postId={post.id}
-          postAuthor={post.author}
-          setShowGuessModal={setShowGuessModal}
-          setOnGuessSubmitted={setOnGuessSubmitted}
+          guesses={guessesList}
         />
       </div>
 
@@ -84,7 +114,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
           postImage={post.image}
           postTitle={post.title || ''}
           onClose={() => setShowGuessModal(false)}
-          onSubmitted={() => onGuessSubmitted?.()}
+          onSubmitted={handleGuessSubmitted}
         />
       )}
     </main>
