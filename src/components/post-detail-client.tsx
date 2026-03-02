@@ -51,7 +51,7 @@ export default function PostDetailClient({ post }: { post: GpsPostType }) {
             alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
             width={1200}
             height={800}
-            className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain`}
+            className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
             onLoad={(e) => {
               const target = e.target as HTMLImageElement;
               setIsPortrait(target.naturalHeight > target.naturalWidth);

@@ -275,7 +275,7 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
 
   return (
     <>
-      {postImage && postTitle && (
+      {postImage && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
           {/* Control buttons header */}
           <div className="flex items-center justify-end gap-2 px-4 py-3">
@@ -309,7 +309,7 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
               <div className="relative w-full h-full">
                 <Image
                   src={postImage}
-                  alt={postTitle}
+                  alt={postTitle || ''}
                   fill
                   className="object-contain"
                   priority
@@ -335,12 +335,12 @@ export default function NewGuess({ postId, onSubmitted, postImage, postTitle, on
                         )}
                       </div>
                     )}
-                    
+
                     {/* Coordinates */}
                     <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm text-xs">
                       {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
                     </div>
-                    
+
                     {/* Get Location Button */}
                     <button
                       type="button"
