@@ -30,6 +30,7 @@ export default async function UserLayout({ children, params }: Props) {
   const { user, profilePhoto, connection, isOwnProfile } = account;
   const tabs = [
     { id: 'overview', label: 'ძირითადი', href: `/account/${userName}` },
+    { id: 'guesses', label: 'გამოცნობები', href: `/account/${userName}/guesses` },
     { id: 'connections', label: 'კავშირები', href: `/account/${userName}/connections` },
   ];
 

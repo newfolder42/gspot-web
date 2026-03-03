@@ -4,7 +4,7 @@ type PageProps = {
   params: Promise<{ userName?: string }>;
 };
 
-export default async function ConnectionsPage({ params }: PageProps) {
+export default async function AccountConnectionsPage({ params }: PageProps) {
   const { userName } = await params;
 
   return (

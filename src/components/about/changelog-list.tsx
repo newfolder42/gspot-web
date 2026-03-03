@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
     {
+        version: "v0.5.26",
+        date: "2026-03-03",
+        items: [
+            "ანგარიშის გვერდზე გამოცნობების ისტორიის ჩვენება",
+        ],
+    },
+    {
         version: "v0.5.25",
         date: "2026-03-01",
         items: [

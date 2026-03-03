@@ -17,7 +17,7 @@ export default function AccountTabs({ tabs }: Props) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap gap-6">
+    <nav className="flex flex-wrap gap-2">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
 

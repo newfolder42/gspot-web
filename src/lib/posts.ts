@@ -326,6 +326,38 @@ order by pg.created_at desc`,
   }
 }
 
+export async function getUserGuesses(userId: number): Promise<(PostGuessType & { postTitle: string; postAuthor: string; postUserId: number })[]> {
+  try {
+    const data = await query(
+      `select pg.id, pg.post_id, pg.user_id, pg.type, pg.details, pg.created_at, 
+              p.title as post_title, u.alias as post_author, p.user_id as post_user_id
+from post_guesses pg
+join posts p on pg.post_id = p.id
+join users u on p.user_id = u.id
+where pg.user_id = $1 and p.status = 'published'
+order by pg.created_at desc`,
+      [userId]
+    );
+
+    return data.rows.map((r) => ({
+      id: r.id,
+      postId: r.post_id,
+      userId: r.user_id,
+      author: '', // The user making the guess
+      type: r.type,
+      createdAt: r.created_at,
+      distance: r.details?.distance ?? null,
+      score: r.details?.score ?? null,
+      postTitle: r.post_title,
+      postAuthor: r.post_author,
+      postUserId: r.post_user_id,
+    }));
+  } catch (err) {
+    await logerror('getUserGuesses error', [err]);
+    return [];
+  }
+}
+
 export async function createPostGuess({ postId, coordinates, distance, score }: { postId: number; coordinates: { latitude: number; longitude: number } | null; distance: number, score: number }): Promise<PostGuessType | null> {
   try {
     const user = await getCurrentUser();
