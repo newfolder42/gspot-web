@@ -32,7 +32,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     // Load Mapbox CSS
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
@@ -40,7 +40,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     // Load Mapbox JS
     if (typeof window.mapboxgl === 'undefined') {
       const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js';
       script.onload = initMap;
       document.head.appendChild(script);
     } else {

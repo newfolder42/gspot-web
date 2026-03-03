@@ -40,7 +40,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   useEffect(() => {
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
@@ -48,7 +48,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
     // Only add the script if it's not already present to avoid multiple loads/costs
     if (!document.querySelector('script[src*="mapbox-gl-js"]')) {
       const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js';
       script.onload = () => initMap();
       document.head.appendChild(script);
     } else if (typeof window.mapboxgl !== 'undefined') {
