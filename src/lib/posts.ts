@@ -8,6 +8,7 @@ import type { PostGuessType } from '@/types/post-guess';
 import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
+import { PostDeletedEvent } from '@/types/events/post-deleted';
 
 export async function getConnectionsPosts(
   userId: number,
@@ -456,6 +457,20 @@ export async function deletePost(postId: number) {
   try {
     await query('BEGIN');
 
+    const postRes = await query(
+      `select p.id, p.type, p.user_id, u.alias as author_alias
+       from posts p
+       join users u on p.user_id = u.id
+       where p.id = $1`,
+      [postId]
+    );
+
+    if (postRes.rowCount === 0) {
+      return false;
+    }
+
+    const post = postRes.rows[0];
+
     const pcRes = await query(`select content_id from post_content where post_id = $1`, [postId]);
     const contentIds = pcRes.rows.map((r) => r.content_id).filter(Boolean);
 
@@ -490,7 +505,14 @@ export async function deletePost(postId: number) {
 
     await query('COMMIT');
 
-    return res.rowCount === 1;
+    await eventBus.publish('post', 'deleted', {
+      postId: +postId,
+      postType: post.type,
+      authorId: +post.user_id,
+      authorAlias: post.author_alias,
+    } as PostDeletedEvent);
+
+    return true;
   } catch (err) {
     await logerror('deletePost error', [err]);
     return false;

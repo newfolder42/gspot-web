@@ -8,10 +8,12 @@ export async function getAccountByAlias(userName: string, currentUserId: number 
     const userRes = await query(
       `SELECT u.id, u.alias, u.email, u.created_at, CURRENT_DATE::date - u.created_at::date as age,
        upp.id as profile_photo_id, upp.public_url as profile_photo_url,
-       ucon.id as connection_id, ucon.created_at as connection_created_at
+       ucon.id as connection_id, ucon.created_at as connection_created_at,
+       ux.xp as total_xp, ux.level as level
 FROM users u
 left join user_content upp on u.id = upp.user_id AND upp.type = 'profile-photo'
 left join user_connections ucon on ucon.user_id = $2 AND ucon.connection_id = u.id
+left join user_xp ux on ux.user_id = u.id
 WHERE u.alias = $1`,
       [userName, currentUserId]
     );
@@ -36,6 +38,10 @@ WHERE u.alias = $1`,
       connection: user.connection_id ? {
         id: user.connection_id,
         createdAt: user.connection_created_at,
+      } : null,
+      level: user.total_xp ? {
+        xp: user.total_xp,
+        level: user.level,
       } : null,
       isOwnProfile,
     };

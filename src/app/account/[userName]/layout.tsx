@@ -3,10 +3,12 @@ import React from 'react';
 import AccountTabs from '@/components/account/account-tabs';
 import FollowButton from '@/components/account/follow-button';
 import ProfilePhotoUpload from '@/components/profile-photo-upload';
+import XPBar from '@/components/xp-bar';
 import { getAccountByAlias } from '@/lib/account';
 import { formatAge } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/session';
 import { getInitials } from '@/lib/getInitials';
+import { getLevelFromXp } from '@/lib/xp';
 
 type Props = {
   children: React.ReactNode;
@@ -16,7 +18,7 @@ type Props = {
 export default async function UserLayout({ children, params }: Props) {
   const [{ userName }, currentUser] = await Promise.all([params, getCurrentUser()]);
   const account = await getAccountByAlias(userName, currentUser?.userId ?? null);
-
+  const xpInfo = await getLevelFromXp(account?.level?.xp ?? 0);
   if (!account) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -62,7 +64,9 @@ export default async function UserLayout({ children, params }: Props) {
               <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">&apos;{user.alias}</h1>
               <div className="mt-1 space-y-1 text-xs text-zinc-500 dark:text-zinc-500">
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">ასაკი: {formatAge(user.age)}</p>
-                {/* <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">დონე: {getLevelFromXp(4000).level}</p> */}
+              </div>
+              <div className="mt-3">
+                <XPBar xp={xpInfo} />
               </div>
             </div>
 
