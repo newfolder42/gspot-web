@@ -28,11 +28,11 @@ export default function PostGuessList({ guesses }: { guesses: PostGuessType[] })
   });
 
   return (
-    <div className="mt-4 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+    <div className="mt-4">
       <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">
         <SortButtons sortType={sortType} onSortChange={setSortType} />
       </div>
-      <div className="p-4 space-y-2">
+      <div className="space-y-2">
         {sortedGuesses.map((guess) => (
           <PostGuess key={guess.id} guess={guess} />
         ))}

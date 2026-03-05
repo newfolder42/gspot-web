@@ -18,7 +18,7 @@ export default function Loading() {
         <div className="w-full h-[60vh] bg-zinc-200 dark:bg-zinc-800" />
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 rounded bg-zinc-200 dark:bg-zinc-700" />
             <div className="h-4 w-8 rounded bg-zinc-200 dark:bg-zinc-700" />
@@ -33,7 +33,7 @@ export default function Loading() {
             key={i}
             role="status"
             aria-hidden="true"
-            className="p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700 animate-pulse"
+            className="p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800 animate-pulse"
           >
             <div className="flex items-baseline justify-between gap-3">
               <div className="h-4 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />

@@ -54,7 +54,7 @@ export default function SigninForm() {
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მეილი</label>
                 <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                   id="email"
                   name="email"
                   type="email"
@@ -67,7 +67,7 @@ export default function SigninForm() {
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">პაროლი</label>
                 <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                   id="password"
                   name="password"
                   type="password"

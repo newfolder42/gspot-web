@@ -35,11 +35,11 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
 
   return (
     <main className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
-      <article className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-start px-4 py-2">
+      <article className="">
+        <div className="flex items-start p-2">
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
-              <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">{post.author}</Link>
+              <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">&apos;{post.author}</Link>
               <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
               {post.status === 'failed' && (
                 <svg
@@ -52,7 +52,7 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
                 </svg>
               )}
             </div>
-            <div className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{post.title}</div>
+            <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
             {post.dateTaken && (
               <div className="text-sm text-zinc-700 dark:text-zinc-300">
                 გადაღებულია: {formatPhotoTakenDate(post.dateTaken)}
@@ -78,7 +78,7 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
           />
         )}
 
-        <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
+        <div className="px-4 py-3 flex items-center justify-between">
           <Link href="#guesses" className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300" title="View guesses">
             <svg className="w-5 h-5 text-zinc-500 dark:text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { updatePassword } from "@/actions/settings";
 
 export default function PasswordChangeForm() {
-  const inputClasses = "mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400";
+  const inputClasses = "mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400";
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

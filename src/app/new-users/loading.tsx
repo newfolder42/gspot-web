@@ -6,7 +6,7 @@ export default function Loading() {
       <section
         role="status"
         aria-hidden="true"
-        className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 p-6 animate-pulse"
+        className="p-6 animate-pulse"
       >
         <div className="h-5 w-36 rounded bg-zinc-200 dark:bg-zinc-700 mb-3" />
         <div className="h-4 w-56 rounded bg-zinc-200 dark:bg-zinc-700 mb-4" />
@@ -14,14 +14,14 @@ export default function Loading() {
         <ol className="space-y-2">
           {rows.map(row => (
             <li key={row}>
-              <div className="flex items-center justify-between p-2 rounded-md bg-zinc-50 dark:bg-zinc-800">
+              <div className="flex items-center justify-between p-2 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-md bg-zinc-200 dark:bg-zinc-700" />
                   <div>
                     <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
-                    <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
                   </div>
                 </div>
+                <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
               </div>
             </li>
           ))}

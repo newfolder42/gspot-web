@@ -18,8 +18,8 @@ export default function AboutPage() {
 
   return (
     <div className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4 space-y-6">
-      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
-        <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
+      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}-ის შესახებ</h1>
         </div>
         <div className="px-6 py-4">
@@ -46,16 +46,16 @@ export default function AboutPage() {
           </p>
         </div>
         <div className="px-6 py-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">Next.js</span>
-          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">PostgreSQL</span>
-          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">Redis pub/sub</span>
-          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">AWS Hosting</span>
-          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">AWS S3</span>
+          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">Next.js</span>
+          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">PostgreSQL</span>
+          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">Redis pub/sub</span>
+          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">AWS Hosting</span>
+          <span className="inline-flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-800">AWS S3</span>
         </div>
       </section>
 
-      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
-        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-700">
+      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">შესაძლებლობები</h2>
         </div>
         <ul className="px-6 py-4 mt-3 space-y-2">
@@ -71,8 +71,8 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
-        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-700">
+      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">გეგმები</h2>
         </div>
         <ul className="px-6 py-4 space-y-2">
@@ -88,8 +88,8 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
-        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-700">
+      <section className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
+        <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">ცვლილებები</h2>
         </div>
         <ChangelogList />

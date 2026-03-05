@@ -84,7 +84,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg">
+          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
             <button onClick={handleEditClick} className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">რედაქტირება</button>
             <button onClick={handleDeleteClick} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800">წაშლა</button>
           </div>
@@ -99,7 +99,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 mb-4"
+              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 mb-4"
               placeholder="პოსტის სათაური"
             />
             <div className="flex gap-2">

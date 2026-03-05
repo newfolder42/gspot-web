@@ -19,7 +19,7 @@ export default async function ConnectionsList({ userName }: { userName: string }
     );
   }
 
-  if (connections.length === 0) return <div className="bg-white dark:bg-zinc-900 rounded-md p-6 border border-zinc-200 dark:border-zinc-800">ჯერ არავინ.</div>;
+  if (connections.length === 0) return <div className="p-6">ჯერ არავინ.</div>;
   return (
     <div className="space-y-3">
       {connections.map((c) => (

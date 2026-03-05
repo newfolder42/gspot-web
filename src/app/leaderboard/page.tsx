@@ -24,14 +24,14 @@ export default async function LeaderboardsPage() {
 
   return (
     <div className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
-      <section className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 p-6">
+      <section className="rounded-md p-6">
         <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-3">ლიდერბორდი</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">ყველაზე შედეგიანი მომხმარებლები გამოცნობილი ქულების მიხედვით</p>
 
         <ol className="space-y-2">
           {entries.map((e, i) => (
             <li key={e.userId}>
-              <Link href={`/account/${e.alias}`} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-700">
+              <div className="flex items-center justify-between p-2 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">
                     <span className={
@@ -43,11 +43,11 @@ export default async function LeaderboardsPage() {
                             ? 'inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#b87333] dark:bg-[#b87333] text-white font-bold'
                             : 'text-zinc-900 dark:text-zinc-100'
                     }>{`#${i + 1}`}</span>
-                    <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{e.alias}</span>
+                    <Link href={`/account/${e.alias}`} className="ml-1 text-zinc-900 dark:text-zinc-100 hover:underline">&apos;{e.alias}</Link>
                   </span>
                 </div>
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">{e.rating}</div>
-              </Link>
+              </div>
             </li>
           ))}
         </ol>

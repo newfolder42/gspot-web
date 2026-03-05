@@ -305,13 +305,13 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
             {/* Map Panel */}
             <div className={`${showMapOrImage === "map" ? 'w-full h-full' : 'hidden'} relative flex flex-col overflow-hidden`}>
               <form onSubmit={submit} className="h-full flex flex-col p-4 gap-3">
-                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 relative flex-1">
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 relative flex-1">
                   <div ref={mapRef} className={`w-full h-full bg-zinc-100 dark:bg-zinc-800 ${submitting !== null ? 'pointer-events-none' : ''}`} />
 
                   <div className="absolute top-3 right-3 flex items-center gap-2">
                     {/* Distance Info */}
                     {distance !== null && (
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm text-xs">
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 text-xs">
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
                           {distance} მ
                         </span>
@@ -319,7 +319,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                     )}
 
                     {/* Coordinates */}
-                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm text-xs">
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 text-xs">
                       {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
                     </div>
 
@@ -328,7 +328,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                       type="button"
                       onClick={useMyLocation}
                       disabled={gettingLocation}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
                       aria-label="მომხმარებლის ლოკაცია"
                       title="გამოიყენე ჩემი ლოკაცია"
                     >

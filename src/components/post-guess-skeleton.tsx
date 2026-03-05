@@ -3,7 +3,7 @@ export default function PostGuessSkeleton() {
     <div
       role="status"
       aria-hidden="true"
-      className="p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-700 animate-pulse"
+      className="p-3 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800 animate-pulse"
     >
       <div className="flex items-baseline justify-between gap-3">
         <div className="h-4 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />

@@ -22,7 +22,7 @@ export default async function UserLayout({ children, params }: Props) {
   if (!account) {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-zinc-900 rounded-md p-6 border border-zinc-200 dark:border-zinc-700 flex gap-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-md p-4 border border-zinc-200 dark:border-zinc-800 flex gap-4">
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">მომხმარებელი არ მოიძებნა</h1>
         </div>
       </div>
@@ -42,8 +42,8 @@ export default async function UserLayout({ children, params }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto py-4 px-2">
-      <div className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-        <div className="p-6 pb-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="overflow-hidden">
+        <div className="p-4">
           <div className="flex flex-row gap-4 items-center">
             <div className="relative flex items-center">
               <div className="relative h-20 w-20 rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-2xl font-semibold text-zinc-700 dark:text-zinc-200">
@@ -78,7 +78,7 @@ export default async function UserLayout({ children, params }: Props) {
           </div>
         </div>
 
-        <div className="px-6 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="px-4">
           <AccountTabs tabs={tabs} />
         </div>
 

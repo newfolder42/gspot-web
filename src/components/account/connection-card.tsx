@@ -15,9 +15,9 @@ export default function ConnectionCard({ alias, profilePhoto, createdAt, canUnfo
   const photoUrl = profilePhoto?.url || null;
 
   return (
-    <div className="flex items-center gap-4 p-3 border rounded-md bg-white dark:bg-zinc-900">
+    <div className="flex items-center p-3 border-b border-zinc-200 dark:border-zinc-800">
       <Link href={`/account/${alias}`} className="flex items-center gap-3 flex-1">
-        <div className="h-12 w-12 rounded-md overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+        <div className="h-12 w-12 rounded-md overflow-hidden flex items-center justify-center">
           {photoUrl ? (
             <Image src={photoUrl} alt={alias} width={48} height={48} className="h-12 w-12 object-cover" />
           ) : (

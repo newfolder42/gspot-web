@@ -158,7 +158,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
             disabled={loading}
             className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg 
                      bg-white dark:bg-zinc-800 
-                     border-zinc-300 dark:border-zinc-700 
+                     border-zinc-300 dark:border-zinc-800 
                      text-zinc-900 dark:text-zinc-50
                      focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900
                      disabled:opacity-50 disabled:cursor-not-allowed

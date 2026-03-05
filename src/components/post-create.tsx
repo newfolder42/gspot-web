@@ -122,7 +122,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   }, [coordinates]);
 
   return (
-    <div className="relative rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+    <div className="relative rounded overflow-hidden border border-zinc-200 dark:border-zinc-800">
       <div className="absolute top-3 right-3 z-10">
         <button
           type="button"
@@ -352,12 +352,12 @@ export default function CreatePost() {
       )}
       {(
         <div>
-          <div className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md">
+          <div className="p-2 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setPanelOpen(true); setPanelStep(0); }}
                 type="button"
-                className="px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer inline-flex items-center"
+                className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer inline-flex items-center"
               >
                 <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor">
                   <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />

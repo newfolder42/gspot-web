@@ -170,7 +170,7 @@ export default function NotificationDropdown({ user }: Props) {
             ) : notifications.length > 0 ? (
               <div className="space-y-2">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="relative group p-2 px-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                  <div key={notification.id} className="relative group p-2 px-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
                       <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-blue-600 z-10" />

@@ -13,9 +13,9 @@ type FeedClientProps = {
   type: 'account-feed' | 'global-feed' | 'connections-feed';
 };
 
-export default function FeedClient({ 
-  initialPosts, 
-  userId, 
+export default function FeedClient({
+  initialPosts,
+  userId,
   accountUserId,
   type
 }: FeedClientProps) {
@@ -28,11 +28,11 @@ export default function FeedClient({
     if (loading || !hasMore) return;
 
     setLoading(true);
-    
+
     const lastPost = posts[posts.length - 1];
-    const cursor = { 
-      date: lastPost.date, 
-      id: lastPost.id 
+    const cursor = {
+      date: lastPost.date,
+      id: lastPost.id
     };
 
     try {
@@ -42,11 +42,11 @@ export default function FeedClient({
         accountUserId,
         cursor,
       });
-      
+
       if (newPosts.length < POSTS_PER_PAGE) {
         setHasMore(false);
       }
-      
+
       setPosts(prev => [...prev, ...newPosts]);
     } catch (error) {
       console.error('Failed to load more posts:', error);
@@ -62,7 +62,7 @@ export default function FeedClient({
           loadMore();
         }
       },
-      { 
+      {
         threshold: 0.1,
         rootMargin: '200px'
       }
@@ -81,19 +81,16 @@ export default function FeedClient({
   }, [hasMore, loading, posts]);
 
   return (
-    <>
-      {posts.map((post, idx) => {
-        const spacing = idx === 0 ? 'mt-2' : 'mt-4';
+    <div className='mt-2 space-y-4'>
+      {posts.map(post => {
         return (
-          <div key={post.id} className={spacing}>
-            <GpsPost post={post} />
-          </div>
+          <GpsPost key={post.id} post={post} />
         );
       })}
-      
+
       {hasMore && (
-        <div 
-          ref={observerTarget} 
+        <div
+          ref={observerTarget}
           className="flex justify-center py-4"
         >
           {loading && (
@@ -101,12 +98,12 @@ export default function FeedClient({
           )}
         </div>
       )}
-      
+
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-4 text-gray-500">
           მეტი პოსტი არ არის
         </div>
       )}
-    </>
+    </div>
   );
 }

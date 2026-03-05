@@ -8,10 +8,6 @@ export default async function AccountConnectionsPage({ params }: PageProps) {
   const { userName } = await params;
 
   return (
-    <div>
-      <div className="mt-4">
-        <ConnectionsList userName={userName ?? ''} />
-      </div>
-    </div>
+    <ConnectionsList userName={userName ?? ''} />
   );
 }

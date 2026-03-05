@@ -58,14 +58,14 @@ export default function HeaderSearch() {
       <input
         ref={inputRef}
         aria-label="Search"
-        className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#00c8ff]"
+        className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#00c8ff]"
         value={search}
         onChange={e => setSearch(e.target.value)}
         onFocus={() => { if (results) setShowDropdown(true); }}
       />
       <button className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-sm text-zinc-600 dark:text-zinc-300">ძებნა</button>
       {showDropdown && (
-        <div ref={dropdownRef} className="absolute left-0 mt-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div ref={dropdownRef} className="absolute left-0 mt-2 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
           {loading && (
             <div className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">ძებნა...</div>
           )}

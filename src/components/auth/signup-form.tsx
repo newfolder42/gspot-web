@@ -151,7 +151,7 @@ export default function SignupForm() {
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">სახელი</label>
                 <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                   id="name"
                   name="name"
                   value={name}
@@ -164,7 +164,7 @@ export default function SignupForm() {
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">თიკუნი</label>
                 <div className="relative mt-1">
                   <input
-                    className="block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                    className="block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                     id="alias"
                     name="alias"
                     value={alias}
@@ -205,7 +205,7 @@ export default function SignupForm() {
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მეილი</label>
                 <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                   id="email"
                   name="email"
                   type="email"
@@ -219,7 +219,7 @@ export default function SignupForm() {
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">პაროლი</label>
                 <div className="relative mt-1">
                   <input
-                    className="block w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                    className="block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}

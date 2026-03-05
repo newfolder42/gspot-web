@@ -4,7 +4,7 @@ export default function NotificationSkeleton() {
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="p-3 rounded-md bg-white dark:bg-zinc-800 animate-pulse border border-zinc-200 dark:border-zinc-700"
+          className="p-3 rounded-md bg-white dark:bg-zinc-800 animate-pulse border border-zinc-200 dark:border-zinc-800"
         >
           <div className="flex items-start gap-3">
             {/* Avatar skeleton */}
