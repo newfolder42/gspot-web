@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificationSkeleton from "./notification-skeleton";
-import { loadNotifications, markAsRead, markAsUnread } from "@/actions/notifications";
+import { loadNotifications, markAsRead, markAsUnread, markAllAsRead } from "@/actions/notifications";
 import { formatTimePassed } from "@/lib/dates";
 import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
 
@@ -120,6 +120,17 @@ export default function NotificationDropdown({ user }: Props) {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      const res = await markAllAsRead(user.userId);
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
+      }
+    } catch (err) {
+      console.error("Failed to mark all notifications as read", err);
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
       {/* Notification Bell Button */}
@@ -157,23 +168,52 @@ export default function NotificationDropdown({ user }: Props) {
       {open && (
         <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 rounded-lg bg-white dark:bg-zinc-900 shadow-xl ring-1 ring-zinc-100 dark:ring-zinc-800 z-50">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               შეტყობინებები
             </h2>
+            {!(loading || unseenCount === 0) && (
+              <button
+                onClick={handleMarkAllAsRead}
+                className="inline-flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 cursor-pointer"
+                aria-label="mark all as read"
+                title="მონიშნე ყველა წაკითხულად"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 15a3 3 0 100-6 3 3 0 000 6z"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Content */}
-          <div className="max-h-96 overflow-y-auto p-3">
+          <div className="max-h-96 overflow-y-auto rounded-b-lg">
             {loading ? (
               <NotificationSkeleton />
             ) : notifications.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-0">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="relative group p-2 px-6 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                  <div key={notification.id} className="relative group p-2 px-6 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
-                      <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-blue-600 z-10" />
+                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-blue-600 z-10" />
                     )}
 
                     <div
@@ -185,14 +225,14 @@ export default function NotificationDropdown({ user }: Props) {
                         handleNotificationClick(notification.id);
                       }}
                     >
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 mt-1 line-clamp-2">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2">
                         {getNotificationContentMessage(notification.type, notification.details)}
                       </p>
                     </div>
 
                     {/* Timestamp */}
                     {notification.timestamp && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                      <p className="text-xs text-zinc-500">
                         {formatTimePassed(notification.timestamp)}
                       </p>
                     )}
@@ -242,15 +282,6 @@ export default function NotificationDropdown({ user }: Props) {
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          {/* {notifications.length > 0 && !loading && (
-            <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-2">
-              <button className="w-full text-sm text-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 py-1 transition-colors">
-                ყველას ნახვა
-              </button>
-            </div>
-          )} */}
         </div>
       )}
     </div>

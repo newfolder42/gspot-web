@@ -1,6 +1,6 @@
 "use server";
 
-import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen } from "@/lib/notifications";
+import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen, markAllNotificationsSeen } from "@/lib/notifications";
 import { normalizeDetails, NotificationType } from "@/types/notification";
 
 export async function loadNotifications(userId: number, limit = 10): Promise<NotificationType[]> {
@@ -46,6 +46,16 @@ export async function markAsRead(userId: number, notificationId: string): Promis
 export async function markAsUnread(userId: number, notificationId: string): Promise<{ ok: boolean }> {
   try {
     const success = await markNotificationUnseen(Number(notificationId), userId);
+    return { ok: success };
+  }
+  catch {
+    return { ok: false };
+  }
+}
+
+export async function markAllAsRead(userId: number): Promise<{ ok: boolean }> {
+  try {
+    const success = await markAllNotificationsSeen(userId);
     return { ok: success };
   }
   catch {

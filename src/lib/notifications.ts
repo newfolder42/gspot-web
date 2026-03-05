@@ -79,6 +79,24 @@ export async function markNotificationUnseen(notificationId: number, userId: num
   }
 }
 
+export async function markAllNotificationsSeen(userId: number) {
+  try {
+    if (!userId) return false;
+    
+    await query(
+      `UPDATE user_notifications
+       SET seen = 1, seen_at = NOW()
+       WHERE user_id = $1 AND seen IS DISTINCT FROM 1`,
+      [userId]
+    );
+
+    return true;
+  } catch (err) {
+    await logerror('markAllNotificationsSeen error', [err]);
+    return false;
+  }
+}
+
 export async function createNotification(
   userId: number,
   type: string,

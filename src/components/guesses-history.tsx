@@ -37,8 +37,11 @@ export default function GuessesHistory({ guesses, emptyMessage }: { guesses: Gue
 
   return (
     <div className="">
-      <div className="px-4 py-2">
+      <div className="px-4 py-2 flex items-center justify-between">
         <SortButtons sortType={sortType} onSortChange={setSortType} />
+        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          სულ: {guesses.length}
+        </span>
       </div>
       <div className="grid">
         {sortedGuesses.map((guess) => (
