@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 export default function SignupForm() {
   const router = useRouter();
-  const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +22,7 @@ export default function SignupForm() {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password || !name || !alias) {
+    if (!email || !password || !alias) {
       setError("გთხოვ შეავსე ყველა ველი.");
       return;
     }
@@ -40,7 +39,7 @@ export default function SignupForm() {
 
     setLoading(true);
     try {
-      await signup({ name, alias, email, password });
+      await signup({ name: alias, alias, email, password });
 
       setRegisteredEmail(email);
       setShowOTPVerification(true);
@@ -65,7 +64,6 @@ export default function SignupForm() {
 
   const handleOTPBack = () => {
     setShowOTPVerification(false);
-    setName("");
     setAlias("");
     setEmail("");
     setPassword("");
@@ -142,24 +140,11 @@ export default function SignupForm() {
     <div className="mx-auto w-full max-w-md">
       <div className="overflow-hidden">
         <div className="px-8 py-6">
-          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">შემოგვი1დი</h2>
-          {/* <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Join GSpot — upload photos and let others guess where they were taken.</p> */}
+          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">შემოგვიერთდი</h2>
 
           <div className="mt-6 grid gap-3">
 
             <form onSubmit={handleSubmit} className="grid gap-3">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">სახელი</label>
-                <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
-                  id="name"
-                  name="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="შენი სრული სახელი (არსად გამოჩნდება)"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">თიკუნი</label>
                 <div className="relative mt-1">
@@ -211,7 +196,7 @@ export default function SignupForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                  placeholder="you@example.com"
+                  placeholder="you@example.com (არსად გამოჩნდება)"
                 />
               </div>
 

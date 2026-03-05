@@ -39,7 +39,7 @@ export default function SigninForm() {
       });
 
       if (result?.error) {
-        setError("არასწორი მონაცემები ან ქსელის შეცდომა." + result.error);
+        setError("მეილი ან პაროლი არასწორია.");
         return;
       }
 
@@ -57,7 +57,6 @@ export default function SigninForm() {
       <div className="overflow-hidden">
         <div className="px-8 py-6">
           <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">დაუბრუნდი {APP_NAME}-ს</h2>
-          {/* <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Welcome back — enter your credentials to continue.</p> */}
 
           <div className="mt-6 grid gap-3">
 

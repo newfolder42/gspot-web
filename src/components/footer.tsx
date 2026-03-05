@@ -28,11 +28,6 @@ export default function Footer() {
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               <span className="font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span> © 2026. All rights reserved.
             </div>
-            {/* <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
-              <Link href="/sitemap" className="hover:text-zinc-900 dark:hover:text-white transition">
-                Sitemap
-              </Link>
-            </div> */}
           </div>
         </div>
       </div>

@@ -295,9 +295,8 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
               <Image
                 src={postImage}
                 alt={postTitle || ''}
-                width={1200}
-                height={800}
-                className="w-full h-full object-contain"
+                fill
+                className="object-contain"
                 priority
               />
             </div>
