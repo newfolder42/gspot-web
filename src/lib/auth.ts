@@ -141,3 +141,66 @@ export async function completePendingRegistration(email: string): Promise<{ succ
     return { success: false, error: 'SERVER_ERROR' };
   }
 }
+
+export async function initiatePasswordReset(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const normalizedEmail = email.toLowerCase();
+
+    if (!isEmail(normalizedEmail)) {
+      return { success: false, error: 'INVALID_EMAIL' };
+    }
+
+    const userResult = await query(
+      'SELECT id FROM users WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
+    if (userResult.rows.length === 0) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    try {
+      const otpCode = await createOTP(normalizedEmail);
+      await sendOTPEmail(normalizedEmail, otpCode);
+    } catch (otpErr) {
+      await logerror('Password reset OTP email error:', [otpErr]);
+      return { success: false, error: 'EMAIL_SEND_FAILED' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    await logerror('initiatePasswordReset error', [err]);
+    return { success: false, error: 'SERVER_ERROR' };
+  }
+}
+
+export async function resetPassword(email: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const normalizedEmail = email.toLowerCase();
+
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return { success: false, error: 'INVALID_PASSWORD' };
+    }
+
+    const userResult = await query(
+      'SELECT id FROM users WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
+    if (userResult.rows.length === 0) {
+      return { success: false, error: 'USER_NOT_FOUND' };
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await query(
+      'UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2',
+      [passwordHash, normalizedEmail]
+    );
+
+    return { success: true };
+  } catch (err) {
+    await logerror('resetPassword error', [err]);
+    return { success: false, error: 'SERVER_ERROR' };
+  }
+}

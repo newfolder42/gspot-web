@@ -91,7 +91,7 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
           </div>
           <div class="content">
             <h2>მეილის ვერიფიკაცია</h2>
-            <p>კეთილი იყოს შენი მობრძანება ${FROM_NAME}-ზე! გამოიყენე ვერიფიკაციის კოდი რეგისტრაციის ფორმაზე:</p>
+            <p>გამოიყენე ვერიფიკაციის კოდი ${FROM_NAME}-ის ავტორიზაციის ფორმაზე:</p>
             <div class="code-box">
               <div class="code">${code}</div>
             </div>
@@ -110,7 +110,7 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
     const text = `
 ${FROM_NAME} - მეილის ვერიფიკაცია
 
-კეთილი იყოს შენი მობრძანება ${FROM_NAME}-ზე! გამოიყენე ვერიფიკაციის კოდი რეგისტრაციის ფორმაზე: ${code}
+გამოიყენე ვერიფიკაციის კოდი ${FROM_NAME}-ის ავტორიზაციის ფორმაზე: ${code}
 
 ვერიფიკაციის კოდის ვადა 10 wT.
 
