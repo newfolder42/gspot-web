@@ -14,6 +14,7 @@ export default function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [aliasStatus, setAliasStatus] = useState<"checking" | "available" | "taken" | "invalid" | null>(null);
   const [passwordStatus, setPasswordStatus] = useState<"invalid" | null>(null);
+  const [emailStatus, setEmailStatus] = useState<"valid" | "invalid" | "blocked" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showOTPVerification, setShowOTPVerification] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
@@ -34,6 +35,11 @@ export default function SignupForm() {
 
     if (passwordStatus === "invalid") {
       setError("პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო.");
+      return;
+    }
+
+    if (emailStatus !== "valid") {
+      setError("გთხოვ შეიყვანე მართებული მეილი.");
       return;
     }
 
@@ -126,6 +132,26 @@ export default function SignupForm() {
     }
   }, [password]);
 
+  useEffect(() => {
+    if (!email) {
+      setEmailStatus(null);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailStatus("invalid");
+      return;
+    }
+
+    if (email.toLowerCase().endsWith('.ru') || email.toLowerCase().includes('.ru.')) {
+      setEmailStatus("blocked");
+      return;
+    }
+
+    setEmailStatus("valid");
+  }, [email]);
+
   if (showOTPVerification && registeredEmail) {
     return (
       <OTPVerificationForm
@@ -189,15 +215,37 @@ export default function SignupForm() {
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">მეილი</label>
-                <input
-                  className="mt-1 block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                  placeholder="you@example.com (არსად გამოჩნდება)"
-                />
+                <div className="relative mt-1">
+                  <input
+                    className="block w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400"
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                    placeholder="you@example.com"
+                  />
+                  {email && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {emailStatus === "valid" && (
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {(emailStatus === "invalid" || emailStatus === "blocked") && (
+                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {emailStatus === "invalid" && email && (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">გთხოვ შეიყვანე მართებული მეილი</p>
+                )}
+                {emailStatus === "blocked" && email && (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">.ru დომენები დაბლოკილია</p>
+                )}
               </div>
 
               <div>
@@ -210,7 +258,7 @@ export default function SignupForm() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="პაროლი"
+                    placeholder="123456 არა"
                   />
                   <button
                     type="button"
