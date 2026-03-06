@@ -25,7 +25,7 @@ WHERE u.alias = $1`,
 
     return {
       user: {
-        id: user.id,
+        id: +user.id,
         alias: user.alias,
         email: user.email,
         age: user.age,

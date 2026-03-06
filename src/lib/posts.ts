@@ -14,26 +14,35 @@ export async function getConnectionsPosts(
   userId: number,
   accountUserId: number,
   limit: number,
-  cursor?: { date: string; id: number }
+  cursor?: { date: string; id: number },
+  filter: 'all' | 'guessed' | 'not-guessed' = 'all'
 ): Promise<(GpsPostType)[]> {
   try {
     const cursorCondition = cursor
-      ? `and (p.created_at < $3 or (p.created_at = $3 and p.id < $4))`
+      ? `and (p.created_at < $4 or (p.created_at = $4 and p.id < $5))`
       : '';
     
+    let filterCondition = '';
+    if (filter === 'guessed') {
+      filterCondition = 'and exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3)';
+    } else if (filter === 'not-guessed') {
+      filterCondition = 'and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3)';
+    }
+    
     const params = cursor
-      ? [limit, accountUserId, cursor.date, cursor.id]
-      : [limit, accountUserId];
+      ? [limit, accountUserId, userId, cursor.date, cursor.id]
+      : [limit, accountUserId, userId];
 
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url,
-       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where ucn.user_id = $2 and p.status in ('published') ${cursorCondition}
+where ucn.user_id = $2 and p.status in ('published') ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
@@ -49,6 +58,7 @@ limit $1`,
       image: r.image_url,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
     await logerror('getConnectionsPosts error', [err]);
@@ -60,25 +70,34 @@ export async function getAccountPosts(
   userId: number,
   accountUserId: number,
   limit = 20,
-  cursor?: { date: string; id: number }
+  cursor?: { date: string; id: number },
+  filter: 'all' | 'guessed' | 'not-guessed' = 'all'
 ): Promise<(GpsPostType)[]> {
   try {
     const cursorCondition = cursor
-      ? `and (p.created_at < $3 or (p.created_at = $3 and p.id < $4))`
+      ? `and (p.created_at < $4 or (p.created_at = $4 and p.id < $5))`
       : '';
     
+    let filterCondition = '';
+    if (filter === 'guessed') {
+      filterCondition = 'and exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3)';
+    } else if (filter === 'not-guessed') {
+      filterCondition = 'and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3)';
+    }
+    
     const params = cursor
-      ? [limit, accountUserId, cursor.date, cursor.id]
-      : [limit, accountUserId];
+      ? [limit, accountUserId, userId, cursor.date, cursor.id]
+      : [limit, accountUserId, userId];
 
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
-       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where p.user_id = $2 ${cursorCondition}
+where p.user_id = $2 ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
@@ -95,6 +114,7 @@ limit $1`,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
     await logerror('getAccountPosts error', [err]);
@@ -105,28 +125,37 @@ limit $1`,
 export async function getGlobalPosts(
   userId: number,
   limit = 20,
-  cursor?: { date: string; id: number }
+  cursor?: { date: string; id: number },
+  filter: 'all' | 'guessed' | 'not-guessed' = 'all'
 ): Promise<(GpsPostType)[]> {
   try {
     const cursorCondition = cursor
-      ? `and (p.created_at < $2 or (p.created_at = $2 and p.id < $3))`
+      ? `and (p.created_at < $3 or (p.created_at = $3 and p.id < $4))`
       : '';
     
-    const params = cursor
-      ? [limit, cursor.date, cursor.id]
-      : [limit];
+    let filterCondition = '';
+    if (filter === 'guessed') {
+      filterCondition = 'and exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)';
+    } else if (filter === 'not-guessed') {
+      filterCondition = 'and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)';
+    }
+    
+    const params2 = cursor
+      ? [limit, userId, cursor.date, cursor.id]
+      : [limit, userId];
 
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, u.alias as author_alias, uc.public_url as image_url, uc.details,
-       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed
 from posts p
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where p.status = 'published' ${cursorCondition}
+where p.status = 'published' ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
-      params
+      params2
     );
 
     return res.rows.map((r) => ({
@@ -140,6 +169,7 @@ limit $1`,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
     await logerror('getGlobalPosts error', [err]);

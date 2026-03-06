@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GpsPost } from './post-gps';
 import { GpsPostType } from '@/types/post';
-import { loadPosts } from '@/actions/feed';
+import { loadPosts, FeedFilter } from '@/actions/feed';
 import { POSTS_PER_PAGE } from '@/lib/constants';
 
 type FeedClientProps = {
@@ -11,18 +11,48 @@ type FeedClientProps = {
   userId: number;
   accountUserId?: number;
   type: 'account-feed' | 'global-feed' | 'connections-feed';
+  filter: FeedFilter;
 };
 
 export default function FeedClient({
   initialPosts,
   userId,
   accountUserId,
-  type
+  type,
+  filter
 }: FeedClientProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPosts.length === POSTS_PER_PAGE);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const prevFilterRef = useRef(filter);
+
+  // Reload posts when filter changes
+  useEffect(() => {
+    if (prevFilterRef.current !== filter) {
+      prevFilterRef.current = filter;
+      
+      const reloadPosts = async () => {
+        setLoading(true);
+        try {
+          const newPosts = await loadPosts({
+            type,
+            userId,
+            accountUserId,
+            filter,
+          });
+          setPosts(newPosts);
+          setHasMore(newPosts.length === POSTS_PER_PAGE);
+        } catch (error) {
+          console.error('Failed to reload posts:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      reloadPosts();
+    }
+  }, [filter, type, userId, accountUserId]);
 
   const loadMore = async () => {
     if (loading || !hasMore) return;
@@ -41,6 +71,7 @@ export default function FeedClient({
         userId,
         accountUserId,
         cursor,
+        filter,
       });
 
       if (newPosts.length < POSTS_PER_PAGE) {

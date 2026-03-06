@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   const notificationSettings = await getNotificationSettings();
 
   return (
-    <div className="max-w-4xl mx-auto py-4 px-2">
+    <div className="max-w-4xl mx-auto px-2 py-2 md:py-4">
       <div className="space-y-4">
         {/* {<div className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -31,8 +31,8 @@ export default async function SettingsPage() {
           </div>
         </div>} */}
 
-        <div className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-hidden">
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">შეტყობინებები</h2>
           </div>
           <div className="p-4">

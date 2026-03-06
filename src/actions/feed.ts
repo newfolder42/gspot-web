@@ -4,11 +4,14 @@ import { getAccountPosts, getConnectionsPosts, getGlobalPosts } from '@/lib/post
 import { POSTS_PER_PAGE } from '@/lib/constants';
 import { GpsPostType } from '@/types/post';
 
+export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
+
 type LoadPostsParams = {
   type: 'account-feed' | 'global-feed' | 'connections-feed';
   userId: number;
   accountUserId?: number;
   cursor?: { date: string; id: number };
+  filter?: FeedFilter;
 };
 
 export async function loadPosts({
@@ -16,13 +19,14 @@ export async function loadPosts({
   userId,
   accountUserId,
   cursor,
+  filter = 'all',
 }: LoadPostsParams): Promise<GpsPostType[]> {
   switch (type) {
     case 'connections-feed':
-      return await getConnectionsPosts(userId, accountUserId!, POSTS_PER_PAGE, cursor);
+      return await getConnectionsPosts(userId, accountUserId!, POSTS_PER_PAGE, cursor, filter);
     case 'account-feed':
-      return await getAccountPosts(userId, accountUserId!, POSTS_PER_PAGE, cursor);
+      return await getAccountPosts(userId, accountUserId!, POSTS_PER_PAGE, cursor, filter);
     case 'global-feed':
-      return await getGlobalPosts(userId, POSTS_PER_PAGE, cursor);
+      return await getGlobalPosts(userId, POSTS_PER_PAGE, cursor, filter);
   }
 }

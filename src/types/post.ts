@@ -29,4 +29,5 @@ export type GpsPostType = PostType & {
   ratings?: GpsPostRatingType;
   userRating?: DifficultyLevel | null;
   guessCount?: number | null;
+  userHasGuessed?: boolean;
 }

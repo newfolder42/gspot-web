@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/session';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+import { loadPosts } from '@/actions/feed';
 
 export async function generateMetadata({ params }: { params: Promise<{ userName: string }> }): Promise<Metadata> {
   const { userName } = await params;
@@ -40,17 +41,28 @@ export async function generateMetadata({ params }: { params: Promise<{ userName:
 export default async function AccountPage({ params }: { params: Promise<{ userName: string }> }) {
   const { userName } = await params;
 
-  const payload = await getCurrentUser();
-  const currentUserId = payload?.userId ?? null;
+  const currentUser = await getCurrentUser();
+  const currentUserId = currentUser?.userId ?? null;
 
   const data = await getAccountByAlias(userName, currentUserId);
   if (!data) return notFound();
+
+  const posts = currentUserId ? await loadPosts({ 
+    type: 'account-feed', 
+    userId: currentUserId, 
+    accountUserId: data.user.id,
+    filter: 'all' 
+  }) : [];
+
+  const isOwnProfile = currentUserId === data.user.id;
 
   return (
     <div>
       {currentUserId && (<Feed type='account-feed'
         userId={currentUserId}
-        accountUserId={data.user.id} />)}
+        accountUserId={data.user.id}
+        initialPosts={posts}
+        showFilter={!isOwnProfile} />)}
     </div>
   );
 }

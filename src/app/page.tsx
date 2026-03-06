@@ -2,6 +2,7 @@ import AuthTabs from "@/components/auth/auth-tabs";
 import Feed from "@/components/feed";
 import { APP_NAME } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/session";
+import { loadPosts } from "@/actions/feed";
 
 export default async function Page() {
   const user = await getCurrentUser();
@@ -16,11 +17,14 @@ export default async function Page() {
     );
   }
 
+  const posts = await loadPosts({ type: 'global-feed', userId: user.userId, filter: 'all' });
+
   return (
     <main className="min-h-screen">
       <div className="max-w-4xl mx-auto py-4 px-2">
         <Feed type="global-feed"
-          userId={user.userId} />
+          userId={user.userId}
+          initialPosts={posts} />
       </div>
     </main>
   );
