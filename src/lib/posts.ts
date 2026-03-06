@@ -137,7 +137,7 @@ export async function getGlobalPosts(
     if (filter === 'guessed') {
       filterCondition = 'and exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)';
     } else if (filter === 'not-guessed') {
-      filterCondition = 'and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)';
+      filterCondition = 'and p.user_id <> $2 and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)';
     }
     
     const params2 = cursor
