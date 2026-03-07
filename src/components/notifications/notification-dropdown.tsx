@@ -16,7 +16,7 @@ type Props = {
 };
 
 function NotificationIcon({ type }: { type: NotificationType['type'] }) {
-  const baseClasses = "w-5 h-5";
+  const baseClasses = "w-4 h-4 shrink-0";
 
   switch (type) {
     case 'gps-guess':
@@ -228,7 +228,7 @@ export default function NotificationDropdown({ user }: Props) {
             ) : notifications.length > 0 ? (
               <div className="space-y-0">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="relative group p-2 px-6 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                  <div key={notification.id} className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
                       <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-blue-600 z-10" />
@@ -242,13 +242,13 @@ export default function NotificationDropdown({ user }: Props) {
                         }
                         handleNotificationClick(notification.id);
                       }}
-                      className="flex items-start gap-3"
+                      className="flex items-start gap-3 min-w-0"
                     >
                       <div className="mt-0.5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">
                         <NotificationIcon type={notification.type} />
                       </div>
                       <div className="flex-1 flex flex-col gap-1">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2">
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2 break-words">
                           {getNotificationContentMessage(notification.type, notification.details)}
                         </p>
                         {/* Timestamp */}
@@ -263,11 +263,11 @@ export default function NotificationDropdown({ user }: Props) {
                     {/* Three-dots action trigger moved into dropdown wrapper */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMenuToggle(notification.id); }}
-                      className="absolute right-2 top-2 p-1 rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer z-20"
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer z-20"
                       aria-label="notification menu"
                     >
                       <svg
-                        className="h-5 w-5"
+                        className="h-4 w-4"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                         aria-hidden="true"

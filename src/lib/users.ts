@@ -24,6 +24,16 @@ export async function getUserIdByEMail(email: string) {
   }
 }
 
+export async function getTotalUsers(): Promise<number> {
+  try {
+    const res = await query('select count(*) as total from users');
+    return Number(res.rows[0]?.total ?? 0);
+  } catch (err) {
+    await logerror('getTotalUsers error', [err]);
+    return 0;
+  }
+}
+
 export async function getNewUsers(limit = 20, offset = 0): Promise<NewUser[]> {
   try {
     const res = await query(

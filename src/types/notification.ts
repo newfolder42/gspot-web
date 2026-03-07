@@ -66,7 +66,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
   switch (type) {
     case 'gps-guess': {
       const d = details as NotificationGpsGuessDetailsType;
-      return `შენს პოსტზე სცადეს გამოცნობა (${d.score} ქულა)`;
+      return `${d.userAlias}-მა შენს პოსტზე სცადა გამოცნობა (${d.score} ქულა)`;
     }
     case 'connection-created-gps-post': {
       const d = details as NotificationConnectionPublishedGpsPostDetailsType;
@@ -84,7 +84,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'user-started-following': {
       const d = details as NotificationUserStartedFollowingDetailsType;
-      return `გილოცავ, შენ შეგეძინა ახალი ფოლოვერი ${d.followerAlias}`;
+      return `ახალი ფოლოვერი ${d.followerAlias}`;
     }
     default:
       return "ახალი შეტყობინება";

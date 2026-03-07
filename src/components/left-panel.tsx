@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HomeIcon, LeaderboardIcon, UsersIcon } from "@/components/icons";
+import { HomeIcon, LeaderboardIcon, NewUsersIcon } from "@/components/icons";
 
 export default function LeftPanel() {
   return (
@@ -31,7 +31,7 @@ export default function LeftPanel() {
               href="/new-users"
               className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             >
-              <UsersIcon className="w-5 h-5" />
+              <NewUsersIcon className="w-5 h-5" />
               <span>მომხმარებლები</span>
             </Link>
           </li>
