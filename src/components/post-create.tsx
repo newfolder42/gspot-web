@@ -7,6 +7,7 @@ import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
 import { formatCoordinates } from '@/lib/utils';
+import { ImageIcon } from './icons';
 
 declare global {
   interface Window {
@@ -379,9 +380,7 @@ export default function CreatePost() {
           type="button"
           className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md text-sm bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer inline-flex items-center"
         >
-          <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor">
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-          </svg>
+          <ImageIcon className="w-5 h-5" />
           <span className="ml-2">ატვირთვა</span>
         </button>
       </div>
@@ -405,9 +404,9 @@ export default function CreatePost() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">ფოტოს ატვირთვა</h3>
-                <button 
-                  type="button" 
-                  className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" 
+                <button
+                  type="button"
+                  className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                   onClick={() => {
                     if (!uploading && !processing) {
                       setPanelOpen(false);
@@ -436,160 +435,160 @@ export default function CreatePost() {
               )}
 
 
-            {panelStep === 0 && (
-              <div className="p-3 border rounded-md text-xs text-zinc-700 dark:text-zinc-300">
-                {processing ? (
-                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <div className="text-center space-y-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">ფოტოს დამუშავება...</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {uploading ? 'ფორმატირება...' : 'GPS და თარიღის მონაცემების ამოღება...'}
-                      </p>
+              {panelStep === 0 && (
+                <div className="p-3 border rounded-md text-xs text-zinc-700 dark:text-zinc-300">
+                  {processing ? (
+                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="text-center space-y-1">
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">ფოტოს დამუშავება...</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {uploading ? 'ფორმატირება...' : 'GPS და თარიღის მონაცემების ამოღება...'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-1 mb-3">
+                        <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
+                        <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
+                        <p>• GPS ლოკაციის მითითება სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
+                        <p>• <strong>მობილურზე:</strong> ბრაუზერი შლის GPS მონაცემებს და ლოკაცია მიუთითე რუკაზე.</p>
+                        <p>• არ გამოიყენო დაზუმილი ან შემთხვევითი ფოტო - უნდა ჩანდეს ამოსაცნობი ადგილი.</p>
+                        <p>• უპირატესობა მიანიჭე ფორთრეითში გადაღებულ სურათს.</p>
+                      </div>
+
+                      <div>
+                        <label className="w-full block p-4 border border-dashed border-zinc-200 rounded-md text-center cursor-pointer bg-zinc-50 dark:bg-zinc-800">
+                          <div className="inline-flex items-center gap-2">
+                            <span>აირჩიე ან გადაიღე ფოტო</span>
+                          </div>
+                          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={processing || uploading} className="hidden" aria-hidden="true" />
+                        </label>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {panelStep === 1 && photo && (
+                <div>
+                  <div className="mb-3">
+                    <div className="relative w-full h-[320px] bg-zinc-50 dark:bg-zinc-900 rounded overflow-hidden">
+                      <Image src={photo.url} alt={photo.filename} fill sizes="(max-width: 768px) 100vw, 768px" className="object-contain" priority />
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="space-y-1 mb-3">
-                      <p className="font-medium text-blue-700 dark:text-blue-400">📋 ატვირთვის მოთხოვნები:</p>
-                      <p>• დასაშვები: WebP/JPEG/PNG · მაქს 15მბ.</p>
-                      <p>• GPS ლოკაციის მითითება სავალდებულოა და ლოკაცია უნდა იყოს საქართველოში.</p>
-                      <p>• <strong>მობილურზე:</strong> ბრაუზერი შლის GPS მონაცემებს და ლოკაცია მიუთითე რუკაზე.</p>
-                      <p>• არ გამოიყენო დაზუმილი ან შემთხვევითი ფოტო - უნდა ჩანდეს ამოსაცნობი ადგილი.</p>
-                      <p>• უპირატესობა მიანიჭე ფორთრეითში გადაღებულ სურათს.</p>
-                    </div>
+                  <div className="flex justify-end gap-2">
+                    <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>შემდეგი</button>
+                  </div>
+                </div>
+              )}
 
+              {panelStep === 2 && (
+                <div>
+                  <MapPreview
+                    coordinates={coords ?? photo?.coordinates ?? null}
+                    onChange={(c) => {
+                      setCoords({ latitude: c.latitude, longitude: c.longitude });
+                      setPhoto((p) => p ? { ...p, coordinates: { latitude: c.latitude, longitude: c.longitude } } : p);
+                      setError(null);
+                    }}
+                  />
+
+                  <div className="flex justify-between mt-3">
                     <div>
-                      <label className="w-full block p-4 border border-dashed border-zinc-200 rounded-md text-center cursor-pointer bg-zinc-50 dark:bg-zinc-800">
-                        <div className="inline-flex items-center gap-2">
-                          <span>აირჩიე ან გადაიღე ფოტო</span>
-                        </div>
-                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={processing || uploading} className="hidden" aria-hidden="true" />
-                      </label>
+                      <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(1)}>უკან</button>
                     </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {panelStep === 1 && photo && (
-              <div>
-                <div className="mb-3">
-                  <div className="relative w-full h-[320px] bg-zinc-50 dark:bg-zinc-900 rounded overflow-hidden">
-                    <Image src={photo.url} alt={photo.filename} fill sizes="(max-width: 768px) 100vw, 768px" className="object-contain" priority />
+                    <div className="flex gap-2">
+                      {(() => {
+                        const final = coords ?? photo?.coordinates ?? null;
+                        const hasCoords = final && final.latitude != null && final.longitude != null;
+                        const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
+                        const disabled = !hasCoords || !inGeorgia;
+                        return (
+                          <button
+                            className={`px-3 py-1 rounded-md text-white ${disabled ? 'bg-blue-300 cursor-not-allowed opacity-60' : 'bg-blue-600 cursor-pointer'}`}
+                            onClick={async () => {
+                              const finalCoords = coords ?? photo?.coordinates;
+                              if (!finalCoords || finalCoords.latitude == null || finalCoords.longitude == null) {
+                                setError('GPS კოორდინატები სავალდებულოა');
+                                return;
+                              }
+                              if (!isInGeorgia(finalCoords.latitude, finalCoords.longitude)) {
+                                setError('ლოკაცია უნდა იყოს საქართველოში');
+                                return;
+                              }
+                              setError(null);
+                              setPanelStep(3);
+                            }}
+                            disabled={disabled}
+                          >შემდეგი</button>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>შემდეგი</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {panelStep === 2 && (
-              <div>
-                <MapPreview
-                  coordinates={coords ?? photo?.coordinates ?? null}
-                  onChange={(c) => {
-                    setCoords({ latitude: c.latitude, longitude: c.longitude });
-                    setPhoto((p) => p ? { ...p, coordinates: { latitude: c.latitude, longitude: c.longitude } } : p);
-                    setError(null);
-                  }}
-                />
+              {panelStep === 3 && (
+                <div>
+                  <div className="space-y-3">
+                    <label className="block text-sm">
+                      სათაური:
+                      <input
+                        className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="სათაური (არასავალდებულო)"
+                      />
+                    </label>
 
-                <div className="flex justify-between mt-3">
-                  <div>
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(1)}>უკან</button>
+                    <label className="block text-sm">
+                      გადაღებულია:
+                      <input
+                        type="date"
+                        className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
+                        value={formatDateOnly(dateTaken)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          const parsed = parseDateOnly(e.target.value);
+                          setDateTaken(parsed);
+                          const err = validateDateTaken(parsed);
+                          setError(err);
+                        }}
+                      />
+                    </label>
                   </div>
-                  <div className="flex gap-2">
-                    {(() => {
-                      const final = coords ?? photo?.coordinates ?? null;
-                      const hasCoords = final && final.latitude != null && final.longitude != null;
-                      const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
-                      const disabled = !hasCoords || !inGeorgia;
-                      return (
-                        <button
-                          className={`px-3 py-1 rounded-md text-white ${disabled ? 'bg-blue-300 cursor-not-allowed opacity-60' : 'bg-blue-600 cursor-pointer'}`}
-                          onClick={async () => {
-                            const finalCoords = coords ?? photo?.coordinates;
-                            if (!finalCoords || finalCoords.latitude == null || finalCoords.longitude == null) {
-                              setError('GPS კოორდინატები სავალდებულოა');
-                              return;
-                            }
-                            if (!isInGeorgia(finalCoords.latitude, finalCoords.longitude)) {
-                              setError('ლოკაცია უნდა იყოს საქართველოში');
-                              return;
-                            }
-                            setError(null);
-                            setPanelStep(3);
-                          }}
-                          disabled={disabled}
-                        >შემდეგი</button>
-                      );
-                    })()}
+
+                  <div className="flex justify-between mt-3">
+                    <div>
+                      <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>უკან</button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer"
+                        onClick={async () => {
+                          const final = coords ?? photo?.coordinates;
+                          if (!final || final.latitude == null || final.longitude == null) return setError('GPS coordinates required');
+                          const dateErr = validateDateTaken(dateTaken);
+                          if (dateErr) return setError(dateErr);
+                          await uploadAndCreate({ latitude: final.latitude, longitude: final.longitude });
+                        }}
+                      >ატვირთვა</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {panelStep === 3 && (
-              <div>
-                <div className="space-y-3">
-                  <label className="block text-sm">
-                    სათაური:
-                    <input
-                      className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="სათაური (არასავალდებულო)"
+              {uploading && uploadProgress !== null && (
+                <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                  <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                      style={{ width: `${uploadProgress}%` }}
                     />
-                  </label>
-
-                  <label className="block text-sm">
-                    გადაღებულია:
-                    <input
-                      type="date"
-                      className="mt-1 w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800"
-                      value={formatDateOnly(dateTaken)}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const parsed = parseDateOnly(e.target.value);
-                        setDateTaken(parsed);
-                        const err = validateDateTaken(parsed);
-                        setError(err);
-                      }}
-                    />
-                  </label>
-                </div>
-
-                <div className="flex justify-between mt-3">
-                  <div>
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer" onClick={() => setPanelStep(2)}>უკან</button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="px-3 py-1 bg-blue-600 text-white rounded-md cursor-pointer"
-                      onClick={async () => {
-                        const final = coords ?? photo?.coordinates;
-                        if (!final || final.latitude == null || final.longitude == null) return setError('GPS coordinates required');
-                        const dateErr = validateDateTaken(dateTaken);
-                        if (dateErr) return setError(dateErr);
-                        await uploadAndCreate({ latitude: final.latitude, longitude: final.longitude });
-                      }}
-                    >ატვირთვა</button>
                   </div>
                 </div>
-              </div>
-            )}
-
-        {uploading && uploadProgress !== null && (
-          <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-            <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-blue-500 h-3 rounded-full transition-all duration-200"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
+              )}
             </div>
           </div>
         </div>

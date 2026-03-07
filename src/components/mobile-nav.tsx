@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HomeIcon, LeaderboardIcon, UsersIcon } from "@/components/icons";
 
 type MobileNavProps = {
   open: boolean;
@@ -26,28 +27,31 @@ export default function MobileNav({ open, setOpen }: MobileNavProps) {
             <li>
               <Link
                 href="/"
-                className="block px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 onClick={() => setOpen(false)}
               >
-                მთავარი
+                <HomeIcon className="w-5 h-5" />
+                <span>მთავარი</span>
               </Link>
             </li>
             <li>
               <Link
                 href="/leaderboard"
-                className="block px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 onClick={() => setOpen(false)}
               >
-                ლიდერბორდი
+                <LeaderboardIcon className="w-5 h-5" />
+                <span>ლიდერბორდი</span>
               </Link>
             </li>
             <li>
               <Link
                 href="/new-users"
-                className="block px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 onClick={() => setOpen(false)}
               >
-                მომხმარებლები
+                <UsersIcon className="w-5 h-5" />
+                <span>მომხმარებლები</span>
               </Link>
             </li>
           </ul>

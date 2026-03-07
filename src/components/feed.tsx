@@ -33,7 +33,7 @@ export default function Feed({ userId, accountUserId, type, initialPosts, showFi
             >
               <option value="all">ყველა</option>
               <option value="guessed">გამოცნობილი</option>
-              <option value="not-guessed">გამოუცნობელი</option>
+              <option value="not-guessed">გამოსაცნობი</option>
             </select>
           )}
         </div>

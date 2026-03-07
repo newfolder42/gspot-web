@@ -6,6 +6,7 @@ import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
+import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
 
 declare global {
   interface Window {
@@ -271,9 +272,11 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
               title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
               aria-label="Toggle between image and map"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
-              </svg>
+              {showMapOrImage === "image" ? (
+                <MapPinIcon className="w-5 h-5" />
+              ) : (
+                <ImageIcon className="w-5 h-5" />
+              )}
             </button>
 
             <button
@@ -282,9 +285,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
               title="დახურვა"
               aria-label="დახურვა"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon className="w-5 h-5" />
             </button>
           </div>
 

@@ -6,6 +6,7 @@ import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread, markAllAsRead } from "@/actions/notifications";
 import { formatTimePassed } from "@/lib/dates";
 import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon } from "@/components/icons";
 
 type Props = {
   user: {
@@ -13,6 +14,23 @@ type Props = {
     alias: string;
   };
 };
+
+function NotificationIcon({ type }: { type: NotificationType['type'] }) {
+  const baseClasses = "w-5 h-5";
+
+  switch (type) {
+    case 'gps-guess':
+      return <MapPinIcon className={baseClasses} />;
+    case 'connection-created-gps-post':
+      return <ImageIcon className={baseClasses} />;
+    case 'gps-post-failed':
+      return <AlertTriangleIcon className={baseClasses} />;
+    case 'user-started-following':
+      return <UsersIcon className={baseClasses} />;
+    default:
+      return <InfoIcon className={baseClasses} />;
+  }
+}
 
 export default function NotificationDropdown({ user }: Props) {
   const router = useRouter();
@@ -224,18 +242,23 @@ export default function NotificationDropdown({ user }: Props) {
                         }
                         handleNotificationClick(notification.id);
                       }}
+                      className="flex items-start gap-3"
                     >
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2">
-                        {getNotificationContentMessage(notification.type, notification.details)}
-                      </p>
+                      <div className="mt-0.5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">
+                        <NotificationIcon type={notification.type} />
+                      </div>
+                      <div className="flex-1 flex flex-col gap-1">
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2">
+                          {getNotificationContentMessage(notification.type, notification.details)}
+                        </p>
+                        {/* Timestamp */}
+                        {notification.timestamp && (
+                          <p className="text-xs text-zinc-500">
+                            {formatTimePassed(notification.timestamp)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-
-                    {/* Timestamp */}
-                    {notification.timestamp && (
-                      <p className="text-xs text-zinc-500">
-                        {formatTimePassed(notification.timestamp)}
-                      </p>
-                    )}
 
                     {/* Three-dots action trigger moved into dropdown wrapper */}
                     <button

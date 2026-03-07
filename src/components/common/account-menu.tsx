@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { getInitials } from "@/lib/getInitials";
+import { UserIcon, SettingsIcon, LogoutIcon } from "@/components/icons";
 
 type Props = {
   user: {
@@ -45,9 +46,32 @@ export default function AccountMenu({ user }: Props) {
       {open && (
         <div className="absolute right-0 mt-2 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-100 dark:ring-zinc-800 z-20">
           <div className="py-1">
-            <Link href={`/account/${user.alias}`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800">შენი სივრცე</Link>
-            <Link href="/settings" onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800">პარამეტრები</Link>
-            <button onClick={() => { setOpen(false); handleSignOut(); }} className="w-full text-left block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800">გასვლა</button>
+            <Link
+              href={`/account/${user.alias}`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <UserIcon className="w-4 h-4" />
+              <span>შენი სივრცე</span>
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <SettingsIcon className="w-4 h-4" />
+              <span>პარამეტრები</span>
+            </Link>
+            <button
+              onClick={() => {
+                setOpen(false);
+                handleSignOut();
+              }}
+              className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <LogoutIcon className="w-4 h-4" />
+              <span>გასვლა</span>
+            </button>
           </div>
         </div>
       )}

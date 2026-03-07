@@ -3,6 +3,7 @@
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { useState, useRef } from 'react';
+import { ImageIcon } from './icons';
 
 export default function ProfilePhotoUpload() {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,12 +84,10 @@ export default function ProfilePhotoUpload() {
       {/* Edit icon overlay */}
       <button
         onClick={() => setIsOpen(true)}
-        className="absolute bottom-0 right-0 p-1 rounded-full bg-[#00c8ff] hover:bg-[#00b0e6] shadow-md transition"
+        className="absolute bottom-0 right-0 p-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition"
         title="პროფილის სურათის შეცვლა"
       >
-        <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
-        </svg>
+        <ImageIcon className="w-4 h-4" />
       </button>
 
       {/* Modal */}
