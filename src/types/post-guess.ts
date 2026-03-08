@@ -8,3 +8,15 @@ export type PostGuessType = {
     score: number | null;
     distance: number | null;
 };
+
+export type PostGuessMapPointType = {
+    author: string;
+    score: number | null;
+    distance: number | null;
+    coordinates: { latitude: number; longitude: number };
+};
+
+export type PostGuessMapDataType = {
+    guessPoints: PostGuessMapPointType[];
+    photoCoordinates: { latitude: number; longitude: number } | null;
+};

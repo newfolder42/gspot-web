@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { logerror } from './logger';
 import type { GpsPostType } from '@/types/post';
-import type { PostGuessType } from '@/types/post-guess';
+import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
 import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
@@ -463,6 +463,67 @@ where p.id = $1`,
   } catch (err) {
     await logerror('getPhotoCoordinates error', [err]);
     return null;
+  }
+}
+
+export async function getPostGuessMapPoints(postId: number): Promise<PostGuessMapDataType> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { guessPoints: [], photoCoordinates: null };
+
+    const ownerRes = await query(
+      `select user_id from posts where id = $1 limit 1`,
+      [postId]
+    );
+
+    if (ownerRes.rowCount === 0) return { guessPoints: [], photoCoordinates: null };
+    if (Number(ownerRes.rows[0].user_id) !== Number(user.userId)) return { guessPoints: [], photoCoordinates: null };
+
+    const data = await query(
+      `select pg.details, u.alias as author_alias
+from post_guesses pg
+join users u on pg.user_id = u.id
+where pg.post_id = $1
+order by pg.created_at desc`,
+      [postId]
+    );
+
+    const points: PostGuessMapPointType[] = [];
+    for (const r of data.rows) {
+      const lat = Number(r.details?.coordinates?.latitude);
+      const lng = Number(r.details?.coordinates?.longitude);
+      if (!isFinite(lat) || !isFinite(lng)) continue;
+
+      points.push({
+        author: r.author_alias,
+        score: r.details?.score ?? null,
+        distance: r.details?.distance ?? null,
+        coordinates: { latitude: lat, longitude: lng },
+      });
+    }
+
+    // Fetch photo coordinates
+    const photoRes = await query(
+      `select uc.details from posts p
+       join post_content pc on p.id = pc.post_id
+       join user_content uc on uc.id = pc.content_id
+       where p.id = $1 limit 1`,
+      [postId]
+    );
+
+    let photoCoordinates: { latitude: number; longitude: number } | null = null;
+    if (photoRes.rowCount && photoRes.rowCount > 0) {
+      const lat = Number(photoRes.rows[0].details?.coordinates?.latitude);
+      const lng = Number(photoRes.rows[0].details?.coordinates?.longitude);
+      if (isFinite(lat) && isFinite(lng)) {
+        photoCoordinates = { latitude: lat, longitude: lng };
+      }
+    }
+
+    return { guessPoints: points, photoCoordinates };
+  } catch (err) {
+    await logerror('getPostGuessMapPoints error', [err]);
+    return { guessPoints: [], photoCoordinates: null };
   }
 }
 

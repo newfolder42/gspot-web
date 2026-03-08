@@ -79,34 +79,26 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
           />
         )}
 
-        <div className="px-4 py-3 flex items-center justify-between">
-          <Link href="#guesses" className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300" title="გამოცნობების ნახვა">
-            <svg className="w-5 h-5 text-zinc-500 dark:text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            <span className="font-medium">{guessCount}</span>
-          </Link>
-
-          {canGuess &&
-            (
-              <div className="flex flex-col">
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
-                  onClick={() => setShowGuessModal(true)}
-                >
-                  <MapPinIcon className="w-5 h-5" />
-                  სცადე
-                </button>
-              </div>
-            )
-          }
-        </div>
+        {canGuess && (
+          <div className="px-4 py-3 flex items-center justify-end">
+            <button
+              type="button"
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+              onClick={() => setShowGuessModal(true)}
+            >
+              <MapPinIcon className="w-5 h-5" />
+              სცადე
+            </button>
+          </div>
+        )}
       </article>
 
       <div id="guesses">
         <PostGuessList
           guesses={guessesList}
+          isAuthor={isAuthor}
+          postId={post.id}
+          guessCount={guessCount}
         />
       </div>
 
