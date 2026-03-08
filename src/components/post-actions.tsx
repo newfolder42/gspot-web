@@ -9,7 +9,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
   const [isOwnPost, setIsOwnPost] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [editTitle, setEditTitle] = useState(currentTitle);
+  const [editTitle, setEditTitle] = useState(currentTitle ?? '');
   const [isLoading, setIsLoading] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 

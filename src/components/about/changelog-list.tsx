@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.6.8",
+    date: "2026-03-08",
+    items: [
+      "საკუთარ პოსტზე შესაძლებელია გამოცნობების რუკაზე ნახვა",
+    ],
+  },
+  {
     version: "v0.6.0",
     date: "2026-03-04",
     items: [

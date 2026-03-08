@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PostGuess from './post-guess';
 import SortButtons, { type SortType } from './common/sort-buttons';
+import NewGuess from './new-guess';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, XIcon } from './icons';
 import { getPostGuessMapPoints } from '@/lib/posts';
@@ -13,9 +14,31 @@ declare global {
   }
 }
 
-export default function PostGuessList({ guesses, isAuthor, postId, guessCount }: { guesses: PostGuessType[]; isAuthor?: boolean; postId: number; guessCount?: number }) {
+type PostGuessListProps = {
+  guesses: PostGuessType[];
+  isAuthor?: boolean;
+  postId: number;
+  guessCount?: number;
+  canGuess?: boolean;
+  postImage?: string;
+  postTitle?: string;
+  onGuessSubmitted?: (guess: PostGuessType) => void;
+};
+
+export default function PostGuessList({
+  guesses,
+  isAuthor,
+  postId,
+  guessCount,
+  canGuess,
+  postImage,
+  postTitle,
+  onGuessSubmitted,
+}: PostGuessListProps) {
+  const actionButtonClass = 'inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors';
   const [sortType, setSortType] = useState<SortType>("date");
   const [showMap, setShowMap] = useState(false);
+  const [showGuessModal, setShowGuessModal] = useState(false);
   const [loadingMapPoints, setLoadingMapPoints] = useState(false);
   const [mapPointsError, setMapPointsError] = useState<string | null>(null);
   const [mapData, setMapData] = useState<PostGuessMapDataType | null>(null);
@@ -50,10 +73,17 @@ export default function PostGuessList({ guesses, isAuthor, postId, guessCount }:
 
       window.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+      const photoLng = Number(mapData?.photoCoordinates?.longitude);
+      const photoLat = Number(mapData?.photoCoordinates?.latitude);
+      const initialCenter: [number, number] =
+        isFinite(photoLng) && isFinite(photoLat)
+          ? [photoLng, photoLat]
+          : [44.8271, 41.7151];
+
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: [44.8271, 41.7151],
+        center: initialCenter,
         zoom: 8,
         renderWorldCopies: false,
         maxBounds: [[39.4, 40.8], [46.9, 43.8]],
@@ -274,26 +304,49 @@ export default function PostGuessList({ guesses, isAuthor, postId, guessCount }:
 
   return (
     <div className="mt-4 space-y-2">
-      {guesses.length > 0 && (
+      {(guesses.length > 0 || isAuthor || canGuess) && (
         <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {guessCount !== undefined && (
-              <div className="flex items-center gap-2">
-                {/* <GuessCountIcon className="w-4 h-4" /> */}
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">სულ: {guessCount}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 py-1">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4 text-zinc-500 dark:text-zinc-400"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{guessCount}</span>
+                </div>
               </div>
             )}
-            <SortButtons sortType={sortType} onSortChange={setSortType} />
+            {guesses.length > 0 && <SortButtons sortType={sortType} onSortChange={setSortType} />}
           </div>
           {isAuthor && (
             <button
               type="button"
               onClick={handleOpenMap}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded text-sm font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+              className={actionButtonClass}
               title="რუკაზე ყველა გამოცნობის ჩვენება"
             >
-              <MapPinIcon className="w-4 h-4" />
-              რუკაზე ნახვა
+              <MapPinIcon className="w-5 h-5" />
+              <span className="hidden sm:inline">რუკაზე ნახვა</span>
+            </button>
+          )}
+          {!isAuthor && canGuess && (
+            <button
+              type="button"
+              className={actionButtonClass}
+              onClick={() => setShowGuessModal(true)}
+            >
+              <MapPinIcon className="w-5 h-5" />
+              <span className="hidden sm:inline">სცადე</span>
             </button>
           )}
         </div>
@@ -303,6 +356,19 @@ export default function PostGuessList({ guesses, isAuthor, postId, guessCount }:
           <PostGuess key={guess.id} guess={guess} />
         ))}
       </div>
+
+      {showGuessModal && canGuess && (
+        <NewGuess
+          postId={postId}
+          postImage={postImage}
+          postTitle={postTitle || ''}
+          onClose={() => setShowGuessModal(false)}
+          onSubmitted={(newGuess) => {
+            onGuessSubmitted?.(newGuess);
+            setShowGuessModal(false);
+          }}
+        />
+      )}
 
       {showMap && (
         <div className="fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-sm p-4">

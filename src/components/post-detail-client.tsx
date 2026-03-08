@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PostActions from './post-actions';
 import PostGuessList from './post-guess-list';
-import NewGuess from './new-guess';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 import type { PostGuessType } from '@/types/post-guess';
-import { MapPinIcon } from './icons';
 
 type PostDetailClientProps = {
   post: GpsPostType;
@@ -22,7 +20,6 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
   const isAuthor = currentUser === post.author;
   const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
 
-  const [showGuessModal, setShowGuessModal] = useState(false);
   const [isPortrait, setIsPortrait] = useState(false);
   const [canGuess, setCanGuess] = useState(userCanGuess);
   const [guessesList, setGuessesList] = useState<PostGuessType[]>(guesses);
@@ -78,19 +75,6 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
             }}
           />
         )}
-
-        {canGuess && (
-          <div className="px-4 py-3 flex items-center justify-end">
-            <button
-              type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
-              onClick={() => setShowGuessModal(true)}
-            >
-              <MapPinIcon className="w-5 h-5" />
-              სცადე
-            </button>
-          </div>
-        )}
       </article>
 
       <div id="guesses">
@@ -99,18 +83,12 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
           isAuthor={isAuthor}
           postId={post.id}
           guessCount={guessCount}
-        />
-      </div>
-
-      {showGuessModal && (
-        <NewGuess
-          postId={post.id}
+          canGuess={canGuess}
           postImage={post.image}
           postTitle={post.title || ''}
-          onClose={() => setShowGuessModal(false)}
-          onSubmitted={handleGuessSubmitted}
+          onGuessSubmitted={handleGuessSubmitted}
         />
-      )}
+      </div>
     </main>
   );
 }
