@@ -6,6 +6,12 @@
   --font-default: var(--font-default);
   --font-geist-sans: var(--font-geist-sans);
   --font-geist-mono: var(--font-geist-mono);
+  --z-sidebar: 30;
+  --z-header: 40;
+  --z-context-menu: 60;
+  --z-mobile-nav: 70;
+  --z-modal: 80;
+  --z-critical: 90;
 }
 
 @theme inline {
@@ -26,4 +32,30 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-default), var(--font-geist-sans), var(--font-geist-mono), Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .z-layer-header {
+    z-index: var(--z-header);
+  }
+
+  .z-layer-sidebar {
+    z-index: var(--z-sidebar);
+  }
+
+  .z-layer-context {
+    z-index: var(--z-context-menu);
+  }
+
+  .z-layer-mobile {
+    z-index: var(--z-mobile-nav);
+  }
+
+  .z-layer-modal {
+    z-index: var(--z-modal);
+  }
+
+  .z-layer-critical {
+    z-index: var(--z-critical);
+  }
 }

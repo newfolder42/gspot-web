@@ -84,7 +84,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+          <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
             <button onClick={handleEditClick} className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">რედაქტირება</button>
             <button onClick={handleDeleteClick} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800">წაშლა</button>
           </div>
@@ -92,7 +92,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
       </div>
 
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-layer-modal bg-black/50 flex items-center justify-center">
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">რედაქტირება</h2>
             <input
@@ -123,7 +123,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-layer-modal bg-black/50 flex items-center justify-center">
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">გსურს პოსტის წაშლა?</h2>
 

@@ -263,7 +263,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
   return (
     <>
       {postImage && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-layer-modal bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
           {/* Control buttons header */}
           <div className="flex items-center justify-end gap-2 px-4 py-3">
             <button

@@ -97,7 +97,7 @@ export default function ProfilePhotoUpload() {
           onMouseDown={(e) => {
             if (overlayRef.current && e.target === overlayRef.current) setIsOpen(false);
           }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-layer-modal bg-black/50 flex items-center justify-center"
         >
           <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 w-96 border border-zinc-200 dark:border-zinc-800">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">პროფილის სურათის შეცვლა</h2>

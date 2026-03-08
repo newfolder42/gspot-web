@@ -3,7 +3,7 @@ import { HomeIcon, LeaderboardIcon, NewUsersIcon } from "@/components/icons";
 
 export default function LeftPanel() {
   return (
-    <aside className="hidden md:block px-4 py-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 md:fixed md:left-0 md:top-14 md:h-[calc(100vh-56px)] md:w-56 md:rounded-none md:shadow-sm z-20">
+    <aside className="hidden md:block px-4 py-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 md:fixed md:left-0 md:top-14 md:h-[calc(100vh-56px)] md:w-56 md:rounded-none md:shadow-sm z-layer-sidebar">
       <nav>
         <ul className="space-y-1">
           <li>

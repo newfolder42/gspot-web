@@ -44,7 +44,7 @@ export default function AccountMenu({ user }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-100 dark:ring-zinc-800 z-20">
+        <div className="absolute right-0 mt-2 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-100 dark:ring-zinc-800 z-50">
           <div className="py-1">
             <Link
               href={`/account/${user.alias}`}

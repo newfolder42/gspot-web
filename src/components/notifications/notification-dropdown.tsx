@@ -184,7 +184,7 @@ export default function NotificationDropdown({ user }: Props) {
 
       {/* Notification Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 rounded-lg bg-white dark:bg-zinc-900 shadow-xl ring-1 ring-zinc-100 dark:ring-zinc-800 z-50">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 rounded-lg bg-white dark:bg-zinc-900 shadow-xl ring-1 ring-zinc-100 dark:ring-zinc-800">
           {/* Header */}
           <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -231,7 +231,7 @@ export default function NotificationDropdown({ user }: Props) {
                   <div key={notification.id} className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
-                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-blue-600 z-10" />
+                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-blue-600" />
                     )}
 
                     <div
@@ -263,7 +263,7 @@ export default function NotificationDropdown({ user }: Props) {
                     {/* Three-dots action trigger moved into dropdown wrapper */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMenuToggle(notification.id); }}
-                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer z-20"
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                       aria-label="notification menu"
                     >
                       <svg
@@ -277,7 +277,7 @@ export default function NotificationDropdown({ user }: Props) {
                     </button>
                     {/* Notification menu */}
                     {openMenuId === notification.id && (
-                      <div className="absolute right-2 top-8 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-200 dark:ring-zinc-800 z-30">
+                      <div className="absolute right-2 top-8 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-200 dark:ring-zinc-800">
                         <div className="py-1">
                           <button
                             onClick={(e) => {

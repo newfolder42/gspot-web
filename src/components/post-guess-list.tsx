@@ -225,7 +225,7 @@ export default function PostGuessList({
         // Mobile + Desktop: click/tap to toggle popup
         el.addEventListener('click', (e) => {
           e.stopPropagation();
-          
+
           // If this popup is already open (pinned), close it
           if (activePopupRef.current === popup) {
             popup.remove();
@@ -357,21 +357,18 @@ export default function PostGuessList({
         ))}
       </div>
 
-      {showGuessModal && canGuess && (
+      {showGuessModal && (
         <NewGuess
           postId={postId}
           postImage={postImage}
           postTitle={postTitle || ''}
           onClose={() => setShowGuessModal(false)}
-          onSubmitted={(newGuess) => {
-            onGuessSubmitted?.(newGuess);
-            setShowGuessModal(false);
-          }}
+          onSubmitted={(newGuess) => onGuessSubmitted?.(newGuess)}
         />
       )}
 
       {showMap && (
-        <div className="fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-layer-modal bg-zinc-900/50 backdrop-blur-sm p-4">
           <div className="mx-auto h-full max-w-4xl rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">გამოცნობები რუკაზე</h3>

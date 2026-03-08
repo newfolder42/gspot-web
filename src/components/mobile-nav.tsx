@@ -14,14 +14,14 @@ export default function MobileNav({ open, setOpen }: MobileNavProps) {
   return (
     <>
       <div
-        className="fixed inset-0 z-50"
+        className="fixed inset-0 z-layer-mobile"
         onClick={() => setOpen(false)}
         aria-hidden="true"
       >
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
       </div>
 
-      <aside className="fixed left-0 top-0 z-50 w-64 h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4 pt-16">
+      <aside className="fixed left-0 top-0 z-layer-mobile w-64 h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4 pt-16">
         <nav>
           <ul className="space-y-2">
             <li>
