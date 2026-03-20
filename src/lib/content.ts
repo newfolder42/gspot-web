@@ -3,6 +3,16 @@
 import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { deleteObject } from './s3';
+import { eventBus } from './eventBus';
+import type { UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
+
+async function publishProfilePhotoChangedEvent(event: UserProfilePhotoChangedEvent) {
+  try {
+    await eventBus.publish('user_profile_photo', 'changed', event);
+  } catch (err) {
+    console.warn('Failed to publish user_profile_photo:changed event', err);
+  }
+}
 
 export async function storeContent(url: string, type: string, details: any) {
   if (!type) return null;
@@ -35,6 +45,15 @@ export async function storeContent(url: string, type: string, details: any) {
           [url, JSON.stringify(details), existing.id]
         );
 
+        await publishProfilePhotoChangedEvent({
+          contentId: +upd.rows[0].id,
+          userId: +currentUserId,
+          userAlias: user.alias,
+          profilePhotoUrl: url,
+          previousProfilePhotoUrl: existing.public_url ?? null,
+          replacedExisting: true,
+        });
+
         return { id: upd.rows[0].id, replacedOldId: existing.id };
       }
     }
@@ -45,6 +64,17 @@ export async function storeContent(url: string, type: string, details: any) {
                              RETURNING id`,
       [currentUserId, type, url, JSON.stringify(details)]
     );
+
+    if (type === 'profile-photo') {
+      await publishProfilePhotoChangedEvent({
+        contentId: +res.rows[0].id,
+        userId: +currentUserId,
+        userAlias: user.alias,
+        profilePhotoUrl: url,
+        previousProfilePhotoUrl: null,
+        replacedExisting: false,
+      });
+    }
 
     return { id: res.rows[0].id };
   } catch (err) {

@@ -6,7 +6,7 @@ import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread, markAllAsRead } from "@/actions/notifications";
 import { formatTimePassed } from "@/lib/dates";
 import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon } from "@/components/icons";
 
 type Props = {
   user: {
@@ -27,6 +27,8 @@ function NotificationIcon({ type }: { type: NotificationType['type'] }) {
       return <AlertTriangleIcon className={baseClasses} />;
     case 'user-started-following':
       return <UsersIcon className={baseClasses} />;
+    case 'user-achievement-achieved':
+      return <TrophyIcon className={baseClasses} />;
     default:
       return <InfoIcon className={baseClasses} />;
   }
@@ -236,7 +238,7 @@ export default function NotificationDropdown({ user }: Props) {
 
                     <div
                       onClick={() => {
-                        const route = getNotificationRoute(notification.type, notification.details);
+                        const route = getNotificationRoute(notification);
                         if (route) {
                           router.push(route);
                         }

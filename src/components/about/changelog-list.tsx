@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.7.0",
+    date: "2026-03-20",
+    items: [
+      "დამატებულია მიღწევების სისტემა, გვერდი პირად პროფილზე და ახალი ნოთიფიკაცია",
+    ],
+  },
+  {
     version: "v0.6.8",
     date: "2026-03-08",
     items: [

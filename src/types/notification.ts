@@ -1,12 +1,13 @@
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following';
+  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved';
   user: {
     userId: number;
     alias: string;
   };
   details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType
-  | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType;
+  | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType
+  | NotificationUserAchievementAchievedDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -39,6 +40,14 @@ export type NotificationUserStartedFollowingDetailsType = {
   id: number,
   followerId: number,
   followerAlias: string,
+}
+
+export type NotificationUserAchievementAchievedDetailsType = {
+  userId: number,
+  achievementKey: string,
+  achievementName: string,
+  achievedAt: string | null,
+  currentValue?: number,
 }
 
 // Normalize `details` to a plain object regardless of input shape.
@@ -86,28 +95,35 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationUserStartedFollowingDetailsType;
       return `ახალი ფოლოვერი ${d.followerAlias}`;
     }
+    case 'user-achievement-achieved': {
+      const d = details as NotificationUserAchievementAchievedDetailsType;
+      return `ახალი მიღწევა: ${d.achievementName}`;
+    }
     default:
       return "ახალი შეტყობინება";
   }
 }
 
-export function getNotificationRoute(type: NotificationType['type'], details: NotificationType['details']): string | null {
-  switch (type) {
+export function getNotificationRoute(notification: NotificationType): string | null {
+  switch (notification.type) {
     case 'gps-guess': {
-      const d = details as NotificationGpsGuessDetailsType;
+      const d = notification.details as NotificationGpsGuessDetailsType;
       return `/post/${d.postId}`;
     }
     case 'connection-created-gps-post': {
-      const d = details as NotificationConnectionPublishedGpsPostDetailsType;
+      const d = notification.details as NotificationConnectionPublishedGpsPostDetailsType;
       return `/post/${d.postId}`;
     }
     case 'gps-post-failed': {
-      const d = details as NotificationGpsPostPublishFailedDetailsType;
+      const d = notification.details as NotificationGpsPostPublishFailedDetailsType;
       return `/post/${d.postId}`;
     }
     case 'user-started-following': {
-      const d = details as NotificationUserStartedFollowingDetailsType;
+      const d = notification.details as NotificationUserStartedFollowingDetailsType;
       return `/account/${d.followerAlias}`;
+    }
+    case 'user-achievement-achieved': {
+      return `/account/${notification.user.alias}/achievements`;
     }
     default:
       return null;

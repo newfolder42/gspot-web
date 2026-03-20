@@ -8,7 +8,7 @@ export async function loadNotifications(userId: number, limit = 10): Promise<Not
     const rows = await getNotificationsForUser(userId, limit);
 
     const mapped = rows.map((row) => {
-      const type = row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following';
+      const type = row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved';
       const details = normalizeDetails(row.details);
 
       const notif: NotificationType = {
