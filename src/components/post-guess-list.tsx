@@ -18,7 +18,7 @@ type PostGuessListProps = {
   guesses: PostGuessType[];
   isAuthor?: boolean;
   postId: number;
-  guessCount?: number;
+  guessCount: number;
   canGuess?: boolean;
   postImage?: string;
   postTitle?: string;
@@ -36,6 +36,7 @@ export default function PostGuessList({
   onGuessSubmitted,
 }: PostGuessListProps) {
   const actionButtonClass = 'inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors';
+  const showToolbar = guessCount > 0 || Boolean(isAuthor) || Boolean(canGuess);
   const [sortType, setSortType] = useState<SortType>("date");
   const [showMap, setShowMap] = useState(false);
   const [showGuessModal, setShowGuessModal] = useState(false);
@@ -304,10 +305,10 @@ export default function PostGuessList({
 
   return (
     <div className="mt-4 space-y-2">
-      {(guesses.length > 0 || isAuthor || canGuess) && (
+      {(guessCount > 0 || isAuthor || canGuess) && (
         <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {guessCount !== undefined && (
+            {guessCount > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 py-1">
                   <svg
@@ -326,9 +327,9 @@ export default function PostGuessList({
                 </div>
               </div>
             )}
-            {guesses.length > 0 && <SortButtons sortType={sortType} onSortChange={setSortType} />}
+            {guessCount > 0 && <SortButtons sortType={sortType} onSortChange={setSortType} />}
           </div>
-          {isAuthor && (
+          {isAuthor && guessCount > 0 && (
             <button
               type="button"
               onClick={handleOpenMap}

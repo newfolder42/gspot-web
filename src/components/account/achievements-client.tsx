@@ -156,7 +156,7 @@ export default function AchievementsClient({ achievements }: Props) {
                       {item.imageUrl ? (
                         <Image src={item.imageUrl} alt={item.name} width={48} height={48} className="h-full w-full object-cover" />
                       ) : (
-                        <span>img</span>
+                        <span>სრთ</span>
                       )}
                     </div>
 
@@ -179,7 +179,7 @@ export default function AchievementsClient({ achievements }: Props) {
                       </div>
 
                       <div className="mt-1 flex items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                        <p>პროგრესი: {progressText(item)}</p>
+                        {item.maxProgress !== 1 && <p>პროგრესი: {progressText(item)}</p>}
                         {item.isAchieved && item.achievedAt && (
                           <p className="text-right">{formatPhotoTakenDate(item.achievedAt)}</p>
                         )}
