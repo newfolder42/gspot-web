@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatActionDate } from "@/lib/dates";
 import SortButtons, { type SortType } from "./common/sort-buttons";
 import type { PostGuessType } from "@/types/post-guess";
+import { ListIcon } from "./icons";
 
 type GuessItem = PostGuessType & {
   postTitle: string;
@@ -39,9 +40,10 @@ export default function GuessesHistory({ guesses, emptyMessage }: { guesses: Gue
     <div className="">
       <div className="px-4 py-2 flex items-center justify-between">
         <SortButtons sortType={sortType} onSortChange={setSortType} />
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          სულ: {guesses.length}
-        </span>
+        <div className="inline-flex items-center gap-1.5 py-1">
+          <ListIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{guesses.length}</span>
+        </div>
       </div>
       <div className="grid">
         {sortedGuesses.map((guess) => (

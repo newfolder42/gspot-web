@@ -7,7 +7,7 @@ const EMPTY_GUESSES_MESSAGES = [
   'უსაქმურობის სუნი დგას...',
   'ვესტერნის ფილმებში რომ გამხმარი ბალახი დაგორავს ის...',
   'გამოსაცნობი ჯერ კიდევ ბევრია!',
-  'აქამდე რა გაუკეთებია რომ რამე გააკეთოს...',
+  'აქამდე რა გაუკეთებია რომ ახლა რამე გააკეთოს...',
 ];
 
 export default async function AccountGuessesPage({ params }: { params: Promise<{ userName: string }> }) {

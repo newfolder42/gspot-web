@@ -4,7 +4,6 @@ import SkeletonConnectionCard from './connection-card-skeleton';
 import { getConnectionsForUserByAlias } from '@/lib/connections';
 import type { ClientConnection } from '@/types/client-connection';
 
-
 export default async function ConnectionsList({ userName }: { userName: string }) {
   const connections: ClientConnection[] | null = await getConnectionsForUserByAlias(userName);
 

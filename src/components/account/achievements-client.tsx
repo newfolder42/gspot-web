@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import type { AccountAchievement } from '@/types/achievement';
 import { formatPhotoTakenDate } from '@/lib/dates';
+import { CheckmarkCircleIcon } from '@/components/icons';
 
 type Props = {
   achievements: AccountAchievement[];
@@ -55,28 +56,6 @@ function compactMilestones(items: AccountAchievement[]) {
   return compact;
 }
 
-function getInProgressMilestoneKeys(items: AccountAchievement[]) {
-  const groupedByTrack = items.reduce<Record<string, AccountAchievement[]>>((acc, item) => {
-    const key = `${item.trackId}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
-
-  const keys = new Set<string>();
-
-  for (const milestones of Object.values(groupedByTrack)) {
-    const sorted = [...milestones].sort(sortByMilestone);
-    const nextPending = sorted.find((item) => !item.isAchieved) ?? null;
-
-    if (nextPending && nextPending.progress > 0) {
-      keys.add(nextPending.key);
-    }
-  }
-
-  return keys;
-}
-
 function groupAchievements(items: AccountAchievement[]) {
   const grouped = items.reduce<Record<string, AccountAchievement[]>>((acc, item) => {
     if (!acc[item.category]) {
@@ -105,9 +84,16 @@ function progressText(item: AccountAchievement) {
   return `${Math.min(item.progress, item.maxProgress)} / ${item.maxProgress}`;
 }
 
+function progressPercent(item: AccountAchievement) {
+  if (item.maxProgress == null || item.maxProgress <= 0) {
+    return 0;
+  }
+
+  return Math.round((Math.min(item.progress, item.maxProgress) / item.maxProgress) * 100);
+}
+
 export default function AchievementsClient({ achievements }: Props) {
   const [showAllMilestones, setShowAllMilestones] = useState(false);
-  const inProgressMilestoneKeys = useMemo(() => getInProgressMilestoneKeys(achievements), [achievements]);
 
   const visibleAchievements = useMemo(() => {
     if (showAllMilestones) return achievements;
@@ -126,17 +112,37 @@ export default function AchievementsClient({ achievements }: Props) {
     [grouped]
   );
 
+  // Calculate achievement stats
+  const totalAchievements = achievements.length;
+  const achievedAchievements = achievements.filter((a) => a.isAchieved).length;
+  const achievementPercent =
+    totalAchievements > 0 ? Math.round((achievedAchievements / totalAchievements) * 100) : 0;
+
   return (
     <div className="space-y-4">
-      <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 select-none">
-        <input
-          type="checkbox"
-          checked={showAllMilestones}
-          onChange={(event) => setShowAllMilestones(event.target.checked)}
-          className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
-        />
-        დეტალური ჩვენება
-      </label>
+      <div className="space-y-3">
+        <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 select-none">
+          <input
+            type="checkbox"
+            checked={showAllMilestones}
+            onChange={(event) => setShowAllMilestones(event.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+          />
+          დეტალური ჩვენება
+        </label>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-end text-xs text-zinc-600 dark:text-zinc-400">
+            <span>მიღწეული: {achievedAchievements} / {totalAchievements}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-violet-100 dark:bg-violet-950/50">
+            <div
+              className="h-full rounded-full bg-violet-500 transition-all duration-300"
+              style={{ width: `${achievementPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-6">
         {orderedCategories.map((category) => (
@@ -163,25 +169,24 @@ export default function AchievementsClient({ achievements }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{item.name}</h3>
-                        {item.isAchieved ? (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                            მიღწეულია
-                          </span>
-                        ) : inProgressMilestoneKeys.has(item.key) ? (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                            მიმდინარე
-                          </span>
-                        ) : (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                            სამომავლო
-                          </span>
-                        )}
+                        {item.isAchieved && <CheckmarkCircleIcon />}
                       </div>
 
-                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                        {item.maxProgress !== 1 && <p>პროგრესი: {progressText(item)}</p>}
-                        {item.isAchieved && item.achievedAt && (
-                          <p className="text-right">{formatPhotoTakenDate(item.achievedAt)}</p>
+                      <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        <div className="flex items-center justify-between gap-2">
+                          {item.isAchieved && item.achievedAt && (
+                            <p className="text-left">{formatPhotoTakenDate(item.achievedAt)}</p>
+                          )}
+                          {item.maxProgress !== 1 && <p>პროგრესი: {progressText(item)}</p>}
+                        </div>
+
+                        {item.maxProgress != null && item.maxProgress > 1 && (
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-violet-100 dark:bg-violet-950/50">
+                            <div
+                              className="h-full rounded-full bg-violet-500 transition-all duration-300"
+                              style={{ width: `${progressPercent(item)}%` }}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

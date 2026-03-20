@@ -5,8 +5,8 @@ import PostGuess from './post-guess';
 import SortButtons, { type SortType } from './common/sort-buttons';
 import NewGuess from './new-guess';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
-import { MapPinIcon, XIcon } from './icons';
 import { getPostGuessMapPoints } from '@/lib/posts';
+import { MapPinIcon, XIcon, ListIcon } from './icons';
 
 declare global {
   interface Window {
@@ -36,7 +36,6 @@ export default function PostGuessList({
   onGuessSubmitted,
 }: PostGuessListProps) {
   const actionButtonClass = 'inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors';
-  const showToolbar = guessCount > 0 || Boolean(isAuthor) || Boolean(canGuess);
   const [sortType, setSortType] = useState<SortType>("date");
   const [showMap, setShowMap] = useState(false);
   const [showGuessModal, setShowGuessModal] = useState(false);
@@ -311,18 +310,7 @@ export default function PostGuessList({
             {guessCount > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 py-1">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-4 h-4 text-zinc-500 dark:text-zinc-400"
-                    aria-hidden="true"
-                  >
-                    <path d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  <ListIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                   <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{guessCount}</span>
                 </div>
               </div>
