@@ -46,6 +46,9 @@ export type NotificationUserAchievementAchievedDetailsType = {
   userId: number,
   achievementKey: string,
   achievementName: string,
+  achievementType: 'one_time' | 'progressive',
+  milestoneKey?: string,
+  milestoneName?: string,
   achievedAt: string | null,
   currentValue?: number,
 }
@@ -80,7 +83,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'connection-created-gps-post': {
       const d = details as NotificationConnectionPublishedGpsPostDetailsType;
       const title = d.title?.trim();
-      return title 
+      return title
         ? `${d.authorAlias}-მა გამოაქვეყნა: ${title}`
         : `${d.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
     }
@@ -97,7 +100,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'user-achievement-achieved': {
       const d = details as NotificationUserAchievementAchievedDetailsType;
-      return `ახალი მიღწევა: ${d.achievementName}`;
+      if (d.achievementType === 'progressive')
+        return `ახალი მიღწევა: ${d.milestoneName}`;
+      if (d.achievementType === 'one_time')
+        return `ახალი მიღწევა: ${d.achievementName}`;
     }
     default:
       return "ახალი შეტყობინება";
