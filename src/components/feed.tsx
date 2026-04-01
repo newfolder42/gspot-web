@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { FeedFilter } from "@/actions/feed";
-import CreatePost from "./post-create";
 import FeedClient from "./feed-client";
 import { GpsPostType } from '@/types/post';
 
