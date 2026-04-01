@@ -521,7 +521,7 @@ export default function Submit({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <label className="block text-sm">
-                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">სათაური (optional)</span>
+                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">სათაური</span>
                       <input
                         className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                         value={title}
@@ -604,8 +604,7 @@ export default function Submit({
 
               <aside className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden lg:sticky lg:top-4">
                 <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Zone Rules</p>
-                  <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{selectedZone ? `r/${selectedZone.slug}` : 'აირჩიე საბზონა'}</p>
+                  <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">წესები</p>
                 </div>
                 <div className="px-4 py-3">
                   {selectedZone?.description && (
