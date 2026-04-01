@@ -249,7 +249,7 @@ export function XIcon({ className = "w-5 h-5", strokeWidth = 3 }: IconProps) {
   );
 }
 
-export function CheckmarkCircleIcon({ className = "w-5 h-5 text-emerald-600 dark:text-emerald-400", strokeWidth = 2 }: IconProps) {
+export function CheckmarkCircleIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
   return (
     <svg
       className={className}
@@ -280,6 +280,24 @@ export function ListIcon({ className = "w-4 h-4", strokeWidth = 2 }: IconProps) 
       aria-hidden="true"
     >
       <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
+export function PlusIcon({ className = "w-4 h-4", strokeWidth = 3 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
     </svg>
   );
 }

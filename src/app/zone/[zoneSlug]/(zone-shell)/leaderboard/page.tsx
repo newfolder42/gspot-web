@@ -19,8 +19,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LeaderboardsPage() {
-  const entries: LeaderboardEntry[] = await getLeaderboard('gps-guessers', 10, 0);
+export default async function LeaderboardsPage({ params }: { params: Promise<{ zoneSlug: string }> }) {
+  const { zoneSlug } = await params;
+
+  const entries: LeaderboardEntry[] = await getLeaderboard('gps-guessers', zoneSlug, 10, 0);
 
   return (
     <div className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">

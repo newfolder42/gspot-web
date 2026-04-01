@@ -4,4 +4,6 @@ export interface PostCreatedEvent {
   postTitle: string;
   authorId: number;
   authorAlias: string;
+  zoneId: number;
+  zoneSlug: string;
 }

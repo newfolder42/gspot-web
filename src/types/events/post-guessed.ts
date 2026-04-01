@@ -6,4 +6,6 @@ export interface PostGuessedEvent {
   userId: number;
   userAlias: string;
   score: number;
+  zoneId: number;
+  zoneSlug: string;
 }

@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { formatAge } from "@/lib/dates";
-import { searchUsersAndPosts } from "@/lib/search";
-import type { SearchedPost, SearchedUser } from "@/types/searched";
+import { quickSearch } from "@/lib/search";
+import type { SearchedPost, SearchedUser, SearchedZone } from "@/types/searched";
 
 export default function HeaderSearch() {
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<{ users: SearchedUser[]; posts: SearchedPost[] } | null>(null);
+  const [results, setResults] = useState<{ users: SearchedUser[]; posts: SearchedPost[]; zones: SearchedZone[] } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +23,7 @@ export default function HeaderSearch() {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const data = await searchUsersAndPosts(search);
+        const data = await quickSearch(search);
         setResults(data);
         setShowDropdown(true);
       } catch {
@@ -76,11 +76,27 @@ export default function HeaderSearch() {
                   <div className="px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">თიკუნი</div>
                   {results.users.slice(0, 5).map((u: SearchedUser) => (
                     <Link key={u.id} href={`/account/${u.alias}`} onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <span className="font-mono text-sm text-blue-600 dark:text-blue-400">@{u.alias}</span>
+                      <span className="font-mono text-sm text-blue-600 dark:text-blue-400">&apos;{u.alias}</span>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">ასაკი: {formatAge(u.age)}</span>
                     </Link>
                   ))}
                   {results.users.length > 5 && (
+                    <div className="px-4 py-2 text-center">
+                      <button onClick={() => setShowDropdown(false)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">მეტის ნახვა</button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {results.zones.length > 0 && (
+                <div>
+                  <div className="px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">საბზონები</div>
+                  {results.zones.slice(0, 5).map((p: SearchedZone) => (
+                    <Link key={p.id} href={`/zone/${p.slug}`} onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
+                      <span className="font-mono text-xs text-zinc-700 dark:text-zinc-200">{p.slug}</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{p.description}</span>
+                    </Link>
+                  ))}
+                  {results.zones.length > 5 && (
                     <div className="px-4 py-2 text-center">
                       <button onClick={() => setShowDropdown(false)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">მეტის ნახვა</button>
                     </div>
@@ -93,7 +109,7 @@ export default function HeaderSearch() {
                   {results.posts.slice(0, 5).map((p: SearchedPost) => (
                     <Link key={p.id} href={`/post/${p.id}`} onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
                       <span className="font-mono text-xs text-zinc-700 dark:text-zinc-200">{p.title}</span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">ავტორი: @{p.author}</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">ავტორი: &apos;{p.author}</span>
                     </Link>
                   ))}
                   {results.posts.length > 5 && (
@@ -103,7 +119,7 @@ export default function HeaderSearch() {
                   )}
                 </div>
               )}
-              {results.users.length === 0 && results.posts.length === 0 && (
+              {results.users.length === 0 && results.posts.length === 0 && results.zones.length === 0 && (
                 <div className="px-4 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">ვერაფერი მოიძებნა</div>
               )}
             </>

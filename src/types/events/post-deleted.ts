@@ -3,4 +3,6 @@ export interface PostDeletedEvent {
   postType: string;
   authorId: number;
   authorAlias: string;
+  zoneId: number;
+  zoneSlug: string;
 }

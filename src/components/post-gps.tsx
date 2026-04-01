@@ -6,7 +6,7 @@ import { formatActionDate, formatPhotoTakenDate } from "@/lib/dates";
 import { useState } from "react";
 import { MapPinIcon } from "./icons";
 
-export function GpsPost({ post }: { post: GpsPostType }) {
+export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: boolean }) {
 
   const [isPortrait, setIsPortrait] = useState(false);
 
@@ -14,8 +14,15 @@ export function GpsPost({ post }: { post: GpsPostType }) {
     <article className="overflow-hidden">
       <div className="flex items-start p-2">
         <div className="flex-1">
-          <div className="flex items-baseline gap-2">
-            <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">&apos;{post.author}</Link>
+          <div className="flex items-baseline gap-1.5">
+            {showZone && post.zoneSlug && (
+                <Link href={`/zone/${post.zoneSlug}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">{post.zoneSlug}</Link>
+            )}
+            {showZone && post.zoneSlug && (
+                <span className="text-xs text-zinc-400">•</span>
+            )}
+            <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
+            <span className="text-xs text-zinc-400">•</span>
             <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
             {post.status === 'failed' && (
               <svg
@@ -29,11 +36,6 @@ export function GpsPost({ post }: { post: GpsPostType }) {
             )}
           </div>
           <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
-          {post.dateTaken && (
-            <div className="text-sm text-zinc-700 dark:text-zinc-300">
-              გადაღებულია: {formatPhotoTakenDate(post.dateTaken)}
-            </div>
-          )}
         </div>
         <div className="flex-shrink-0">
           <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
@@ -54,6 +56,11 @@ export function GpsPost({ post }: { post: GpsPostType }) {
             priority={false}
           />
         </Link>
+        {post.dateTaken && (
+          <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
+            {formatPhotoTakenDate(post.dateTaken)}
+          </div>
+        )}
         <Link
           href={`/post/${post.id}#guesses`}
           className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"

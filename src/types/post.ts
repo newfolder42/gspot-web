@@ -6,6 +6,8 @@ export type PostType = {
   author: string;
   date: string;
   status: 'processing' | 'published' | 'failed';
+  zoneId?: number;
+  zoneSlug?: string;
 };
 
 export enum DifficultyLevel {

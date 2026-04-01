@@ -169,7 +169,7 @@ export default function AchievementsClient({ achievements }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{item.name}</h3>
-                        {item.isAchieved && <CheckmarkCircleIcon />}
+                        {item.isAchieved && <CheckmarkCircleIcon className='w-5 h-5 text-emerald-600 dark:text-emerald-400'/>}
                       </div>
 
                       <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">

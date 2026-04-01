@@ -9,3 +9,9 @@ export type SearchedPost = {
   title: string;
   author: string;
 }
+
+export type SearchedZone = {
+  id: number;
+  slug: string;
+  description: string;
+}

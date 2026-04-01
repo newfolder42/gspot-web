@@ -36,26 +36,22 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
       <article className="">
         <div className="flex items-start p-2">
           <div className="flex-1">
-            <div className="flex items-baseline gap-2">
-              <Link href={`/account/${post.author}`} className="font-semibold text-zinc-900 dark:text-zinc-50 hover:underline">&apos;{post.author}</Link>
-              <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
-              {post.status === 'failed' && (
-                <svg
-                  className="w-3 h-3 text-rose-600"
-                  viewBox="0 0 12 12"
-                  aria-label="Post failed"
-                  role="img"
-                >
-                  <circle cx="6" cy="6" r="5.5" fill="currentColor" />
-                </svg>
+            <div className="flex flex-col gap-0.5">
+              {post.zoneSlug && (
+                <Link href={`/zones/${post.zoneSlug}`} className="text-sm font-bold text-zinc-900 dark:text-zinc-50 hover:underline">{post.zoneSlug}</Link>
               )}
+              <div className="flex items-baseline gap-1.5">
+                <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
+                <span className="text-xs text-zinc-400">•</span>
+                <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
+                {post.status === 'failed' && (
+                  <svg className="w-3 h-3 text-rose-600" viewBox="0 0 12 12" aria-label="Post failed" role="img">
+                    <circle cx="6" cy="6" r="5.5" fill="currentColor" />
+                  </svg>
+                )}
+              </div>
             </div>
             <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
-            {post.dateTaken && (
-              <div className="text-sm text-zinc-700 dark:text-zinc-300">
-                გადაღებულია: {formatPhotoTakenDate(post.dateTaken)}
-              </div>
-            )}
           </div>
           <div className="flex-shrink-0">
             <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
@@ -63,17 +59,24 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
         </div>
 
         {post.image && (
-          <Image
-            src={post.image}
-            alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
-            width={1200}
-            height={800}
-            className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
-            onLoad={(e) => {
-              const target = e.target as HTMLImageElement;
-              setIsPortrait(target.naturalHeight > target.naturalWidth);
-            }}
-          />
+          <div className="relative">
+            <Image
+              src={post.image}
+              alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+              width={1200}
+              height={800}
+              className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
+              onLoad={(e) => {
+                const target = e.target as HTMLImageElement;
+                setIsPortrait(target.naturalHeight > target.naturalWidth);
+              }}
+            />
+            {post.dateTaken && (
+              <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
+                {formatPhotoTakenDate(post.dateTaken)}
+              </div>
+            )}
+          </div>
         )}
       </article>
 

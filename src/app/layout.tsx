@@ -5,6 +5,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import LeftPanel from "@/components/left-panel";
 import { getCurrentUser } from "@/lib/session";
+import { getUserPostZones } from "@/lib/zones";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -66,6 +67,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  const zones = user ? await getUserPostZones(user.userId) : null;
 
   return (
     <html lang="en">
@@ -74,9 +76,9 @@ export default async function RootLayout({
       >
         <Header image={{
           url: "/gspot.svg"
-        }} headers={[]} user={user} />
+        }} headers={[]} user={user} zones={zones} />
 
-        <LeftPanel />
+        <LeftPanel zones={zones} />
 
         <main className="flex-1 pt-14 p-2 md:pl-56 bg-zinc-50 dark:bg-zinc-950">
           {children}

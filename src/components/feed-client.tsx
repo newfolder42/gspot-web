@@ -8,9 +8,10 @@ import { POSTS_PER_PAGE } from '@/lib/constants';
 
 type FeedClientProps = {
   initialPosts: GpsPostType[];
-  userId: number;
+  userId?: number | null;
   accountUserId?: number;
-  type: 'account-feed' | 'global-feed' | 'connections-feed';
+  type: 'account-feed' | 'global-feed' | 'connections-feed' | 'zone-feed';
+  zoneId?: number;
   filter: FeedFilter;
 };
 
@@ -19,6 +20,7 @@ export default function FeedClient({
   userId,
   accountUserId,
   type,
+  zoneId,
   filter
 }: FeedClientProps) {
   const [posts, setPosts] = useState(initialPosts);
@@ -31,7 +33,7 @@ export default function FeedClient({
   useEffect(() => {
     if (prevFilterRef.current !== filter) {
       prevFilterRef.current = filter;
-      
+
       const reloadPosts = async () => {
         setLoading(true);
         try {
@@ -39,6 +41,7 @@ export default function FeedClient({
             type,
             userId,
             accountUserId,
+            zoneId,
             filter,
           });
           setPosts(newPosts);
@@ -49,10 +52,10 @@ export default function FeedClient({
           setLoading(false);
         }
       };
-      
+
       reloadPosts();
     }
-  }, [filter, type, userId, accountUserId]);
+  }, [filter, type, userId, accountUserId, zoneId]);
 
   const loadMore = async () => {
     if (loading || !hasMore) return;
@@ -70,6 +73,7 @@ export default function FeedClient({
         type,
         userId,
         accountUserId,
+        zoneId,
         cursor,
         filter,
       });
@@ -115,7 +119,7 @@ export default function FeedClient({
     <div className='mt-2 space-y-4'>
       {posts.map(post => {
         return (
-          <GpsPost key={post.id} post={post} />
+          <GpsPost key={post.id} post={post} showZone={type !== 'zone-feed'} />
         );
       })}
 

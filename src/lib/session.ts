@@ -2,12 +2,7 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
-type LoggedinUser = {
-  userId: number;
-  alias: string;
-  email: string;
-};
+import { LoggedinUser } from '@/types/LoggedinUser';
 
 export async function getCurrentUser(): Promise<LoggedinUser | null> {
   const session = await getServerSession(authOptions);
