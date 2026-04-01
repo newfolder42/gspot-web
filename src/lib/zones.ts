@@ -138,7 +138,8 @@ export async function getZoneMembers(zoneId: number):
        JOIN users u on u.id = zm.user_id
        left join user_content upp on u.id = upp.user_id AND upp.type = 'profile-photo'
        where zone_id = $1
-       limit 1`,
+       order by zm.joined_at desc
+       limit 20`,
       [zoneId]
     );
     if (res.rows.length === 0) return [];
