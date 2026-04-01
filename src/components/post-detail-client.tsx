@@ -36,10 +36,9 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
       <article className="">
         <div className="flex items-start p-2">
           <div className="flex-1">
-            <div className="flex flex-col gap-0.5">
-              {post.zoneSlug && (
-                <Link href={`/zones/${post.zoneSlug}`} className="text-sm font-bold text-zinc-900 dark:text-zinc-50 hover:underline">{post.zoneSlug}</Link>
-              )}
+            <div className="flex items-baseline gap-1.5">
+              <Link href={`/zone/${post.zoneSlug}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">{post.zoneSlug}</Link>
+              <span className="text-xs text-zinc-400">•</span>
               <div className="flex items-baseline gap-1.5">
                 <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
                 <span className="text-xs text-zinc-400">•</span>

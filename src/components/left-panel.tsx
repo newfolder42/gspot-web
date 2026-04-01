@@ -33,7 +33,7 @@ export default function LeftPanel({ zones }: MobileNavProps) {
         </ul>
         {zones && zones.length > 0 && (
           <>
-            <div className="mt-6 mb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 px-3 uppercase tracking-wider">ჩემი ჯგუფები</div>
+            <div className="mt-6 mb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 px-3 uppercase tracking-wider">ჩემი საბზონები</div>
             <ul className="space-y-1">
               {zones.map((zone) => (
                 <li key={zone.id}>
