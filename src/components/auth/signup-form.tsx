@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { signup, userAliasTaken } from "@/lib/auth";
 import OTPVerificationForm from "./otp-verification-form";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -291,6 +292,15 @@ export default function SignupForm() {
                 {loading ? "მიმდინარეობს..." : "რეგისტრაცია"}
               </button>
             </form>
+
+            <div className="text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                გაქვს უკვე ანგარიში?{" "}
+                <Link href="/auth/signin" className="text-[#00c8ff] hover:text-[#00b0e6] font-medium transition-colors">
+                  ავტორიზაცია
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

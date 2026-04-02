@@ -118,6 +118,15 @@ export default function SigninForm() {
                 {loading ? "მიმდინარეობს..." : "ავტორიზაცია"}
               </button>
             </form>
+
+            <div className="text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                არ გაქვს ანგარიში?{" "}
+                <Link href="/auth/signup" className="text-[#00c8ff] hover:text-[#00b0e6] font-medium transition-colors">
+                  რეგისტრაცია
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
