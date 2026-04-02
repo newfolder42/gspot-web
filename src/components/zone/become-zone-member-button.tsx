@@ -66,16 +66,16 @@ export default function BecomeZoneMemberButton({ zoneId, userId, initialStatus =
       <button
         onClick={handleClick}
         disabled={loading}
-        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm transition ${loading
+        className={`inline-flex items-center px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-800  text-sm transition ${loading
           ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
           : (status == 'active' || status == 'pending')
-            ? 'bg-red-600 text-white hover:bg-red-700'
+            ? ''
             : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
       >
         {loading && <LoadingSvg />}
-        {!loading && (status == 'active' || status == 'pending') && <RemoveSvg />}
-        {!loading && (status == 'left' || status == null) && <CheckSvg />}
+        {!loading && (status == 'active' || status == 'pending') && <span>წევრი</span>}
+        {!loading && (status == 'left' || status == null) && <span>გაწევრიანება</span>}
       </button>
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>

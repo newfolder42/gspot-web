@@ -3,6 +3,8 @@ export type ZoneBaseType = {
   slug: string;
   name: string;
   description: string | null;
+  profile_photo_url?: string | null;
+  banner_url?: string | null;
   visibility: string;
   join_policy: string;
   state: string;

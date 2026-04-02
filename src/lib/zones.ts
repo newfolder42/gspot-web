@@ -10,8 +10,13 @@ export async function getZone(slug: string): Promise<ZoneBaseType | null> {
   try {
     const res = await query(
       `select 
-        z.id, z.slug, z.name, z.description, z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
+        z.id, z.slug, z.name, z.description,
+        zcp.public_url as profile_photo_url,
+        zcb.public_url as banner_url,
+        z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
        from zones z
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       left join content_store zcb on zcb.reference_type = 'zone' and zcb.reference_id = z.id and zcb.content_type = 'banner'
        where z.slug = $1
        limit 1`,
       [slug]
@@ -23,6 +28,8 @@ export async function getZone(slug: string): Promise<ZoneBaseType | null> {
       slug: r.slug,
       name: r.name,
       description: r.description,
+      profile_photo_url: r.profile_photo_url,
+      banner_url: r.banner_url,
       visibility: r.visibility,
       join_policy: r.join_policy,
       state: r.state,
@@ -39,8 +46,13 @@ export async function getZoneById(id: number): Promise<ZoneBaseType | null> {
   try {
     const res = await query(
       `select 
-        z.id, z.slug, z.name, z.description, z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
+        z.id, z.slug, z.name, z.description,
+        zcp.public_url as profile_photo_url,
+        zcb.public_url as banner_url,
+        z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
        from zones z
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       left join content_store zcb on zcb.reference_type = 'zone' and zcb.reference_id = z.id and zcb.content_type = 'banner'
        where z.id = $1
        limit 1`,
       [id]
@@ -52,6 +64,8 @@ export async function getZoneById(id: number): Promise<ZoneBaseType | null> {
       slug: r.slug,
       name: r.name,
       description: r.description,
+      profile_photo_url: r.profile_photo_url,
+      banner_url: r.banner_url,
       visibility: r.visibility,
       join_policy: r.join_policy,
       state: r.state,
