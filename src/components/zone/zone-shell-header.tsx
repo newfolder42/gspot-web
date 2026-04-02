@@ -35,7 +35,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
   return (
     <>
       <div>
-        <div className="relative rounded-md bg-zinc-950">
+        <div className="relative rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <div className="relative h-28 sm:h-36 overflow-hidden rounded-t-md bg-zinc-200 dark:bg-zinc-800">
             {hasBanner ? (
               <Image
@@ -64,7 +64,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
 
             <div className="pl-20 sm:pl-24 min-w-0">
               <div className="flex items-center justify-between gap-3 min-w-0">
-                <h1 className="text-2xl font-semibold text-zinc-50 truncate">{zoneSlug}</h1>
+                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">{zoneSlug}</h1>
 
                 <div className="flex items-center gap-2 shrink-0">
                   {userId && memberStatus === 'active' && (
@@ -91,12 +91,12 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
 
               {hasDescription && (
                 <div className="mt-2 max-w-2xl">
-                  <p className="text-sm leading-6 text-zinc-300 break-words">{visibleDescription}</p>
+                  <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300 break-words">{visibleDescription}</p>
                   {shouldTruncateDescription && (
                     <button
                       type="button"
                       onClick={() => setExpandedDescription((prev) => !prev)}
-                      className="mt-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                      className="mt-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       {expandedDescription ? 'ნაკლები' : 'მეტი'}
                     </button>
