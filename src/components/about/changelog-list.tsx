@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.8.2",
+    date: "2026-04-02",
+    items: [
+      "არაავტორიზებული მომხმარებლისთვის ღია პოსტების ჩვენება.",
+    ],
+  },
+  {
     version: "v0.8.0",
     date: "2026-04-01",
     items: [

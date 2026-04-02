@@ -74,9 +74,7 @@ export default async function RootLayout({
       <body
         className={`${notoGeorgian.variable} ${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <Header image={{
-          url: "/gspot.svg"
-        }} headers={[]} user={user} zones={zones} />
+        <Header user={user} zones={zones} />
 
         <LeftPanel zones={zones} />
 

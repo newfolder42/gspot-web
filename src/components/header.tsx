@@ -15,22 +15,11 @@ import { LoggedinUser } from "@/types/LoggedinUser";
 import { ZoneBaseType } from "@/types/zone";
 
 type HeaderProps = {
-  image: {
-    url: string;
-  };
-  headers: {
-    title: string;
-    link: string;
-    children: {
-      title: string;
-      link: string;
-    }[];
-  }[];
   user: LoggedinUser | null;
   zones: ZoneBaseType[] | null;
 };
 
-export default function Header({ image, headers, user, zones }: HeaderProps) {
+export default function Header({ user, zones }: HeaderProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -50,24 +39,13 @@ export default function Header({ image, headers, user, zones }: HeaderProps) {
                 </svg>
               </button>
               <Link href="/" className="flex items-center gap-3">
-                <Image src={image?.url} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
+                <Image src={"/gspot.svg"} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
                 <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span>
               </Link>
             </div>
 
-            {/* Middle: nav links + search (collapsed on very small screens) */}
+            {/* Middle: search */}
             <div className="flex-1 flex items-center justify-center px-4">
-              <nav className="hidden md:flex items-center space-x-4">
-                {headers?.map((h, i) => (
-                  <Link
-                    key={i}
-                    href={h.children && h.children.length > 0 ? '#' : `/${h.link ?? ''}`}
-                    className="text-sm text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white px-2 py-1 rounded-md transition"
-                  >
-                    {h.title}
-                  </Link>
-                ))}
-              </nav>
               <div className="flex w-full max-w-lg items-center">
                 <HeaderSearch />
               </div>
@@ -80,7 +58,7 @@ export default function Header({ image, headers, user, zones }: HeaderProps) {
                 aria-label="Create post"
                 className="inline-flex items-center justify-center gap-2 h-9 px-2 sm:px-3 rounded-md text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               >
-                <PlusIcon/>
+                <PlusIcon />
                 <span className="hidden sm:inline text-sm font-medium">დამატება</span>
               </Link>
             )}

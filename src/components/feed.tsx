@@ -19,9 +19,9 @@ export default function Feed({ userId, accountUserId, type, zoneId, initialPosts
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-        <div className="flex items-center gap-3">
-          {showFilter && (
+      {showFilter && userId && (
+        <div className="mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+          <div className="flex items-center gap-3">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as FeedFilter)}
@@ -31,9 +31,9 @@ export default function Feed({ userId, accountUserId, type, zoneId, initialPosts
               <option value="guessed">გამოცნობილი</option>
               <option value="not-guessed">გამოსაცნობი</option>
             </select>
-          )}
+          </div>
         </div>
-      </div>
+      )}
       <FeedClient
         initialPosts={initialPosts}
         userId={userId}

@@ -47,18 +47,18 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   const data = await getAccountByAlias(userName, currentUserId);
   if (!data) return notFound();
 
-  const posts = currentUserId ? await loadPosts({ 
-    type: 'account-feed', 
-    userId: currentUserId, 
+  const posts = await loadPosts({
+    type: 'account-feed',
+    userId: currentUserId,
     accountUserId: data.user.id,
-    filter: 'all' 
-  }) : [];
+    filter: 'all'
+  });
 
   const isOwnProfile = currentUserId === data.user.id;
 
   return (
     <div>
-      {currentUserId && (<Feed type='account-feed'
+      {(<Feed type='account-feed'
         userId={currentUserId}
         accountUserId={data.user.id}
         initialPosts={posts}

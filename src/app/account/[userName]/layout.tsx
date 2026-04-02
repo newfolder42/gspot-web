@@ -71,7 +71,7 @@ export default async function UserLayout({ children, params }: Props) {
               </div>
             </div>
 
-            {!isOwnProfile && (
+            {currentUser && !isOwnProfile && (
               <div className="flex items-start">
                 <FollowButton alias={user.alias} initialConnected={Boolean(connection?.id)} />
               </div>
