@@ -35,7 +35,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
   return (
     <>
       <div>
-        <div className="relative rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="relative">
           <div className="relative h-28 sm:h-36 overflow-hidden rounded-t-md bg-zinc-200 dark:bg-zinc-800">
             {hasBanner ? (
               <Image
