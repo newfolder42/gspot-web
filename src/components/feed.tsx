@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { FeedFilter } from "@/actions/feed";
 import FeedClient from "./feed-client";
-import { GpsPostType } from '@/types/post';
+import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
 
 type FeedProps = {
   userId?: number | null;
   accountUserId?: number;
-  type: "account-feed" | "global-feed" | "connections-feed" | "zone-feed";
+  type: FeedType;
   zoneId?: number | null,
   initialPosts: GpsPostType[];
   showFilter?: boolean;

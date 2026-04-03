@@ -10,7 +10,7 @@ import HeaderSearch from "./header-search";
 import NotificationDropdown from "./notifications/notification-dropdown";
 import MobileNav from "./mobile-nav";
 import { PlusIcon } from "./icons";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME } from "@/types/constants";
 import { LoggedinUser } from "@/types/LoggedinUser";
 import { ZoneBaseType } from "@/types/zone";
 

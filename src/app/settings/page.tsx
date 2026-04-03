@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getNotificationSettings } from "@/actions/settings";
 import NotificationSettingsForm from "@/components/settings/notification-settings-form";
 import type { Metadata } from "next";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME } from "@/types/constants";
 
 export const metadata: Metadata = {
   title: `პარამეტრები | ${APP_NAME}`,

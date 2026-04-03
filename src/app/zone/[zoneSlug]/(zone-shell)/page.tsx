@@ -16,7 +16,7 @@ export default async function ZonePage({ params }: { params: Promise<{ zoneSlug:
   const member = currentUserId ? await getZoneMember(zone.id, currentUserId) : null;
 
   const posts = (currentUserId && member) || zone.visibility == 'public' ? await loadPosts({
-    type: 'zone-feed',
+    type: 'zone',
     zoneId: zone.id,
     userId: currentUserId,
     filter: 'all'
@@ -24,7 +24,7 @@ export default async function ZonePage({ params }: { params: Promise<{ zoneSlug:
 
   return (
     <div>
-      {(<Feed type='zone-feed'
+      {(<Feed type='zone'
         userId={currentUserId}
         initialPosts={posts}
         zoneId={zone.id}

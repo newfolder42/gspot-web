@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME } from "@/types/constants";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 

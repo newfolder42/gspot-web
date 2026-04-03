@@ -52,7 +52,7 @@ export default function SignupForm() {
       setShowOTPVerification(true);
     } catch (err) {
       if (err instanceof Error && err.message === 'USER_EXISTS') {
-        setError('მომხმარებელი ამ მეილით ან თიკუნით უკვე არსებობს.');
+        setError('მომხმარებელი ამ მეილით ან თიკუნით უკვე არსებობს. ან შეზღუდულია ამ სახელის გამოყენება.');
         return;
       }
       if (err instanceof Error && err.message === 'INVALID_INPUT') {
@@ -210,7 +210,7 @@ export default function SignupForm() {
                   <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">უნდა შედგებოდეს 3-30 სიმბოლოსგან (დასაშვები სიმბოლოები: რიცხვები, ასოები, ქვედატირე)</p>
                 )}
                 {aliasStatus === "taken" && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">დაკავებულია</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">დაკავებულია ან შეზღუდულია</p>
                 )}
               </div>
 

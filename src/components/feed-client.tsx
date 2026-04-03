@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { GpsPost } from './post-gps';
-import { GpsPostType } from '@/types/post';
-import { loadPosts, FeedFilter } from '@/actions/feed';
-import { POSTS_PER_PAGE } from '@/lib/constants';
+import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
+import { loadPosts } from '@/actions/feed';
+import { POSTS_PER_PAGE } from '@/types/constants';
 
 type FeedClientProps = {
   initialPosts: GpsPostType[];
   userId?: number | null;
   accountUserId?: number;
-  type: 'account-feed' | 'global-feed' | 'connections-feed' | 'zone-feed';
+  type: FeedType;
   zoneId?: number;
   filter: FeedFilter;
 };
@@ -64,8 +64,10 @@ export default function FeedClient({
 
     const lastPost = posts[posts.length - 1];
     const cursor = {
+      shownCount: posts.length,
+      guessCount: lastPost.guessCount ?? 0,
       date: lastPost.date,
-      id: lastPost.id
+      id: +lastPost.id
     };
 
     try {
@@ -119,7 +121,7 @@ export default function FeedClient({
     <div className='mt-2 space-y-4'>
       {posts.map(post => {
         return (
-          <GpsPost key={post.id} post={post} showZone={type !== 'zone-feed'} />
+          <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
         );
       })}
 

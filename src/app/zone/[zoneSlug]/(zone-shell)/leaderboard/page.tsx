@@ -2,7 +2,7 @@ import { getLeaderboard } from '@/lib/leaderboard';
 import Link from 'next/link';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import type { Metadata } from 'next';
-import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 
 export const metadata: Metadata = {
   title: `ლიდერბორდი | ${APP_NAME}`,

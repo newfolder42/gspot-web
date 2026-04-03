@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
 import { getCurrentUser } from '@/lib/session';
-import { PUBLIC_SITE_URL, APP_NAME } from '@/lib/constants';
+import { PUBLIC_SITE_URL, APP_NAME } from '@/types/constants';
 
 type Props = { params: Promise<{ id: number }> };
 

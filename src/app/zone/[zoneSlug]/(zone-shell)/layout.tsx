@@ -2,7 +2,7 @@ import { getCurrentUser } from '@/lib/session';
 import { getZone, getZoneMember } from '@/actions/zones';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 import ZoneShellHeader from '@/components/zone/zone-shell-header';
 
 type Props = {

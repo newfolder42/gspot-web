@@ -33,3 +33,6 @@ export type GpsPostType = PostType & {
   guessCount?: number | null;
   userHasGuessed?: boolean;
 }
+
+export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
+export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone';

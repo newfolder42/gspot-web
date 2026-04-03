@@ -3,7 +3,7 @@ import { getAccountByAlias } from '@/lib/account';
 import { getCurrentUser } from '@/lib/session';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 import { loadPosts } from '@/actions/feed';
 
 export async function generateMetadata({ params }: { params: Promise<{ userName: string }> }): Promise<Metadata> {
@@ -48,7 +48,7 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   if (!data) return notFound();
 
   const posts = await loadPosts({
-    type: 'account-feed',
+    type: 'account',
     userId: currentUserId,
     accountUserId: data.user.id,
     filter: 'all'
@@ -58,7 +58,7 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
 
   return (
     <div>
-      {(<Feed type='account-feed'
+      {(<Feed type='account'
         userId={currentUserId}
         accountUserId={data.user.id}
         initialPosts={posts}

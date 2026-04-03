@@ -200,6 +200,65 @@ limit $1`,
   }
 }
 
+export async function getPublicPosts(
+  totalLimit = 20,
+  limit = 4,
+  cursor?: { guessCount: number; id: number; shownCount: number }
+): Promise<(GpsPostType)[]> {
+  try {
+    const shownCount = cursor?.shownCount ?? 0;
+    const remaining = totalLimit - shownCount;
+    if (remaining <= 0) {
+      return [];
+    }
+
+    const queryLimit = Math.min(limit, remaining);
+
+    const res = await query(
+      `with public_posts as (
+         select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
+                (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count
+         from posts p
+         join zones z on z.id = p.zone_id
+         join post_content pc on p.id = pc.post_id
+         join users u on u.id = p.user_id
+         join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
+         where p.status = 'published'
+           and z.visibility = 'public'
+       )
+       select *
+       from public_posts
+       where (
+         $2::int is null
+         or guesses_count < $2
+         or (guesses_count = $2 and id < $3)
+       )
+       order by guesses_count desc, id desc
+       limit $1`,
+      [queryLimit, cursor?.guessCount ?? null, cursor?.id ?? null]
+    );
+
+    return res.rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      author: r.author_alias,
+      date: r.created_at,
+      userId: r.user_id,
+      zoneId: r.zone_id,
+      zoneSlug: r.zone_slug,
+      image: r.image_url,
+      dateTaken: r.details?.dateTaken || null,
+      status: r.status,
+      guessCount: r.guesses_count ?? 0,
+      userHasGuessed: false,
+    }));
+  } catch (err) {
+    await logerror('getPublicPosts error', [err]);
+    return [];
+  }
+}
+
 export async function getZonePosts(
   zoneId: number,
   userId?: number | null,
@@ -399,7 +458,7 @@ export async function canUserGuessPost(postId: number): Promise<{ canGuess: bool
   }
 }
 
-export async function createPost({ title, contentId, zoneId, zoneSlug, status = 'published' }: { title?: string; contentId: number; zoneId: number; zoneSlug: string; status?: 'processing' | 'published' | 'failed' }) : Promise<number | null> {
+export async function createPost({ title, contentId, zoneId, zoneSlug, status = 'published' }: { title?: string; contentId: number; zoneId: number; zoneSlug: string; status?: 'processing' | 'published' | 'failed' }): Promise<number | null> {
   try {
     const user = await getCurrentUser();
     if (!user) return null;

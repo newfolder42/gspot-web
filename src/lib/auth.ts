@@ -90,7 +90,9 @@ export async function userAliasTaken(userAlias: string) {
     const res = await query(
       `SELECT COUNT(1) as count FROM users WHERE LOWER(alias) = $1 
              UNION ALL
-             SELECT COUNT(1) as count FROM pending_registrations WHERE LOWER(alias) = $1`,
+             SELECT COUNT(1) as count FROM pending_registrations WHERE LOWER(alias) = $1
+             UNION ALL
+             SELECT COUNT(1) as count FROM restricted_inputs WHERE slug = $1`,
       [userAlias.toLowerCase()]
     );
     return res.rows.some(row => parseInt(row.count) > 0);

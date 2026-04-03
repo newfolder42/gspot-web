@@ -4,7 +4,7 @@ import { getNewUsers, getTotalUsers } from '@/lib/users';
 import { formatTimePassed } from '@/lib/dates';
 import { getInitials } from '@/lib/getInitials';
 import type { Metadata } from 'next';
-import { APP_NAME, PUBLIC_SITE_URL } from '@/lib/constants';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 
 export const metadata: Metadata = {
   title: `ახალი მომხმარებლები | ${APP_NAME}`,

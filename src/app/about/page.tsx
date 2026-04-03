@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME } from "@/types/constants";
 import ChangelogList from "@/components/about/changelog-list";
 
 export default function AboutPage() {
