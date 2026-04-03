@@ -138,7 +138,7 @@ export default function FeedClient({
 
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-4 text-gray-500">
-          მეტი პოსტი არ არის
+          {type === 'public' ? 'მეტი პოსტის ნახვისთვის გაიარე რეგისტრაცია/ავტორიზაცია' : 'მეტი პოსტი არ არის'}
         </div>
       )}
     </div>
