@@ -6,7 +6,7 @@ import type { ZoneSubmitType } from "@/actions/zones";
 
 export default async function Page() {
   const currentUser = await getCurrentUser();
-  if (!currentUser) redirect("/auth/login");
+  if (!currentUser) return redirect("/auth/signin");
 
   const zones: ZoneSubmitType[] = await getAvailableZonesForPost(currentUser.userId);
 

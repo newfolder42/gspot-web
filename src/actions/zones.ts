@@ -94,6 +94,12 @@ export async function getZone(slug: string): Promise<ZoneType | null> {
   };
 }
 
+export async function userIsActiveMember(zoneId: number, userId: number): Promise<boolean> {
+  const member = await getZoneMemberLib(zoneId, userId);
+  if (member && member.status === 'active') return true;
+  return false;
+}
+
 export async function getZoneMember(zoneId: number, userId: number): Promise<ZoneMemberType | null> {
   const member = await getZoneMemberLib(zoneId, userId);
   if (!member) return null;

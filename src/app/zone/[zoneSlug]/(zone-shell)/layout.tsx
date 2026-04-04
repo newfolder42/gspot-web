@@ -76,6 +76,10 @@ export default async function UserLayout({ children, params }: Props) {
 
   const member = currentUserId ? await getZoneMember(zone.id, currentUserId) : null;
 
+  if (zone.visibility === 'private' && (!member || member.status !== 'active')) {
+    return notFound();
+  }
+
   const tabs = [
     { id: 'overview', label: 'ძირითადი', href: `/zone/${zoneSlug}` },
     { id: 'members', label: 'წევრები', href: `/zone/${zoneSlug}/members` },

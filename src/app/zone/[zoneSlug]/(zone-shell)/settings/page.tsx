@@ -4,15 +4,14 @@ import { getCurrentUser } from '@/lib/session';
 import { getZoneSettings, updateZoneSettings } from '@/lib/zones';
 
 export default async function ZoneSettingsPage({ params }: { params: Promise<{ zoneSlug: string }> }) {
-  const { zoneSlug } = await params;
+  const [{ zoneSlug }, currentUser] = await Promise.all([params, getCurrentUser()]);
+  
+  if (!currentUser) return notFound();
   
   const zone = await getZone(zoneSlug);
   if (!zone) return notFound();
   
-  const user = await getCurrentUser();
-  if (!user) return redirect('/');
-  
-  const member = await getZoneMember(zone.id, user.userId);
+  const member = await getZoneMember(zone.id, currentUser.userId);
   if (!(member && (member.role === 'admin' || member.role === 'owner'))) {
     return redirect(`/zone/${zoneSlug}`);
   }

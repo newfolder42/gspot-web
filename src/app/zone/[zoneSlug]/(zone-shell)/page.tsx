@@ -2,7 +2,7 @@ import Feed from '@/components/feed';
 import { getCurrentUser } from '@/lib/session';
 import { notFound } from 'next/navigation';
 import { loadPosts } from '@/actions/feed';
-import { getZone, getZoneMember } from '@/lib/zones';
+import { getZone } from '@/lib/zones';
 
 export default async function ZonePage({ params }: { params: Promise<{ zoneSlug: string }> }) {
   const { zoneSlug } = await params;
@@ -13,14 +13,12 @@ export default async function ZonePage({ params }: { params: Promise<{ zoneSlug:
   const zone = await getZone(zoneSlug);
   if (!zone) return notFound();
 
-  const member = currentUserId ? await getZoneMember(zone.id, currentUserId) : null;
-
-  const posts = (currentUserId && member) || zone.visibility == 'public' ? await loadPosts({
+  const posts = await loadPosts({
     type: 'zone',
     zoneId: zone.id,
     userId: currentUserId,
     filter: 'all'
-  }) : [];
+  });
 
   return (
     <div>
