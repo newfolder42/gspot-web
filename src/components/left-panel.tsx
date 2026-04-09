@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HomeIcon, LeaderboardIcon, NewUsersIcon } from "@/components/icons";
+import { HomeIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 
 type MobileNavProps = {

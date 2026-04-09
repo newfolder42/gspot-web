@@ -7,6 +7,7 @@ import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
+import { mapMaxBounds, mapMaxZoom } from '@/lib/map';
 
 declare global {
   interface Window {
@@ -33,7 +34,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     // Load Mapbox CSS
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css';
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
@@ -41,7 +42,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     // Load Mapbox JS
     if (typeof window.mapboxgl === 'undefined') {
       const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js';
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.js';
       script.onload = initMap;
       document.head.appendChild(script);
     } else {
@@ -59,9 +60,8 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
         center: [selectedCoords.longitude, selectedCoords.latitude],
         zoom: 12,
         renderWorldCopies: false,
-        // restrict map to Georgia bounding box: [west, south], [east, north]
-        maxBounds: [[39.4, 40.8], [46.9, 43.8]],
-        maxZoom: 18,
+        maxBounds: mapMaxBounds,
+        maxZoom: mapMaxZoom,
       });
 
       guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })

@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import PostGuess from './post-guess';
 import SortButtons, { type SortType } from './common/sort-buttons';
 import NewGuess from './new-guess';
-import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
+import type { PostGuessMapDataType, PostGuessType } from '@/types/post-guess';
 import { getPostGuessMapPoints } from '@/lib/posts';
 import { MapPinIcon, XIcon, ListIcon } from './icons';
+import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 
 declare global {
   interface Window {
@@ -63,7 +64,7 @@ export default function PostGuessList({
 
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css';
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
@@ -78,7 +79,7 @@ export default function PostGuessList({
       const initialCenter: [number, number] =
         isFinite(photoLng) && isFinite(photoLat)
           ? [photoLng, photoLat]
-          : [44.8271, 41.7151];
+          : mapDefaultCenter;
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
@@ -86,8 +87,8 @@ export default function PostGuessList({
         center: initialCenter,
         zoom: 8,
         renderWorldCopies: false,
-        maxBounds: [[39.4, 40.8], [46.9, 43.8]],
-        maxZoom: 18,
+        maxBounds: mapMaxBounds,
+        maxZoom: mapMaxZoom,
       });
 
       const bounds = new window.mapboxgl.LngLatBounds();
@@ -263,7 +264,7 @@ export default function PostGuessList({
 
     if (typeof window.mapboxgl === 'undefined') {
       const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js';
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.js';
       script.onload = initMap;
       document.head.appendChild(script);
     } else {

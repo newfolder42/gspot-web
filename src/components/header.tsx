@@ -10,7 +10,6 @@ import HeaderSearch from "./header-search";
 import NotificationDropdown from "./notifications/notification-dropdown";
 import MobileNav from "./mobile-nav";
 import { PlusIcon } from "./icons";
-import { APP_NAME } from "@/types/constants";
 import { LoggedinUser } from "@/types/LoggedinUser";
 import { ZoneBaseType } from "@/types/zone";
 
@@ -38,9 +37,8 @@ export default function Header({ user, zones }: HeaderProps) {
                   <path fillRule="evenodd" d="M3 5h14a1 1 0 010 2H3a1 1 0 110-2zm0 4h14a1 1 0 010 2H3a1 1 0 110-2zm0 4h14a1 1 0 010 2H3a1 1 0 110-2z" clipRule="evenodd" />
                 </svg>
               </button>
-              <Link href="/" className="flex items-center gap-3">
-                <Image src={"/gspot.svg"} alt="Logo" width={40} height={56} style={{ display: 'block' }} />
-                <span className="hidden sm:inline-block text-lg font-semibold text-zinc-900 dark:text-zinc-50">{APP_NAME}</span>
+              <Link href="/" className="flex">
+                <Image src={"/gspot.svg"} alt="Logo" width={40} height={40} loading="eager" style={{ height: "auto" }} />
               </Link>
             </div>
 

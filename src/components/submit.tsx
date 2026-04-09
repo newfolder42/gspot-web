@@ -9,6 +9,7 @@ import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
 import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
+import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 
 declare global {
   interface Window {
@@ -42,7 +43,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   useEffect(() => {
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.css';
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
@@ -50,7 +51,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
     // Only add the script if it's not already present to avoid multiple loads/costs
     if (!document.querySelector('script[src*="mapbox-gl-js"]')) {
       const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.19.0/mapbox-gl.js';
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.js';
       script.onload = () => initMap();
       document.head.appendChild(script);
     } else if (typeof window.mapboxgl !== 'undefined') {
@@ -69,10 +70,9 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         isFinite(coordinates.latitude) &&
         isFinite(coordinates.longitude);
 
-      const defaultCenter: [number, number] = [44.8271, 41.7151];
       const mapCenter: [number, number] = hasValidCoords
         ? [coordinates!.longitude!, coordinates!.latitude!]
-        : defaultCenter;
+        : mapDefaultCenter;
 
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
@@ -80,16 +80,14 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         center: mapCenter,
         zoom: 12,
         renderWorldCopies: false,
-        // restrict map to Georgia bounding box: [west, south], [east, north]
-        maxBounds: [[39.4, 40.8], [46.9, 43.8]],
-        maxZoom: 18,
+        maxBounds: mapMaxBounds,
+        maxZoom: mapMaxZoom,
       });
 
-      const startLng = hasValidCoords ? coordinates!.longitude! : defaultCenter[0];
-      const startLat = hasValidCoords ? coordinates!.latitude! : defaultCenter[1];
+      const startCoords = hasValidCoords ? [coordinates!.longitude, coordinates!.latitude] : mapDefaultCenter;
 
       markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
-        .setLngLat([startLng, startLat])
+        .setLngLat(startCoords)
         .addTo(map);
 
       markerRef.current.on('dragend', () => {
