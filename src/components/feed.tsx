@@ -24,7 +24,7 @@ export default function Feed({ userId, accountUserId, type, zoneId, initialPosts
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as FeedFilter)}
-              className="px-3 py-2 rounded-md text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 rounded-md text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="all">ყველა</option>
               <option value="guessed">გამოცნობილი</option>

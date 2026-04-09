@@ -56,7 +56,7 @@ export default function FollowButton({ alias, initialConnected = false }: Props)
           ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
           : connected
             ? 'bg-red-600 text-white hover:bg-red-700'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-teal-600 text-white hover:bg-teal-700'
           }`}
       >
         {loading && <LoadingSvg />}

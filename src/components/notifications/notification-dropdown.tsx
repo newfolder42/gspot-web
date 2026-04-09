@@ -176,9 +176,9 @@ export default function NotificationDropdown({ user }: Props) {
 
         {/* Notification badge / loading spinner */}
         {loading || badgeLoading ? (
-          <span className="absolute top-1 right-1 h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin transform translate-x-1/2 -translate-y-1/2" />
+          <span className="absolute top-1 right-1 h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin transform translate-x-1/2 -translate-y-1/2" />
         ) : unseenCount > 0 ? (
-          <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-blue-600 rounded-full">
+          <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-teal-600 rounded-full">
             {unseenCount > 9 ? "9+" : unseenCount}
           </span>
         ) : null}
@@ -233,7 +233,7 @@ export default function NotificationDropdown({ user }: Props) {
                   <div key={notification.id} className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
                     {/* Unseen indicator */}
                     {!notification.seen && (
-                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-blue-600" />
+                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-teal-600" />
                     )}
 
                     <div

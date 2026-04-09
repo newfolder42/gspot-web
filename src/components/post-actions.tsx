@@ -112,7 +112,7 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 px-3 py-2 text-sm bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:opacity-50"
                 disabled={isLoading}
               >
                 {isLoading ? 'შენახვა...' : 'შენახვა'}

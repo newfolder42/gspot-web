@@ -64,7 +64,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
         maxZoom: mapMaxZoom,
       });
 
-      guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
+      guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
         .setLngLat([selectedCoords.longitude, selectedCoords.latitude])
         .addTo(map);
 
@@ -312,7 +312,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                     {/* Distance Info */}
                     {distance !== null && (
                       <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 text-xs">
-                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold text-teal-600 dark:text-teal-400">
                           {distance} მ
                         </span>
                       </div>
@@ -328,12 +328,12 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                       type="button"
                       onClick={useMyLocation}
                       disabled={gettingLocation}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400"
                       aria-label="მომხმარებლის ლოკაცია"
                       title="გამოიყენე ჩემი ლოკაცია"
                     >
                       {gettingLocation && (
-                        <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <span className="h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
                       )}
                       <span className="text-xs">ჩემი ლოკაცია</span>
                     </button>
@@ -345,7 +345,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                     type="submit"
                     disabled={submitting !== null}
                     hidden={submitting === 'success' || submitting === 'error'}
-                    className="px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-50"
+                    className="px-4 py-2 rounded-md bg-teal-600 text-white disabled:opacity-50"
                   >
                     {submitting ? 'მიმდინარეობს...' : 'ცდა'}
                   </button>

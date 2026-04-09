@@ -86,7 +86,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
 
       const startCoords = hasValidCoords ? [coordinates!.longitude, coordinates!.latitude] : mapDefaultCenter;
 
-      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: '#3b82f6' })
+      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
         .setLngLat(startCoords)
         .addTo(map);
 
@@ -153,12 +153,12 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
             );
           }}
           disabled={gettingLocation}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 shadow-sm hover:shadow-md transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400"
           aria-label="მომხმარებლის ლოკაცია"
           title="გამოიყენე ჩემი ლოკაცია"
         >
           {gettingLocation && (
-            <span className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
           )}
           <span className="text-xs">ჩემი ლოკაცია</span>
         </button>
@@ -209,7 +209,7 @@ const ZoneDropdown = ({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-sm text-left shadow-sm hover:border-zinc-400 dark:hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-sm text-left shadow-sm hover:border-zinc-400 dark:hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
       >
         <span className="truncate text-zinc-800 dark:text-zinc-100">{selected ? `r/${selected.slug}` : 'საბზონა არჩეული არ არის'}</span>
         <svg className="w-4 h-4 shrink-0 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -226,7 +226,7 @@ const ZoneDropdown = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ძებნა..."
-              className="w-full px-2 py-1.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-2 py-1.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
             />
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
@@ -242,7 +242,7 @@ const ZoneDropdown = ({
                     setOpen(false);
                     setQuery('');
                   }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-start gap-2 ${selected?.id === z.id ? 'font-medium text-blue-600 dark:text-blue-400' : ''
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-start gap-2 ${selected?.id === z.id ? 'font-medium text-teal-600 dark:text-teal-400' : ''
                     }`}
                 >
                   <span className="truncate">r/{z.slug}</span>
@@ -321,19 +321,17 @@ export default function Submit({
       }
 
       let fileToUse = f;
-      if (f.type === 'image/png' || f.type === 'image/jpeg') {
-        setUploading(true);
-        try {
-          fileToUse = await convertToWebP(f);
-        } catch (err) {
-          console.error(err);
-          setError('ვერ მოხერხდა სურათის WebP ფორმატში გარდაქმნა');
-          setProcessing(false);
-          setUploading(false);
-          return;
-        } finally {
-          setUploading(false);
-        }
+      setUploading(true);
+      try {
+        fileToUse = await convertToWebP(f);
+      } catch (err) {
+        console.error(err);
+        setError('ვერ მოხერხდა სურათის WebP ფორმატში გარდაქმნა');
+        setProcessing(false);
+        setUploading(false);
+        return;
+      } finally {
+        setUploading(false);
       }
 
       const preview = URL.createObjectURL(fileToUse);
@@ -521,7 +519,7 @@ export default function Submit({
                     <label className="block text-sm">
                       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">სათაური</span>
                       <input
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="მაგ: ძველი ეკლესია კახეთში"
@@ -532,7 +530,7 @@ export default function Submit({
                       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">გადაღებულია</span>
                       <input
                         type="date"
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                         value={formatDateOnly(dateTaken)}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const parsed = parseDateOnly(e.target.value);
@@ -549,7 +547,7 @@ export default function Submit({
                   <div className="p-4 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900">
                     {processing ? (
                       <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
                         <div className="text-center space-y-1">
                           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">ფოტოს დამუშავება...</p>
                           <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -624,7 +622,7 @@ export default function Submit({
               <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                    className="bg-teal-500 h-3 rounded-full transition-all duration-200"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -640,7 +638,7 @@ export default function Submit({
                 const disabled = !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || !dateTaken;
                 return (
                   <button
-                    className={`px-3 py-1 text-white rounded-md ${disabled ? 'bg-blue-300 cursor-not-allowed opacity-60' : 'bg-blue-600 cursor-pointer'}`}
+                    className={`px-3 py-1 text-white rounded-md ${disabled ? 'bg-teal-300 cursor-not-allowed opacity-60' : 'bg-teal-600 cursor-pointer'}`}
                     onClick={async () => {
                       const validForSubmit = validateBeforeSubmit();
                       if (!validForSubmit) return;

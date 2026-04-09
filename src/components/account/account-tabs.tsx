@@ -38,7 +38,7 @@ export default function AccountTabs({ tabs }: Props) {
               >
                 {tab.label}
               </span>
-              <span aria-hidden className={`mt-1 block h-0.5 w-full rounded ${isActive ? 'bg-blue-600' : 'bg-transparent'}`} />
+              <span aria-hidden className={`mt-1 block h-0.5 w-full rounded ${isActive ? 'bg-teal-600' : 'bg-transparent'}`} />
             </Link>
         );
       })}

@@ -76,13 +76,13 @@ export default function HeaderSearch() {
                   <div className="px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">თიკუნი</div>
                   {results.users.slice(0, 5).map((u: SearchedUser) => (
                     <Link key={u.id} href={`/account/${u.alias}`} onClick={() => setShowDropdown(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                      <span className="font-mono text-sm text-blue-600 dark:text-blue-400">&apos;{u.alias}</span>
+                      <span className="font-mono text-sm text-teal-600 dark:text-teal-400">&apos;{u.alias}</span>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">ასაკი: {formatAge(u.age)}</span>
                     </Link>
                   ))}
                   {results.users.length > 5 && (
                     <div className="px-4 py-2 text-center">
-                      <button onClick={() => setShowDropdown(false)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">მეტის ნახვა</button>
+                      <button onClick={() => setShowDropdown(false)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">მეტის ნახვა</button>
                     </div>
                   )}
                 </div>
@@ -98,7 +98,7 @@ export default function HeaderSearch() {
                   ))}
                   {results.zones.length > 5 && (
                     <div className="px-4 py-2 text-center">
-                      <button onClick={() => setShowDropdown(false)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">მეტის ნახვა</button>
+                      <button onClick={() => setShowDropdown(false)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">მეტის ნახვა</button>
                     </div>
                   )}
                 </div>
@@ -114,7 +114,7 @@ export default function HeaderSearch() {
                   ))}
                   {results.posts.length > 5 && (
                     <div className="px-4 py-2 text-center">
-                      <button onClick={() => setShowDropdown(false)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">მეტის ნახვა</button>
+                      <button onClick={() => setShowDropdown(false)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline">მეტის ნახვა</button>
                     </div>
                   )}
                 </div>

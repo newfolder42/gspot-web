@@ -84,7 +84,7 @@ export default function ProfilePhotoUpload() {
       {/* Edit icon overlay */}
       <button
         onClick={() => setIsOpen(true)}
-        className="absolute bottom-0 right-0 p-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition"
+        className="absolute bottom-0 right-0 p-1 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow-md transition"
         title="პროფილის სურათის შეცვლა"
       >
         <ImageIcon className="w-4 h-4" />
@@ -125,7 +125,7 @@ export default function ProfilePhotoUpload() {
               <div className="mt-4">
                 <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-blue-500 h-3 rounded-full transition-all duration-200"
+                    className="bg-teal-500 h-3 rounded-full transition-all duration-200"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>

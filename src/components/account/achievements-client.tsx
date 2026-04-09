@@ -126,7 +126,7 @@ export default function AchievementsClient({ achievements }: Props) {
             type="checkbox"
             checked={showAllMilestones}
             onChange={(event) => setShowAllMilestones(event.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+            className="h-4 w-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
           />
           დეტალური ჩვენება
         </label>

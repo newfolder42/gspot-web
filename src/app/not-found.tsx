@@ -8,7 +8,7 @@ export default function NotFound() {
         <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-8">გვერდი არ მოიძებნა</p>
         <Link 
           href="/" 
-          className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+          className="inline-block px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition"
         >
           მთავარ გვერდზე დაბრუნება
         </Link>

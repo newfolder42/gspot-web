@@ -174,7 +174,7 @@ export default function ChangelogList() {
         <div className="px-6 py-2">
           <button
             onClick={() => setVisibleCount(changelog.length)}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-teal-600 hover:underline"
           >
             მეტის ნახვა
           </button>

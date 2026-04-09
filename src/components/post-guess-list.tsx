@@ -36,7 +36,7 @@ export default function PostGuessList({
   postTitle,
   onGuessSubmitted,
 }: PostGuessListProps) {
-  const actionButtonClass = 'inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors';
+  const actionButtonClass = 'inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition-colors';
   const [sortType, setSortType] = useState<SortType>("date");
   const [showMap, setShowMap] = useState(false);
   const [showGuessModal, setShowGuessModal] = useState(false);

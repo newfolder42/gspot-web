@@ -160,7 +160,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
                      bg-white dark:bg-zinc-800 
                      border-zinc-300 dark:border-zinc-800 
                      text-zinc-900 dark:text-zinc-50
-                     focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900
+                     focus:border-teal-500 focus:ring-2 focus:ring-teal-200 dark:focus:ring-teal-900
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-all"
           />
@@ -177,7 +177,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         <button
           onClick={() => handleVerify()}
           disabled={loading || code.some((d) => !d)}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 
+          className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 
                    text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
         >
           {loading ? "მუშავდება..." : "დადასტურება"}
@@ -207,7 +207,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         )}
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+      <div className="mt-6 p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
         <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
           💡 კოდი მოქმედებს 10 წუთის განმავლობაში
         </p>

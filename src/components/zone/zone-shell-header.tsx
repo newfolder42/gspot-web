@@ -96,7 +96,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
                     <button
                       type="button"
                       onClick={() => setExpandedDescription((prev) => !prev)}
-                      className="mt-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="mt-1 text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
                     >
                       {expandedDescription ? 'ნაკლები' : 'მეტი'}
                     </button>

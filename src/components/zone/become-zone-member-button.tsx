@@ -58,7 +58,7 @@ export default function BecomeZoneMemberButton({ zoneId, userId, initialStatus =
           ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
           : (status == 'active' || status == 'pending')
             ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-teal-600 text-white hover:bg-teal-700'
           }`}
       >
         {loading && <LoadingSvg />}

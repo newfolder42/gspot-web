@@ -79,7 +79,7 @@ export default function AboutPage() {
         <ul className="px-6 py-4 space-y-2">
           {roadmap.map((r) => (
             <li key={r.title} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-teal-500" />
               <div>
                 <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium">{r.title} <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">{r.status}</span></p>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">{r.note}</p>

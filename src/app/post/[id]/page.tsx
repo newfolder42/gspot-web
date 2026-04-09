@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const post = await getPostForView(0, id);
   if (!post) return {};
 
-  const image = post.image ?? undefined;
+  const ogImageUrl = post.image || `https://${PUBLIC_SITE_URL}/og-image.png`;
 
   const defaultTitle = `გამოიცანი ${post.author}-ის ფოტო-სურათის მდებარეობა ${APP_NAME}-ზე`;
   const seoTitle = post.title && post.title.length <= 20
@@ -37,8 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     : defaultTitle;
 
   const seoDescription = post.title
-    ? `გამოიცანი ${post.author}-ის გამოქვეყნებული ფოტო-სურათის ზუსტი მდებარეობა ${APP_NAME}-ის გეოგრაფიული გამოცანის თამაშში.`
-    : `გამოიცანი ფოტო-სურათის ზუსტი მდებარეობა მდებარეობა ${APP_NAME}-ის პოპულარულ გეოგრაფიულ თამაშში.`;
+    ? `გამოიცანი ${post.author}-ის პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`
+    : `გამოიცანი ამ პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`;
 
   return {
     title: seoTitle,
@@ -52,16 +52,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       siteName: PUBLIC_SITE_URL,
       description: seoDescription,
       url: `https://${PUBLIC_SITE_URL}/post/${post.id}`,
-      images: image ? [{
-        url: image,
+      images: [{
+        url: ogImageUrl,
         alt: post.title || `${post.author}-ის სურათის | ` + post.title,
         width: 1200,
         height: 630,
-      }] : undefined,
+      }],
       publishedTime: post.date,
       authors: post.author ? [`${PUBLIC_SITE_URL}/account/${post.author}`] : undefined,
       section: 'გეოგრაფიული გამოცნობა',
       tags: ['გამოიცანი', 'გეოგრაფია', 'საქართველო', 'ფოტო', 'ლოკაცია'],
-    }
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seoTitle,
+      description: seoDescription,
+      images: [ogImageUrl],
+    },
   };
 }

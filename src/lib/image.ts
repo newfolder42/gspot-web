@@ -4,10 +4,11 @@ import imageCompression from "browser-image-compression";
 export async function convertToWebP(file: File): Promise<File> {
   try {
     return await imageCompression(file, {
-      maxSizeMB: 2.5,
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 1920,
       useWebWorker: true,
       fileType: 'image/webp',
-      initialQuality: 0.95,
+      initialQuality: 0.86,
     });
   }
   catch (err) {
