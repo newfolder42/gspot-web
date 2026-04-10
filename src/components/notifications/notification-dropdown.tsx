@@ -10,8 +10,7 @@ import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIc
 
 type Props = {
   user: {
-    userId: number;
-    alias: string;
+    id: number;
   };
 };
 
@@ -46,12 +45,12 @@ export default function NotificationDropdown({ user }: Props) {
 
   const getNotifications = useCallback(async (): Promise<NotificationType[]> => {
     try {
-      return await loadNotifications(user.userId);
+      return await loadNotifications(user.id);
     } catch (err) {
       console.error("Failed to load notifications", err);
       return [];
     }
-  }, [user.userId]);
+  }, [user.id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -113,7 +112,7 @@ export default function NotificationDropdown({ user }: Props) {
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const res = await markAsRead(user.userId, notificationId);
+      const res = await markAsRead(user.id, notificationId);
       if (res.ok) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n))
@@ -127,7 +126,7 @@ export default function NotificationDropdown({ user }: Props) {
 
   const handleMarkAsUnread = async (notificationId: string) => {
     try {
-      const res = await markAsUnread(user.userId, notificationId);
+      const res = await markAsUnread(user.id, notificationId);
       if (res.ok) {
         // Update local state to mark as unread
         setNotifications((prev) =>
@@ -142,7 +141,7 @@ export default function NotificationDropdown({ user }: Props) {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const res = await markAllAsRead(user.userId);
+      const res = await markAllAsRead(user.id);
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
       }

@@ -130,7 +130,7 @@ export default function PasswordChangeForm() {
       <button
         type="submit"
         disabled={loading}
-        className="inline-flex items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
+        className="inline-flex items-center justify-center rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-black hover:bg-teal-600 disabled:opacity-60 transition"
       >
         {loading ? "მიმდინარეობს..." : "პაროლის შეცვლა"}
       </button>

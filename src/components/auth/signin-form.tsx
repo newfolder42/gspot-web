@@ -83,7 +83,7 @@ export default function SigninForm() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">პაროლი</label>
-                  <Link href="/auth/restore-password" className="text-xs text-[#00c8ff] hover:text-[#00b0e6] transition-colors">
+                  <Link href="/auth/restore-password" className="text-xs text-teal-500 hover:text-teal-600 transition-colors">
                     დაგავიწყდა პაროლი?
                   </Link>
                 </div>
@@ -113,7 +113,7 @@ export default function SigninForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
+                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-black hover:bg-teal-600 disabled:opacity-60 transition"
               >
                 {loading ? "მიმდინარეობს..." : "ავტორიზაცია"}
               </button>
@@ -122,7 +122,7 @@ export default function SigninForm() {
             <div className="text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 არ გაქვს ანგარიში?{" "}
-                <Link href="/auth/signup" className="text-[#00c8ff] hover:text-[#00b0e6] font-medium transition-colors">
+                <Link href="/auth/signup" className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
                   რეგისტრაცია
                 </Link>
               </p>

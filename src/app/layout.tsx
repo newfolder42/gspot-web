@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import LeftPanel from "@/components/left-panel";
 import { getCurrentUser } from "@/lib/session";
 import { getUserPostZones } from "@/lib/zones";
+import { getOwnAccount } from "@/lib/account";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -68,13 +69,14 @@ export default async function RootLayout({
 }>) {
   const user = await getCurrentUser();
   const zones = user ? await getUserPostZones(user.userId) : null;
+  const account = user ? await getOwnAccount(user.userId) : null;
 
   return (
     <html lang="en">
       <body
         className={`${notoGeorgian.variable} ${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <Header user={user} zones={zones} />
+        <Header zones={zones} account={account} />
 
         <LeftPanel zones={zones} />
 

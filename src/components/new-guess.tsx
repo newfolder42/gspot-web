@@ -212,54 +212,6 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     }
   };
 
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      return;
-    }
-
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = Number(pos?.coords?.latitude);
-        const lng = Number(pos?.coords?.longitude);
-        if (!isFinite(lat) || !isFinite(lng)) {
-          console.error('Invalid geolocation coords', pos);
-          setGettingLocation(false);
-          return;
-        }
-
-        setSelectedCoords({ latitude: lat, longitude: lng });
-
-        if (mapInstanceRef.current) {
-          try {
-            mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 12 });
-          } catch (e) {
-            mapInstanceRef.current.setCenter([lng, lat]);
-          }
-        }
-
-        if (guessMarkerRef.current) {
-          try {
-            guessMarkerRef.current.setLngLat([lng, lat]);
-            // ensure marker is draggable so user can nudge it
-            if (typeof guessMarkerRef.current.setDraggable === 'function') {
-              guessMarkerRef.current.setDraggable(true);
-            }
-          } catch (e) {
-            // ignore marker errors
-          }
-        }
-
-        setGettingLocation(false);
-      },
-      (err) => {
-        console.error('Geolocation error', err);
-        setGettingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
   return (
     <>
       {postImage && (
@@ -322,21 +274,6 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                     <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 text-xs">
                       {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
                     </div>
-
-                    {/* Get Location Button */}
-                    <button
-                      type="button"
-                      onClick={useMyLocation}
-                      disabled={gettingLocation}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 transition cursor-pointer disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400"
-                      aria-label="მომხმარებლის ლოკაცია"
-                      title="გამოიყენე ჩემი ლოკაცია"
-                    >
-                      {gettingLocation && (
-                        <span className="h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                      )}
-                      <span className="text-xs">ჩემი ლოკაცია</span>
-                    </button>
                   </div>
                 </div>
 

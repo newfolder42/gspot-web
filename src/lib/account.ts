@@ -1,5 +1,48 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
+import { OwnAccountData } from '@/types/own-account';
+
+export async function getOwnAccount(userId: number): Promise<OwnAccountData | null> {
+  try {
+    if (!userId) return null;
+
+    const userRes = await query(
+      `SELECT u.id, u.alias, u.email, u.created_at, CURRENT_DATE::date - u.created_at::date as age,
+       upp.id as profile_photo_id, upp.public_url as profile_photo_url,
+       ux.xp as total_xp, ux.level as level
+FROM users u
+left join user_content upp on u.id = upp.user_id AND upp.type = 'profile-photo'
+left join user_xp ux on ux.user_id = u.id
+WHERE u.id = $1`,
+      [userId]
+    );
+
+    if (userRes.rows.length === 0) return null;
+
+    const user = userRes.rows[0];
+
+    return {
+      user: {
+        id: +user.id,
+        alias: user.alias,
+        email: user.email,
+        age: user.age,
+        created_at: user.created_at,
+      },
+      profilePhoto: user.profile_photo_id ? {
+        id: user.profile_photo_id,
+        url: user.profile_photo_url,
+      } : null,
+      level: user.total_xp ? {
+        xp: user.total_xp,
+        level: user.level,
+      } : null,
+    };
+  } catch (err) {
+    await logerror('getOwnAccount error', [err]);
+    return null;
+  }
+}
 
 export async function getAccountByAlias(userName: string, currentUserId: number | null) {
   try {

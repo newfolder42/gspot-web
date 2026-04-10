@@ -246,7 +246,7 @@ export default function PasswordRestoreForm() {
                            bg-white dark:bg-zinc-800 
                            border-zinc-300 dark:border-zinc-700 
                            text-zinc-900 dark:text-zinc-50
-                           focus:border-[#00c8ff] focus:ring-2 focus:ring-[#00c8ff]/20
+                           focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20
                            disabled:opacity-50 disabled:cursor-not-allowed
                            transition-all"
                 />
@@ -263,7 +263,7 @@ export default function PasswordRestoreForm() {
               <button
                 onClick={() => handleOTPVerify()}
                 disabled={loading || code.some((d) => !d)}
-                className="w-full py-3 px-4 bg-[#00c8ff] hover:bg-[#00b0e6] disabled:bg-zinc-200 dark:disabled:bg-zinc-700 
+                className="w-full py-3 px-4 bg-teal-500 hover:bg-teal-600 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 
                          text-black font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
               >
                 {loading ? "მუშავდება..." : "დადასტურება"}
@@ -363,7 +363,7 @@ export default function PasswordRestoreForm() {
               <button
                 type="submit"
                 disabled={loading || !!passwordStatus}
-                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
+                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-black hover:bg-teal-600 disabled:opacity-60 transition"
               >
                 {loading ? "მიმდინარეობს..." : "პაროლის შეცვლა"}
               </button>
@@ -402,7 +402,7 @@ export default function PasswordRestoreForm() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-black hover:bg-teal-600 disabled:opacity-60 transition"
             >
               {loading ? "მიმდინარეობს..." : "გამოგზავნე კოდი"}
             </button>

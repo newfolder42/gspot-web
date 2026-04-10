@@ -10,15 +10,15 @@ import HeaderSearch from "./header-search";
 import NotificationDropdown from "./notifications/notification-dropdown";
 import MobileNav from "./mobile-nav";
 import { PlusIcon } from "./icons";
-import { LoggedinUser } from "@/types/LoggedinUser";
 import { ZoneBaseType } from "@/types/zone";
+import { OwnAccountData } from "@/types/own-account";
 
 type HeaderProps = {
-  user: LoggedinUser | null;
   zones: ZoneBaseType[] | null;
+  account: OwnAccountData | null;
 };
 
-export default function Header({ user, zones }: HeaderProps) {
+export default function Header({ zones, account }: HeaderProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -50,7 +50,7 @@ export default function Header({ user, zones }: HeaderProps) {
             </div>
 
             {/* Right: Auth buttons */}
-            {user && (
+            {account && (
               <Link
                 href="/submit"
                 aria-label="Create post"
@@ -60,23 +60,21 @@ export default function Header({ user, zones }: HeaderProps) {
                 <span className="hidden sm:inline text-sm font-medium">დამატება</span>
               </Link>
             )}
-            <div className="flex items-center gap-2">
-              {user ? (
-                <>
-                  <AccountMenu user={user} />
-                  <NotificationDropdown user={user} />
-                </>
-              ) : (
-                <>
-                  <div className="hidden sm:block">
-                    <SignInButton />
-                  </div>
-                  <div>
-                    <SignUpButton />
-                  </div>
-                </>
-              )}
-            </div>
+            {account ? (
+              <div className="flex items-center">
+                <AccountMenu account={account} />
+                <NotificationDropdown user={account.user} />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:block">
+                  <SignInButton />
+                </div>
+                <div>
+                  <SignUpButton />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

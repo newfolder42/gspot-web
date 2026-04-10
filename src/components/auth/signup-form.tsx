@@ -287,7 +287,7 @@ export default function SignupForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#00c8ff] px-4 py-2 text-sm font-semibold text-black hover:bg-[#00b0e6] disabled:opacity-60 transition"
+                className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-black hover:bg-teal-600 disabled:opacity-60 transition"
               >
                 {loading ? "მიმდინარეობს..." : "რეგისტრაცია"}
               </button>
@@ -296,7 +296,7 @@ export default function SignupForm() {
             <div className="text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 გაქვს უკვე ანგარიში?{" "}
-                <Link href="/auth/signin" className="text-[#00c8ff] hover:text-[#00b0e6] font-medium transition-colors">
+                <Link href="/auth/signin" className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
                   ავტორიზაცია
                 </Link>
               </p>
