@@ -288,9 +288,12 @@ export default function Submit({
   const [dateTaken, setDateTaken] = useState<Date | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [submitLocked, setSubmitLocked] = useState(false);
+  const submitRequestIdRef = useRef<string | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
+    submitRequestIdRef.current = null;
     const f = e.target.files?.[0];
     if (!f) return;
 
@@ -355,7 +358,7 @@ export default function Submit({
     }
   };
 
-  const uploadAndCreate = async (finalCoords: { latitude: number; longitude: number }) => {
+  const uploadAndCreate = async (finalCoords: { latitude: number; longitude: number }, idempotencyKey: string) => {
     setError(null);
     if (!selectedFile) return setError('ფაილი არ არის არჩეული');
     if (!selectedZone) return setError('საბზონა არ არის არჩეული');
@@ -391,9 +394,17 @@ export default function Submit({
                 throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
               }
 
-              const postId = await createPost({ title: title.trim() || '', contentId: content.id, zoneId: selectedZone!.id, zoneSlug: selectedZone!.slug });
+              const postId = await createPost({
+                title: title.trim() || '',
+                contentId: content.id,
+                zoneId: selectedZone!.id,
+                zoneSlug: selectedZone!.slug,
+                idempotencyKey,
+              });
               if (postId) {
                 router.push(`/post/${postId}`);
+              } else {
+                throw new Error('ვერ მოხერხდა პოსტის შექმნა');
               }
 
               resolve();
@@ -635,14 +646,32 @@ export default function Submit({
                 const final = coords ?? photo?.coordinates ?? null;
                 const hasCoords = final && final.latitude != null && final.longitude != null;
                 const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
-                const disabled = !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || !dateTaken;
+                const disabled = submitLocked || uploading || processing || !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || !dateTaken;
                 return (
                   <button
                     className={`px-3 py-1 text-white rounded-md ${disabled ? 'bg-teal-300 cursor-not-allowed opacity-60' : 'bg-teal-600 cursor-pointer'}`}
                     onClick={async () => {
+                      if (submitRequestIdRef.current) return;
+                      const requestId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                        ? crypto.randomUUID()
+                        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+                      submitRequestIdRef.current = requestId;
+                      setSubmitLocked(true);
+
                       const validForSubmit = validateBeforeSubmit();
-                      if (!validForSubmit) return;
-                      await uploadAndCreate(validForSubmit);
+                      if (!validForSubmit) {
+                        submitRequestIdRef.current = null;
+                        setSubmitLocked(false);
+                        return;
+                      }
+
+                      try {
+                        await uploadAndCreate(validForSubmit, requestId);
+                      } finally {
+                        submitRequestIdRef.current = null;
+                        setSubmitLocked(false);
+                      }
                     }}
                     disabled={disabled}
                   >ატვირთვა</button>

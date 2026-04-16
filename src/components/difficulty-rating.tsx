@@ -111,7 +111,7 @@ export default function DifficultyRating({
   };
 
   return (
-    <div className="p-2 bg-white dark:bg-zinc-900">
+    <div className="p-2">
       <div className="flex gap-1 flex-wrap">
         {difficulties.map((difficulty) => {
           const count = ratings?.[difficulty.label.toUpperCase() as keyof typeof ratings] || 0;

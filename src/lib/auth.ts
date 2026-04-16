@@ -124,6 +124,7 @@ export async function completePendingRegistration(email: string): Promise<{ succ
 
     if (createdUser.rows[0]?.id) {
       await query('INSERT INTO user_options (user_id) VALUES ($1)', [createdUser.rows[0].id]);
+      await query('INSERT INTO zone_members (zone_id, user_id) VALUES (1, $1)', [createdUser.rows[0].id]);
     }
 
     await query(

@@ -458,11 +458,55 @@ export async function canUserGuessPost(postId: number): Promise<{ canGuess: bool
   }
 }
 
-export async function createPost({ title, contentId, zoneId, zoneSlug, status = 'published' }: { title?: string; contentId: number; zoneId: number; zoneSlug: string; status?: 'processing' | 'published' | 'failed' }): Promise<number | null> {
+export async function createPost({
+  title,
+  contentId,
+  zoneId,
+  zoneSlug,
+  status = 'published',
+  idempotencyKey,
+}: {
+  title?: string;
+  contentId: number;
+  zoneId: number;
+  zoneSlug: string;
+  status?: 'processing' | 'published' | 'failed';
+  idempotencyKey?: string | null;
+}): Promise<number | null> {
   try {
     const user = await getCurrentUser();
     if (!user) return null;
     const currentUserId = user.userId;
+
+    if (idempotencyKey) {
+      const existingReq = await query(
+        `SELECT post_id FROM post_submit_requests WHERE user_id = $1 AND request_id = $2 LIMIT 1`,
+        [currentUserId, idempotencyKey]
+      );
+
+      if ((existingReq.rowCount ?? 0) > 0 && existingReq.rows[0].post_id != null) {
+        return existingReq.rows[0].post_id;
+      }
+
+      const claimReq = await query(
+        `INSERT INTO post_submit_requests (user_id, request_id)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, request_id) DO NOTHING
+         RETURNING id`,
+        [currentUserId, idempotencyKey]
+      );
+
+      if ((claimReq.rowCount ?? 0) === 0) {
+        const claimedReq = await query(
+          `SELECT post_id FROM post_submit_requests WHERE user_id = $1 AND request_id = $2 LIMIT 1`,
+          [currentUserId, idempotencyKey]
+        );
+        if ((claimedReq.rowCount ?? 0) > 0 && claimedReq.rows[0].post_id != null) {
+          return claimedReq.rows[0].post_id;
+        }
+        return null;
+      }
+    }
 
     const postRes = await query(
       `INSERT INTO posts (user_id, type, title, status, zone_id)
@@ -481,6 +525,15 @@ export async function createPost({ title, contentId, zoneId, zoneSlug, status = 
       `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
       [postId, contentId, 0]
     );
+
+    if (idempotencyKey) {
+      await query(
+        `UPDATE post_submit_requests
+         SET post_id = $3
+         WHERE user_id = $1 AND request_id = $2 AND post_id IS NULL`,
+        [currentUserId, idempotencyKey, postId]
+      );
+    }
 
     await eventBus.publish('post', status, {
       postId: +postId,
