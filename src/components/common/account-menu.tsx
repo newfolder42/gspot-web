@@ -38,7 +38,7 @@ export default function AccountMenu({ account }: Props) {
         onClick={() => setOpen((s) => !s)}
         className="flex items-center gap-2 rounded-md px-2 py-1 text-sm bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
       >
-        <span className="inline-block h-8 w-8 rounded-md bg-zinc-200 dark:bg-zinc-700">
+        <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
           {photoUrl ? (
             <Image
               src={photoUrl}
@@ -48,7 +48,7 @@ export default function AccountMenu({ account }: Props) {
               className="h-8 w-8 object-cover"
             />
           ) : (
-            <span className="text-sm leading-8 text-center text-zinc-700 dark:text-zinc-100">{getInitials(account.user.alias || 'U')}</span>
+            <span className="text-sm text-zinc-700 dark:text-zinc-100">{getInitials(account.user.alias || 'U')}</span>
           )}
         </span>
       </button>

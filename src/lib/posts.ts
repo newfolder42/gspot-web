@@ -108,7 +108,7 @@ join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-where p.user_id = $2 and z.visibility = 'public' ${filterCondition} ${cursorCondition}
+where p.user_id = $2 and p.status = 'published' and z.visibility = 'public' ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
@@ -431,7 +431,7 @@ export async function canUserGuessPost(postId: number): Promise<{ canGuess: bool
     }
 
     const postRes = await query(
-      `select user_id from posts where id = $1`,
+      `select user_id from posts where id = $1 and status = 'published'`,
       [postId]
     );
 
@@ -770,14 +770,15 @@ export async function updatePostTitle(postId: number, newTitle: string) {
 
 export async function deletePost(postId: number) {
   try {
-    await query('BEGIN');
+    const user = await getCurrentUser();
+    if (!user) return false;
 
     const postRes = await query(
       `select p.id, p.type, p.user_id, p.zone_id, z.slug as zone_slug, u.alias as author_alias
        from posts p
        join zones z on z.id = p.zone_id
        join users u on p.user_id = u.id
-       where p.id = $1`,
+       where p.id = $1 and p.status != 'deleted'`,
       [postId]
     );
 
@@ -787,39 +788,11 @@ export async function deletePost(postId: number) {
 
     const post = postRes.rows[0];
 
-    const pcRes = await query(`select content_id from post_content where post_id = $1`, [postId]);
-    const contentIds = pcRes.rows.map((r) => r.content_id).filter(Boolean);
-
-    for (const cid of contentIds) {
-      try {
-        const uc = await query(`select public_url from user_content where id = $1`, [cid]);
-        const ucRowCount = uc?.rowCount ?? 0;
-        if (ucRowCount > 0) {
-          const publicUrl = uc.rows[0].public_url;
-          if (publicUrl) {
-            try {
-              const key = new URL(publicUrl).pathname.replace(/^\//, '');
-              const { deleteObject } = await import('./s3');
-              await deleteObject(key);
-            } catch (s3Err) {
-              await logerror('deletePost s3 delete error', [s3Err, publicUrl]);
-            }
-          }
-        }
-      } catch (err) {
-        await logerror('deletePost fetch user_content error', [err, cid]);
-      }
+    if (user.userId != +post.user_id) {
+      return false;
     }
 
-    await query(`delete from post_content where post_id = $1`, [postId]);
-
-    if (contentIds.length > 0) {
-      await query(`delete from user_content where id = any($1::bigint[])`, [contentIds]);
-    }
-
-    const res = await query(`delete from posts where id = $1 returning id`, [postId]);
-
-    await query('COMMIT');
+    await query(`update posts set status = 'deleted', deleted_at = now() where id = $1`, [postId]);
 
     await eventBus.publish('post', 'deleted', {
       postId: +postId,

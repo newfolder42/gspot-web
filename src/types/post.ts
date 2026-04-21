@@ -5,7 +5,7 @@ export type PostType = {
   userId: number;
   author: string;
   date: string;
-  status: 'processing' | 'published' | 'failed';
+  status: 'processing' | 'published' | 'failed' | 'deleted';
   zoneId?: number;
   zoneSlug?: string;
 };
