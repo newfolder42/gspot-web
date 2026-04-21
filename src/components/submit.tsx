@@ -78,7 +78,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center: mapCenter,
-        zoom: 12,
+        zoom: hasValidCoords ? 20 : 12,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
