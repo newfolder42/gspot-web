@@ -22,7 +22,7 @@ export default async function Page() {
 
   return (
     <main className="min-h-screen">
-      <div className="max-w-4xl mx-auto py-4 px-2">
+      <div className="max-w-5xl mx-auto py-4 px-2">
         <Feed type={feedType}
           userId={user?.userId}
           initialPosts={posts} />

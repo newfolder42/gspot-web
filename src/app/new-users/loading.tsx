@@ -2,7 +2,7 @@ export default function Loading() {
   const rows = Array.from({ length: 6 }, (_, i) => i);
 
   return (
-    <div className="max-w-4xl mx-auto px-2 py-2 md:py-4">
+    <div className="max-w-5xl mx-auto px-2 py-2 md:py-4">
       <section
         role="status"
         aria-hidden="true"

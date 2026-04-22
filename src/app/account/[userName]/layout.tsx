@@ -21,7 +21,7 @@ export default async function UserLayout({ children, params }: Props) {
   const xpInfo = await getLevelFromXp(account?.level?.xp ?? 0);
   if (!account) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="bg-white dark:bg-zinc-900 rounded-md p-4 border border-zinc-200 dark:border-zinc-800 flex gap-4">
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">მომხმარებელი არ მოიძებნა</h1>
         </div>
@@ -42,7 +42,7 @@ export default async function UserLayout({ children, params }: Props) {
   const hasProfilePhoto = Boolean(profilePhoto?.url);
 
   return (
-    <div className="max-w-4xl mx-auto py-4 px-2">
+    <div className="max-w-5xl mx-auto py-4 px-2">
       <div className="overflow-hidden">
         <div className="p-4">
           <div className="flex flex-row gap-4 items-center">

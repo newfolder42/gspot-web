@@ -5,6 +5,7 @@ export type ZoneBaseType = {
   description: string | null;
   profile_photo_url?: string | null;
   banner_url?: string | null;
+  is_member?: boolean;
   visibility: string;
   join_policy: string;
   state: string;

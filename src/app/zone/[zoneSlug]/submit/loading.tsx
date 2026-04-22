@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div className="max-w-4xl mx-auto" role="status" aria-hidden="true">
+    <div className="max-w-5xl mx-auto" role="status" aria-hidden="true">
       <div className="mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2">
         <div className="w-full overflow-y-auto">
           <div className="space-y-5 p-6 animate-pulse">

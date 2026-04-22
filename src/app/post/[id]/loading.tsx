@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <main className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
+    <main className="max-w-5xl mx-auto my-auto px-2 py-2 md:py-4">
       <article className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 animate-pulse">
         {/* Header */}
         <div className="flex items-start gap-3 px-4 py-3">

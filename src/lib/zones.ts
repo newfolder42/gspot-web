@@ -211,6 +211,56 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
   }
 }
 
+export async function getActiveZones(userId?: number): Promise<ZoneBaseType[]> {
+  try {
+    const res = userId
+      ? await query(
+          `select z.id, z.slug, z.description,
+              zcp.public_url as profile_photo_url,
+              zcb.public_url as banner_url,
+              (zm.id is not null) as is_member,
+              z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
+       from zones z
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       left join content_store zcb on zcb.reference_type = 'zone' and zcb.reference_id = z.id and zcb.content_type = 'banner'
+       left join zone_members zm on zm.zone_id = z.id and zm.user_id = $1 and zm.status = 'active'
+       where z.visibility = 'public' and z.state = 'active'
+       order by z.name asc`,
+          [userId]
+        )
+      : await query(
+          `select z.id, z.slug, z.description,
+              zcp.public_url as profile_photo_url,
+              zcb.public_url as banner_url,
+              false as is_member,
+              z.visibility, z.join_policy, z.state, z.created_at, z.updated_at
+       from zones z
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       left join content_store zcb on zcb.reference_type = 'zone' and zcb.reference_id = z.id and zcb.content_type = 'banner'
+       where z.visibility = 'public' and z.state = 'active'
+       order by z.name asc`
+        );
+
+    return res.rows.map((r: any) => ({
+      id: Number(r.id),
+      slug: r.slug,
+      name: r.name || r.slug,
+      description: r.description,
+      profile_photo_url: r.profile_photo_url,
+      banner_url: r.banner_url,
+      is_member: Boolean(r.is_member),
+      visibility: r.visibility,
+      join_policy: r.join_policy,
+      state: r.state,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    }));
+  } catch (err) {
+    await logerror('getActiveZones error', [err]);
+    return [];
+  }
+}
+
 export async function getZoneSettings(zoneId: number): Promise<ZoneSettingsRecord | null> {
   try {
     const res = await query(

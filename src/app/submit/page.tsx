@@ -11,7 +11,7 @@ export default async function Page() {
   const zones: ZoneSubmitType[] = await getAvailableZonesForPost(currentUser.userId);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2">
         <div className="flex items-center gap-3">
           <Submit

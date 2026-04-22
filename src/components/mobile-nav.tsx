@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { HomeIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HomeIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 
 type MobileNavProps = {
@@ -44,6 +44,16 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
               >
                 <NewUsersIcon className="w-5 h-5" />
                 <span>მომხმარებლები</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/explore-zones"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              >
+                <CompassIcon className="w-5 h-5" />
+                <span>საბზონები</span>
               </Link>
             </li>
           </ul>

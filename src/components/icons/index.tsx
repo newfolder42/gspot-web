@@ -79,6 +79,25 @@ export function NewUsersIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconPro
   );
 }
 
+export function CompassIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="m14.9 9.1-1.6 4.2-4.2 1.6 1.6-4.2 4.2-1.6Z" />
+      <circle cx="12" cy="12" r="1" />
+    </svg>
+  );
+}
+
 // Account Menu Icons
 export function UserIcon({ className = "w-4 h-4", strokeWidth = 2 }: IconProps) {
   return (
