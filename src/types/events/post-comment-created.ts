@@ -1,7 +1,11 @@
 export interface PostCommentCreatedEvent {
   postId: number;
   commentId: number;
-  parentId: number | null;
+  parent: {
+    id: number;
+    commenterId: number;
+    commenterAlias: string;
+  } | null;
   commentType: 'comment' | 'gps-post-guess';
   commentBody: string;
   postAuthorId: number;

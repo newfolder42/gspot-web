@@ -88,6 +88,27 @@ export async function createPostComment(
     if ((res.rowCount ?? 0) === 0) return null;
     const r = res.rows[0];
 
+    let parent: PostCommentCreatedEvent['parent'] = null;
+    if (parentId !== null && parentId !== undefined) {
+      const parentRes = await query(
+        `select c.id as parent_id, c.user_id as commenter_id, u.alias as commenter_alias
+         from post_comments c
+         join users u on u.id = c.user_id
+         where c.id = $1 and c.post_id = $2
+         limit 1`,
+        [parentId, postId]
+      );
+
+      if ((parentRes.rowCount ?? 0) > 0) {
+        const parentRow = parentRes.rows[0];
+        parent = {
+          id: Number(parentRow.parent_id),
+          commenterId: Number(parentRow.commenter_id),
+          commenterAlias: parentRow.commenter_alias,
+        };
+      }
+    }
+
     const postRes = await query(
       `select p.user_id as post_author_id, u.alias as post_author_alias, p.zone_id, z.slug as zone_slug
        from posts p
@@ -103,7 +124,7 @@ export async function createPostComment(
       await eventBus.publish('post', 'comment-created', {
         postId: +postId,
         commentId: r.id,
-        parentId: parentId ?? null,
+        parent,
         commentType: 'comment',
         commentBody: trimmed,
         postAuthorId: Number(postRow.post_author_id),

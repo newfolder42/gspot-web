@@ -56,7 +56,11 @@ export type NotificationUserAchievementAchievedDetailsType = {
 export type NotificationPostCommentCreatedDetailsType = {
   postId: number,
   commentId: number,
-  parentId?: number | null,
+  parent?: {
+    id: number,
+    commenterId: number,
+    commenterAlias: string,
+  } | null,
   commenterId: number,
   commenterAlias: string,
   commentType: 'comment' | 'gps-post-guess',
@@ -117,9 +121,9 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'post-comment-created': {
       const d = details as NotificationPostCommentCreatedDetailsType;
-      return d.commentType === 'comment'
-        ? `${d.commenterAlias}-მა დაგიტოვა კომენტარი პოსტზე`
-        : `${d.commenterAlias}-მა დაგიტოვა კომენტარი`;
+      return d.parent
+        ? `${d.commenterAlias}-მა დაგიტოვა კომენტარი`
+        : `${d.commenterAlias}-მა დატოვა კომენტარი პოსტზე`;
     }
     default:
       return "ახალი შეტყობინება";
@@ -149,7 +153,7 @@ export function getNotificationRoute(notification: NotificationType): string | n
     }
     case 'post-comment-created': {
       const d = notification.details as NotificationPostCommentCreatedDetailsType;
-      return `/post/${d.postId}`;
+      return `/post/${d.postId}?commentId=${d.commentId}`;
     }
     default:
       return null;
