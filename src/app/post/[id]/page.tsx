@@ -1,4 +1,5 @@
 import { getPostForView, getPostGuesses, postIsGuessedByUser } from '@/lib/posts';
+import { getPostComments } from '@/lib/comments';
 import type { Metadata } from 'next';
 import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
@@ -15,10 +16,12 @@ export default async function Page({ params }: Props) {
   if (!post) return NotFound();
 
   const guesses = await getPostGuesses(post.id);
+  const [alreadyGuessed, comments] = await Promise.all([
+    currentUser ? postIsGuessedByUser(id, currentUser.userId) : Promise.resolve(false),
+    getPostComments(post.id),
+  ]);
 
-  const alreadyGuessed = currentUser ? await postIsGuessedByUser(id, currentUser.userId) : false;
-
-  return <PostDetailClient post={post} guesses={guesses} currentUser={currentUser?.alias || ''} alreadyGuessed={alreadyGuessed} />;
+  return <PostDetailClient post={post} guesses={guesses} comments={comments} currentUser={currentUser?.alias || ''} alreadyGuessed={alreadyGuessed} />;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

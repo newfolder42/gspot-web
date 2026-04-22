@@ -6,7 +6,7 @@ import NotificationSkeleton from "./notification-skeleton";
 import { loadNotifications, markAsRead, markAsUnread, markAllAsRead } from "@/actions/notifications";
 import { formatTimePassed } from "@/lib/dates";
 import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon } from "@/components/icons";
 
 type Props = {
   user: {
@@ -28,6 +28,8 @@ function NotificationIcon({ type }: { type: NotificationType['type'] }) {
       return <UsersIcon className={baseClasses} />;
     case 'user-achievement-achieved':
       return <TrophyIcon className={baseClasses} />;
+    case 'post-comment-created':
+      return <MessageIcon className={baseClasses} />;
     default:
       return <InfoIcon className={baseClasses} />;
   }

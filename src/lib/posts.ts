@@ -8,6 +8,7 @@ import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from 
 import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
+import { createGuessComment } from '@/lib/comments';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
 
 export async function getConnectionsPosts(
@@ -645,6 +646,10 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
       [postId, userId, 'gps-guess', JSON.stringify({ coordinates: coordinates ?? null, distance, score })]
     );
 
+    const guessId = data.rows[0].id;
+
+    await createGuessComment({ postId, userId, guessId, score, distance });
+
     await eventBus.publish('post', 'guessed', {
       postId: +postId,
       guessType: 'gps-guess',
@@ -658,7 +663,7 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     } as PostGuessedEvent);
 
     return {
-      id: data.rows[0].id,
+      id: guessId,
       postId: postId,
       userId: userId,
       author: user.alias,

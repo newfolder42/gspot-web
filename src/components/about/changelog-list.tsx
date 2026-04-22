@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.9.0",
+    date: "2026-04-22",
+    items: [
+      "პოსტის კომენტარები: ახლის დამატება, პასუხი, გამოცნობისას ავტომატური კომენტარი",
+    ],
+  },
+  {
     version: "v0.8.7",
     date: "2026-04-09",
     items: [

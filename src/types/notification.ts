@@ -1,13 +1,13 @@
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved';
+  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created';
   user: {
     userId: number;
     alias: string;
   };
   details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType
   | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType
-  | NotificationUserAchievementAchievedDetailsType;
+  | NotificationUserAchievementAchievedDetailsType | NotificationPostCommentCreatedDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -51,6 +51,15 @@ export type NotificationUserAchievementAchievedDetailsType = {
   milestoneName?: string,
   achievedAt: string | null,
   currentValue?: number,
+}
+
+export type NotificationPostCommentCreatedDetailsType = {
+  postId: number,
+  commentId: number,
+  parentId?: number | null,
+  commenterId: number,
+  commenterAlias: string,
+  commentType: 'comment' | 'gps-post-guess',
 }
 
 // Normalize `details` to a plain object regardless of input shape.
@@ -104,6 +113,13 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
         return `ახალი მიღწევა: ${d.milestoneName}`;
       if (d.achievementType === 'one_time')
         return `ახალი მიღწევა: ${d.achievementName}`;
+      return 'ახალი მიღწევა';
+    }
+    case 'post-comment-created': {
+      const d = details as NotificationPostCommentCreatedDetailsType;
+      return d.commentType === 'comment'
+        ? `${d.commenterAlias}-მა დაგიტოვა კომენტარი პოსტზე`
+        : `${d.commenterAlias}-მა დაგიტოვა კომენტარი`;
     }
     default:
       return "ახალი შეტყობინება";
@@ -130,6 +146,10 @@ export function getNotificationRoute(notification: NotificationType): string | n
     }
     case 'user-achievement-achieved': {
       return `/account/${notification.user.alias}/achievements`;
+    }
+    case 'post-comment-created': {
+      const d = notification.details as NotificationPostCommentCreatedDetailsType;
+      return `/post/${d.postId}`;
     }
     default:
       return null;

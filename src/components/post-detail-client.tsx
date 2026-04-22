@@ -4,19 +4,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import PostActions from './post-actions';
-import PostGuessList from './post-guess-list';
+import PostComments from './post-comments';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 import type { PostGuessType } from '@/types/post-guess';
+import type { PostCommentType } from '@/types/post-comment';
 
 type PostDetailClientProps = {
   post: GpsPostType;
   guesses: PostGuessType[];
+  comments: PostCommentType[];
   currentUser: string;
   alreadyGuessed: boolean;
 };
 
-export default function PostDetailClient({ post, guesses, currentUser, alreadyGuessed }: PostDetailClientProps) {
+export default function PostDetailClient({ post, guesses, comments, currentUser, alreadyGuessed }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
   const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
 
@@ -79,15 +81,18 @@ export default function PostDetailClient({ post, guesses, currentUser, alreadyGu
         )}
       </article>
 
-      <div id="guesses">
-        <PostGuessList
-          guesses={guessesList}
-          isAuthor={isAuthor}
+      <div id="comments">
+        <PostComments
+          comments={comments}
           postId={post.id}
-          guessCount={guessCount}
+          postAuthorAlias={post.author}
+          isAuthor={isAuthor}
           canGuess={canGuess}
+          currentUser={currentUser}
           postImage={post.image}
           postTitle={post.title || ''}
+          guessCount={guessCount}
+          guesses={guessesList}
           onGuessSubmitted={handleGuessSubmitted}
         />
       </div>
