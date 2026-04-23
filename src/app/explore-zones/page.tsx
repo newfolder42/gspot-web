@@ -4,35 +4,22 @@ import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZones } from "@/lib/zones";
 import type { ZoneBaseType } from "@/types/zone";
+import { getProfileColors } from "@/lib/profileColors";
+import ProfileAvatar from "@/components/common/profileAvatar";
 
 export const metadata: Metadata = {
   title: "საბზონების დათვალიერება | G'spot",
   description: "აღმოაჩინე G'spot-ის საბზონები, იპოვე შენი წევრობის სივრცეები და გადადი ინტერესის მიხედვით ახალ ნაკადებში.",
 };
 
-const ZONE_COLORS = [
-  { banner: "bg-red-100 dark:bg-red-950",     icon: "bg-red-500"     },
-  { banner: "bg-orange-100 dark:bg-orange-950", icon: "bg-orange-500" },
-  { banner: "bg-amber-100 dark:bg-amber-950",  icon: "bg-amber-500"   },
-  { banner: "bg-teal-100 dark:bg-teal-950",    icon: "bg-teal-500"    },
-  { banner: "bg-cyan-100 dark:bg-cyan-950",    icon: "bg-cyan-500"    },
-  { banner: "bg-blue-100 dark:bg-blue-950",    icon: "bg-blue-500"    },
-  { banner: "bg-violet-100 dark:bg-violet-950", icon: "bg-violet-500" },
-  { banner: "bg-fuchsia-100 dark:bg-fuchsia-950", icon: "bg-fuchsia-500" },
-  { banner: "bg-rose-100 dark:bg-rose-950",    icon: "bg-rose-500"    },
-];
-
 function zoneColors(slug: string) {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
-  return ZONE_COLORS[hash % ZONE_COLORS.length];
+  return getProfileColors(slug);
 }
 
 function ZoneCard({ zone }: { zone: ZoneBaseType }) {
   const colors = zoneColors(zone.slug);
   const initial = zone.slug[0].toUpperCase();
   const isOpen = zone.join_policy === "open";
-  const hasProfilePhoto = Boolean(zone.profile_photo_url);
   const hasBanner = Boolean(zone.banner_url);
 
   return (
@@ -55,19 +42,15 @@ function ZoneCard({ zone }: { zone: ZoneBaseType }) {
         </div>
 
         {/* profile photo overlapping banner - positioned absolutely */}
-        <div className={`absolute bottom-0 left-3 translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-md border-2 border-white text-xs font-bold text-white dark:border-zinc-900 ${colors.icon}`}>
-          {hasProfilePhoto ? (
-            <Image
-              src={zone.profile_photo_url!}
-              alt={`${zone.slug} profile`}
-              fill
-              className="object-cover rounded-sm"
-              sizes="40px"
-            />
-          ) : (
-            <span>{initial}</span>
-          )}
-        </div>
+        <ProfileAvatar
+          name={zone.slug}
+          photoUrl={zone.profile_photo_url ?? null}
+          fallbackText={initial}
+          positionClassName="absolute"
+          className="bottom-0 left-3 h-10 w-10 translate-y-1/2 rounded-md border-2 border-white text-xs font-bold dark:border-zinc-900"
+          width={40}
+          height={40}
+        />
       </div>
 
       {/* card content with extra top padding for profile photo */}

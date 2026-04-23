@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { signOut } from "next-auth/react";
-import { getInitials } from "@/lib/getInitials";
 import { UserIcon, SettingsIcon, LogoutIcon } from "@/components/icons";
 import { OwnAccountData } from "@/types/own-account";
+import ProfileAvatar from "@/components/common/profileAvatar";
 
 type Props = {
   account: OwnAccountData;
@@ -16,8 +15,6 @@ export default function AccountMenu({ account }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const photoUrl = account.profilePhoto?.url || null;
-  const level = account.level?.level ?? null;
-  const levelBadge = typeof level === "number" ? (level > 99 ? "99+" : level) : null;
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -38,19 +35,13 @@ export default function AccountMenu({ account }: Props) {
         onClick={() => setOpen((s) => !s)}
         className="flex items-center gap-2 rounded-md px-2 py-1 text-sm bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
       >
-        <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-          {photoUrl ? (
-            <Image
-              src={photoUrl}
-              alt={`${account.user.alias} profile photo`}
-              width={32}
-              height={32}
-              className="h-8 w-8 object-cover"
-            />
-          ) : (
-            <span className="text-sm text-zinc-700 dark:text-zinc-100">{getInitials(account.user.alias || 'U')}</span>
-          )}
-        </span>
+        <ProfileAvatar
+          name={account.user.alias}
+          photoUrl={photoUrl}
+          className="h-8 w-8 rounded-full"
+          width={32}
+          height={32}
+        />
       </button>
 
       {open && (

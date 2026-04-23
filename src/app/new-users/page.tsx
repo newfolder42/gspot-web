@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { getNewUsers, getTotalUsers } from '@/lib/users';
 import { formatTimePassed } from '@/lib/dates';
-import { getInitials } from '@/lib/getInitials';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
+import { type NewUser } from '@/types/user';
+import { LeaderboardIcon, TrophyIcon, ImageIcon } from '@/components/icons';
+import ProfileAvatar from '@/components/common/profileAvatar';
 
 export const metadata: Metadata = {
   title: `ახალი მომხმარებლები | ${APP_NAME}`,
@@ -18,39 +19,74 @@ export const metadata: Metadata = {
   },
 };
 
+function UserCard({ user }: { user: NewUser }) {
+  return (
+    <Link
+      href={`/account/${user.alias}`}
+      className="group flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <ProfileAvatar
+          name={user.alias}
+          photoUrl={user.profilePhoto?.url ?? null}
+          className="h-12 w-12 shrink-0 rounded-md"
+          width={56}
+          height={56}
+        />
+
+        <div className="min-w-0 flex-1 text-right">
+          <p className="truncate text-sm font-semibold leading-tight text-zinc-900 group-hover:underline dark:text-zinc-50">
+            &apos;{user.alias}
+          </p>
+          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+            {formatTimePassed(user.createdAt)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+        <div className="flex items-center justify-center rounded-md border border-zinc-200/70 bg-zinc-50 px-1.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/70">
+          <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-300">
+            <LeaderboardIcon className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{user.level}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center rounded-md border border-zinc-200/70 bg-zinc-50 px-1.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/70">
+          <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-300">
+            <TrophyIcon className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{user.achievementsAchieved}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center rounded-md border border-zinc-200/70 bg-zinc-50 px-1.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/70">
+          <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-300">
+            <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{user.postsCreated}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default async function NewUsersPage() {
-  const [entries, totalUsers] = await Promise.all([getNewUsers(10, 0), getTotalUsers()]);
+  const [entries, totalUsers] = await Promise.all([getNewUsers(15, 0), getTotalUsers()]);
 
   return (
-    <div className="max-w-5xl mx-auto px-2 py-2 md:py-4">
-      <section className="p-6">
-        <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-1">მომხმარებლები</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">ბოლოს დარეგისტრირებული მომხმარებლები. სულ: {totalUsers}</p>
+    <div className="mx-auto max-w-5xl px-2 py-4 md:px-4 md:py-8">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">ახალი მომხმარებლები</h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          ბოლოს დარეგისტრირებული მომხმარებლები · სულ: {totalUsers}
+        </p>
+      </div>
 
-        <ol className="space-y-2">
-          {entries.map((e) => (
-            <li key={e.id}>
-              <div className="flex items-center justify-between p-2 border-b border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <Link href={`/account/${e.alias}`} className="h-12 w-12 rounded-md overflow-hidden flex items-center justify-center">
-                    {e.profilePhoto?.url ? (
-                      <Image src={e.profilePhoto.url} alt={e.alias} width={48} height={48} className="h-12 w-12 object-cover" />
-                    ) : (
-                      <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{getInitials(e.alias)}</span>
-                    )}
-                  </Link>
-                  <div>
-                    <div className="text-sm font-medium">
-                      <Link href={`/account/${e.alias}`} className="ml-1 text-zinc-900 dark:text-zinc-100 hover:underline">&apos;{e.alias}</Link>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(e.createdAt)}</div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        {entries.map((e) => (
+          <UserCard key={e.id} user={e} />
+        ))}
+      </div>
     </div>
   );
 }

@@ -3,12 +3,12 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
-import { getInitials } from '@/lib/getInitials';
 import { PlusIcon } from '@/components/icons';
 import AccountTabs from '@/components/account/account-tabs';
 import type { AccountTab } from '@/components/account/account-tabs';
 import BecomeZoneMemberButton from './become-zone-member-button';
 import type { ZoneMemberStatus, ZoneType } from '@/actions/zones';
+import ProfileAvatar from '@/components/common/profileAvatar';
 
 type Props = {
   zone: ZoneType;
@@ -25,9 +25,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
   const zoneDescription = zone.description?.trim() ?? '';
   const hasDescription = zoneDescription.length > 0;
   const shouldTruncateDescription = zoneDescription.length > 100;
-  const hasProfilePhoto = Boolean(zone.profile_photo_url);
   const hasBanner = Boolean(zone.banner_url);
-  const initials = getInitials(zoneSlug);
   const visibleDescription = expandedDescription || !shouldTruncateDescription
     ? zoneDescription
     : `${zoneDescription.slice(0, 100).trimEnd()}...`;
@@ -53,13 +51,15 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
 
           <div className="relative px-4 pt-2 pb-4">
             <div className="absolute left-4 -top-8 sm:-top-10 z-20">
-              <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-2xl font-semibold text-zinc-700 dark:text-zinc-200 ring-2 ring-white/90 dark:ring-zinc-900/80">
-                {hasProfilePhoto ? (
-                  <Image src={zone.profile_photo_url!} alt={`${zoneSlug} profile photo`} fill className="object-cover" sizes="(max-width: 640px) 64px, 80px" />
-                ) : (
-                  <span>{initials}</span>
-                )}
-              </div>
+              <ProfileAvatar
+                name={zoneSlug}
+                photoUrl={zone.profile_photo_url ?? null}
+                fallbackText={zoneSlug[0]?.toUpperCase() ?? '?'}
+                className="h-16 w-16 sm:h-20 sm:w-20 rounded-md text-2xl ring-2 ring-white/90 dark:ring-zinc-900/80"
+                initialsClassName="text-2xl font-semibold"
+                width={80}
+                height={80}
+              />
             </div>
 
             <div className="pl-20 sm:pl-24 min-w-0">

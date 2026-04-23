@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import React from 'react';
 import AccountTabs from '@/components/account/account-tabs';
 import FollowButton from '@/components/account/follow-button';
@@ -7,8 +6,8 @@ import XPBar from '@/components/xp-bar';
 import { getAccountByAlias } from '@/lib/account';
 import { formatAge } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/session';
-import { getInitials } from '@/lib/getInitials';
 import { getLevelFromXp } from '@/lib/xp';
+import ProfileAvatar from '@/components/common/profileAvatar';
 
 type Props = {
   children: React.ReactNode;
@@ -37,22 +36,21 @@ export default async function UserLayout({ children, params }: Props) {
     { id: 'connections', label: 'კავშირები', href: `/account/${userName}/connections` },
   ];
 
-  const initials = getInitials(user.alias);
-
-  const hasProfilePhoto = Boolean(profilePhoto?.url);
-
   return (
     <div className="max-w-5xl mx-auto py-4 px-2">
       <div className="overflow-hidden">
         <div className="p-4">
           <div className="flex flex-row gap-4 items-center">
             <div className="relative flex items-center">
-              <div className="relative h-20 w-20 rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-2xl font-semibold text-zinc-700 dark:text-zinc-200">
-                {hasProfilePhoto ? (
-                  <Image src={profilePhoto!.url} alt={`${user.alias} profile photo`} fill className="object-cover" sizes="80px" />
-                ) : (
-                  <span>{initials}</span>
-                )}
+              <div className="relative">
+                <ProfileAvatar
+                  name={user.alias}
+                  photoUrl={profilePhoto?.url ?? null}
+                  className="h-20 w-20 rounded-md text-2xl"
+                  initialsClassName="text-2xl font-semibold"
+                  width={80}
+                  height={80}
+                />
                 {isOwnProfile && (
                   <div className="absolute bottom-1 right-1 sm:bottom-1 sm:right-1">
                     <ProfilePhotoUpload />
