@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PostActions from './post-actions';
 import PostComments from './post-comments';
+import { MapPinIcon } from './icons';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 import type { PostGuessType } from '@/types/post-guess';
@@ -24,12 +25,10 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
 
   const [isPortrait, setIsPortrait] = useState(false);
   const [canGuess, setCanGuess] = useState(userCanGuess);
-  const [guessesList, setGuessesList] = useState<PostGuessType[]>(guesses);
   const [guessCount, setGuessCount] = useState(Number(post.guessCount) || 0);
 
   const handleGuessSubmitted = (newGuess: PostGuessType) => {
     setCanGuess(false);
-    setGuessesList(prev => [newGuess, ...prev]);
     setGuessCount(prev => prev + 1);
   };
 
@@ -72,6 +71,15 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
                 setIsPortrait(target.naturalHeight > target.naturalWidth);
               }}
             />
+            <Link
+              href={`#comments`}
+              className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"
+              title="გამოცნობების ნახვა"
+              aria-label="გამოცნობების ნახვა"
+            >
+              <MapPinIcon className="w-4 h-4" />
+              <span className="text-sm font-semibold">{guessCount}</span>
+            </Link>
             {post.dateTaken && (
               <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
                 {formatPhotoTakenDate(post.dateTaken)}
@@ -92,7 +100,6 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
           postImage={post.image}
           postTitle={post.title || ''}
           guessCount={guessCount}
-          guesses={guessesList}
           onGuessSubmitted={handleGuessSubmitted}
         />
       </div>

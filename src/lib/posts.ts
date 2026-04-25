@@ -560,7 +560,7 @@ export async function getPostGuesses(postId: number): Promise<PostGuessType[]> {
 from post_guesses pg
 join users u on pg.user_id = u.id
 where pg.post_id = $1
-order by pg.created_at desc`,
+order by pg.created_at desc, pg.id desc`,
       [postId]
     );
 

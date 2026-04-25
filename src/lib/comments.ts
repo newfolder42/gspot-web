@@ -15,7 +15,7 @@ export async function getPostComments(postId: number): Promise<PostCommentType[]
        from post_comments c
        join users u on u.id = c.user_id
        where c.post_id = $1
-       order by c.created_at desc`,
+       order by c.created_at desc, c.id desc`,
       [postId]
     );
 

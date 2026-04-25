@@ -27,7 +27,6 @@ type PostCommentsProps = {
   postImage?: string;
   postTitle?: string;
   guessCount: number;
-  guesses: PostGuessType[];
   onGuessSubmitted?: (guess: PostGuessType) => void;
 };
 
@@ -36,21 +35,17 @@ function insertComment(
   newComment: PostCommentType
 ): PostCommentType[] {
   if (newComment.parentId === null) {
-    return [...tree, newComment];
+    return [newComment, ...tree];
   }
   return tree.map((c) => {
     if (c.id === newComment.parentId) {
-      return { ...c, children: [...c.children, newComment] };
+      return { ...c, children: [newComment, ...c.children] };
     }
     if (c.children.length > 0) {
       return { ...c, children: insertComment(c.children, newComment) };
     }
     return c;
   });
-}
-
-function countComments(tree: PostCommentType[]): number {
-  return tree.reduce((acc, c) => acc + 1 + countComments(c.children), 0);
 }
 
 export default function PostComments({
@@ -63,7 +58,6 @@ export default function PostComments({
   postImage,
   postTitle,
   guessCount,
-  guesses,
   onGuessSubmitted,
 }: PostCommentsProps) {
   const [comments, setComments] = useState<PostCommentType[]>(initialComments);
@@ -82,8 +76,6 @@ export default function PostComments({
   const markersRef = useRef<any[]>([]);
   const activePopupRef = useRef<any>(null);
 
-  const totalComments = countComments(comments);
-
   const handleCommentAdded = (newComment: PostCommentType) => {
     setComments((prev) => insertComment(prev, newComment));
   };
@@ -100,7 +92,7 @@ export default function PostComments({
     try {
       const newComment = await addCommentAction(postId, trimmed, null);
       if (newComment) {
-        setComments((prev) => [...prev, newComment]);
+        setComments((prev) => [newComment, ...prev]);
         setBody('');
         setComposerExpanded(false);
       }
@@ -109,9 +101,10 @@ export default function PostComments({
     }
   };
 
-  const handleGuessSubmitted = (newGuess: PostGuessType) => {
+  const handleGuessSubmitted = async (newGuess: PostGuessType) => {
     setCanGuess2(false);
     setGuessCount2((n) => n + 1);
+    await refreshComments();
     onGuessSubmitted?.(newGuess);
   };
 
@@ -353,10 +346,6 @@ export default function PostComments({
     <div className="mt-4">
       {/* Header bar */}
       <div className="px-4 py-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
-          <MessageIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{totalComments}</span>
-        </div>
 
         <div className="flex items-center gap-2">
           {isAuthor && guessCount2 > 0 && (
@@ -424,7 +413,7 @@ export default function PostComments({
       )}
 
       {/* Comments tree */}
-      <div className="px-4 py-2 space-y-1 divide-y divide-zinc-100 dark:divide-zinc-800/50">
+      <div className="px-4 py-2 space-y-1">
         {comments.length === 0 ? (
           <p className="py-4 text-center text-sm text-zinc-400">კომენტარები არ არის</p>
         ) : (
@@ -449,10 +438,7 @@ export default function PostComments({
           postImage={postImage}
           postTitle={postTitle || ''}
           onClose={() => setShowGuessModal(false)}
-          onSubmitted={async (newGuess) => {
-            handleGuessSubmitted(newGuess);
-            await refreshComments();
-          }}
+          onSubmitted={handleGuessSubmitted}
         />
       )}
 
