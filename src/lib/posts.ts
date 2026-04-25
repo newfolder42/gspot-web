@@ -57,7 +57,7 @@ limit $1`,
       params
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       type: r.type,
       title: r.title,
@@ -115,7 +115,7 @@ limit $1`,
       params
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       type: r.type,
       title: r.title,
@@ -180,7 +180,7 @@ limit $1`,
       params2
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       type: r.type,
       title: r.title,
@@ -239,7 +239,7 @@ export async function getPublicPosts(
       [queryLimit, cursor?.guessCount ?? null, cursor?.id ?? null]
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       type: r.type,
       title: r.title,
@@ -300,7 +300,7 @@ limit $1`,
       params
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       type: r.type,
       title: r.title,
@@ -564,7 +564,7 @@ order by pg.created_at desc, pg.id desc`,
       [postId]
     );
 
-    return data.rows.map((r) => ({
+    return data.rows.map(r => ({
       id: r.id,
       postId: r.post_id,
       userId: r.user_id,
@@ -593,7 +593,7 @@ order by pg.created_at desc`,
       [userId]
     );
 
-    return data.rows.map((r) => ({
+    return data.rows.map(r => ({
       id: r.id,
       postId: r.post_id,
       userId: r.user_id,

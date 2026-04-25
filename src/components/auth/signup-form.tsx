@@ -29,18 +29,8 @@ export default function SignupForm() {
       return;
     }
 
-    if (aliasStatus !== "available") {
-      setError("გთხოვ აარჩიე თავისუფალი თიკუნი.");
-      return;
-    }
-
-    if (passwordStatus === "invalid") {
-      setError("პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო.");
-      return;
-    }
-
-    if (emailStatus !== "valid") {
-      setError("გთხოვ შეიყვანე მართებული მეილი.");
+    if (aliasStatus !== "available" || passwordStatus === "invalid" || emailStatus !== "valid") {
+      setError("გთხოვ შეავსე ველები ვალიდურად.");
       return;
     }
 

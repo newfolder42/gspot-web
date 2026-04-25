@@ -522,7 +522,7 @@ export default function Submit({
                     <div className="mt-1">
                       <ZoneDropdown zones={zones} selected={selectedZone} onSelect={setSelectedZone} />
                       {zones.length === 0 && (
-                        <p className="mt-1 text-xs text-zinc-500">თქვენ არ ხართ არცერთი საბზონის წევრი</p>
+                        <p className="mt-1 text-xs text-zinc-500">შენ არ ხარ არცერთი საბზონის წევრი</p>
                       )}
                     </div>
                   </div>

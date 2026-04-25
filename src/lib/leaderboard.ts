@@ -17,7 +17,7 @@ export async function getLeaderboard(type: string, zoneSlug: string, limit = 50,
       [type, zoneSlug, limit, offset]
     );
 
-    return res.rows.map((r: any) => ({
+    return res.rows.map(r => ({
       userId: r.user_id,
       alias: r.alias,
       rating: r.rating ?? 0,

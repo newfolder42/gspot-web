@@ -19,7 +19,7 @@ export async function getPostComments(postId: number): Promise<PostCommentType[]
       [postId]
     );
 
-    const flat: PostCommentType[] = res.rows.map((r) => ({
+    const flat: PostCommentType[] = res.rows.map(r => ({
       id: r.id,
       postId: r.post_id,
       userId: r.user_id,

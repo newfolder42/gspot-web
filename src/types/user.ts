@@ -10,7 +10,4 @@ export type NewUser = {
   alias: string;
   createdAt: string;
   profilePhoto?: { url?: string | null } | null;
-  level: number;
-  achievementsAchieved: number;
-  postsCreated: number;
 }

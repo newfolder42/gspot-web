@@ -25,7 +25,7 @@ export async function getConnectionsForUserByAlias(userName: string): Promise<Cl
       [userId]
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       alias: r.alias,
       createdAt: r.created_at,
@@ -49,7 +49,7 @@ ORDER BY ucx.created_at DESC
       [userId]
     );
 
-    return res.rows.map((r) => ({
+    return res.rows.map(r => ({
       id: r.id,
       alias: r.alias,
       createdAt: r.created_at,

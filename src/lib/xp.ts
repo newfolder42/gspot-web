@@ -9,7 +9,7 @@ export async function fetchXpTable(): Promise<number[]> {
     'SELECT level, xp FROM xp_levels ORDER BY level ASC'
   );
   
-  return result.rows.map(row => row.xp);
+  return result.rows.map(r => r.xp);
 }
 
 export async function getXpTable(): Promise<number[]> {

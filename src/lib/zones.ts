@@ -157,7 +157,7 @@ export async function getZoneMembers(zoneId: number):
       [zoneId]
     );
     if (res.rows.length === 0) return [];
-    return res.rows.map((r: any) => ({
+    return res.rows.map(r => ({
       id: Number(r.id),
       role: r.role,
       status: r.status,
@@ -193,7 +193,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
       [userId]
     );
 
-    return res.rows.map((r: any) => ({
+    return res.rows.map(r => ({
       id: Number(r.id),
       slug: r.slug,
       name: r.name,
@@ -241,7 +241,7 @@ export async function getActiveZones(userId?: number): Promise<ZoneBaseType[]> {
        order by z.name asc`
         );
 
-    return res.rows.map((r: any) => ({
+    return res.rows.map(r => ({
       id: Number(r.id),
       slug: r.slug,
       name: r.name || r.slug,
