@@ -12,7 +12,7 @@ export type NotificationRecord = {
   seenAt: Date | null;
 };
 
-export async function getNotificationsForUser(userId: number, limit = 10): Promise<NotificationRecord[]> {
+export async function getNotificationsForUser(userId: number, limit = 10, offset = 0): Promise<NotificationRecord[]> {
   try {
     if (!userId) return [];
 
@@ -30,8 +30,8 @@ export async function getNotificationsForUser(userId: number, limit = 10): Promi
       LEFT JOIN users u ON n.user_id = u.id
       WHERE n.user_id = $1
       ORDER BY n.created_at DESC
-      LIMIT $2`,
-      [userId, limit]
+      LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
     );
 
     return res.rows;

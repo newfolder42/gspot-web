@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import NotificationSkeleton from "./notification-skeleton";
-import { loadNotifications, markAsRead, markAsUnread, markAllAsRead } from "@/actions/notifications";
-import { formatTimePassed } from "@/lib/dates";
-import { getNotificationContentMessage, getNotificationRoute, NotificationType } from "@/types/notification";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon } from "@/components/icons";
+import NotificationItem from "./notification-item";
+import { loadNotifications, markAllAsRead } from "@/actions/notifications";
+import { NotificationType } from "@/types/notification";
 
 type Props = {
   user: {
@@ -14,33 +13,10 @@ type Props = {
   };
 };
 
-function NotificationIcon({ type }: { type: NotificationType['type'] }) {
-  const baseClasses = "w-4 h-4 shrink-0";
-
-  switch (type) {
-    case 'gps-guess':
-      return <MapPinIcon className={baseClasses} />;
-    case 'connection-created-gps-post':
-      return <ImageIcon className={baseClasses} />;
-    case 'gps-post-failed':
-      return <AlertTriangleIcon className={baseClasses} />;
-    case 'user-started-following':
-      return <UsersIcon className={baseClasses} />;
-    case 'user-achievement-achieved':
-      return <TrophyIcon className={baseClasses} />;
-    case 'post-comment-created':
-      return <MessageIcon className={baseClasses} />;
-    default:
-      return <InfoIcon className={baseClasses} />;
-  }
-}
-
 export default function NotificationDropdown({ user }: Props) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
   const [badgeLoading, setBadgeLoading] = useState(false);
   const unseenCount = notifications.reduce((acc, n) => acc + (n.seen ? 0 : 1), 0);
@@ -60,7 +36,6 @@ export default function NotificationDropdown({ user }: Props) {
       if (!ref.current) return;
       if (!ref.current.contains(e.target as Node)) {
         setOpen(false);
-        setOpenMenuId(null);
       }
     }
     document.addEventListener("click", onDoc);
@@ -70,74 +45,22 @@ export default function NotificationDropdown({ user }: Props) {
   // Prefetch notifications on mount so badge and first open have data
   useEffect(() => {
     let cancelled = false;
-
     setBadgeLoading(true);
     getNotifications()
-      .then((data) => {
-        if (!cancelled) setNotifications(data);
-      })
-      .finally(() => {
-        if (!cancelled) setBadgeLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      .then((data) => { if (!cancelled) setNotifications(data); })
+      .finally(() => { if (!cancelled) setBadgeLoading(false); });
+    return () => { cancelled = true; };
   }, [getNotifications]);
 
-  // Simulate loading notifications
   const handleOpen = () => {
     if (!open) {
       setLoading(true);
       setOpen(true);
-
       getNotifications()
         .then(setNotifications)
         .finally(() => setLoading(false));
     } else {
       setOpen(false);
-    }
-  };
-
-  const handleNotificationClick = async (notificationId: string) => {
-    const notification = notifications.find(n => n.id === notificationId);
-    if (notification && !notification.seen) {
-      await handleMarkAsRead(notificationId);
-    }
-    setOpen(false);
-    setOpenMenuId(null);
-  };
-
-  const handleMenuToggle = (notificationId: string) => {
-    setOpenMenuId(openMenuId === notificationId ? null : notificationId);
-  };
-
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      const res = await markAsRead(user.id, notificationId);
-      if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n))
-        );
-        setOpenMenuId(null);
-      }
-    } catch (err) {
-      console.error("Failed to mark notification as read", err);
-    }
-  };
-
-  const handleMarkAsUnread = async (notificationId: string) => {
-    try {
-      const res = await markAsUnread(user.id, notificationId);
-      if (res.ok) {
-        // Update local state to mark as unread
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, seen: false } : n))
-        );
-        setOpenMenuId(null);
-      }
-    } catch (err) {
-      console.error("Failed to mark notification as read", err);
     }
   };
 
@@ -152,6 +75,10 @@ export default function NotificationDropdown({ user }: Props) {
     }
   };
 
+  const handleItemUpdate = (id: string, seen: boolean) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, seen } : n)));
+  };
+
   return (
     <div className="relative" ref={ref}>
       {/* Notification Bell Button */}
@@ -160,22 +87,12 @@ export default function NotificationDropdown({ user }: Props) {
         className="relative p-2 rounded-md text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
         aria-label="notifications"
       >
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
           />
         </svg>
 
-        {/* Notification badge / loading spinner */}
         {loading || badgeLoading ? (
           <span className="absolute top-1 right-1 h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin transform translate-x-1/2 -translate-y-1/2" />
         ) : unseenCount > 0 ? (
@@ -190,123 +107,58 @@ export default function NotificationDropdown({ user }: Props) {
         <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 rounded-lg bg-white dark:bg-zinc-900 shadow-xl ring-1 ring-zinc-100 dark:ring-zinc-800">
           {/* Header */}
           <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              შეტყობინებები
-            </h2>
-            {!(loading || unseenCount === 0) && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="inline-flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 cursor-pointer"
-                aria-label="mark all as read"
-                title="მონიშნე ყველა წაკითხულად"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">შეტყობინებები</h2>
+            <div className="flex items-center gap-2">
+              {!(loading || unseenCount === 0) && (
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="inline-flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 cursor-pointer"
+                  aria-label="mark all as read"
+                  title="მონიშნე ყველა წაკითხულად"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 15a3 3 0 100-6 3 3 0 000 6z"
-                  />
-                </svg>
-              </button>
-            )}
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Content */}
-          <div className="max-h-96 overflow-y-auto rounded-b-lg">
+          <div className="max-h-96 overflow-y-auto">
             {loading ? (
               <NotificationSkeleton />
             ) : notifications.length > 0 ? (
               <div className="space-y-0">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
-                    {/* Unseen indicator */}
-                    {!notification.seen && (
-                      <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-teal-600" />
-                    )}
-
-                    <div
-                      onClick={() => {
-                        const route = getNotificationRoute(notification);
-                        if (route) {
-                          router.push(route);
-                        }
-                        handleNotificationClick(notification.id);
-                      }}
-                      className="flex items-start gap-3 min-w-0"
-                    >
-                      <div className="mt-0.5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">
-                        <NotificationIcon type={notification.type} />
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2 break-words">
-                          {getNotificationContentMessage(notification.type, notification.details)}
-                        </p>
-                        {/* Timestamp */}
-                        {notification.timestamp && (
-                          <p className="text-xs text-zinc-500">
-                            {formatTimePassed(notification.timestamp)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Three-dots action trigger moved into dropdown wrapper */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleMenuToggle(notification.id); }}
-                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                      aria-label="notification menu"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M6 12a2 2 0 11-4 0 2 2 0 014 0zM12 12a2 2 0 11-4 0 2 2 0 014 0zM16 14a2 2 0 100-4 2 2 0 000 4z" />
-                      </svg>
-                    </button>
-                    {/* Notification menu */}
-                    {openMenuId === notification.id && (
-                      <div className="absolute right-2 top-8 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-200 dark:ring-zinc-800">
-                        <div className="py-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (notification.seen)
-                                handleMarkAsUnread(notification.id);
-                              else
-                                handleMarkAsRead(notification.id);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
-                          >
-                            {notification.seen ? "მონიშნე წაუკითხავად" : "მონიშნე წაკითხულად"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    userId={user.id}
+                    onUpdate={handleItemUpdate}
+                    onNavigate={() => setOpen(false)}
+                  />
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  შეტყობინებები არ არის
-                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">შეტყობინებები არ არის</p>
               </div>
             )}
+          </div>
+
+          {/* Footer: see all */}
+          <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-2 rounded-b-lg">
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="block text-center text-xs text-teal-600 dark:text-teal-400 hover:underline"
+            >
+              ყველას ნახვა
+            </Link>
           </div>
         </div>
       )}

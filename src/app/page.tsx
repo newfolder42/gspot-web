@@ -6,16 +6,6 @@ import { FeedType } from "@/types/post";
 export default async function Page() {
   const user = await getCurrentUser();
 
-  // if (!user) {
-  //   return (
-  //     <main className="flex flex-col items-center mt-16 min-h-screen">
-  //       <h1 className="text-4xl font-bold mb-4 text-center">კეთილი იყოს შენი მაუსი {APP_NAME}-ზე</h1>
-  //       <p className="text-lg text-zinc-600 dark:text-zinc-300 mb-8 text-center max-w-xl">გააზიარე საქართველოს სურათები, აღმოაჩინე და გამოიცანი სადაა გადაღებული. შემოგვიერთდი!</p>
-  //       <AuthTabs />
-  //     </main>
-  //   );
-  // }
-
   const feedType: FeedType = user ? 'global' : 'public';
 
   const posts = await loadPosts({ type: feedType, userId: user?.userId, filter: 'all' });
@@ -23,10 +13,11 @@ export default async function Page() {
   return (
     <main className="min-h-screen">
       <div className="max-w-5xl mx-auto py-4 px-2">
+        {/* <GameEmbed iframeClassName="h-[92dvh]"/> */}
         <Feed type={feedType}
           userId={user?.userId}
           initialPosts={posts} />
-      </div>
+      </div> 
     </main>
   );
 }

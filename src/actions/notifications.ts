@@ -3,9 +3,9 @@
 import { getNotificationsForUser, markNotificationSeen, markNotificationUnseen, markAllNotificationsSeen } from "@/lib/notifications";
 import { normalizeDetails, NotificationType } from "@/types/notification";
 
-export async function loadNotifications(userId: number, limit = 10): Promise<NotificationType[]> {
+export async function loadNotifications(userId: number, limit = 10, offset = 0): Promise<NotificationType[]> {
   try {
-    const rows = await getNotificationsForUser(userId, limit);
+    const rows = await getNotificationsForUser(userId, limit, offset);
 
     const mapped = rows.map((row) => {
       const type = row.type as 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created';
