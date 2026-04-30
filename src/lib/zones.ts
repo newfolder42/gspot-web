@@ -283,6 +283,45 @@ export async function getZoneSettings(zoneId: number): Promise<ZoneSettingsRecor
   }
 }
 
+export async function upsertZoneContent(
+  zoneId: number,
+  contentType: 'profile-photo' | 'banner',
+  publicUrl: string,
+  details: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    const existingRes = await query(
+      `SELECT id
+       FROM content_store
+       WHERE reference_type = 'zone' AND reference_id = $1 AND content_type = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [zoneId, contentType],
+    );
+
+    if (existingRes.rows.length > 0) {
+      await query(
+        `UPDATE content_store
+         SET public_url = $1, details = $2, created_at = NOW()
+         WHERE id = $3`,
+        [publicUrl, JSON.stringify(details ?? {}), existingRes.rows[0].id],
+      );
+      return true;
+    }
+
+    await query(
+      `INSERT INTO content_store (reference_type, reference_id, content_type, public_url, details, created_at)
+       VALUES ('zone', $1, $2, $3, $4, NOW())`,
+      [zoneId, contentType, publicUrl, JSON.stringify(details ?? {})],
+    );
+
+    return true;
+  } catch (err) {
+    await logerror('upsertZoneContent error', [err]);
+    return false;
+  }
+}
+
 
 export async function updateZoneSettings(zoneId: number, { description, join_policy, upload_rules, guess_scoring_rules }: { description: string, join_policy: string, upload_rules: string, guess_scoring_rules: string }): Promise<boolean> {
   try {

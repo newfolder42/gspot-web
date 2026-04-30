@@ -1,14 +1,14 @@
 import exifr from "exifr";
 import imageCompression from "browser-image-compression";
+import { POST_PHOTO_COMPRESSION, UPLOAD_QUALITY } from "./upload-config";
 
 export async function convertToWebP(file: File): Promise<File> {
   try {
     return await imageCompression(file, {
-      maxSizeMB: 1.5,
-      maxWidthOrHeight: 1920,
+      ...POST_PHOTO_COMPRESSION,
       useWebWorker: true,
       fileType: 'image/webp',
-      initialQuality: 0.86,
+      initialQuality: UPLOAD_QUALITY.POST_WEBP,
     });
   }
   catch (err) {

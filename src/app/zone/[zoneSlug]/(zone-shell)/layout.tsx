@@ -86,9 +86,9 @@ export default async function UserLayout({ children, params }: Props) {
     { id: 'leaderboard', label: 'ლიდერბორდი', href: `/zone/${zoneSlug}/leaderboard` },
   ];
 
-  // if (member?.role == 'owner' || member?.role == 'admin') {
-  //   tabs.push({ id: 'settings', label: 'პარამეტრები', href: `/zone/${zoneSlug}/settings` });
-  // }
+  if (member?.role == 'owner' || member?.role == 'admin') {
+    tabs.push({ id: 'manage', label: 'მართვა', href: `/zone/${zoneSlug}/settings` });
+  }
 
   return (
     <div className="max-w-5xl mx-auto py-4 px-2">

@@ -7,6 +7,7 @@ import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
+import { ACCEPTED_IMAGE_TYPES, UPLOAD_SIZE_LIMIT } from '@/lib/upload-config';
 import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
@@ -297,12 +298,12 @@ export default function Submit({
     const f = e.target.files?.[0];
     if (!f) return;
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) {
-      setError('ხმოლოდ PNG, JPEG, და WebP ფოტო-სურათებია ნებადართული');
+    if (!ACCEPTED_IMAGE_TYPES.includes(f.type as typeof ACCEPTED_IMAGE_TYPES[number])) {
+      setError('მხოლოდ PNG, JPEG, და WebP ფოტო-სურათებია ნებადართული');
       return;
     }
 
-    if (f.size > 15 * 1024 * 1024) {
+    if (f.size > UPLOAD_SIZE_LIMIT.POST_PHOTO) {
       setError('ფაილის ზომა არ უნდა აღემატებოდეს 15 მბს');
       return;
     }
