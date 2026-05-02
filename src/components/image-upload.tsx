@@ -38,7 +38,7 @@ export type ImageUploadProps = {
   maxSizeBytes?: number;
   /**
    * When provided, shows the interactive drag-to-crop UI and outputs a JPEG at
-   * UPLOAD_QUALITY.PROFILE_JPEG. When omitted, the validated raw file is uploaded directly.
+   * UPLOAD_QUALITY.PROFILE_WEBP. When omitted, the validated raw file is uploaded directly.
    */
   crop?: CropConfig;
   onUploadComplete?: (payload: UploadCompletePayload) => Promise<UploadResult>;
@@ -186,8 +186,8 @@ export default function ImageUpload({
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, oW, oH);
 
-    const blob = await canvasToBlob(canvas, 'image/jpeg', UPLOAD_QUALITY.PROFILE_JPEG);
-    return new File([blob], rawFile.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+    const blob = await canvasToBlob(canvas, 'image/webp', UPLOAD_QUALITY.PROFILE_WEBP);
+    return new File([blob], rawFile.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
   };
 
   const handleUpload = async () => {

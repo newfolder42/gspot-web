@@ -75,8 +75,8 @@ export default function PostComment({
     ? 'კომენტარი წაიშალა'
     : isGuess
       ? [
-        comment.metadata?.score != null ? `ქულა ${comment.metadata.score}` : null,
-        comment.metadata?.distance != null ? `მანძილი ${comment.metadata.distance.toLocaleString('ka-GE')} მ` : null,
+        comment.metadata?.score != null ? `${comment.metadata.score}` : null,
+        comment.metadata?.distance != null ? `${comment.metadata.distance.toLocaleString('ka-GE')} მ` : null,
       ].filter(Boolean).join(' • ') || 'გამოცნობა'
       : comment.body.replace(/\s+/g, ' ').trim() || 'კომენტარი';
 

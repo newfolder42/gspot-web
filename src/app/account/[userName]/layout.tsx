@@ -1,13 +1,13 @@
 import React from 'react';
 import AccountTabs from '@/components/account/account-tabs';
 import FollowButton from '@/components/account/follow-button';
-import ProfilePhotoUpload from '@/components/profile-photo-upload';
 import XPBar from '@/components/xp-bar';
 import { getAccountByAlias } from '@/lib/account';
 import { formatAge } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/session';
 import { getLevelFromXp } from '@/lib/xp';
 import ProfileAvatar from '@/components/common/profileAvatar';
+import ImageUpload from '@/components/image-upload';
 
 type Props = {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ export default async function UserLayout({ children, params }: Props) {
                 />
                 {isOwnProfile && (
                   <div className="absolute bottom-1 right-1 sm:bottom-1 sm:right-1">
-                    <ProfilePhotoUpload />
+                    <ImageUpload />
                   </div>
                 )}
               </div>
