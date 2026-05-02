@@ -34,7 +34,7 @@ export default function ProfileAvatar({
 
   const rootClassName = [
     `${positionClassName} overflow-hidden flex items-center justify-center`,
-    hasPhoto ? 'bg-zinc-100 dark:bg-zinc-800' : `${colors.icon} text-white`,
+    hasPhoto ? 'bg-zinc-50 dark:bg-zinc-950' : `${colors.icon} text-white`,
     className,
   ].join(' ');
 

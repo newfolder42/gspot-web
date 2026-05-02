@@ -27,7 +27,7 @@ function ZoneCard({ zone }: { zone: ZoneBaseType }) {
       {/* banner container - relative for absolute positioning of profile photo */}
       <div className="relative">
         {/* banner */}
-        <div className="relative h-24 overflow-hidden bg-zinc-100 dark:bg-zinc-800 rounded-t-2xl">
+        <div className="relative h-24 overflow-hidden bg-zinc-50 dark:bg-zinc-950 rounded-t-2xl">
           {hasBanner ? (
             <Image
               src={zone.banner_url!}

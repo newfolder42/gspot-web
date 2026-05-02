@@ -8,6 +8,7 @@ export type PostType = {
   status: 'processing' | 'published' | 'failed' | 'deleted';
   zoneId?: number;
   zoneSlug?: string;
+  zoneProfilePhoto?: string | null;
 };
 
 export enum DifficultyLevel {

@@ -180,9 +180,10 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
   try {
     const res = await query(
       `select z.id, z.slug, z.name, z.description, z.visibility, z.join_policy, z.state, z.created_at, z.updated_at,
-              zs.upload_rules
+              zs.upload_rules, zcp.public_url as profile_photo_url
        from zones z
        left join zone_settings zs on zs.zone_id = z.id
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
        where z.state = 'active'
          and exists (
              select 1
@@ -198,6 +199,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
       slug: r.slug,
       name: r.name,
       description: r.description,
+      profile_photo_url: r.profile_photo_url ?? null,
       visibility: r.visibility,
       join_policy: r.join_policy,
       state: r.state,

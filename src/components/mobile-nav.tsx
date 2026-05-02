@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CompassIcon, HomeIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
+import ProfileAvatar from "@/components/common/profileAvatar";
 
 type MobileNavProps = {
   open: boolean;
@@ -66,9 +67,17 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
                   <li key={zone.id}>
                     <Link
                       href={`/zone/${zone.slug}`}
-                      className="block px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                      className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                       onClick={() => setOpen(false)}
                     >
+                      <ProfileAvatar
+                        name={zone.slug}
+                        photoUrl={zone.profile_photo_url}
+                        className="w-5 h-5 rounded-md flex-shrink-0"
+                        initialsClassName="text-[9px] font-bold"
+                        width={20}
+                        height={20}
+                      />
                       {zone.slug}
                     </Link>
                   </li>

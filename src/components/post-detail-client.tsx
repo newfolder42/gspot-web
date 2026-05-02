@@ -6,6 +6,7 @@ import { useState } from 'react';
 import PostActions from './post-actions';
 import PostComments from './post-comments';
 import { MapPinIcon } from './icons';
+import ProfileAvatar from './common/profileAvatar';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 import type { PostGuessType } from '@/types/post-guess';
@@ -37,10 +38,20 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
       <article className="">
         <div className="flex items-start p-2">
           <div className="flex-1">
-            <div className="flex items-baseline gap-1.5">
-              <Link href={`/zone/${post.zoneSlug}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">{post.zoneSlug}</Link>
+            <div className="flex items-center gap-1.5">
+              <Link href={`/zone/${post.zoneSlug}`} className="flex items-center gap-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">
+                <ProfileAvatar
+                  name={post.zoneSlug ?? ''}
+                  photoUrl={post.zoneProfilePhoto}
+                  className="w-6 h-6 rounded-md flex-shrink-0"
+                  initialsClassName="text-[8px] font-bold"
+                  width={24}
+                  height={24}
+                />
+                {post.zoneSlug}
+              </Link>
               <span className="text-xs text-zinc-400">•</span>
-              <div className="flex items-baseline gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
                 <span className="text-xs text-zinc-400">•</span>
                 <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>

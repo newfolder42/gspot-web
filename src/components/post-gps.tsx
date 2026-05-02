@@ -5,6 +5,7 @@ import type { GpsPostType } from "@/types/post";
 import { formatActionDate, formatPhotoTakenDate } from "@/lib/dates";
 import { useState } from "react";
 import { MapPinIcon } from "./icons";
+import ProfileAvatar from "./common/profileAvatar";
 
 export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: boolean }) {
 
@@ -14,9 +15,19 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
     <article className="overflow-hidden">
       <div className="flex items-start p-2">
         <div className="flex-1">
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-center gap-1.5">
             {showZone && post.zoneSlug && (
-                <Link href={`/zone/${post.zoneSlug}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">{post.zoneSlug}</Link>
+                <Link href={`/zone/${post.zoneSlug}`} className="flex items-center gap-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">
+                  <ProfileAvatar
+                    name={post.zoneSlug}
+                    photoUrl={post.zoneProfilePhoto}
+                    className="w-6 h-6 rounded-md flex-shrink-0"
+                    initialsClassName="text-[8px] font-bold"
+                    width={24}
+                    height={24}
+                  />
+                  {post.zoneSlug}
+                </Link>
             )}
             {showZone && post.zoneSlug && (
                 <span className="text-xs text-zinc-400">•</span>
