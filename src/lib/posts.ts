@@ -223,14 +223,13 @@ export async function getPublicPosts(
 
     const res = await query(
       `with public_posts as (
-         select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
+         select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
                 (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count
          from posts p
          join zones z on z.id = p.zone_id
          join post_content pc on p.id = pc.post_id
          join users u on u.id = p.user_id
          join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-         left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
          where p.status = 'published'
            and z.visibility = 'public'
        )
@@ -255,7 +254,6 @@ export async function getPublicPosts(
       userId: r.user_id,
       zoneId: r.zone_id,
       zoneSlug: r.zone_slug,
-      zoneProfilePhoto: r.zone_profile_photo_url ?? null,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
@@ -292,7 +290,7 @@ export async function getZonePosts(
       : [limit, zoneId, userId];
 
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
 from posts p
@@ -300,7 +298,6 @@ join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
-left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.status = 'published'
   and z.id = $2
   ${filterCondition} ${cursorCondition}
@@ -318,7 +315,6 @@ limit $1`,
       userId: r.user_id,
       zoneId: r.zone_id,
       zoneSlug: r.zone_slug,
-      zoneProfilePhoto: r.zone_profile_photo_url ?? null,
       image: r.image_url,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
@@ -334,14 +330,13 @@ limit $1`,
 export async function getPostForView(userId: number, id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.id = pc.content_id
-left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.id = $1 and (
   $2 = p.user_id
   or (
@@ -368,7 +363,6 @@ limit 1`,
       userId: r.user_id,
       zoneId: r.zone_id,
       zoneSlug: r.zone_slug,
-      zoneProfilePhoto: r.zone_profile_photo_url ?? null,
       author: r.author_alias,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
@@ -384,14 +378,13 @@ limit 1`,
 async function getPostById(id: number): Promise<GpsPostType | null> {
   try {
     const res = await query(
-      `select p.id, p.type, p.title, p.created_at, p.user_id, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
+      `select p.id, p.type, p.title, p.created_at, p.user_id, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.id = pc.content_id
-left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.id = $1 and p.status in ('published')
 order by pc.sort
 limit 1`,
@@ -408,7 +401,6 @@ limit 1`,
       userId: r.user_id,
       zoneId: r.zone_id,
       zoneSlug: r.zone_slug,
-      zoneProfilePhoto: r.zone_profile_photo_url ?? null,
       author: r.author_alias,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,

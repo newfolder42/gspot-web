@@ -4,7 +4,6 @@ import { getCurrentUser } from '@/lib/session';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
-import { loadPosts } from '@/actions/feed';
 
 export async function generateMetadata({ params }: { params: Promise<{ userName: string }> }): Promise<Metadata> {
   const { userName } = await params;
@@ -47,13 +46,6 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   const data = await getAccountByAlias(userName, currentUserId);
   if (!data) return notFound();
 
-  const posts = await loadPosts({
-    type: 'account',
-    userId: currentUserId,
-    accountUserId: data.user.id,
-    filter: 'all'
-  });
-
   const isOwnProfile = currentUserId === data.user.id;
 
   return (
@@ -61,7 +53,6 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
       {(<Feed type='account'
         userId={currentUserId}
         accountUserId={data.user.id}
-        initialPosts={posts}
         showFilter={!isOwnProfile} />)}
     </div>
   );

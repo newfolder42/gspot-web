@@ -2,18 +2,17 @@
 
 import { useState } from 'react';
 import FeedClient from "./feed-client";
-import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
+import { FeedFilter, FeedType } from '@/types/post';
 
 type FeedProps = {
   userId?: number | null;
   accountUserId?: number;
   type: FeedType;
   zoneId?: number | null,
-  initialPosts: GpsPostType[];
   showFilter?: boolean;
 };
 
-export default function Feed({ userId, accountUserId, type, zoneId, initialPosts, showFilter = true }: FeedProps) {
+export default function Feed({ userId, accountUserId, type, zoneId, showFilter = true }: FeedProps) {
   const [filter, setFilter] = useState<FeedFilter>('all');
 
   return (
@@ -34,11 +33,10 @@ export default function Feed({ userId, accountUserId, type, zoneId, initialPosts
         </div>
       )}
       <FeedClient
-        initialPosts={initialPosts}
         userId={userId}
         accountUserId={accountUserId}
         type={type}
-        zoneId={zoneId!}
+        zoneId={zoneId}
         filter={filter}
       />
     </div>

@@ -7,29 +7,41 @@ import { loadPosts } from '@/actions/feed';
 import { POSTS_PER_PAGE } from '@/types/constants';
 
 type FeedClientProps = {
-  initialPosts: GpsPostType[];
   userId?: number | null;
   accountUserId?: number;
   type: FeedType;
-  zoneId?: number;
+  zoneId?: number | null;
   filter: FeedFilter;
 };
 
 export default function FeedClient({
-  initialPosts,
   userId,
   accountUserId,
   type,
   zoneId,
   filter
 }: FeedClientProps) {
-  const [posts, setPosts] = useState(initialPosts);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(initialPosts.length === POSTS_PER_PAGE);
+  const [posts, setPosts] = useState<GpsPostType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const prevFilterRef = useRef(filter);
 
-  // Reload posts when filter changes
+  useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        const fetched = await loadPosts({ type, userId, accountUserId, zoneId, filter });
+        setPosts(fetched);
+        setHasMore(fetched.length === POSTS_PER_PAGE);
+      } catch (error) {
+        console.error('Failed to load initial posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitial();
+  }, []);
+
   useEffect(() => {
     if (prevFilterRef.current !== filter) {
       prevFilterRef.current = filter;
@@ -119,6 +131,9 @@ export default function FeedClient({
 
   return (
     <div className='mt-2 space-y-4'>
+      {loading && posts.length === 0 && (
+        <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
+      )}
       {posts.map(post => {
         return (
           <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />

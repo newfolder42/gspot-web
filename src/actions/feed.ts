@@ -7,7 +7,7 @@ import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
 type LoadPostsParams = {
   type: FeedType;
   userId?: number | null;
-  zoneId?: number;
+  zoneId?: number | null;
   accountUserId?: number;
   cursor?: { guessCount: number, date: string; id: number, shownCount: number };
   filter?: FeedFilter;
