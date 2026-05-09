@@ -345,7 +345,7 @@ export default function PostComments({
   return (
     <div className="mt-4">
       {/* Header bar */}
-      <div className="px-4 py-2 flex items-center justify-between gap-3">
+      <div className="px-4 py-2 flex items-center justify-end gap-3">
 
         <div className="flex items-center gap-2">
           {isAuthor && guessCount2 > 0 && (
@@ -356,7 +356,7 @@ export default function PostComments({
               title="რუკაზე ყველა გამოცნობის ჩვენება"
             >
               <MapPinIcon className="w-5 h-5" />
-              <span className="hidden sm:inline">რუკაზე ნახვა</span>
+              <span>რუკაზე ნახვა</span>
             </button>
           )}
 
@@ -367,8 +367,8 @@ export default function PostComments({
               onClick={() => setShowGuessModal(true)}
               className={actionButtonClass}
             >
-              <MapPinIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">სცადე</span>
+              <MapPinIcon className="w-5 h-5" />
+              <span>სცადე</span>
             </button>
           )}
         </div>
@@ -414,9 +414,7 @@ export default function PostComments({
 
       {/* Comments tree */}
       <div className="px-4 py-2 space-y-1">
-        {comments.length === 0 ? (
-          <p className="py-4 text-center text-sm text-zinc-400">კომენტარები არ არის</p>
-        ) : (
+        {comments && comments.length !== 0 &&
           comments.map((comment) => (
             <PostComment
               key={comment.id}
@@ -427,8 +425,7 @@ export default function PostComments({
               postAuthorAlias={postAuthorAlias}
               onCommentAdded={handleCommentAdded}
             />
-          ))
-        )}
+          ))}
       </div>
 
       {/* Guess modal */}

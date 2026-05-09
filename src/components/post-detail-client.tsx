@@ -7,10 +7,12 @@ import PostActions from './post-actions';
 import PostComments from './post-comments';
 import { MapPinIcon } from './icons';
 import ProfileAvatar from './common/profileAvatar';
+import TagBadge from './common/tag-badge';
 import type { GpsPostType } from '@/types/post';
 import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
 import type { PostGuessType } from '@/types/post-guess';
 import type { PostCommentType } from '@/types/post-comment';
+import type { ZoneTag } from '@/types/tag';
 
 type PostDetailClientProps = {
   post: GpsPostType;
@@ -18,9 +20,10 @@ type PostDetailClientProps = {
   comments: PostCommentType[];
   currentUser: string;
   alreadyGuessed: boolean;
+  zoneTags: ZoneTag[];
 };
 
-export default function PostDetailClient({ post, guesses, comments, currentUser, alreadyGuessed }: PostDetailClientProps) {
+export default function PostDetailClient({ post, guesses, comments, currentUser, alreadyGuessed, zoneTags }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
   const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
 
@@ -51,21 +54,20 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
                 {post.zoneSlug}
               </Link>
               <span className="text-xs text-zinc-400">•</span>
-              <div className="flex items-center gap-1.5">
-                <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
-                <span className="text-xs text-zinc-400">•</span>
-                <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
-                {post.status === 'failed' && (
-                  <svg className="w-3 h-3 text-rose-600" viewBox="0 0 12 12" aria-label="Post failed" role="img">
-                    <circle cx="6" cy="6" r="5.5" fill="currentColor" />
-                  </svg>
-                )}
-              </div>
+              <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
+              <span className="text-xs text-zinc-400">•</span>
+              <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
+              {post.status === 'failed' && (
+                <svg className="w-3 h-3 text-rose-600" viewBox="0 0 12 12" aria-label="Post failed" role="img">
+                  <circle cx="6" cy="6" r="5.5" fill="currentColor" />
+                </svg>
+              )}
             </div>
+            {post.tag && <TagBadge name={post.tag.name} color={post.tag.color} />}
             <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
           </div>
           <div className="flex-shrink-0">
-            <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
+            <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} currentTagId={post.tag?.id ?? null} zoneTags={zoneTags} />
           </div>
         </div>
 

@@ -1,6 +1,8 @@
 import { logerror } from '@/lib/logger';
 import { becomeZoneMember, getUserPostZones, getZoneById, getZone as getZoneLib, getZoneMember as getZoneMemberLib, leaveZoneMember } from '@/lib/zones';
+import { getZoneTags } from '@/lib/tags';
 import type { ZoneBaseType, ZoneMemberInfo } from '@/types/zone';
+import type { ZoneTag } from '@/types/tag';
 
 export type ZoneStatus = 'active' | 'archived' | 'disabled';
 export type ZoneVisibility = 'public' | 'private';
@@ -26,6 +28,7 @@ export type ZoneSubmitType = {
   created_at: string;
   updated_at: string;
   settings: ZoneSettinsType;
+  tags: ZoneTag[];
 };
 
 export type ZoneMemberType = Omit<ZoneMemberInfo, 'role' | 'status'> & {
@@ -75,12 +78,16 @@ export function getZoneUploadRules(uploadRules: unknown): string[] {
 
 export async function getAvailableZonesForPost(userId: number): Promise<ZoneSubmitType[]> {
   const zones = await getUserPostZones(userId);
-  return zones.map((z) => ({
-    ...z,
-    settings: {
-      upload_rules: getZoneUploadRules(z.upload_rules),
-    },
-  }));
+  const withTags = await Promise.all(
+    zones.map(async (z) => ({
+      ...z,
+      settings: {
+        upload_rules: getZoneUploadRules(z.upload_rules),
+      },
+      tags: await getZoneTags(z.id),
+    }))
+  );
+  return withTags;
 }
 
 export async function getZone(slug: string): Promise<ZoneType | null> {

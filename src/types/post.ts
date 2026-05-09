@@ -6,7 +6,7 @@ export type PostType = {
   author: string;
   date: string;
   status: 'processing' | 'published' | 'failed' | 'deleted';
-  zoneId?: number;
+  zoneId: number;
   zoneSlug?: string;
   zoneProfilePhoto?: string | null;
 };
@@ -33,6 +33,7 @@ export type GpsPostType = PostType & {
   userRating?: DifficultyLevel | null;
   guessCount?: number | null;
   userHasGuessed?: boolean;
+  tag?: { id: number; name: string; color: string } | null;
 }
 
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';

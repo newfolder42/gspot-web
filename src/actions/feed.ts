@@ -11,6 +11,7 @@ type LoadPostsParams = {
   accountUserId?: number;
   cursor?: { guessCount: number, date: string; id: number, shownCount: number };
   filter?: FeedFilter;
+  tagId?: number | null;
 } | {
   type: 'public';
   cursor?: { guessCount: number, id: number, shownCount: number };
@@ -31,6 +32,7 @@ type LoadPostsParams = {
   userId?: number | null;
   cursor?: { date: string; id: number };
   filter?: FeedFilter;
+  tagId?: number | null;
 };
 
 export async function loadPosts(params: LoadPostsParams): Promise<GpsPostType[]> {
@@ -42,7 +44,7 @@ export async function loadPosts(params: LoadPostsParams): Promise<GpsPostType[]>
     case 'global':
       return await getGlobalPosts(params.userId, POSTS_PER_PAGE, params.cursor, params.filter);
     case 'zone':
-      return await getZonePosts(params.zoneId!, params.userId, POSTS_PER_PAGE, params.cursor, params.filter);
+      return await getZonePosts(params.zoneId!, params.userId, POSTS_PER_PAGE, params.cursor, params.filter, params.tagId);
     case 'public':
     default:
       return await getPublicPosts(10, POSTS_PER_PAGE, params.cursor);

@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import { getZoneUploadRules, getZone, getZoneMember } from '@/actions/zones';
 import { getCurrentUser } from '@/lib/session';
 import { getZoneSettings } from '@/lib/zones';
+import { getZoneTags } from '@/lib/tags';
 import ZoneSettingsEditor from '@/components/zone/zone-settings-editor';
+import ZoneTagsEditor from '@/components/zone/zone-tags-editor';
 
 type Props = {
 	params: Promise<{ zoneSlug: string }>;
@@ -21,13 +23,20 @@ export default async function ZoneSettingsPage({ params }: Props) {
 		return notFound();
 	}
 
-	const settings = await getZoneSettings(zone.id);
+	const [settings, tags] = await Promise.all([
+		getZoneSettings(zone.id),
+		getZoneTags(zone.id),
+	]);
 
 	return (
-		<ZoneSettingsEditor
-			zoneSlug={zoneSlug}
-			initialDescription={zone.description ?? ''}
-			initialUploadRules={getZoneUploadRules(settings?.upload_rules)}
-		/>
+		<div className="space-y-8">
+			<ZoneSettingsEditor
+				zoneSlug={zoneSlug}
+				initialDescription={zone.description ?? ''}
+				initialUploadRules={getZoneUploadRules(settings?.upload_rules)}
+			/>
+			<hr className="border-zinc-200 dark:border-zinc-800" />
+			<ZoneTagsEditor zoneSlug={zoneSlug} initialTags={tags} />
+		</div>
 	);
 }

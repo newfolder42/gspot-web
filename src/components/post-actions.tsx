@@ -3,13 +3,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { getCurrentUser } from '@/lib/session';
 import { updatePostTitle, deletePost } from '@/lib/posts';
+import { setPostTag } from '@/lib/tags';
+import type { ZoneTag } from '@/types/tag';
+import TagPicker from '@/components/common/tag-picker';
 
-export default function PostActions({ postAuthor, postId, currentTitle }: { postAuthor: string; postId: number; currentTitle: string }) {
+export default function PostActions({ postAuthor, postId, currentTitle, currentTagId = null, zoneTags = [] }: { postAuthor: string; postId: number; currentTitle: string; currentTagId?: number | null; zoneTags?: ZoneTag[] }) {
   const [open, setOpen] = useState(false);
   const [isOwnPost, setIsOwnPost] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editTitle, setEditTitle] = useState(currentTitle ?? '');
+  const [editTagId, setEditTagId] = useState<number | null>(currentTagId);
   const [isLoading, setIsLoading] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -31,6 +35,8 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
   }, []);
 
   const handleEditClick = () => {
+    setEditTitle(currentTitle ?? '');
+    setEditTagId(currentTagId);
     setShowEditModal(true);
     setOpen(false);
   };
@@ -41,15 +47,16 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
   };
 
   const handleSaveEdit = async () => {
-    if (!editTitle.trim()) {
-      return;
-    }
+    if (!editTitle.trim()) return;
 
     setIsLoading(true);
-    const success = await updatePostTitle(postId, editTitle.trim());
+    const [titleOk] = await Promise.all([
+      updatePostTitle(postId, editTitle.trim()),
+      editTagId !== currentTagId ? setPostTag(postId, editTagId) : Promise.resolve(true),
+    ]);
     setIsLoading(false);
 
-    if (success) {
+    if (titleOk) {
       setShowEditModal(false);
       window.location.reload();
     }
@@ -93,15 +100,21 @@ export default function PostActions({ postAuthor, postId, currentTitle }: { post
 
       {showEditModal && (
         <div className="fixed inset-0 z-layer-modal bg-black/50 flex items-center justify-center">
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">რედაქტირება</h2>
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-6 max-w-md w-full mx-4 space-y-4">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">რედაქტირება</h2>
             <input
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 mb-4"
+              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
               placeholder="პოსტის სათაური"
             />
+            {zoneTags.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">თეგი</p>
+                <TagPicker tags={zoneTags} selectedTagId={editTagId} onChange={setEditTagId} />
+              </div>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEditModal(false)}

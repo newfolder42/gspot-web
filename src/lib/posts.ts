@@ -271,7 +271,8 @@ export async function getZonePosts(
   userId?: number | null,
   limit = 20,
   cursor?: { date: string; id: number },
-  filter: 'all' | 'guessed' | 'not-guessed' = 'all'
+  filter: 'all' | 'guessed' | 'not-guessed' = 'all',
+  tagId?: number | null,
 ): Promise<(GpsPostType)[]> {
   try {
     const cursorCondition = cursor
@@ -285,6 +286,8 @@ export async function getZonePosts(
       filterCondition = 'and p.user_id <> $3 and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3)';
     }
 
+    const tagCondition = tagId ? `and exists(select 1 from post_tags pt where pt.post_id = p.id and pt.tag_id = ${Number(tagId)})` : '';
+
     const params = cursor
       ? [limit, zoneId, userId, cursor.date, cursor.id]
       : [limit, zoneId, userId];
@@ -292,15 +295,18 @@ export async function getZonePosts(
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
-       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
+       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
+left join post_tags ptt on ptt.post_id = p.id
+left join zone_tags zt on zt.id = ptt.tag_id
 where p.status = 'published'
   and z.id = $2
-  ${filterCondition} ${cursorCondition}
+  ${filterCondition} ${tagCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
@@ -320,6 +326,7 @@ limit $1`,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
+      tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
     }));
   } catch (err) {
     await logerror('getZonePosts error', [err]);
@@ -331,12 +338,16 @@ export async function getPostForView(userId: number, id: number): Promise<GpsPos
   try {
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
-       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count
+       (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count, zcp.public_url as zone_profile_photo_url,
+       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
 join user_content uc on uc.id = pc.content_id
+left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+left join post_tags ptt on ptt.post_id = p.id
+left join zone_tags zt on zt.id = ptt.tag_id
 where p.id = $1 and (
   $2 = p.user_id
   or (
@@ -364,10 +375,12 @@ limit 1`,
       zoneId: r.zone_id,
       zoneSlug: r.zone_slug,
       author: r.author_alias,
+      zoneProfilePhoto: r.zone_profile_photo_url ?? null,
       image: r.image_url || null,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
     };
   } catch (err) {
     await logerror('getPostForView error', [err]);
@@ -472,6 +485,7 @@ export async function createPost({
   zoneSlug,
   status = 'published',
   idempotencyKey,
+  tagId,
 }: {
   title?: string;
   contentId: number;
@@ -479,6 +493,7 @@ export async function createPost({
   zoneSlug: string;
   status?: 'processing' | 'published' | 'failed';
   idempotencyKey?: string | null;
+  tagId?: number | null;
 }): Promise<number | null> {
   try {
     const user = await getCurrentUser();
@@ -532,6 +547,13 @@ export async function createPost({
       `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
       [postId, contentId, 0]
     );
+
+    if (tagId) {
+      await query(
+        `INSERT INTO post_tags (post_id, tag_id) VALUES ($1, $2) ON CONFLICT (post_id) DO UPDATE SET tag_id = EXCLUDED.tag_id`,
+        [postId, tagId]
+      );
+    }
 
     if (idempotencyKey) {
       await query(

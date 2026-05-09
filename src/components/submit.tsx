@@ -11,6 +11,7 @@ import { ACCEPTED_IMAGE_TYPES, UPLOAD_SIZE_LIMIT } from '@/lib/upload-config';
 import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import TagPicker from '@/components/common/tag-picker';
 
 declare global {
   interface Window {
@@ -79,7 +80,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center: mapCenter,
-        zoom: hasValidCoords ? 20 : 12,
+        zoom: hasValidCoords ? mapMaxZoom : 12,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
@@ -284,6 +285,7 @@ export default function Submit({
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [coords, setCoords] = useState<{ latitude: number | null; longitude: number | null } | null>(null);
   const [dateTaken, setDateTaken] = useState<Date | null>(null);
@@ -401,6 +403,7 @@ export default function Submit({
                 zoneId: selectedZone!.id,
                 zoneSlug: selectedZone!.slug,
                 idempotencyKey,
+                tagId: selectedTagId,
               });
               if (postId) {
                 router.push(`/post/${postId}`);
@@ -430,17 +433,17 @@ export default function Submit({
 
   const formatDateOnly = (d: Date | null) => {
     if (!d) return '';
-    const tzOffset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - tzOffset * 60000);
-    return local.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const parseDateOnly = (dateVal: string) => {
     if (!dateVal) return null;
     const [y, m, day] = dateVal.split('-').map((s) => parseInt(s, 10));
-    const local = new Date(y, m - 1, day); // local midnight
-    const tzOffset = new Date().getTimezoneOffset();
-    return new Date(local.getTime() + tzOffset * 60000);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) return null;
+    return new Date(y, m - 1, day);
   };
 
   const validateDateTaken = (d: Date | null) => {
@@ -510,18 +513,18 @@ export default function Submit({
             <h3 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">ახალი პოსტის შექმნა</h3>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <div className="mb-4 p-3 bg-red-50">
                 <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
               </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-4 lg:gap-6 items-start">
               <div className="space-y-4">
-                <div className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 space-y-4">
+                <div className="space-y-4">
                   <div className="block text-sm">
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">საბზონა</label>
                     <div className="mt-1">
-                      <ZoneDropdown zones={zones} selected={selectedZone} onSelect={setSelectedZone} />
+                      <ZoneDropdown zones={zones} selected={selectedZone} onSelect={(z) => { setSelectedZone(z); setSelectedTagId(null); }} />
                       {zones.length === 0 && (
                         <p className="mt-1 text-xs text-zinc-500">შენ არ ხარ არცერთი საბზონის წევრი</p>
                       )}
@@ -553,10 +556,14 @@ export default function Submit({
                       />
                     </label>
                   </div>
+
+                  {selectedZone && selectedZone.tags.length > 0 && (
+                      <TagPicker tags={selectedZone.tags} selectedTagId={selectedTagId} onChange={setSelectedTagId} />
+                  )}
                 </div>
 
                 {!photo && (
-                  <div className="p-4 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900">
+                  <div className="text-xs text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900">
                     {processing ? (
                       <div className="flex flex-col items-center justify-center py-8 space-y-4">
                         <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />

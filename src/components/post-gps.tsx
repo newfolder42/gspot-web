@@ -1,20 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import PostActions from "./post-actions";
 import type { GpsPostType } from "@/types/post";
 import { formatActionDate, formatPhotoTakenDate } from "@/lib/dates";
 import { useState } from "react";
 import { MapPinIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
-
+import TagBadge from "./common/tag-badge";
 export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: boolean }) {
 
   const [isPortrait, setIsPortrait] = useState(false);
 
   return (
     <article className="overflow-hidden">
-      <div className="flex items-start p-2">
-        <div className="flex-1">
+      <div className="p-2">
           <div className="flex items-center gap-1.5">
             {showZone && post.zoneSlug && (
                 <Link href={`/zone/${post.zoneSlug}`} className="flex items-center gap-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">
@@ -46,11 +44,8 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
               </svg>
             )}
           </div>
+          {post.tag && <TagBadge name={post.tag.name} color={post.tag.color} />}
           <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
-        </div>
-        <div className="flex-shrink-0">
-          <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} />
-        </div>
       </div>
       <div className="relative">
         <Link href={`/post/${post.id}`} className="block w-full">

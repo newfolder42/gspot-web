@@ -7,7 +7,7 @@ import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
-import { mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { mapMaxBounds, mapMaxZoom, mapDefaultCenter } from '@/lib/map';
 
 declare global {
   interface Window {
@@ -18,8 +18,8 @@ declare global {
 export default function NewGuess({ postId, postImage, postTitle, onClose, onSubmitted }:
   { postId: number; postImage?: string; postTitle?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
   const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number }>({
-    latitude: 41.7151,
-    longitude: 44.8271
+    latitude: mapDefaultCenter[1],
+    longitude: mapDefaultCenter[0]
   });
   const [submitting, setSubmitting] = useState<null | "submitting" | "success" | "error">(null);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -217,28 +217,33 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
       {postImage && (
         <div className="fixed inset-0 z-layer-modal bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
           {/* Control buttons header */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3">
-            <button
-              onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
-              className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
-              title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
-              aria-label="Toggle between image and map"
-            >
-              {showMapOrImage === "image" ? (
-                <MapPinIcon className="w-5 h-5" />
-              ) : (
-                <ImageIcon className="w-5 h-5" />
-              )}
-            </button>
+          <div className="flex items-center justify-between gap-2 px-4 py-3">
+            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              {postTitle}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
+                className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
+                title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
+                aria-label="Toggle between image and map"
+              >
+                {showMapOrImage === "image" ? (
+                  <MapPinIcon className="w-5 h-5" />
+                ) : (
+                  <ImageIcon className="w-5 h-5" />
+                )}
+              </button>
 
-            <button
-              onClick={onClose}
-              className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
-              title="დახურვა"
-              aria-label="დახურვა"
-            >
-              <XIcon className="w-5 h-5" />
-            </button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
+                title="დახურვა"
+                aria-label="დახურვა"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Panels container */}
