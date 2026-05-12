@@ -33,6 +33,7 @@ export async function extractGPSCorrdinates(file: File): Promise<{ latitude: num
       }
     }
   } catch (err) {
+    console.log('extractGPSCorrdinates error', err);
     return null;
   }
   return null;

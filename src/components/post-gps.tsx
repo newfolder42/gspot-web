@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { GpsPostType } from "@/types/post";
 import { formatActionDate, formatPhotoTakenDate } from "@/lib/dates";
 import { useState } from "react";
-import { MapPinIcon } from "./icons";
+import { MapPinIcon, MessageIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
 import TagBadge from "./common/tag-badge";
 export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: boolean }) {
@@ -74,7 +74,11 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
           aria-label="გამოცნობების ნახვა"
         >
           <MapPinIcon className="w-4 h-4" />
-          <span className="text-sm font-semibold">{post.guessCount ?? '0'}</span>
+          <span className="text-sm font-semibold">{post.guessCount ?? 0}</span>
+          <span className="ml-2 text-sm font-semibold text-zinc-50 flex items-center gap-1">
+            <MessageIcon className="w-4 h-4" />
+            {post.commentCount ?? 0}
+          </span>
         </Link>
       </div>
     </article>

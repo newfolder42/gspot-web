@@ -28,6 +28,7 @@ type PostCommentsProps = {
   postTitle?: string;
   guessCount: number;
   onGuessSubmitted?: (guess: PostGuessType) => void;
+  onCommentAdded?: (comment: PostCommentType) => void;
 };
 
 function insertComment(
@@ -59,6 +60,7 @@ export default function PostComments({
   postTitle,
   guessCount,
   onGuessSubmitted,
+  onCommentAdded,
 }: PostCommentsProps) {
   const [comments, setComments] = useState<PostCommentType[]>(initialComments);
   const [body, setBody] = useState('');
@@ -78,6 +80,7 @@ export default function PostComments({
 
   const handleCommentAdded = (newComment: PostCommentType) => {
     setComments((prev) => insertComment(prev, newComment));
+    if (typeof onCommentAdded === 'function') onCommentAdded(newComment);
   };
 
   const refreshComments = async () => {
@@ -92,7 +95,7 @@ export default function PostComments({
     try {
       const newComment = await addCommentAction(postId, trimmed, null);
       if (newComment) {
-        setComments((prev) => [newComment, ...prev]);
+        handleCommentAdded(newComment);
         setBody('');
         setComposerExpanded(false);
       }

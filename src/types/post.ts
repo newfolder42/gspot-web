@@ -1,6 +1,6 @@
 export type PostType = {
   id: number;
-  type: string;
+  type: PostTypeType;
   title: string;
   userId: number;
   author: string;
@@ -32,9 +32,11 @@ export type GpsPostType = PostType & {
   ratings?: GpsPostRatingType;
   userRating?: DifficultyLevel | null;
   guessCount?: number | null;
+  commentCount?: number | null;
   userHasGuessed?: boolean;
   tag?: { id: number; name: string; color: string } | null;
 }
 
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
 export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone';
+export type PostTypeType = 'gps-photo' | 'text';

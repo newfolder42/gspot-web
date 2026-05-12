@@ -1,4 +1,4 @@
-import { getLevelFromXp, XPInfo } from '@/lib/xp';
+import { XPInfo } from '@/lib/xp';
 
 type Props = {
   xp: XPInfo;

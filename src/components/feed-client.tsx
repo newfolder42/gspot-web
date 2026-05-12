@@ -134,11 +134,9 @@ export default function FeedClient({
       {loading && posts.length === 0 && (
         <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
       )}
-      {posts.map(post => {
-        return (
-          <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
-        );
-      })}
+      {posts.map(post => (
+        <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
+      ))}
 
       {hasMore && (
         <div

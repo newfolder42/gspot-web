@@ -37,6 +37,7 @@ export async function getConnectionsPosts(
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
@@ -71,6 +72,7 @@ limit $1`,
       image: r.image_url,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
@@ -105,6 +107,7 @@ export async function getAccountPosts(
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
 from posts p
 join zones z on z.id = p.zone_id
@@ -132,6 +135,7 @@ limit $1`,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
@@ -165,6 +169,7 @@ export async function getGlobalPosts(
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed
 from posts p
 join zones z on z.id = p.zone_id
@@ -199,6 +204,7 @@ limit $1`,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
     }));
   } catch (err) {
@@ -223,8 +229,9 @@ export async function getPublicPosts(
 
     const res = await query(
       `with public_posts as (
-         select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
-                (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count
+          select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
+            (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count,
+            (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment')::int as comment_count
          from posts p
          join zones z on z.id = p.zone_id
          join post_content pc on p.id = pc.post_id
@@ -258,6 +265,7 @@ export async function getPublicPosts(
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      commentCount: r.comment_count ?? 0,
       userHasGuessed: false,
     }));
   } catch (err) {
@@ -295,6 +303,7 @@ export async function getZonePosts(
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+       (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment') as comment_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
        zt.id as tag_id, zt.name as tag_name, zt.color as tag_color
 from posts p
@@ -325,6 +334,7 @@ limit $1`,
       dateTaken: r.details?.dateTaken || null,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
+      commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
       tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
     }));

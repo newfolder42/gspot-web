@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PostActions from './post-actions';
 import PostComments from './post-comments';
-import { MapPinIcon } from './icons';
+import { MapPinIcon, MessageIcon } from './icons';
 import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
 import type { GpsPostType } from '@/types/post';
@@ -16,14 +16,13 @@ import type { ZoneTag } from '@/types/tag';
 
 type PostDetailClientProps = {
   post: GpsPostType;
-  guesses: PostGuessType[];
   comments: PostCommentType[];
   currentUser: string;
   alreadyGuessed: boolean;
   zoneTags: ZoneTag[];
 };
 
-export default function PostDetailClient({ post, guesses, comments, currentUser, alreadyGuessed, zoneTags }: PostDetailClientProps) {
+export default function PostDetailClient({ post, comments, currentUser, alreadyGuessed, zoneTags }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
   const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
 
@@ -31,9 +30,17 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
   const [canGuess, setCanGuess] = useState(userCanGuess);
   const [guessCount, setGuessCount] = useState(Number(post.guessCount) || 0);
 
-  const handleGuessSubmitted = (newGuess: PostGuessType) => {
+  const handleGuessSubmitted = (_: PostGuessType) => {
     setCanGuess(false);
     setGuessCount(prev => prev + 1);
+  };
+
+  // Track comment count for UI update
+  const [commentCount, setCommentCount] = useState(comments.filter(c => c.type !== 'gps-post-guess').length);
+
+  // Handler to update comment count after new comment
+  const handleCommentAdded = (newComment: PostCommentType) => {
+    if (newComment.type !== 'gps-post-guess') setCommentCount(prev => prev + 1);
   };
 
   return (
@@ -92,6 +99,10 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
             >
               <MapPinIcon className="w-4 h-4" />
               <span className="text-sm font-semibold">{guessCount}</span>
+              <span className="ml-2 text-sm font-semibold text-zinc-50 flex items-center gap-1">
+                <MessageIcon className="w-4 h-4" />
+                {commentCount}
+              </span>
             </Link>
             {post.dateTaken && (
               <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
@@ -114,6 +125,7 @@ export default function PostDetailClient({ post, guesses, comments, currentUser,
           postTitle={post.title || ''}
           guessCount={guessCount}
           onGuessSubmitted={handleGuessSubmitted}
+          onCommentAdded={handleCommentAdded}
         />
       </div>
     </main>
