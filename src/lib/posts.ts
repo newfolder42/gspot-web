@@ -716,6 +716,85 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
   }
 }
 
+export async function createPhotoGuess({ postId, coordinates, distance, score, imageUrl }: {
+  postId: number;
+  coordinates: { latitude: number; longitude: number };
+  distance: number;
+  score: number;
+  imageUrl: string;
+}): Promise<PostGuessType | null> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return null;
+    const userId = user.userId;
+
+    const post = await getPostById(postId);
+    if (!post) return null;
+
+    const exists = await query(
+      `select pg.id, pg.post_id, pg.user_id, pg.type, pg.details, pg.created_at, u.alias as author_alias
+       from post_guesses pg
+       join users u on pg.user_id = u.id
+       where pg.post_id = $1 and pg.user_id = $2 limit 1`,
+      [postId, userId]
+    );
+    if ((exists?.rowCount ?? 0) > 0) {
+      const r = exists.rows[0];
+      return {
+        id: r.id,
+        postId: r.post_id,
+        userId: r.user_id,
+        author: r.author_alias,
+        type: r.type,
+        createdAt: r.created_at,
+        distance: r.details?.distance ?? null,
+        score: r.details?.score ?? null,
+      };
+    }
+
+    const data = await query(
+      `insert into post_guesses (post_id, user_id, type, details) values ($1, $2, $3, $4) returning id, created_at`,
+      [postId, userId, 'gps-photo-guess', JSON.stringify({ coordinates, distance, score })]
+    );
+
+    const guessId = data.rows[0].id;
+
+    await query(
+      `insert into user_content (user_id, type, public_url, details)
+       values ($1, 'guess-photo', $2, $3)`,
+      [userId, imageUrl, JSON.stringify({ guessId, postId })]
+    );
+
+    await createGuessComment({ postId, userId, guessId, score, distance, type: 'gps-photo-guess-comment', imageUrl });
+
+    await eventBus.publish('post', 'guessed', {
+      postId: +postId,
+      guessType: 'gps-photo-guess',
+      authorId: +post.userId,
+      authorAlias: post.author,
+      userId: +user.userId,
+      userAlias: user.alias,
+      score,
+      zoneId: +(post.zoneId ?? 0),
+      zoneSlug: post.zoneSlug || 'public',
+    } as PostGuessedEvent);
+
+    return {
+      id: guessId,
+      postId: postId,
+      userId: userId,
+      author: user.alias,
+      type: 'gps-photo-guess',
+      createdAt: data.rows[0].created_at,
+      distance: distance,
+      score: score,
+    };
+  } catch (err) {
+    await logerror('createPhotoGuess error', [err]);
+    return null;
+  }
+}
+
 export async function getPhotoCoordinates({ postId }: { postId: number }): Promise<{ coordinates: { latitude: number; longitude: number } } | null> {
   try {
     const data = await query(

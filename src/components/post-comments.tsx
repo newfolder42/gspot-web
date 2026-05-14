@@ -6,8 +6,9 @@ import type { PostGuessMapDataType, PostGuessType } from '@/types/post-guess';
 import { addCommentAction, loadPostCommentsAction } from '@/actions/comments';
 import PostComment from './post-comment';
 import NewGuess from './new-guess';
+import NewPhotoGuess from './new-photo-guess';
 import { getPostGuessMapPoints } from '@/lib/posts';
-import { MessageIcon, MapPinIcon, XIcon } from './icons';
+import { MapPinIcon, XIcon, CameraIcon } from './icons';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { useEffect, useRef } from 'react';
 
@@ -67,6 +68,7 @@ export default function PostComments({
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showGuessModal, setShowGuessModal] = useState(false);
+  const [showPhotoGuessModal, setShowPhotoGuessModal] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [loadingMapPoints, setLoadingMapPoints] = useState(false);
   const [mapPointsError, setMapPointsError] = useState<string | null>(null);
@@ -363,16 +365,26 @@ export default function PostComments({
             </button>
           )}
 
-          {/* Non-author: guess button */}
+          {/* Non-author: guess buttons */}
           {!isAuthor && canGuess2 && (
-            <button
-              type="button"
-              onClick={() => setShowGuessModal(true)}
-              className={actionButtonClass}
-            >
-              <MapPinIcon className="w-5 h-5" />
-              <span>სცადე</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setShowGuessModal(true)}
+                className={actionButtonClass}
+              >
+                <MapPinIcon className="w-5 h-5" />
+                <span>რუკაზე</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPhotoGuessModal(true)}
+                className={actionButtonClass}
+              >
+                <CameraIcon className="w-5 h-5" />
+                <span>ადგილზე</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -430,6 +442,16 @@ export default function PostComments({
             />
           ))}
       </div>
+
+      {/* Photo guess modal */}
+      {showPhotoGuessModal && (
+        <NewPhotoGuess
+          postId={postId}
+          postTitle={postTitle}
+          onClose={() => setShowPhotoGuessModal(false)}
+          onSubmitted={handleGuessSubmitted}
+        />
+      )}
 
       {/* Guess modal */}
       {showGuessModal && (

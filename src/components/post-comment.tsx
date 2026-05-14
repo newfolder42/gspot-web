@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { PostCommentType } from '@/types/post-comment';
 import { formatTimePassed } from '@/lib/dates';
 import { addCommentAction } from '@/actions/comments';
-import { ReplyIcon, MapPinIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/icons';
+import { ReplyIcon, MapPinIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/icons';
 import { getInitials } from '@/lib/getInitials';
 
 type PostCommentProps = {
@@ -66,7 +67,8 @@ export default function PostComment({
   };
 
   const isDeleted = !!comment.deletedAt;
-  const isGuess = comment.type === 'gps-post-guess';
+  const isGuess = comment.type === 'gps-guess-comment' || comment.type === 'gps-photo-guess-comment';
+  const isPhotoGuess = comment.type === 'gps-photo-guess-comment';
   const isPostAuthor = comment.author === postAuthorAlias;
   const hasChildren = comment.children.length > 0;
   const borderColor = DEPTH_COLORS[depth % DEPTH_COLORS.length];
@@ -111,10 +113,10 @@ export default function PostComment({
           {isGuess && (
             <span
               className="inline-flex items-center text-teal-600 dark:text-teal-400"
-              title="გამოცნობა"
-              aria-label="გამოცნობა"
+              title={isPhotoGuess ? 'გამოცნობა ადგილზე' : 'გამოცნობა'}
+              aria-label={isPhotoGuess ? 'გამოცნობა ადგილზე' : 'გამოცნობა'}
             >
-              <MapPinIcon className="w-3 h-3" />
+              {isPhotoGuess ? <CameraIcon className="w-3 h-3" /> : <MapPinIcon className="w-3 h-3" />}
             </span>
           )}
           <span className="text-xs text-zinc-400">•</span>
@@ -132,19 +134,32 @@ export default function PostComment({
             {isDeleted ? (
               <p className="text-xs italic text-zinc-400 mb-1">კომენტარი წაიშალა</p>
             ) : isGuess ? (
-              <div className="text-sm text-zinc-700 dark:text-zinc-300 mb-1 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 inline-block">
-                {comment.metadata?.score != null && (
-                  <span className="mr-3">
-                    <span className="text-zinc-500 dark:text-zinc-400 text-xs">ქულა </span>
-                    <span className="font-semibold text-teal-600 dark:text-teal-400">{comment.metadata.score}</span>
-                  </span>
+              <div className="mb-1 space-y-1.5">
+                {isPhotoGuess && comment.metadata?.imageUrl && (
+                  <div className="w-52 h-40 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800">
+                    <Image
+                      src={comment.metadata.imageUrl}
+                      alt="guess photo"
+                      width={208}
+                      height={160}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 )}
-                {comment.metadata?.distance != null && (
-                  <span>
-                    <span className="text-zinc-500 dark:text-zinc-400 text-xs">მანძილი </span>
-                    <span className="font-semibold">{comment.metadata.distance.toLocaleString("ka-GE")} მ</span>
-                  </span>
-                )}
+                <div className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 inline-flex items-center gap-2">
+                  {comment.metadata?.score != null && (
+                    <span className="mr-3">
+                      <span className="text-zinc-500 dark:text-zinc-400 text-xs">ქულა </span>
+                      <span className="font-semibold text-teal-600 dark:text-teal-400">{comment.metadata.score}</span>
+                    </span>
+                  )}
+                  {comment.metadata?.distance != null && (
+                    <span>
+                      <span className="text-zinc-500 dark:text-zinc-400 text-xs">მანძილი </span>
+                      <span className="font-semibold">{comment.metadata.distance.toLocaleString("ka-GE")} მ</span>
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-zinc-800 dark:text-zinc-200 mb-1 whitespace-pre-wrap break-words">

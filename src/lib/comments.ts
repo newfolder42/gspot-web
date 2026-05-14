@@ -162,21 +162,26 @@ export async function createGuessComment({
   guessId,
   score,
   distance,
+  type = 'gps-guess-comment',
+  imageUrl,
 }: {
   postId: number;
   userId: number;
   guessId: number;
   score: number;
   distance: number;
+  type?: 'gps-guess-comment' | 'gps-photo-guess-comment';
+  imageUrl?: string;
 }): Promise<void> {
   try {
     await query(
       `insert into post_comments (post_id, user_id, body, type, metadata, guess_id)
-       values ($1, $2, '', 'gps-post-guess', $3, $4)`,
+       values ($1, $2, '', $3, $4, $5)`,
       [
         postId,
         userId,
-        JSON.stringify({ score, distance }),
+        type,
+        JSON.stringify({ score, distance, ...(imageUrl ? { imageUrl } : {}) }),
         guessId,
       ]
     );

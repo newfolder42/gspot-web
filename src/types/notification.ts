@@ -1,6 +1,6 @@
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created';
   user: {
     userId: number;
     alias: string;
@@ -63,7 +63,7 @@ export type NotificationPostCommentCreatedDetailsType = {
   } | null,
   commenterId: number,
   commenterAlias: string,
-  commentType: 'comment' | 'gps-post-guess',
+  commentType: 'comment' | 'gps-guess-comment'| 'gps-photo-guess-comment',
 }
 
 // Normalize `details` to a plain object regardless of input shape.
@@ -92,6 +92,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'gps-guess': {
       const d = details as NotificationGpsGuessDetailsType;
       return `${d.userAlias}-მა შენს პოსტზე სცადა გამოცნობა (${d.score} ქულა)`;
+    }
+    case 'gps-photo-guess': {
+      const d = details as NotificationGpsGuessDetailsType;
+      return `${d.userAlias}-მა შენს პოსტზე სცადა გამოცნობა ადგილზე ფოტოს გადაღებით (${d.score} ქულა)`;
     }
     case 'connection-created-gps-post': {
       const d = details as NotificationConnectionPublishedGpsPostDetailsType;
@@ -133,6 +137,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
 export function getNotificationRoute(notification: NotificationType): string | null {
   switch (notification.type) {
     case 'gps-guess': {
+      const d = notification.details as NotificationGpsGuessDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'gps-photo-guess': {
       const d = notification.details as NotificationGpsGuessDetailsType;
       return `/post/${d.postId}`;
     }

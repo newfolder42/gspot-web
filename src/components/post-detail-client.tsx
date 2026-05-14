@@ -36,11 +36,11 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
   };
 
   // Track comment count for UI update
-  const [commentCount, setCommentCount] = useState(comments.filter(c => c.type !== 'gps-post-guess').length);
+  const [commentCount, setCommentCount] = useState(comments.filter(c => c.type === 'comment').length);
 
   // Handler to update comment count after new comment
   const handleCommentAdded = (newComment: PostCommentType) => {
-    if (newComment.type !== 'gps-post-guess') setCommentCount(prev => prev + 1);
+    if (newComment.type === 'comment') setCommentCount(prev => prev + 1);
   };
 
   return (
@@ -94,8 +94,8 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
             <Link
               href={`#comments`}
               className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"
-              title="გამოცნობების ნახვა"
-              aria-label="გამოცნობების ნახვა"
+              title="კონტრიბუციის ნახვა"
+              aria-label="კონტრიბუციის ნახვა"
             >
               <MapPinIcon className="w-4 h-4" />
               <span className="text-sm font-semibold">{guessCount}</span>

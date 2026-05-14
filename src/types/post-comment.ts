@@ -5,8 +5,8 @@ export type PostCommentType = {
   author: string;
   parentId: number | null;
   body: string;
-  type: 'comment' | 'gps-post-guess';
-  metadata: { score?: number | null; distance?: number | null } | null;
+  type: 'comment' | 'gps-guess-comment' | 'gps-photo-guess-comment';
+  metadata: { score?: number | null; distance?: number | null; imageUrl?: string | null } | null;
   guessId: number | null;
   createdAt: string;
   deletedAt: string | null;
