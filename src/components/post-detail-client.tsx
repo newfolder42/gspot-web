@@ -35,12 +35,14 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
     setGuessCount(prev => prev + 1);
   };
 
-  // Track comment count for UI update
-  const [commentCount, setCommentCount] = useState(comments.filter(c => c.type === 'comment').length);
+  const countComments = (items: PostCommentType[]): number =>
+    items.reduce((acc, c) => acc + (c.type === 'comment' ? 1 : 0) + countComments(c.children), 0);
+  
+  const [commentCount, setCommentCount] = useState(() => countComments(comments));
 
   // Handler to update comment count after new comment
   const handleCommentAdded = (newComment: PostCommentType) => {
-    if (newComment.type === 'comment') setCommentCount(prev => prev + 1);
+    if (newComment.type === 'comment') setCommentCount(prev => prev + 1 + countComments(newComment.children));
   };
 
   return (
