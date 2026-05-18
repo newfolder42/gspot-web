@@ -33,7 +33,7 @@ export default async function LeaderboardsPage({ params, searchParams }: Props) 
   const monthKeys = recentPeriodKeys('monthly', 12);
   const allValidKeys = ['total', ...weekKeys, ...monthKeys];
 
-  const periodKey = rawPeriod && allValidKeys.includes(rawPeriod) ? rawPeriod : 'weekly';
+  const periodKey = rawPeriod && allValidKeys.includes(rawPeriod) ? rawPeriod : 'total';
 
   const entries: LeaderboardEntry[] = await getLeaderboard('gps-guessers', zoneSlug, periodKey, 50, 0);
 
@@ -45,7 +45,7 @@ export default async function LeaderboardsPage({ params, searchParams }: Props) 
   const podiumMeta = [
     { rank: 2, label: '#2', platformH: 'h-16', badgeCn: 'bg-slate-300 dark:bg-slate-500 text-zinc-900' },
     { rank: 1, label: '#1', platformH: 'h-24', badgeCn: 'bg-amber-400 dark:bg-amber-300 text-zinc-900' },
-    { rank: 3, label: '#3', platformH: 'h-10', badgeCn: 'bg-[#b87333] dark:bg-slate-500 text-zinc-900' },
+    { rank: 3, label: '#3', platformH: 'h-10', badgeCn: 'bg-[#b87333] dark:bg-[#b87333] text-zinc-900' },
   ] as const;
 
   return (
@@ -97,7 +97,7 @@ export default async function LeaderboardsPage({ params, searchParams }: Props) 
                     </span>
                     <span className="block text-ms text-zinc-500 dark:text-zinc-400">{entry.rating} ქ.</span>
                   </Link>
-                  <div className={`${meta.platformH} w-full rounded-t-md ${meta.badgeCn} opacity-40`} />
+                  <div className={`${meta.platformH} w-full rounded-t-md ${meta.badgeCn}`} />
                 </div>
               );
             })}
