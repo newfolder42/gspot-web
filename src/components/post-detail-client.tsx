@@ -37,13 +37,38 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
 
   const countComments = (items: PostCommentType[]): number =>
     items.reduce((acc, c) => acc + (c.type === 'comment' ? 1 : 0) + countComments(c.children), 0);
-  
+
   const [commentCount, setCommentCount] = useState(() => countComments(comments));
 
   // Handler to update comment count after new comment
   const handleCommentAdded = (newComment: PostCommentType) => {
     if (newComment.type === 'comment') setCommentCount(prev => prev + 1 + countComments(newComment.children));
   };
+
+  function buildCommentTree(flat: PostCommentType[]): PostCommentType[] {
+    const map = new Map<number, PostCommentType>();
+    const roots: PostCommentType[] = [];
+
+    for (const c of flat) {
+      map.set(c.id, { ...c, children: [] });
+    }
+
+    for (const c of flat) {
+      const node = map.get(c.id)!;
+      if (c.parentId === null) {
+        roots.push(node);
+      } else {
+        const parent = map.get(c.parentId);
+        if (parent) {
+          parent.children.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+    }
+
+    return roots;
+  }
 
   return (
     <main className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
@@ -117,7 +142,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
 
       <div id="comments">
         <PostComments
-          comments={comments}
+          comments={buildCommentTree(comments)}
           postId={post.id}
           postAuthorAlias={post.author}
           isAuthor={isAuthor}

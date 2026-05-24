@@ -5,12 +5,13 @@ import Link from "next/link";
 import { NotificationType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
 import { formatTimePassed } from "@/lib/dates";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon } from "@/components/icons";
 
 export function NotificationIcon({ type, className }: { type: NotificationType['type']; className?: string }) {
   const cls = className ?? "w-4 h-4 shrink-0";
   switch (type) {
     case 'gps-guess': return <MapPinIcon className={cls} />;
+    case 'gps-photo-guess': return <CameraIcon className={cls} />;
     case 'connection-created-gps-post': return <ImageIcon className={cls} />;
     case 'gps-post-failed': return <AlertTriangleIcon className={cls} />;
     case 'user-started-following': return <UsersIcon className={cls} />;

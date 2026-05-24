@@ -43,16 +43,16 @@ export function calculateGuessScore(distanceMeters: number): number {
 }
 
 /**
- * Calculate score for a photo-based guess (max 100).
+ * Calculate score for a photo-based guess (max 200).
  * Perfect threshold is 50m (wider than regular 30m) to account for GPS capture inaccuracy.
  * @param distanceMeters - Distance between guess and actual location in meters
- * @returns Score between 1 and 100
+ * @returns Score between 1 and 200
  */
 export function calculatePhotoGuessScore(distanceMeters: number): number {
   if (distanceMeters < 0) return 0;
 
-  // Perfect: 0-50m -> 100 points
-  if (distanceMeters <= 50) return 100;
+  // Perfect: 0-50m -> 200 points
+  if (distanceMeters <= 50) return 200;
 
   // Excellent: 50-150m -> 80-99 points
   if (distanceMeters <= 150) {
