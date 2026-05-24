@@ -1,11 +1,11 @@
 import { getPostForView, postIsGuessedByUser } from '@/lib/posts';
-import { getPostComments } from '@/lib/comments';
 import type { Metadata } from 'next';
 import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
 import { getCurrentUser } from '@/lib/session';
 import { getZoneTags } from '@/lib/tags';
 import { PUBLIC_SITE_URL, APP_NAME } from '@/types/constants';
+import { loadPostCommentsAction } from '@/actions/comments';
 
 type Props = { params: Promise<{ id: number }> };
 
@@ -17,7 +17,7 @@ export default async function Page({ params }: Props) {
 
   const [alreadyGuessed, comments, zoneTags] = await Promise.all([
     currentUser ? postIsGuessedByUser(id, currentUser.userId) : Promise.resolve(false),
-    getPostComments(post.id),
+    loadPostCommentsAction(post.id),
     getZoneTags(post.zoneId),
   ]);
 

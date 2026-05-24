@@ -45,31 +45,6 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
     if (newComment.type === 'comment') setCommentCount(prev => prev + 1 + countComments(newComment.children));
   };
 
-  function buildCommentTree(flat: PostCommentType[]): PostCommentType[] {
-    const map = new Map<number, PostCommentType>();
-    const roots: PostCommentType[] = [];
-
-    for (const c of flat) {
-      map.set(c.id, { ...c, children: [] });
-    }
-
-    for (const c of flat) {
-      const node = map.get(c.id)!;
-      if (c.parentId === null) {
-        roots.push(node);
-      } else {
-        const parent = map.get(c.parentId);
-        if (parent) {
-          parent.children.push(node);
-        } else {
-          roots.push(node);
-        }
-      }
-    }
-
-    return roots;
-  }
-
   return (
     <main className="max-w-4xl mx-auto my-auto px-2 py-2 md:py-4">
       <article className="">
@@ -142,7 +117,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
 
       <div id="comments">
         <PostComments
-          comments={buildCommentTree(comments)}
+          comments={comments}
           postId={post.id}
           postAuthorAlias={post.author}
           isAuthor={isAuthor}
