@@ -11,6 +11,7 @@ import { getPostGuessMapPoints } from '@/lib/posts';
 import { MapPinIcon, XIcon, CameraIcon } from './icons';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
 declare global {
   interface Window {
@@ -75,6 +76,8 @@ export default function PostComments({
   const [mapData, setMapData] = useState<PostGuessMapDataType | null>(null);
   const [guessCount2, setGuessCount2] = useState(guessCount);
   const [canGuess2, setCanGuess2] = useState(canGuess);
+  const pathname = usePathname();
+  const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -366,11 +369,17 @@ export default function PostComments({
           )}
 
           {/* Non-author: guess buttons */}
-          {!isAuthor && canGuess2 && (
+          {!isAuthor && (canGuess2 || !currentUser) && (
             <>
               <button
                 type="button"
-                onClick={() => setShowGuessModal(true)}
+                onClick={() => {
+                  if (!currentUser) {
+                    router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
+                    return;
+                  }
+                  setShowGuessModal(true);
+                }}
                 className={actionButtonClass}
               >
                 <MapPinIcon className="w-5 h-5" />
@@ -378,7 +387,13 @@ export default function PostComments({
               </button>
               <button
                 type="button"
-                onClick={() => setShowPhotoGuessModal(true)}
+                onClick={() => {
+                  if (!currentUser) {
+                    router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
+                    return;
+                  }
+                  setShowPhotoGuessModal(true);
+                }}
                 className={actionButtonClass}
               >
                 <CameraIcon className="w-5 h-5" />

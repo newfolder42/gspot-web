@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CompassIcon, HomeIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HomeIcon, InfoIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 import ProfileAvatar from "@/components/common/profileAvatar";
 
@@ -10,7 +10,8 @@ type MobileNavProps = {
 export default function LeftPanel({ zones }: MobileNavProps) {
   return (
     <aside className="hidden md:block px-4 py-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 md:fixed md:left-0 md:top-14 md:h-[calc(100vh-56px)] md:w-56 md:rounded-none md:shadow-sm z-layer-sidebar">
-      <nav>
+      <nav className="flex flex-col h-full">
+        <div className="flex-1">
         <ul className="space-y-1">
           <li>
             <Link
@@ -67,6 +68,16 @@ export default function LeftPanel({ zones }: MobileNavProps) {
             </ul>
           </>
         )}
+        </div>
+        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-4">
+          <Link
+            href="/about"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <InfoIcon className="w-5 h-5" />
+            <span>ჩვენ შესახებ</span>
+          </Link>
+        </div>
       </nav>
     </aside>
   );

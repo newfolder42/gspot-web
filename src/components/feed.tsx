@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import FeedClient from "./feed-client";
-import { FeedFilter, FeedType } from '@/types/post';
+import { FeedFilter, FeedType, FeedView } from '@/types/post';
 
 type FeedProps = {
   userId?: number | null;
@@ -10,9 +10,10 @@ type FeedProps = {
   type: FeedType;
   zoneId?: number | null,
   showFilter?: boolean;
+  view?: FeedView;
 };
 
-export default function Feed({ userId, accountUserId, type, zoneId, showFilter = true }: FeedProps) {
+export default function Feed({ userId, accountUserId, type, zoneId, showFilter = true, view = 'timeline' }: FeedProps) {
   const [filter, setFilter] = useState<FeedFilter>('all');
 
   return (
@@ -38,6 +39,7 @@ export default function Feed({ userId, accountUserId, type, zoneId, showFilter =
         type={type}
         zoneId={zoneId}
         filter={filter}
+        view={view}
       />
     </div>
   );

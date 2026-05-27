@@ -8,6 +8,11 @@ import { useSearchParams } from "next/navigation";
 
 export default function SigninForm() {
   const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  const safeRedirect =
+    redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+      ? redirectParam
+      : '/';
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +48,7 @@ export default function SigninForm() {
         return;
       }
 
-      window.location.href = "/";
+      window.location.href = safeRedirect;
 
     } catch {
       setError("დაფიქსირდა გაურკვეველი ხარვეზი.");
@@ -122,7 +127,7 @@ export default function SigninForm() {
             <div className="text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 არ გაქვს ანგარიში?{" "}
-                <Link href="/auth/signup" className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
+                <Link href={`/auth/signup${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`} className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
                   რეგისტრაცია
                 </Link>
               </p>

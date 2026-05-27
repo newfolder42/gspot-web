@@ -4,10 +4,17 @@ import React, { useState, useEffect } from "react";
 import { signup, userAliasTaken } from "@/lib/auth";
 import OTPVerificationForm from "./otp-verification-form";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  const safeRedirect =
+    redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+      ? redirectParam
+      : null;
   const [alias, setAlias] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +63,7 @@ export default function SignupForm() {
   }
 
   const handleOTPSuccess = () => {
-    router.push("/auth/signin");
+    router.push(`/auth/signin${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`);
   };
 
   const handleOTPBack = () => {
@@ -286,7 +293,7 @@ export default function SignupForm() {
             <div className="text-center">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 გაქვს უკვე ანგარიში?{" "}
-                <Link href="/auth/signin" className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
+                <Link href={`/auth/signin${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`} className="text-teal-500 hover:text-teal-600 font-medium transition-colors">
                   ავტორიზაცია
                 </Link>
               </p>

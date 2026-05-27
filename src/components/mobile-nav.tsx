@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CompassIcon, HomeIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HomeIcon, InfoIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 import ProfileAvatar from "@/components/common/profileAvatar";
 
@@ -25,7 +25,8 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
       </div>
 
       <aside className="fixed left-0 top-0 z-layer-mobile w-64 h-full bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4 pt-16">
-        <nav>
+        <nav className="flex flex-col h-full">
+          <div className="flex-1">
           <ul className="space-y-2">
             <li>
               <Link
@@ -85,6 +86,17 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
               </ul>
             </>
           )}
+          </div>
+          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-4">
+            <Link
+              href="/about"
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+              onClick={() => setOpen(false)}
+            >
+              <InfoIcon className="w-5 h-5" />
+              <span>ჩვენ შესახებ</span>
+            </Link>
+          </div>
         </nav>
       </aside>
     </>

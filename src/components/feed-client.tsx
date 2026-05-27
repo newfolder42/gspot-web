@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { GpsPost } from './post-gps';
-import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
+import { GpsPost, GpsPostGridItem } from './post-gps';
+import { FeedFilter, FeedType, FeedView, GpsPostType } from '@/types/post';
 import { loadPosts } from '@/actions/feed';
-import { POSTS_PER_PAGE } from '@/types/constants';
+import { POSTS_PER_PAGE, POSTS_PER_PAGE_GRID } from '@/types/constants';
 
 type FeedClientProps = {
   userId?: number | null;
@@ -12,6 +12,7 @@ type FeedClientProps = {
   type: FeedType;
   zoneId?: number | null;
   filter: FeedFilter;
+  view?: FeedView;
 };
 
 export default function FeedClient({
@@ -19,27 +20,38 @@ export default function FeedClient({
   accountUserId,
   type,
   zoneId,
-  filter
+  filter,
+  view = 'timeline',
 }: FeedClientProps) {
+  const postsPerPage = view === 'grid' ? POSTS_PER_PAGE_GRID : POSTS_PER_PAGE;
+
   const [posts, setPosts] = useState<GpsPostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const prevFilterRef = useRef(filter);
+  const postsRef = useRef<GpsPostType[]>([]);
+  const loadingRef = useRef(true);
+
+  useEffect(() => { postsRef.current = posts; }, [posts]);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchInitial = async () => {
       try {
-        const fetched = await loadPosts({ type, userId, accountUserId, zoneId, filter });
+        const fetched = await loadPosts({ type, userId, accountUserId, zoneId, filter, limit: postsPerPage });
+        if (cancelled) return;
         setPosts(fetched);
-        setHasMore(fetched.length === POSTS_PER_PAGE);
+        setHasMore(fetched.length === postsPerPage);
       } catch (error) {
-        console.error('Failed to load initial posts:', error);
+        if (!cancelled) console.error('Failed to load initial posts:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchInitial();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -55,9 +67,10 @@ export default function FeedClient({
             accountUserId,
             zoneId,
             filter,
+            limit: postsPerPage,
           });
           setPosts(newPosts);
-          setHasMore(newPosts.length === POSTS_PER_PAGE);
+          setHasMore(newPosts.length === postsPerPage);
         } catch (error) {
           console.error('Failed to reload posts:', error);
         } finally {
@@ -70,13 +83,15 @@ export default function FeedClient({
   }, [filter, type, userId, accountUserId, zoneId]);
 
   const loadMore = async () => {
-    if (loading || !hasMore) return;
+    if (loadingRef.current || !hasMore) return;
 
+    loadingRef.current = true;
     setLoading(true);
 
-    const lastPost = posts[posts.length - 1];
+    const currentPosts = postsRef.current;
+    const lastPost = currentPosts[currentPosts.length - 1];
     const cursor = {
-      shownCount: posts.length,
+      shownCount: currentPosts.length,
       guessCount: lastPost.guessCount ?? 0,
       date: lastPost.date,
       id: +lastPost.id
@@ -90,9 +105,10 @@ export default function FeedClient({
         zoneId,
         cursor,
         filter,
+        limit: postsPerPage,
       });
 
-      if (newPosts.length < POSTS_PER_PAGE) {
+      if (newPosts.length < postsPerPage) {
         setHasMore(false);
       }
 
@@ -100,6 +116,7 @@ export default function FeedClient({
     } catch (error) {
       console.error('Failed to load more posts:', error);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   };
@@ -107,7 +124,7 @@ export default function FeedClient({
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (entries[0].isIntersecting && hasMore) {
           loadMore();
         }
       },
@@ -127,7 +144,36 @@ export default function FeedClient({
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loading, posts]);
+  }, [hasMore]);
+
+  if (view === 'grid') {
+    return (
+      <div>
+        {loading && posts.length === 0 && (
+          <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '4px' }}>
+          {posts.map(post => (
+            <GpsPostGridItem key={post.id} post={post} />
+          ))}
+        </div>
+
+        {hasMore && (
+          <div ref={observerTarget} className="flex justify-center py-4">
+            {loading && (
+              <div className="text-gray-500">მეტი პოსტის ჩვენება...</div>
+            )}
+          </div>
+        )}
+
+        {!hasMore && posts.length > 0 && (
+          <div className="text-center py-4 text-gray-500">
+            {type === 'public' ? 'მეტი პოსტის ნახვისთვის გაიარე რეგისტრაცია/ავტორიზაცია' : 'მეტი პოსტი არ არის'}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className='mt-2 space-y-4'>

@@ -53,7 +53,8 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
       {(<Feed type='account'
         userId={currentUserId}
         accountUserId={data.user.id}
-        showFilter={!isOwnProfile} />)}
+        showFilter={!isOwnProfile}
+        view="grid" />)}
     </div>
   );
 }

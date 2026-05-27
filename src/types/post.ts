@@ -39,4 +39,5 @@ export type GpsPostType = PostType & {
 
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
 export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone';
+export type FeedView = 'timeline' | 'grid';
 export type PostTypeType = 'gps-photo' | 'text';
