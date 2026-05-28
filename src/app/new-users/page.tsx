@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getNewUsers, getTotalUsers } from '@/lib/users';
-import { formatTimePassed } from '@/lib/dates';
+import TimePassed from '@/components/common/time-passed';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 import { type NewUser } from '@/types/user';
@@ -38,7 +38,7 @@ function UserCard({ user }: { user: NewUser }) {
             &apos;{user.alias}
           </p>
           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-            {formatTimePassed(user.createdAt)}
+            <TimePassed date={user.createdAt} />
           </p>
         </div>
       </div>

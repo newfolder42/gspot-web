@@ -101,7 +101,7 @@ export default function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="w-full border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg p-8 text-center cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors"
+              className="w-full border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg p-8 text-center cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500"
             >
               <CameraIcon className="mx-auto h-7 w-7 text-zinc-400 mb-2" />
               <span className="text-sm text-zinc-500 dark:text-zinc-400">

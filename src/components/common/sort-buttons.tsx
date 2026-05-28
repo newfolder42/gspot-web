@@ -11,7 +11,7 @@ export default function SortButtons({ sortType, onSortChange }: SortButtonsProps
       <span className="text-sm text-zinc-500 dark:text-zinc-400">დალაგება:</span>
       <button
         onClick={() => onSortChange("date")}
-        className={`p-2 rounded text-sm font-medium transition-colors flex items-center gap-1.5 ${sortType === "date"
+        className={`p-2 rounded text-sm font-medium flex items-center gap-1.5 ${sortType === "date"
           ? "bg-teal-500 text-white"
           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700"
           }`}
@@ -29,7 +29,7 @@ export default function SortButtons({ sortType, onSortChange }: SortButtonsProps
       </button>
       <button
         onClick={() => onSortChange("distance")}
-        className={`p-2 rounded text-sm font-medium transition-colors flex items-center gap-1.5 ${sortType === "distance"
+        className={`p-2 rounded text-sm font-medium flex items-center gap-1.5 ${sortType === "distance"
           ? "bg-teal-500 text-white"
           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700"
           }`}

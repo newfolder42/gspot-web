@@ -3,4 +3,5 @@ export type LeaderboardEntry = {
   alias: string;
   rating: number;
   lastModifiedAt: string | null;
+  level?: number | null;
 };

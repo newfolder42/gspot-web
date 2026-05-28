@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { LeaderboardEntry } from '@/types/leaderboard';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
+import LevelBadge from '@/components/common/level-badge';
 
 export const metadata: Metadata = {
   title: `ლიდერბორდი | ${APP_NAME}`,
@@ -95,6 +96,9 @@ export default async function LeaderboardsPage({ params, searchParams }: Props) 
                     <span className="block text-ms font-medium text-zinc-700 dark:text-zinc-100 group-hover:underline truncate max-w-full">
                       &apos;{entry.alias}
                     </span>
+                    {entry.level != null && (
+                      <LevelBadge level={entry.level} className="mx-auto w-4 h-4 mt-0.5 mb-0.5" />
+                    )}
                     <span className="block text-ms text-zinc-500 dark:text-zinc-400">{entry.rating} ქ.</span>
                   </Link>
                   <div className={`${meta.platformH} w-full rounded-t-md ${meta.badgeCn}`} />

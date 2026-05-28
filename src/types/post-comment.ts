@@ -11,4 +11,5 @@ export type PostCommentType = {
   createdAt: string;
   deletedAt: string | null;
   children: PostCommentType[];
+  authorLevel?: number | null;
 };

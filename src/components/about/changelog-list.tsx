@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.8.27",
+    date: "2026-05-28",
+    items: [
+      "მომხამრებლის დონის ჩვენება სხვადასხვაგან."
+    ],
+  },
+  {
     version: "v0.8.26",
     date: "2026-05-27",
     items: [

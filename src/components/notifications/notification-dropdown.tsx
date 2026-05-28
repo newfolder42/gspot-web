@@ -84,7 +84,7 @@ export default function NotificationDropdown({ user }: Props) {
       {/* Notification Bell Button */}
       <button
         onClick={handleOpen}
-        className="relative p-2 rounded-md text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        className="relative p-2 rounded-md text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
         aria-label="notifications"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

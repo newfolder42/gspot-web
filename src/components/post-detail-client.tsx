@@ -8,8 +8,10 @@ import PostComments from './post-comments';
 import { MapPinIcon, MessageIcon } from './icons';
 import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
+import UserLink from './common/user-link';
 import type { GpsPostType } from '@/types/post';
-import { formatActionDate, formatPhotoTakenDate } from '@/lib/dates';
+import { formatPhotoTakenDate } from '@/lib/dates';
+import TimePassed from './common/time-passed';
 import type { PostGuessType } from '@/types/post-guess';
 import type { PostCommentType } from '@/types/post-comment';
 import type { ZoneTag } from '@/types/tag';
@@ -63,9 +65,9 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
                 {post.zoneSlug}
               </Link>
               <span className="text-xs text-zinc-400">•</span>
-              <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
+              <UserLink alias={post.author} level={post.authorLevel} className="text-sm" />
               <span className="text-xs text-zinc-400">•</span>
-              <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
+              <TimePassed date={post.date} className="text-xs text-zinc-400" />
               {post.status === 'failed' && (
                 <svg className="w-3 h-3 text-rose-600" viewBox="0 0 12 12" aria-label="Post failed" role="img">
                   <circle cx="6" cy="6" r="5.5" fill="currentColor" />

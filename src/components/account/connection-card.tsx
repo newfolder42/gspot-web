@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import FollowButton from './follow-button';
-import { formatTimePassed } from '@/lib/dates';
+import TimePassed from '../common/time-passed';
 import ProfileAvatar from '../common/profileAvatar';
 
 type Props = {
@@ -27,7 +27,7 @@ export default function ConnectionCard({ alias, profilePhoto, createdAt, canUnfo
           <div className="text-sm font-medium">
             <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{alias}</span>
           </div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(createdAt)}</div>
+          <TimePassed date={createdAt} className="text-xs text-zinc-500 dark:text-zinc-400" />
         </div>
       </Link>
       {canUnfollow && (

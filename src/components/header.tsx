@@ -54,7 +54,7 @@ export default function Header({ zones, account }: HeaderProps) {
               <Link
                 href="/submit"
                 aria-label="Create post"
-                className="inline-flex items-center justify-center gap-2 h-9 px-2 sm:px-3 rounded-md text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-9 px-2 sm:px-3 rounded-md text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 <PlusIcon />
                 <span className="hidden sm:inline text-sm font-medium">დამატება</span>

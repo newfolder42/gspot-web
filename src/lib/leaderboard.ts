@@ -7,9 +7,10 @@ import type { LeaderboardEntry } from '@/types/leaderboard';
 export async function getLeaderboard(type: string, zoneSlug: string, periodKey: string, limit = 50, offset = 0): Promise<LeaderboardEntry[]> {
   try {
     const res = await query(
-      `select u.id as user_id, u.alias, l.rating, l.last_modified_at
+      `select u.id as user_id, u.alias, l.rating, l.last_modified_at, ux.level as user_level
        from leaderboards l
        join users u on u.id = l.user_id
+       left join user_xp ux on ux.user_id = u.id
        join zones z on z.id = l.zone_id
        where l.type = $1 and z.slug = $2 and l.period_key = $3
        order by l.rating desc, l.last_modified_at desc
@@ -22,6 +23,7 @@ export async function getLeaderboard(type: string, zoneSlug: string, periodKey: 
       alias: r.alias,
       rating: r.rating ?? 0,
       lastModifiedAt: r.last_modified_at || null,
+      level: r.user_level ?? null,
     }));
   } catch (err) {
     await logerror('getLeaderboard error', [err]);

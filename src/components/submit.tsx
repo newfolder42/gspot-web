@@ -576,7 +576,7 @@ export default function Submit({
                       </div>
                     ) : (
                       <div>
-                        <label className="w-full block p-7 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-center cursor-pointer bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors">
+                        <label className="w-full block p-7 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-center cursor-pointer bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-900">
                           <div className="inline-flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

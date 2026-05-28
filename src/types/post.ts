@@ -35,6 +35,7 @@ export type GpsPostType = PostType & {
   commentCount?: number | null;
   userHasGuessed?: boolean;
   tag?: { id: number; name: string; color: string } | null;
+  authorLevel?: number | null;
 }
 
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';

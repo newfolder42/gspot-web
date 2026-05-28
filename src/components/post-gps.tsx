@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { GpsPostType } from "@/types/post";
-import { formatActionDate, formatPhotoTakenDate } from "@/lib/dates";
+import { formatPhotoTakenDate } from "@/lib/dates";
+import TimePassed from "./common/time-passed";
 import { useState } from "react";
 import { MapPinIcon, MessageIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
 import TagBadge from "./common/tag-badge";
+import UserLink from "./common/user-link";
 
 export function GpsPostGridItem({ post }: { post: GpsPostType }) {
   return (
@@ -57,9 +59,9 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
           {showZone && post.zoneSlug && (
             <span className="text-xs text-zinc-400">•</span>
           )}
-          <Link href={`/account/${post.author}`} className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">&apos;{post.author}</Link>
+          <UserLink alias={post.author} level={post.authorLevel} className="text-sm" />
           <span className="text-xs text-zinc-400">•</span>
-          <time className="text-xs text-zinc-400">{formatActionDate(post.date)}</time>
+          <TimePassed date={post.date} className="text-xs text-zinc-400" />
           {post.status === 'failed' && (
             <svg
               className="w-3 h-3 text-rose-600"

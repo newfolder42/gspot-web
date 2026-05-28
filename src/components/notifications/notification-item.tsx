@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { NotificationType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
-import { formatTimePassed } from "@/lib/dates";
+import TimePassed from "@/components/common/time-passed";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
 import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon } from "@/components/icons";
 
@@ -60,7 +60,7 @@ export default function NotificationItem({ notification, userId, onUpdate, onNav
   };
 
   return (
-    <div className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+    <div className="relative group p-2 pl-6 pr-12 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer">
       {!notification.seen && (
         <span className="absolute left-2 top-4 h-1 w-1 rounded-full bg-teal-600" />
       )}
@@ -78,14 +78,14 @@ export default function NotificationItem({ notification, userId, onUpdate, onNav
             {getNotificationContentMessage(notification.type, notification.details)}
           </p>
           {notification.timestamp && (
-            <p className="text-xs text-zinc-500">{formatTimePassed(notification.timestamp)}</p>
+            <TimePassed date={notification.timestamp} className="text-xs text-zinc-500" />
           )}
         </div>
       </Link>
 
       <button
         onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer"
         aria-label="notification menu"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -98,7 +98,7 @@ export default function NotificationItem({ notification, userId, onUpdate, onNav
           <div className="py-1">
             <button
               onClick={handleToggleSeen}
-              className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+              className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer"
             >
               {notification.seen ? "მონიშნე წაუკითხავად" : "მონიშნე წაკითხულად"}
             </button>

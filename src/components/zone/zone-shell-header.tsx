@@ -71,7 +71,7 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
                     <Link
                       href={`/zone/${zone.slug}/submit`}
                       aria-label="Create post"
-                      className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md text-sm font-medium text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md text-sm font-medium text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
                       <PlusIcon />
                       <span className="hidden sm:inline">დამატება</span>

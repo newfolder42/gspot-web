@@ -11,9 +11,10 @@ export async function getPostComments(postId: number): Promise<PostCommentType[]
   try {
     const res = await query(
       `select c.id, c.post_id, c.user_id, c.parent_id, c.body, c.type, c.metadata, c.guess_id, c.created_at, c.deleted_at,
-              u.alias as author_alias
+              u.alias as author_alias, ux.level as author_level
        from post_comments c
        join users u on u.id = c.user_id
+       left join user_xp ux on ux.user_id = u.id
        where c.post_id = $1
        order by c.created_at desc, c.id desc`,
       [postId]
@@ -31,6 +32,7 @@ export async function getPostComments(postId: number): Promise<PostCommentType[]
       guessId: r.guess_id ?? null,
       createdAt: r.created_at,
       deletedAt: r.deleted_at ?? null,
+      authorLevel: r.author_level ?? null,
       children: [],
     }));
   } catch (err) {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatTimePassed } from '@/lib/dates';
+import TimePassed from '@/components/common/time-passed';
 import FollowButton from '../account/follow-button';
 import ProfileAvatar from '@/components/common/profileAvatar';
 
@@ -27,7 +27,7 @@ export default function ZoneMemberCard({ alias, profilePhoto, createdAt, canUnfo
           <div className="text-sm font-medium">
             <span className="ml-1 text-zinc-900 dark:text-zinc-100">&apos;{alias}</span>
           </div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(createdAt)}</div>
+          <TimePassed date={createdAt} className="text-xs text-zinc-500 dark:text-zinc-400" />
         </div>
       </Link>
       {canUnfollow && (

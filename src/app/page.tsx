@@ -19,7 +19,7 @@ export default async function Page() {
             <p className="text-teal-50 mb-6 leading-relaxed max-w-2xl">
               შემოუერთდი ქართულ ლოკაციის გამომცნობ თამაშს - ატვირთე სურათი საქართველოს ტერიტორიაზე გადაღებული,
               გამოიცანი სხვისი გადაღებული სურათის მდებარეობა, დააგროვე ქულები და მოხვდი{" "}
-              <Link href="/zone/public/leaderboard" className="underline underline-offset-2 font-semibold hover:text-white transition-colors">
+              <Link href="/zone/public/leaderboard" className="underline underline-offset-2 font-semibold hover:text-white">
                 ლიბერბოდში
               </Link>.
             </p>

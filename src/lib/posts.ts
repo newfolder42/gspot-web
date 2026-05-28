@@ -38,12 +38,14 @@ export async function getConnectionsPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
-       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
+       ux.level as author_level
 from user_connections ucn
 join posts p on ucn.connection_id = p.user_id
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
+left join user_xp ux on ux.user_id = u.id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where ucn.user_id = $2 and p.status in ('published')
@@ -74,6 +76,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
       commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
+      authorLevel: r.author_level ?? null,
     }));
   } catch (err) {
     await logerror('getConnectionsPosts error', [err]);
@@ -108,11 +111,13 @@ export async function getAccountPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
-       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
+       ux.level as author_level
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
+left join user_xp ux on ux.user_id = u.id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.user_id = $2 and p.status = 'published' and z.visibility = 'public' ${filterCondition} ${cursorCondition}
@@ -137,6 +142,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
       commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
+      authorLevel: r.author_level ?? null,
     }));
   } catch (err) {
     await logerror('getAccountPosts error', [err]);
@@ -170,11 +176,13 @@ export async function getGlobalPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
-       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed
+       exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed,
+       ux.level as author_level
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
+left join user_xp ux on ux.user_id = u.id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.status = 'published'
@@ -206,6 +214,7 @@ limit $1`,
       guessCount: r.guesses_count ?? 0,
       commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
+      authorLevel: r.author_level ?? null,
     }));
   } catch (err) {
     await logerror('getGlobalPosts error', [err]);
@@ -231,11 +240,13 @@ export async function getPublicPosts(
       `with public_posts as (
           select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
             (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count,
-            (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment')::int as comment_count
+            (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment')::int as comment_count,
+            ux.level as author_level
          from posts p
          join zones z on z.id = p.zone_id
          join post_content pc on p.id = pc.post_id
          join users u on u.id = p.user_id
+         left join user_xp ux on ux.user_id = u.id
          join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
          where p.status = 'published'
            and z.visibility = 'public'
@@ -267,6 +278,7 @@ export async function getPublicPosts(
       guessCount: r.guesses_count ?? 0,
       commentCount: r.comment_count ?? 0,
       userHasGuessed: false,
+      authorLevel: r.author_level ?? null,
     }));
   } catch (err) {
     await logerror('getPublicPosts error', [err]);
@@ -305,11 +317,13 @@ export async function getZonePosts(
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment') as comment_count,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
-       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color
+       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color,
+       ux.level as author_level
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
+left join user_xp ux on ux.user_id = u.id
 join user_content uc on uc.user_id = p.user_id and uc.type = 'gps-photo' and pc.content_id = uc.id
 left join post_tags ptt on ptt.post_id = p.id
 left join zone_tags zt on zt.id = ptt.tag_id
@@ -337,6 +351,7 @@ limit $1`,
       commentCount: r.comment_count ?? 0,
       userHasGuessed: r.user_has_guessed ?? false,
       tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
+      authorLevel: r.author_level ?? null,
     }));
   } catch (err) {
     await logerror('getZonePosts error', [err]);
@@ -349,11 +364,13 @@ export async function getPostForView(userId: number, id: number): Promise<GpsPos
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, uc.public_url as image_url, uc.details,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count, zcp.public_url as zone_profile_photo_url,
-       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color
+       zt.id as tag_id, zt.name as tag_name, zt.color as tag_color,
+       ux.level as author_level
 from posts p
 join zones z on z.id = p.zone_id
 join post_content pc on p.id = pc.post_id
 join users u on u.id = p.user_id
+left join user_xp ux on ux.user_id = u.id
 join user_content uc on uc.id = pc.content_id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 left join post_tags ptt on ptt.post_id = p.id
@@ -391,6 +408,7 @@ limit 1`,
       status: r.status,
       guessCount: r.guesses_count ?? 0,
       tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
+      authorLevel: r.author_level ?? null,
     };
   } catch (err) {
     await logerror('getPostForView error', [err]);

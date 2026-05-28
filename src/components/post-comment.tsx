@@ -2,12 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import type { PostCommentType } from '@/types/post-comment';
-import { formatTimePassed } from '@/lib/dates';
+import TimePassed from '@/components/common/time-passed';
 import { addCommentAction } from '@/actions/comments';
 import { ReplyIcon, MapPinIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/icons';
 import { getInitials } from '@/lib/getInitials';
+import UserLink from '@/components/common/user-link';
 
 type PostCommentProps = {
   comment: PostCommentType;
@@ -99,12 +99,7 @@ export default function PostComment({
               {collapsed ? <ChevronDownIcon className="w-2.5 h-2.5" /> : <ChevronUpIcon className="w-2.5 h-2.5" />}
             </span>
           </button>
-          <Link
-            href={`/account/${comment.author}`}
-            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:underline"
-          >
-            &apos;{comment.author}
-          </Link>
+          <UserLink alias={comment.author} level={comment.authorLevel} className="text-xs" />
           {isPostAuthor && (
             <span className="inline-flex items-center text-xs font-semibold text-teal-600 dark:text-teal-400">
               ავტორი
@@ -120,7 +115,7 @@ export default function PostComment({
             </span>
           )}
           <span className="text-xs text-zinc-400">•</span>
-          <span className="text-xs text-zinc-400">{formatTimePassed(comment.createdAt)}</span>
+          <TimePassed date={comment.createdAt} className="text-xs text-zinc-400" />
           {collapsed && (
             <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[45vw] sm:max-w-[28rem]">
               • {collapsedPreview}
