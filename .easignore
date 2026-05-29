@@ -1,0 +1,30 @@
+# EAS archives from the git root — exclude everything not needed for the mobile build
+
+# Next.js app (not needed for mobile build)
+src/node_modules/
+src/.next/
+src/out/
+src/build/
+
+# Mobile node_modules (EAS installs on the build server)
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+
+# Secrets
+mobile/.env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

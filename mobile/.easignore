@@ -1,0 +1,28 @@
+# Dependencies — EAS installs these on the build server
+node_modules/
+
+# Expo build artifacts
+.expo/
+dist/
+build/
+
+# Android / iOS local build outputs
+android/
+ios/
+
+# Environment files (secrets should be set via EAS secrets, not uploaded)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
