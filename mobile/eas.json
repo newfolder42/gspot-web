@@ -10,6 +10,10 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://gspot.ge",
+        "MOBILE_JWT_SECRET": "AKIAVHHCM4AEGA5INEXMAKIAVHHCM4AEGA5INEXM"
       }
     },
     "production": {
