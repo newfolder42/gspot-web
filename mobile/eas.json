@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 13.0.0"
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -13,13 +14,13 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
       },
-      "autoIncrement": "buildNumber"
+      "autoIncrement": true
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
       },
-      "autoIncrement": "buildNumber"
+      "autoIncrement": true
     }
   },
   "submit": {

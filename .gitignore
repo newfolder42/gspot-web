@@ -17,7 +17,6 @@
 
 # expo
 /mobile/.expo
-/mobile/android
 
 # IDE
 .vscode
