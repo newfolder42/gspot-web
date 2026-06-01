@@ -29,7 +29,7 @@ const textClasses: Record<Variant, string> = {
 const spinnerColor: Record<Variant, string> = {
   primary: '#ffffff',
   secondary: '#71717A',
-  ghost: '#FF6314',
+  ghost: '#14B8A6',
   danger: '#ffffff',
 };
 

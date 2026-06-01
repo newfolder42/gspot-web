@@ -1,9 +1,16 @@
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { OwnAccountData } from './account.types';
+import type { MobilePostType } from '@/types/post';
+
+const COLUMNS = 3;
+const GAP = 2;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CELL_SIZE = (SCREEN_WIDTH - GAP * (COLUMNS + 1)) / COLUMNS;
 
 // ─── Avatar ──────────────────────────────────────────────────────────────────
 
@@ -25,11 +32,21 @@ function getAvatarColor(alias: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function Avatar({ alias }: { alias: string }) {
+function Avatar({ alias, photoUrl }: { alias: string; photoUrl: string | null }) {
   const bg = getAvatarColor(alias);
+  if (photoUrl) {
+    return (
+      <Image
+        source={{ uri: photoUrl }}
+        className="h-20 w-20 rounded-md"
+        resizeMode="cover"
+      />
+    );
+  }
+
   return (
     <View
-      className="h-20 w-20 rounded-xl items-center justify-center"
+      className="h-20 w-20 rounded-md items-center justify-center"
       style={{ backgroundColor: bg }}
     >
       <Text className="text-white text-2xl font-bold">{getInitials(alias)}</Text>
@@ -46,12 +63,12 @@ function XPBar({ xp, level }: { xp: number; level: number }) {
   return (
     <View>
       <View className="flex-row justify-between mb-1">
-        <Text className="text-xs text-zinc-500 dark:text-zinc-400">Level {level}</Text>
+        <Text className="text-xs text-zinc-500 dark:text-zinc-400">დონე {level}</Text>
         <Text className="text-xs text-zinc-500 dark:text-zinc-400">{xp} XP</Text>
       </View>
       <View className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
         <View
-          className="h-full rounded-full bg-brand"
+          className="h-full rounded-full bg-amber-500"
           style={{ width: `${Math.min(progress * 100, 100)}%` }}
         />
       </View>
@@ -75,6 +92,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 
 export default function AccountScreen() {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   const { data, isLoading, error, refetch } = useQuery<OwnAccountData>({
     queryKey: ['account', 'me'],
@@ -82,17 +100,23 @@ export default function AccountScreen() {
     enabled: !!user,
   });
 
+  const postsQuery = useQuery<{ posts: MobilePostType[] }>({
+    queryKey: ['user-profile', user?.alias],
+    queryFn: () => apiClient.get(`/users/${user!.alias}`).then((r) => r.data),
+    enabled: !!user?.alias,
+  });
+
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    Alert.alert('გასვლა', 'დარწმუნებული ხარ, რომ გსურს გასვლა?', [
+      { text: 'გაუქმება', style: 'cancel' },
+      { text: 'გასვლა', style: 'destructive', onPress: logout },
     ]);
   };
 
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <ActivityIndicator size="large" color="#FF6314" />
+        <ActivityIndicator size="large" color="#14B8A6" />
       </View>
     );
   }
@@ -101,49 +125,48 @@ export default function AccountScreen() {
     return (
       <View className="flex-1 items-center justify-center px-8 bg-zinc-50 dark:bg-zinc-950">
         <Text className="text-zinc-500 dark:text-zinc-400 text-sm text-center mb-4">
-          Could not load account.
+          ანგარიშის ჩატვირთვა ვერ მოხერხდა.
         </Text>
         <Pressable onPress={() => refetch()} className="px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-          <Text className="text-brand text-sm font-semibold">Retry</Text>
+          <Text className="text-brand text-sm font-semibold">ხელახლა ცდა</Text>
         </Pressable>
       </View>
     );
   }
 
   const { user: profile, profilePhoto, level } = data;
-  const memberYears = profile.age ?? 0;
-  const memberLabel =
-    memberYears === 0 ? 'New member' : memberYears === 1 ? '1 year' : `${memberYears} years`;
+  const ageLabel = profile.age ? String(profile.age) : '-';
 
-  return (
-    <ScrollView
-      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-      contentContainerClassName="pb-10"
-      showsVerticalScrollIndicator={false}
-    >
+  const posts: MobilePostType[] = postsQuery.data?.posts ?? [];
+
+  // Build 3-column rows for the grid
+  type GridRow = { key: string; items: MobilePostType[] };
+  const rows: GridRow[] = [];
+  for (let i = 0; i < posts.length; i += COLUMNS) {
+    rows.push({ key: `row-${i}`, items: posts.slice(i, i + COLUMNS) });
+  }
+
+  const ListHeader = (
+    <View>
       {/* Profile card */}
       <View className="mx-4 mt-4 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800">
         <View className="flex-row gap-4 items-center">
-          <Avatar alias={profile.alias} />
+          <Avatar alias={profile.alias} photoUrl={profilePhoto?.url ?? null} />
           <View className="flex-1">
             <Text className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               &apos;{profile.alias}
             </Text>
-            <Text className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5 mb-3">
-              {profile.email}
+            <Text className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+              ასაკი: {ageLabel} დღე
             </Text>
-            {level ? (
-              <XPBar xp={level.xp} level={level.level} />
-            ) : null}
+            <View className="mt-3">
+              {level ? <XPBar xp={level.xp} level={level.level} /> : null}
+            </View>
           </View>
         </View>
-      </View>
-
-      {/* Info section */}
-      <View className="mx-4 mt-3 bg-white dark:bg-zinc-900 rounded-2xl px-4 border border-zinc-100 dark:border-zinc-800">
-        <InfoRow icon="clock" label="Member for" value={memberLabel} />
-        <InfoRow icon="user" label="Username" value={`'${profile.alias}`} />
-        <InfoRow icon="mail" label="Email" value={profile.email} />
+        <View className="mt-3 flex-row items-center gap-1">
+          <Text className="text-sm text-zinc-500 dark:text-zinc-400">{posts.length} პოსტი</Text>
+        </View>
       </View>
 
       {/* Actions */}
@@ -154,9 +177,54 @@ export default function AccountScreen() {
           android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
         >
           <Feather name="log-out" size={18} color="#EF4444" />
-          <Text className="text-red-500 ml-3 text-base font-medium">Sign Out</Text>
+          <Text className="text-red-500 ml-3 text-base font-medium">გასვლა</Text>
         </Pressable>
       </View>
-    </ScrollView>
+
+      {/* Grid header */}
+      {posts.length > 0 ? (
+        <View className="px-4 pt-5 pb-2">
+          <Text className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">პოსტები</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <FlatList
+      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+      contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: GAP / 2 }}
+      data={rows}
+      keyExtractor={(row) => row.key}
+      renderItem={({ item: row }) => (
+        <View style={{ flexDirection: 'row' }}>
+          {row.items.map((post) => (
+            <Pressable
+              key={post.id}
+              onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(post.id) } })}
+              style={{ width: CELL_SIZE, height: CELL_SIZE, margin: GAP / 2 }}
+            >
+              <Image source={{ uri: post.image }} style={{ width: CELL_SIZE, height: CELL_SIZE }} resizeMode="cover" />
+            </Pressable>
+          ))}
+          {/* Fill empty cells in last row */}
+          {row.items.length < COLUMNS
+            ? Array.from({ length: COLUMNS - row.items.length }).map((_, i) => (
+                <View key={`empty-${i}`} style={{ width: CELL_SIZE, height: CELL_SIZE, margin: GAP / 2 }} />
+              ))
+            : null}
+        </View>
+      )}
+      ListHeaderComponent={ListHeader}
+      ListEmptyComponent={
+        postsQuery.isLoading ? (
+          <View className="py-10 items-center"><ActivityIndicator color="#14B8A6" /></View>
+        ) : (
+          <View className="py-10 items-center">
+            <Text className="text-sm text-zinc-500 dark:text-zinc-400">პოსტები არ არის</Text>
+          </View>
+        )
+      }
+    />
   );
 }

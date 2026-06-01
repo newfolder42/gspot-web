@@ -1,7 +1,7 @@
 export const Colors = {
-  // Brand / accent (orange — Reddit-style)
-  brand: '#FF6314',
-  brandPressed: '#E8550E',
+  // Brand / accent (teal)
+  brand: '#14B8A6',
+  brandPressed: '#0D9488',
 
   // Backgrounds
   bgLight: '#FAFAFA',

@@ -4,8 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "build:android:preview": "eas build --platform android --profile preview",
     "build:android:prod": "eas build --platform android --profile production",
     "lint": "expo lint"
@@ -13,13 +13,17 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
     "@hookform/resolvers": "^3.9.0",
+    "@react-native-community/datetimepicker": "8.4.1",
     "@tanstack/react-query": "^5.64.0",
     "axios": "^1.8.0",
     "expo": "~53.0.0",
     "expo-asset": "~11.1.7",
     "expo-constants": "~17.1.8",
+    "expo-device": "~7.1.4",
     "expo-font": "~13.3.2",
+    "expo-image-picker": "~16.1.4",
     "expo-linking": "~7.1.7",
+    "expo-notifications": "~0.31.5",
     "expo-router": "~5.1.11",
     "expo-secure-store": "~14.2.4",
     "expo-status-bar": "~2.2.3",

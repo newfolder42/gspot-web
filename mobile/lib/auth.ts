@@ -9,23 +9,33 @@ export type LoginResult = {
 type ApiErrorBody = { error?: string };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  INVALID_CREDENTIALS: 'Invalid email or password.',
-  USER_EXISTS: 'An account with this email already exists.',
-  ALIAS_EXISTS: 'This username is already taken.',
-  INVALID_INPUT: 'Please check your input and try again.',
-  INVALID_CODE: 'The verification code is incorrect.',
-  EXPIRED: 'The verification code has expired.',
-  INVALID_REFRESH_TOKEN: 'Your session has expired. Please log in again.',
-  SERVER_ERROR: 'A server error occurred. Please try again later.',
-  NO_PENDING_REGISTRATION: 'Registration not found. Please start over.',
+  INVALID_CREDENTIALS: 'მეილი ან პაროლი არასწორია.',
+  USER_EXISTS: 'მომხმარებელი ამ მეილით ან თიკუნით უკვე არსებობს.',
+  ALIAS_EXISTS: 'დაკავებულია ან შეზღუდულია.',
+  INVALID_INPUT: 'არასწორი მონაცემები.',
+  INVALID_CODE: 'არასწორი კოდი.',
+  EXPIRED: 'კოდის ვადა გასულია.',
+  NOT_FOUND: 'კოდი ვერ მოიძებნა.',
+  USER_NOT_FOUND: 'მომხმარებელი ამ მეილით ვერ მოიძებნა.',
+  EMAIL_SEND_FAILED: 'მეილის გაგზავნა ვერ მოხერხდა.',
+  INVALID_EMAIL: 'არასწორი მეილის ფორმატი.',
+  INVALID_PASSWORD: 'პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო.',
+  INVALID_REFRESH_TOKEN: 'სესია ამოიწურა. გთხოვ შეხვიდე ხელახლა.',
+  SERVER_ERROR: 'სერვერის შეცდომა. გთხოვ ხელახლა სცადე.',
+  NO_PENDING_REGISTRATION: 'რეგისტრაცია ვერ მოიძებნა. გთხოვ თავიდან სცადე.',
 };
 
 function toUserFacingError(err: unknown): Error {
+  if (__DEV__) {
+    console.error('[Auth Error Raw]', JSON.stringify((err as any)?.response?.data, null, 2));
+    console.error('[Status]', (err as any)?.response?.status);
+  }
   const body = (err as any)?.response?.data as ApiErrorBody | undefined;
   if (body?.error) {
+    console.error('[Auth Error]', body.error);
     return new Error(ERROR_MESSAGES[body.error] ?? body.error);
   }
-  return new Error('Network error. Please check your connection.');
+  return new Error('ქსელის შეცდომა. შეამოწმე კავშირი.');
 }
 
 async function call<T>(fn: () => Promise<T>): Promise<T> {
@@ -65,5 +75,10 @@ export const authApi = {
   resetPassword: (email: string, code: string, newPassword: string): Promise<void> =>
     call(() =>
       apiClient.post('/auth/reset-password', { email, code, newPassword }).then(() => undefined)
+    ),
+
+  checkAlias: (alias: string): Promise<{ available: boolean }> =>
+    call(() =>
+      apiClient.get<{ available: boolean }>('/auth/check-alias', { params: { alias } }).then((r) => r.data)
     ),
 };

@@ -1,5 +1,6 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
+import { sendExpoPush, getPushTokensForUser } from './push';
 
 export type NotificationRecord = {
   id: number;
@@ -112,9 +113,52 @@ export async function createNotification(
       [userId, type, JSON.stringify(details)]
     );
 
-    return res.rows.length > 0 ? res.rows[0].id : null;
+    const notifId = res.rows.length > 0 ? res.rows[0].id : null;
+
+    // Fire push notification (non-blocking, errors are logged internally)
+    sendPushForNotification(userId, type, details).catch(() => {});
+
+    return notifId;
   } catch (err) {
     await logerror('createNotification error', [err]);
     return null;
   }
+}
+
+async function sendPushForNotification(userId: number, type: string, details: Record<string, any>) {
+  const tokens = await getPushTokensForUser(userId);
+  if (tokens.length === 0) return;
+
+  let body = 'ახალი შეტყობინება';
+  switch (type) {
+    case 'gps-guess':
+      body = `${details.userAlias}-მა სცადა გამოცნობა (${details.score} ქულა)`;
+      break;
+    case 'gps-photo-guess':
+      body = `${details.userAlias}-მა სცადა გამოცნობა ფოტოთი (${details.score} ქულა)`;
+      break;
+    case 'connection-created-gps-post': {
+      const title = details.title?.trim();
+      body = title ? `${details.authorAlias}-მა გამოაქვეყნა: ${title}` : `${details.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
+      break;
+    }
+    case 'gps-post-failed': {
+      const title = details.title?.trim();
+      body = title ? `პოსტი "${title}" ვერ განთავსდა` : 'შენი პოსტი ვერ განთავსდა';
+      break;
+    }
+    case 'user-started-following':
+      body = `ახალი ფოლოვერი: ${details.followerAlias}`;
+      break;
+    case 'user-achievement-achieved':
+      body = `ახალი მიღწევა: ${details.milestoneName ?? details.achievementName}`;
+      break;
+    case 'post-comment-created':
+      body = details.parent
+        ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი`
+        : `${details.commenterAlias}-მა დატოვა კომენტარი`;
+      break;
+  }
+
+  await Promise.all(tokens.map((t) => sendExpoPush(t, 'G\'Spot', body, { type, ...details })));
 }

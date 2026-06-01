@@ -15,6 +15,14 @@
 /.next/
 /out/
 
+# expo
+/mobile/.expo
+/mobile/android
+
+# IDE
+.vscode
+.idea
+
 # production
 /build
 
