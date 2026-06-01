@@ -8,14 +8,18 @@
       "distribution": "internal"
     },
     "preview": {
+      "distribution": "internal",
       "android": {
-        "buildType": "apk"
-      }
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "autoIncrement": "buildNumber"
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "autoIncrement": "buildNumber"
     }
   },
   "submit": {
