@@ -2,16 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import { storeLandingRedirect } from '@/actions/landing-attribution';
-import type { LandingSource } from '@/lib/landing-attribution';
 
 type Props = {
-  source: LandingSource;
+  source: string;
   landingPath: string;
-  utmSource?: string | null;
   utmCampaign?: string | null;
 };
 
-export default function LandingRedirectCapture({ source, landingPath, utmSource, utmCampaign }: Props) {
+export default function LandingRedirectCapture({ source, landingPath, utmCampaign }: Props) {
   const hasCapturedRef = useRef(false);
 
   useEffect(() => {
@@ -24,10 +22,9 @@ export default function LandingRedirectCapture({ source, landingPath, utmSource,
       source,
       landingPath,
       referrer: document.referrer || undefined,
-      utmSource,
       utmCampaign,
     });
-  }, [landingPath, source, utmSource, utmCampaign]);
+  }, [landingPath, source, utmCampaign]);
 
   return null;
 }

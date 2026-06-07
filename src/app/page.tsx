@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: Props) {
     <main className="min-h-screen">
       <div className="max-w-5xl mx-auto py-4 px-2">
         {!user && landing && landingPath && (
-          <LandingRedirectCapture source={landing.source} landingPath={landingPath} utmSource={landing.utmSource} utmCampaign={landing.utmCampaign} />
+          <LandingRedirectCapture source={landing.source} landingPath={landingPath} utmCampaign={landing.utmCampaign} />
         )}
         {!user && (
           <div className="overflow-hidden text-zinc-900 dark:text-zinc-100 px-8 py-10">
