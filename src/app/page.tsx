@@ -1,7 +1,7 @@
 import Feed from "@/components/feed";
 import LandingRedirectCapture from "@/components/common/landing-redirect-capture";
 import { getCurrentUser } from "@/lib/session";
-import { buildLandingPath, getLandingSource, type LandingAttributionSearchParams } from "@/lib/landing-attribution";
+import { buildLandingPath, getLandingAttribution, type LandingAttributionSearchParams } from '@/lib/landing-attribution';
 import { APP_NAME } from "@/types/constants";
 import { FeedType } from "@/types/post";
 import { ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
@@ -15,14 +15,14 @@ export default async function Page({ searchParams }: Props) {
   const [user, resolvedSearchParams] = await Promise.all([getCurrentUser(), searchParams]);
 
   const feedType: FeedType = user ? 'global' : 'public';
-  const landingSource = user ? null : getLandingSource(resolvedSearchParams);
-  const landingPath = landingSource ? buildLandingPath(resolvedSearchParams) : null;
+  const landing = user ? null : getLandingAttribution(resolvedSearchParams);
+  const landingPath = landing ? buildLandingPath(resolvedSearchParams) : null;
 
   return (
     <main className="min-h-screen">
       <div className="max-w-5xl mx-auto py-4 px-2">
-        {!user && landingSource && landingPath && (
-          <LandingRedirectCapture source={landingSource} landingPath={landingPath} />
+        {!user && landing && landingPath && (
+          <LandingRedirectCapture source={landing.source} landingPath={landingPath} utmSource={landing.utmSource} utmCampaign={landing.utmCampaign} />
         )}
         {!user && (
           <div className="overflow-hidden text-zinc-900 dark:text-zinc-100 px-8 py-10">

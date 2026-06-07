@@ -7,9 +7,11 @@ import type { LandingSource } from '@/lib/landing-attribution';
 type Props = {
   source: LandingSource;
   landingPath: string;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
 };
 
-export default function LandingRedirectCapture({ source, landingPath }: Props) {
+export default function LandingRedirectCapture({ source, landingPath, utmSource, utmCampaign }: Props) {
   const hasCapturedRef = useRef(false);
 
   useEffect(() => {
@@ -22,8 +24,10 @@ export default function LandingRedirectCapture({ source, landingPath }: Props) {
       source,
       landingPath,
       referrer: document.referrer || undefined,
+      utmSource,
+      utmCampaign,
     });
-  }, [landingPath, source]);
+  }, [landingPath, source, utmSource, utmCampaign]);
 
   return null;
 }
