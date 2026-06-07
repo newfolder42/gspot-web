@@ -1,23 +1,19 @@
+import { getLevelColor } from '@/lib/level-color';
+
 type Props = {
   level: number;
   className?: string;
 };
 
-function getLevelTierClass(level: number): string {
-  if (level >= 42) return 'text-amber-500';
-  if (level >= 30) return 'text-violet-500';
-  if (level >= 20) return 'text-sky-500';
-  if (level >= 10) return 'text-emerald-500';
-  return 'text-slate-400';
-}
-
 export default function LevelBadge({ level, className = '' }: Props) {
+  const color = getLevelColor(level);
   return (
     <span
-      className={`inline-flex items-center justify-center font-bold leading-none ${getLevelTierClass(level)} ${className}`}
+      className={`inline-flex items-center justify-center font-bold text-xs leading-none rounded-md px-1.5 py-0.5 border ${className}`}
+      style={{ color, borderColor: color + '70', backgroundColor: color + '18' }}
       title={`დონე ${level}`}
     >
-      {level}დ
+      {level}
     </span>
   );
 }

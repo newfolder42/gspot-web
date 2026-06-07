@@ -1,6 +1,6 @@
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
-/** Matches web LevelBadge exactly: tier-coloured, format "{N}დ". */
+/** Matches web LevelBadge exactly: tier-coloured rounded square, format "{N}დ". */
 function getLevelColor(level: number): string {
   if (level >= 42) return '#F59E0B'; // amber-500
   if (level >= 30) return '#8B5CF6'; // violet-500
@@ -14,12 +14,24 @@ type Props = {
 };
 
 export function LevelBadge({ level }: Props) {
+  const color = getLevelColor(level);
   return (
-    <Text
-      className="text-xs font-bold leading-none"
-      style={{ color: getLevelColor(level) }}
+    <View
+      style={{
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: color + '70',
+        backgroundColor: color + '18',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+      }}
     >
-      {level}დ
-    </Text>
+      <Text
+        className="text-xs font-bold leading-none"
+        style={{ color }}
+      >
+        {level}
+      </Text>
+    </View>
   );
 }

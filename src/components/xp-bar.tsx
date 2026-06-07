@@ -1,4 +1,5 @@
 import { XPInfo } from '@/lib/xp';
+import { getLevelColor } from '@/lib/level-color';
 
 type Props = {
   xp: XPInfo;
@@ -8,12 +9,13 @@ export default function XPBar({ xp }: Props) {
   const maxLevel = 42;
   const progressPercentage = (xp.currentXP / xp.xpForNextLevel) * 100;
   const isMaxLevel = xp.level >= maxLevel;
+  const levelColor = getLevelColor(xp.level);
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
         {/* Level with max level tooltip */}
-        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 relative group/level cursor-help">
+        <span className="text-xs font-semibold relative group/level cursor-help" style={{ color: levelColor }}>
           დონე {xp.level}{isMaxLevel && ' (მაქს)'}
           <span className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-zinc-900 dark:bg-zinc-800 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover/level:opacity-100 group-hover/level:visible transition-all duration-200 z-10 pointer-events-none whitespace-nowrap">
             მაქსიმალური დონე: {maxLevel}
