@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getUserPostZones } from '@/lib/zones';
 import { getZoneTags } from '@/lib/tags';
-import { getZoneUploadRules } from '@/actions/zones';
+import { getZoneUploadRules } from '@/lib/zone-upload-rules';
 import { logerror } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {

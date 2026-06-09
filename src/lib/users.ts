@@ -34,6 +34,37 @@ export async function getTotalUsers(): Promise<number> {
   }
 }
 
+export async function getUserLevel(userId: number): Promise<number> {
+  try {
+    const res = await query(
+      `SELECT level FROM user_xp WHERE user_id = $1 LIMIT 1`,
+      [userId]
+    );
+    return res.rows.length > 0 ? Number(res.rows[0].level) : 0;
+  } catch (err) {
+    await logerror('getUserLevel error', [err]);
+    return 0;
+  }
+}
+
+export async function getUserIdByAliasWithLevel(alias: string): Promise<{ id: number; level: number } | null> {
+  try {
+    const res = await query(
+      `SELECT u.id, COALESCE(ux.level, 0) as level
+       FROM users u
+       LEFT JOIN user_xp ux ON ux.user_id = u.id
+       WHERE u.alias = $1
+       LIMIT 1`,
+      [alias]
+    );
+    if (res.rows.length === 0) return null;
+    return { id: Number(res.rows[0].id), level: Number(res.rows[0].level) };
+  } catch (err) {
+    await logerror('getUserIdByAliasWithLevel error', [err]);
+    return null;
+  }
+}
+
 export async function getNewUsers(limit = 20, offset = 0): Promise<NewUser[]> {
   try {
     const res = await query(

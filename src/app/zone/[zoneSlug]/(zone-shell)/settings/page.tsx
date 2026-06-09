@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { getZoneUploadRules, getZone, getZoneMember } from '@/actions/zones';
+import { getZone, getZoneMember } from '@/actions/zones';
+import { getZoneUploadRules } from '@/lib/zone-upload-rules';
 import { getCurrentUser } from '@/lib/session';
 import { getZoneSettings } from '@/lib/zones';
 import { getZoneTags } from '@/lib/tags';

@@ -7,7 +7,8 @@ export type NotificationType = {
     | 'gps-post-failed'
     | 'user-started-following'
     | 'user-achievement-achieved'
-    | 'post-comment-created';
+    | 'post-comment-created'
+    | 'zone-member-invitation';
   user: {
     userId: number;
     alias: string;
@@ -18,7 +19,8 @@ export type NotificationType = {
     | NotificationGpsPostPublishFailedDetailsType
     | NotificationUserStartedFollowingDetailsType
     | NotificationUserAchievementAchievedDetailsType
-    | NotificationPostCommentCreatedDetailsType;
+    | NotificationPostCommentCreatedDetailsType
+    | NotificationZoneMemberInvitationDetailsType;
   timestamp: string | null;
   seen: boolean;
 };
@@ -77,6 +79,11 @@ export type NotificationPostCommentCreatedDetailsType = {
   commentType: 'comment' | 'gps-guess-comment' | 'gps-photo-guess-comment';
 };
 
+export type NotificationZoneMemberInvitationDetailsType = {
+  zoneSlug: number;
+  userAlias: number;
+};
+
 export function getNotificationContentMessage(type: NotificationType['type'], details: NotificationType['details']): string {
   switch (type) {
     case 'gps-guess': {
@@ -111,6 +118,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationPostCommentCreatedDetailsType;
       return d.parent ? `${d.commenterAlias}-მა დაგიტოვა კომენტარი` : `${d.commenterAlias}-მა დატოვა კომენტარი პოსტზე`;
     }
+    case 'zone-member-invitation': {
+      const d = details as NotificationZoneMemberInvitationDetailsType;
+      return `${d.userAlias}-მა მოგიწვია საბზონაში: ${d.zoneSlug}`;
+    }
     default:
       return 'ახალი შეტყობინება';
   }
@@ -144,6 +155,10 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'post-comment-created': {
       const d = notification.details as NotificationPostCommentCreatedDetailsType;
       return `/post/${d.postId}?commentId=${d.commentId}`;
+    }
+    case 'zone-member-invitation': {
+      const d = notification.details as NotificationZoneMemberInvitationDetailsType;
+      return `/zone/${d.zoneSlug}`;
     }
     default:
       return null;

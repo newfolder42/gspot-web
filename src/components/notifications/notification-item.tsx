@@ -5,7 +5,7 @@ import Link from "next/link";
 import { NotificationType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
 import TimePassed from "@/components/common/time-passed";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon } from "@/components/icons";
 
 export function NotificationIcon({ type, className }: { type: NotificationType['type']; className?: string }) {
   const cls = className ?? "w-4 h-4 shrink-0";
@@ -17,6 +17,7 @@ export function NotificationIcon({ type, className }: { type: NotificationType['
     case 'user-started-following': return <UsersIcon className={cls} />;
     case 'user-achievement-achieved': return <TrophyIcon className={cls} />;
     case 'post-comment-created': return <MessageIcon className={cls} />;
+    case 'zone-member-invitation': return <CompassIcon className={cls} />;
     default: return <InfoIcon className={cls} />;
   }
 }

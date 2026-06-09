@@ -142,6 +142,22 @@ export async function leaveZoneMember(zoneId: number, userId: number):
   }
 }
 
+export async function acceptZoneInvite(zoneId: number, userId: number): Promise<boolean> {
+  try {
+    const res = await query(
+      `UPDATE zone_members
+       SET status = 'active'
+       WHERE zone_id = $1 AND user_id = $2 AND status = 'pending'
+       RETURNING id`,
+      [zoneId, userId]
+    );
+    return res.rows.length > 0;
+  } catch (err) {
+    await logerror('acceptZoneInvite error', [err]);
+    return false;
+  }
+}
+
 export async function getZoneMembers(zoneId: number):
   Promise<ZoneMemberInfo[]> {
   try {
@@ -152,7 +168,14 @@ export async function getZoneMembers(zoneId: number):
        JOIN users u on u.id = zm.user_id
        left join user_content upp on u.id = upp.user_id AND upp.type = 'profile-photo'
        where zone_id = $1
-       order by zm.joined_at desc
+       order by
+         case zm.role
+           when 'owner' then 1
+           when 'admin' then 2
+           when 'moderator' then 3
+           else 4
+         end asc,
+         zm.joined_at desc
        limit 20`,
       [zoneId]
     );
@@ -188,7 +211,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
          and exists (
              select 1
              from zone_members zm
-             where zm.zone_id = z.id and zm.user_id = $1 and zm.status = 'active'
+             where zm.zone_id = z.id and zm.user_id = $1 and zm.status in ('active', 'pending')
            )
        order by case when z.slug = 'public' then 0 else 1 end, z.name asc`,
       [userId]
@@ -324,6 +347,84 @@ export async function upsertZoneContent(
   }
 }
 
+
+export async function checkZoneSlugAvailable(slug: string): Promise<boolean> {
+  try {
+    const normalized = slug.toLowerCase();
+    const [zonesRes, restrictedRes] = await Promise.all([
+      query(`SELECT id FROM zones WHERE LOWER(slug) = $1 LIMIT 1`, [normalized]),
+      query(`SELECT id FROM restricted_inputs WHERE type = 'zone-slug' AND slug = $1 LIMIT 1`, [normalized]),
+    ]);
+    return zonesRes.rows.length === 0 && restrictedRes.rows.length === 0;
+  } catch (err) {
+    await logerror('checkZoneSlugAvailable error', [err]);
+    return false;
+  }
+}
+
+export type CreateZoneInput = {
+  slug: string;
+  name: string;
+  description: string | null;
+  visibility: string;
+  join_policy: string;
+};
+
+export async function createZone(input: CreateZoneInput): Promise<ZoneBaseType | null> {
+  try {
+    const res = await query(
+      `INSERT INTO zones (slug, name, description, visibility, join_policy, state)
+       VALUES ($1, $2, $3, $4, $5, 'active')
+       RETURNING id, slug, name, description, visibility, join_policy, state, created_at, updated_at`,
+      [input.slug.toLowerCase(), input.name, input.description, input.visibility, input.join_policy]
+    );
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: Number(r.id),
+      slug: r.slug,
+      name: r.name,
+      description: r.description,
+      visibility: r.visibility,
+      join_policy: r.join_policy,
+      state: r.state,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    };
+  } catch (err) {
+    await logerror('createZone error', [err]);
+    return null;
+  }
+}
+
+export async function inviteZoneMember(zoneId: number, userId: number): Promise<{ success: boolean; alreadyMember?: boolean }> {
+  try {
+    const existing = await query(
+      `SELECT id, status FROM zone_members WHERE zone_id = $1 AND user_id = $2 LIMIT 1`,
+      [zoneId, userId]
+    );
+
+    if (existing.rows.length > 0) {
+      const status = existing.rows[0].status;
+      if (status === 'active' || status === 'pending') {
+        return { success: false, alreadyMember: true };
+      }
+    }
+
+    await query(
+      `INSERT INTO zone_members (zone_id, user_id, role, status)
+       VALUES ($1, $2, 'member', 'pending')
+       ON CONFLICT (zone_id, user_id)
+       DO UPDATE SET status = 'pending'`,
+      [zoneId, userId]
+    );
+
+    return { success: true };
+  } catch (err) {
+    await logerror('inviteZoneMember error', [err]);
+    return { success: false };
+  }
+}
 
 export async function updateZoneSettings(zoneId: number, { description, join_policy, upload_rules, guess_scoring_rules }: { description: string, join_policy: string, upload_rules: string, guess_scoring_rules: string }): Promise<boolean> {
   try {

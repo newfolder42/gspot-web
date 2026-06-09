@@ -3,9 +3,11 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveZones } from "@/lib/zones";
+import { getUserLevel } from "@/lib/users";
 import type { ZoneBaseType } from "@/types/zone";
 import { getProfileColors } from "@/lib/profileColors";
 import ProfileAvatar from "@/components/common/profileAvatar";
+import { MIN_LEVEL_CREATE_ZONE } from "@/lib/permissions";
 
 export const metadata: Metadata = {
   title: "საბზონების დათვალიერება | G'spot",
@@ -101,15 +103,34 @@ function ZoneCard({ zone }: { zone: ZoneBaseType }) {
 
 export default async function ExploreZonesPage() {
   const currentUser = await getCurrentUser();
-  const zones = await getActiveZones(currentUser?.userId);
+  const [zones, userLevel] = await Promise.all([
+    getActiveZones(currentUser?.userId),
+    currentUser ? getUserLevel(currentUser.userId) : Promise.resolve(0),
+  ]);
+
+  const canCreateZone = currentUser != null && userLevel >= MIN_LEVEL_CREATE_ZONE;
 
   return (
     <div className="mx-auto max-w-5xl px-2 py-4 md:px-4 md:py-8">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">აღმოაჩინე საბზონები</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          გაწევრიანდი შენი ინტერესის მიხედვით
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">აღმოაჩინე საბზონები</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            გაწევრიანდი შენი ინტერესის მიხედვით
+          </p>
+        </div>
+        {canCreateZone && (
+          <Link
+            href="/new-zone"
+            className="inline-flex items-center gap-1.5 shrink-0 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            ახალი საბზონა
+          </Link>
+        )}
       </div>
 
       {zones.length === 0 ? (

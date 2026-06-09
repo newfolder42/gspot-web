@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 import ZoneShellHeader from '@/components/zone/zone-shell-header';
+import PendingMemberBanner from '@/components/zone/pending-member-banner';
 
 type Props = {
   children: React.ReactNode;
@@ -102,6 +103,9 @@ export default async function UserLayout({ children, params }: Props) {
         />
 
         <main className="p-2">
+          {member?.status === 'pending' && currentUserId && (
+            <PendingMemberBanner zoneId={zone.id} userId={currentUserId} />
+          )}
           {children}
         </main>
       </div>
