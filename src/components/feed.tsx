@@ -14,7 +14,7 @@ type FeedProps = {
 };
 
 export default function Feed({ userId, accountUserId, type, zoneId, showFilter = true, view = 'timeline' }: FeedProps) {
-  const [filter, setFilter] = useState<FeedFilter>('all');
+  const [filter, setFilter] = useState<FeedFilter>('not-guessed');
 
   return (
     <div className="max-w-4xl mx-auto">
