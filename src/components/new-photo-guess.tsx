@@ -69,7 +69,7 @@ export default function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
       setStage('success');
       onSubmitted?.(guess);
     } catch {
-      setErrorMsg('შეცდომა მოხდა. სცადეთ თავიდან.');
+      setErrorMsg('შეცდომა მოხდა. სცადე თავიდან.');
       setStage('error');
     }
   };
@@ -192,7 +192,7 @@ export default function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
           <>
             <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-md mb-4">
               <p className="text-xs text-red-600 dark:text-red-400">
-                {errorMsg ?? 'შეცდომა მოხდა. სცადეთ თავიდან.'}
+                {errorMsg ?? 'შეცდომა მოხდა. სცადე თავიდან.'}
               </p>
             </div>
             <div className="flex gap-3">

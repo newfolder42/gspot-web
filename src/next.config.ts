@@ -13,6 +13,21 @@ module.exports = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.gspot.ge',
+          },
+        ],
+        destination: 'https://gspot.ge/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

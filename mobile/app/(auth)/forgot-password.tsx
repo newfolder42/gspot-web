@@ -239,7 +239,7 @@ export default function ForgotPasswordScreen() {
           პაროლის აღდგენა
         </Text>
         <Text className="text-zinc-500 dark:text-zinc-400 text-sm mb-6">
-          შეიყვანე მეილი და გამოგიგზავნით კოდს.
+          შეიყვანე მეილი და გამოგიგზავნი კოდს.
         </Text>
 
         <Input

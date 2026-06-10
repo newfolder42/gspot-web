@@ -159,7 +159,7 @@ export type CreateZoneInput = {
 export async function createZoneAction(input: CreateZoneInput): Promise<{ success: boolean; slug?: string; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser) return { success: false, error: 'არ ხართ ავტორიზებული' };
+    if (!currentUser) return { success: false, error: 'არ ხარ ავტორიზებული' };
 
     const userLevel = await getUserLevel(currentUser.userId);
     if (userLevel < MIN_LEVEL_CREATE_ZONE) {
@@ -214,7 +214,7 @@ export async function inviteZoneMemberAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser) return { success: false, error: 'არ ხართ ავტორიზებული' };
+    if (!currentUser) return { success: false, error: 'არ ხარ ავტორიზებული' };
 
     const zone = await getZoneById(zoneId);
     if (!zone) {
@@ -258,7 +258,7 @@ export async function inviteZoneMemberAction(
 export async function acceptZoneInviteAction(zoneId: number): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser) return { success: false, error: 'არ ხართ ავტორიზებული' };
+    if (!currentUser) return { success: false, error: 'არ ხარ ავტორიზებული' };
 
     const ok = await acceptZoneInviteLib(zoneId, currentUser.userId);
     if (!ok) return { success: false, error: 'მოწვევა ვერ მოიძებნა ან უკვე დამუშავებულია' };
