@@ -74,8 +74,8 @@ jobs:
                 "image": "${{ steps.image.outputs.reference }}",
                 "environment": {
                   "NODE_ENV": "production",
-                  "ALLOWED_HOSTS: "gspot.ge,www.gspot.ge"
-                  "CANONICAL_HOST: "gspot.ge"
+                  "ALLOWED_HOSTS: "gspot.ge,www.gspot.ge",
+                  "CANONICAL_HOST: "gspot.ge",
                   "POSTGRES_HOST": "${{ secrets.POSTGRES_HOST }}",
                   "POSTGRES_DB": "${{ secrets.POSTGRES_DB }}",
                   "POSTGRES_USER": "${{ secrets.POSTGRES_USER }}",
