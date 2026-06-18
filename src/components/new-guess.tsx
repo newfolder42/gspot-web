@@ -8,6 +8,7 @@ import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
 import { mapMaxBounds, mapMaxZoom, mapDefaultCenter } from '@/lib/map';
+import ZoomableImage from '@/components/common/zoomable-image';
 
 declare global {
   interface Window {
@@ -22,7 +23,6 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     longitude: mapDefaultCenter[0]
   });
   const [submitting, setSubmitting] = useState<null | "submitting" | "success" | "error">(null);
-  const [gettingLocation, setGettingLocation] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [showMapOrImage, setShowMapOrImage] = useState<"image" | "map">("map");
   const mapRef = useRef<HTMLDivElement>(null);
@@ -250,13 +250,15 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
           <div className="flex-1 flex flex-row">
             {/* Image Panel */}
             <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} relative flex items-center justify-center overflow-hidden`}>
-              <Image
-                src={postImage}
-                alt={postTitle || ''}
-                fill
-                className="object-contain"
-                priority
-              />
+              <ZoomableImage className="w-full h-full">
+                <Image
+                  src={postImage}
+                  alt={postTitle || ''}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </ZoomableImage>
             </div>
 
             {/* Map Panel */}

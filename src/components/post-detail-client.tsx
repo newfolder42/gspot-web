@@ -9,6 +9,7 @@ import { MapPinIcon, MessageIcon } from './icons';
 import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
+import ZoomableImage from './common/zoomable-image';
 import type { GpsPostType } from '@/types/post';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import TimePassed from './common/time-passed';
@@ -84,17 +85,19 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
 
         {post.image && (
           <div className="relative">
-            <Image
-              src={post.image}
-              alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
-              width={1200}
-              height={800}
-              className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
-              onLoad={(e) => {
-                const target = e.target as HTMLImageElement;
-                setIsPortrait(target.naturalHeight > target.naturalWidth);
-              }}
-            />
+            <ZoomableImage className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'}`}>
+              <Image
+                src={post.image}
+                alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+                width={1200}
+                height={800}
+                className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
+                onLoad={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  setIsPortrait(target.naturalHeight > target.naturalWidth);
+                }}
+              />
+            </ZoomableImage>
             <Link
               href={`#comments`}
               className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"

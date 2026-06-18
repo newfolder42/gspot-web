@@ -37,9 +37,9 @@ export default function Header({ zones, account }: HeaderProps) {
                   <path fillRule="evenodd" d="M3 5h14a1 1 0 010 2H3a1 1 0 110-2zm0 4h14a1 1 0 010 2H3a1 1 0 110-2zm0 4h14a1 1 0 010 2H3a1 1 0 110-2z" clipRule="evenodd" />
                 </svg>
               </button>
-              <Link href="/" className="flex">
+              <a href="/" className="flex">
                 <Image src={"/gspot.svg"} alt="Logo" width={40} height={40} loading="eager" style={{ height: "auto" }} />
-              </Link>
+              </a>
             </div>
 
             {/* Middle: search */}
