@@ -64,8 +64,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
   const zones = user ? await getUserPostZones(user.userId) : null;
@@ -80,6 +82,7 @@ export default async function RootLayout({
 
         <LeftPanel zones={zones} />
 
+        {modal}
         <main className="flex-1 pt-14 p-2 md:pl-56 bg-zinc-50 dark:bg-zinc-950">
           {children}
         </main>
