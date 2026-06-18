@@ -4,6 +4,7 @@ module.exports = function (api) {
     presets: [
       ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
     ],
-    plugins: ['react-native-reanimated/plugin'],
+    // react-native-worklets/plugin (Reanimated 4) is added automatically by
+    // babel-preset-expo when react-native-worklets is installed.
   };
 };

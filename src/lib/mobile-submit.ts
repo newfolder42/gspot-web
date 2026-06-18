@@ -1,6 +1,7 @@
 import { query } from '@/lib/db';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
+import { processGpsPhoto } from '@/lib/image-pipeline';
 import { type PostCreatedEvent } from '@/types/events/post-created';
 
 type CreateMobilePostParams = {
@@ -32,11 +33,20 @@ export async function storeMobileGpsPhotoContent({
   details,
 }: StoreMobileContentParams): Promise<{ id: number } | null> {
   try {
+    let storedUrl = publicUrl;
+    let storedDetails: StoreMobileContentParams['details'] & { variants?: unknown } = details;
+    const processed = await processGpsPhoto(publicUrl);
+    if (processed) {
+      storedUrl = processed.displayUrl;
+      storedDetails = { ...details, variants: processed.variants };
+    }
+    // On failure, fall back to the original upload URL with no variants.
+
     const res = await query(
       `INSERT INTO user_content (user_id, type, public_url, details, created_at)
        VALUES ($1, $2, $3, $4, NOW())
        RETURNING id`,
-      [userId, 'gps-photo', publicUrl, JSON.stringify(details)]
+      [userId, 'gps-photo', storedUrl, JSON.stringify(storedDetails)]
     );
 
     if ((res.rowCount ?? 0) === 0) return null;

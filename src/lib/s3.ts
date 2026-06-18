@@ -1,6 +1,6 @@
 "use server"
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { logerror } from "./logger";
 
@@ -39,4 +39,37 @@ export async function deleteObject(key: string) {
     } catch (err) {
         await logerror('deleteObject error', [err]);
     }
+}
+
+/** Download an object's bytes into a Buffer. Throws on failure (caller decides how to handle). */
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+    const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+    const res = await s3client.send(cmd);
+    const body = res.Body as unknown as AsyncIterable<Uint8Array> | undefined;
+    if (!body) throw new Error(`getObjectBuffer: empty body for key ${key}`);
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of body) {
+        chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+}
+
+/**
+ * Upload bytes to a known key. No ACL is set — the bucket serves objects via its policy, and an
+ * explicit ACL can fail under "Bucket owner enforced" object ownership.
+ */
+export async function putObject(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    cacheControl: string = "public, max-age=31536000, immutable",
+) {
+    const cmd = new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+    });
+    return s3client.send(cmd);
 }

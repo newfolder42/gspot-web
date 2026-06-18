@@ -26,8 +26,14 @@ export type GpsPostRatingType = {
   total: number;
 };
 
+export type PostImageVariants = {
+  thumb: string;
+  feed: string;
+};
+
 export type GpsPostType = PostType & {
   image: string;
+  imageVariants?: PostImageVariants | null;
   dateTaken?: string | null;
   ratings?: GpsPostRatingType;
   userRating?: DifficultyLevel | null;

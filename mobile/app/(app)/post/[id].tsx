@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -12,6 +11,8 @@ import { postsApi } from '@/lib/posts';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PostCommentType } from '@/types/post-comment';
 import { getInitials } from '@/lib/getInitials';
+import { NewGuess } from '@/components/NewGuess';
+import type { GuessResult } from '@/types/post-guess';
 
 /** Matches web DEPTH_COLORS cycle */
 const DEPTH_BORDER_COLORS = [
@@ -171,13 +172,29 @@ export default function PostPageScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const headerHeight = insets.top + 44;
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<PostCommentType | null>(null);
+  const [showGuess, setShowGuess] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const handleReply = (comment: PostCommentType) => {
     setReplyTo(comment);
     setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const handleGuessSubmitted = (_result: GuessResult) => {
+    queryClient.setQueryData(queryKey, (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        alreadyGuessed: true,
+        post: {
+          ...old.post,
+          guessCount: (old.post.guessCount ?? 0) + 1,
+        },
+      };
+    });
   };
 
   const queryKey = useMemo(() => ['post-detail', postId] as const, [postId]);
@@ -268,16 +285,16 @@ export default function PostPageScreen() {
     );
   }
 
-  const { post, comments } = query.data;
+  const { post, comments, alreadyGuessed } = query.data;
   const commentsCount = countComments(comments);
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
-  const headerHeight = useHeaderHeight();
+  const canGuess = post.type === 'gps-photo' && !alreadyGuessed && !isOwner;
 
   return (
     <KeyboardAvoidingView
-      className="flex-1"
-      behavior="padding"
-      keyboardVerticalOffset={headerHeight}
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
     >
       <ScrollView
         className="flex-1 bg-zinc-50 dark:bg-zinc-950"
@@ -351,6 +368,26 @@ export default function PostPageScreen() {
           </View>
         ) : null}
 
+        {/* ── Guess button ── */}
+        {canGuess ? (
+          <View className="px-4 pt-3">
+            <Pressable
+              onPress={() => setShowGuess(true)}
+              className="h-11 rounded-xl bg-teal-600 flex-row items-center justify-center gap-2 active:opacity-80"
+            >
+              <Feather name="map-pin" size={16} color="#fff" />
+              <Text className="text-sm font-semibold text-white">გამოიცანი</Text>
+            </Pressable>
+          </View>
+        ) : alreadyGuessed ? (
+          <View className="px-4 pt-3">
+            <View className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2">
+              <Feather name="check-circle" size={16} color="#14B8A6" />
+              <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">გამოცნობილია</Text>
+            </View>
+          </View>
+        ) : null}
+
         {/* ── Comments ── */}
         <View className="px-4 pt-4">
           <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">კომენტარები</Text>
@@ -405,6 +442,13 @@ export default function PostPageScreen() {
           </Pressable>
         </View>
       </View>
+      {showGuess ? (
+        <NewGuess
+          post={post}
+          onClose={() => setShowGuess(false)}
+          onSubmitted={handleGuessSubmitted}
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

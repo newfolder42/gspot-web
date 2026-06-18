@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
-import type { OwnAccountData } from './account.types';
+import type { OwnAccountData } from '@/types/own-account';
 import type { MobilePostType } from '@/types/post';
 
 const COLUMNS = 3;

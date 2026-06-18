@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api';
 import type { PostCommentType } from '@/types/post-comment';
 import type { PostDetailResponse } from '@/types/post';
+import type { GuessResult } from '@/types/post-guess';
 
 type ApiErrorBody = { error?: string };
 
@@ -41,4 +42,14 @@ export const postsApi = {
 
   deletePost: (postId: number): Promise<void> =>
     call(() => apiClient.delete(`/posts/${postId}`).then(() => undefined)),
+
+  addGuess: (
+    postId: number,
+    coordinates: { latitude: number; longitude: number }
+  ): Promise<GuessResult> =>
+    call(() =>
+      apiClient
+        .post<GuessResult>(`/posts/${postId}/guesses`, { coordinates })
+        .then((r) => r.data)
+    ),
 };

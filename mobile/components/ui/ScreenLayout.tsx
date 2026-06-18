@@ -1,4 +1,5 @@
-import { KeyboardAvoidingView, Platform, ScrollView, SafeAreaView } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = {
   children: React.ReactNode;

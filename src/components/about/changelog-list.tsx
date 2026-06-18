@@ -4,6 +4,13 @@ import { useState } from "react";
 
 const changelog = [
   {
+    version: "v0.8.34",
+    date: "2026-06-18",
+    items: [
+      "ჰოტოების სხვადასხვა ვერსიის ქონა, ფიდისთვის და გრიდისთვის, ბევრად დაბალი ხარისხის."
+    ],
+  },
+  {
     version: "v0.8.27",
     date: "2026-05-28",
     items: [

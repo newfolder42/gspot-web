@@ -1,4 +1,6 @@
 module.exports = {
+  // Keep sharp's native binary out of the server bundle.
+  serverExternalPackages: ["sharp"],
   images: {
     remotePatterns: [
       {

@@ -12,21 +12,8 @@ buildscript {
   }
 }
 
-def reactNativeAndroidDir = new File(
-  providers.exec {
-    workingDir(rootDir)
-    commandLine("node", "--print", "require.resolve('react-native/package.json')")
-  }.standardOutput.asText.get().trim(),
-  "../android"
-)
-
 allprojects {
   repositories {
-    maven {
-      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-      url(reactNativeAndroidDir)
-    }
-
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
@@ -35,3 +22,47 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+// @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY) sync-d4ccbfdff48fdba3138b02a8ba41b9722af001d8
+
+allprojects {
+  repositories {
+    maven {
+      url 'https://api.mapbox.com/downloads/v2/releases/maven'
+      // Authentication is no longer required as per Mapbox's removal of download token requirement
+      // See: https://github.com/mapbox/mapbox-maps-flutter/issues/775
+      // Keeping this as optional for backward compatibility
+      def token = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: System.getenv('RNMAPBOX_MAPS_DOWNLOAD_TOKEN')
+      if (token) {
+        authentication { basic(BasicAuthentication) }
+        credentials {
+          username = 'mapbox'
+          password = token
+        }
+      }
+    }
+  }
+}
+
+// @generated end @rnmapbox/maps-v2-maven
+
+// Force CMake 4.1.2 (bundled ninja 1.12.1) for every native module. ninja 1.12+
+// supports Windows long paths (>260 chars), which the new-architecture codegen
+// build outputs (e.g. react-native-gesture-handler) exceed on deep project paths.
+// The default toolchain (CMake 3.22.1 / ninja 1.10.2) fails with
+// "ninja: error: Stat(...): Filename longer than 260 characters".
+// Use gradle.projectsEvaluated so this runs AFTER every project's afterEvaluate
+// (including the React Native plugin's, which otherwise leaves the :app module on
+// AGP's default CMake 3.22.1 / ninja 1.10.2). Compatible with --configure-on-demand.
+gradle.projectsEvaluated {
+  rootProject.subprojects.each { project ->
+    try {
+      def androidExt = project.extensions.findByName('android')
+      if (androidExt != null) {
+        androidExt.externalNativeBuild.cmake.version = '4.1.2'
+        // Allow CMake 4 to configure modules that still declare an old
+        // cmake_minimum_required (<3.5), which CMake 4 otherwise rejects.
+        androidExt.externalNativeBuild.cmake.arguments '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+      }
+    } catch (Throwable ignored) {}
+  }
+}

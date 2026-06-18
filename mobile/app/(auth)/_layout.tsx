@@ -13,7 +13,7 @@ export default function AuthLayout() {
     );
   }
 
-  if (user) return <Redirect href="/(app)" />;
+  if (user) return <Redirect href="/(app)/(tabs)" />;
 
   return (
     <Stack

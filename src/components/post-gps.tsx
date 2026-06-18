@@ -17,7 +17,7 @@ export function GpsPostGridItem({ post }: { post: GpsPostType }) {
         style={{ position: 'relative', paddingBottom: '100%', overflow: 'hidden' }}
       >
         <Image
-          src={post.image}
+          src={post.imageVariants?.thumb ?? post.image}
           alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
           fill
           className="object-cover transition-transform group-hover:scale-105"
@@ -79,7 +79,7 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
       <div className="relative">
         <Link href={`/post/${post.id}`} className="block w-full">
           <Image
-            src={post.image}
+            src={post.imageVariants?.feed ?? post.image}
             alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
             width={1200}
             height={800}
