@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { createPost } from '@/lib/posts';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
@@ -270,8 +269,6 @@ export default function Submit({
   initialZoneId: number | null;
   initialZoneSlug: string | null;
 }) {
-  const router = useRouter();
-
   const findInitialZone = () => {
     if (initialZoneId) return zones.find((z) => z.id === initialZoneId) ?? null;
     if (initialZoneSlug) return zones.find((z) => z.slug === initialZoneSlug) ?? null;
@@ -406,7 +403,7 @@ export default function Submit({
                 tagId: selectedTagId,
               });
               if (postId) {
-                router.push(`/post/${postId}`);
+                window.location.assign(`/post/${postId}`);
               } else {
                 throw new Error('ვერ მოხერხდა პოსტის შექმნა');
               }
