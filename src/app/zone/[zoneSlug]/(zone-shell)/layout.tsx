@@ -98,7 +98,7 @@ export default async function UserLayout({ children, params }: Props) {
           zone={zone}
           userId={currentUserId}
           initialStatus={member?.status ?? null}
-          isPublic={zone.visibility === 'public'}
+          initialRole={member?.role ?? null}
           tabs={tabs}
         />
 

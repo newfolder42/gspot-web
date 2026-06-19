@@ -1,11 +1,14 @@
 "use client"
 
 import React, { useState } from 'react';
-import { zoneMemberLeave, zoneMemberRequest, ZoneMemberStatus, getZoneMember } from '@/actions/zones';
+import { zoneMemberLeave, zoneMemberRequest, getZoneMember } from '@/actions/zones';
+import type { ZoneJoinPolicy, ZoneMemberRole, ZoneMemberStatus } from '@/actions/zones';
 
 type Props = {
   zoneId: number;
   userId: number;
+  joinPolicy: ZoneJoinPolicy;
+  role?: ZoneMemberRole | null;
   initialStatus?: ZoneMemberStatus | null;
   onStatusChange?: (newStatus: ZoneMemberStatus | null) => void;
 };
@@ -16,10 +19,19 @@ const LoadingSvg = () => (
   </svg>
 );
 
-export default function BecomeZoneMemberButton({ zoneId, userId, initialStatus = null, onStatusChange }: Props) {
+export default function BecomeZoneMemberButton({ zoneId, userId, joinPolicy, role = null, initialStatus = null, onStatusChange }: Props) {
   const [status, setStatus] = useState<ZoneMemberStatus | null>(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isMember = status === 'active';
+  const isPending = status === 'pending';
+  const isJoined = isMember || isPending;
+  const canSelfJoin = joinPolicy !== 'invite_only';
+
+  if (status === 'banned') return null;
+  if (role === 'owner') return null;
+  if (!isJoined && !canSelfJoin) return null;
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -27,27 +39,28 @@ export default function BecomeZoneMemberButton({ zoneId, userId, initialStatus =
     setLoading(true);
     setError(null);
 
-    console.log('status', status);
+    const result = isJoined
+      ? await zoneMemberLeave(zoneId, userId)
+      : await zoneMemberRequest(zoneId, userId);
 
-    if ((status == 'active' || status == 'pending')) {
-      const result = await zoneMemberLeave(zoneId, userId);
-      if (!result.success) {
-        setError('ფიქსირდება ხარვეზი, გთხოვ ცადე მოგვაინებით:' + result.error);
-      }
-    }
-    else {
-      const result = await zoneMemberRequest(zoneId, userId);
-      if (!result.success) {
-        setError('ფიქსირდება ხარვეზი, გთხოვ ცადე მოგვაინებით:' + result.error);
-      }
+    if (!result.success) {
+      setError('ფიქსირდება ხარვეზი, გთხოვ ცადე მოგვაინებით:' + result.error);
     }
 
-    var member = await getZoneMember(zoneId, userId);
+    const member = await getZoneMember(zoneId, userId);
     setStatus(member?.status ?? null);
     onStatusChange?.(member?.status ?? null);
 
     setLoading(false);
   }
+
+  const label = isMember
+    ? 'წევრი'
+    : isPending
+      ? 'მოლოდინში'
+      : joinPolicy === 'request'
+        ? 'გაწევრიანების მოთხოვნა'
+        : 'გაწევრიანება';
 
   return (
     <div className="">
@@ -56,14 +69,13 @@ export default function BecomeZoneMemberButton({ zoneId, userId, initialStatus =
         disabled={loading}
         className={`inline-flex items-center px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 cursor-pointer text-sm font-medium transition ${loading
           ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
-          : (status == 'active' || status == 'pending')
+          : isJoined
             ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
             : 'bg-teal-600 text-white hover:bg-teal-700'
           }`}
       >
         {loading && <LoadingSvg />}
-        {!loading && (status == 'active' || status == 'pending') && <span>წევრი</span>}
-        {!loading && (status == 'left' || status == null) && <span>გაწევრიანება</span>}
+        {!loading && <span>{label}</span>}
       </button>
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>

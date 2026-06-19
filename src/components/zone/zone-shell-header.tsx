@@ -7,18 +7,18 @@ import { PlusIcon } from '@/components/icons';
 import AccountTabs from '@/components/account/account-tabs';
 import type { AccountTab } from '@/components/account/account-tabs';
 import BecomeZoneMemberButton from './become-zone-member-button';
-import type { ZoneMemberStatus, ZoneType } from '@/actions/zones';
+import type { ZoneMemberRole, ZoneMemberStatus, ZoneType } from '@/actions/zones';
 import ProfileAvatar from '@/components/common/profileAvatar';
 
 type Props = {
   zone: ZoneType;
   userId: number | null;
   initialStatus: ZoneMemberStatus | null;
-  isPublic: boolean;
+  initialRole: ZoneMemberRole | null;
   tabs: AccountTab[];
 };
 
-export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic, tabs }: Props) {
+export default function ZoneShellHeader({ zone, userId, initialStatus, initialRole, tabs }: Props) {
   const [memberStatus, setMemberStatus] = useState<ZoneMemberStatus | null>(initialStatus);
   const [expandedDescription, setExpandedDescription] = useState(false);
   const zoneSlug = zone.slug;
@@ -78,10 +78,12 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, isPublic,
                     </Link>
                   )}
 
-                  {isPublic && userId && (
+                  {userId && (
                     <BecomeZoneMemberButton
                       zoneId={zone.id}
                       userId={userId}
+                      joinPolicy={zone.join_policy}
+                      role={initialRole}
                       initialStatus={initialStatus}
                       onStatusChange={setMemberStatus}
                     />
