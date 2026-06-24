@@ -70,7 +70,7 @@ export default function ImageUpload({
   trigger = 'overlay',
   buttonLabel = 'სურათის ატვირთვა',
   modalTitle = 'სურათის შეცვლა',
-  fileType = 'profle-phioto',
+  fileType = 'profile-photo',
   maxSizeBytes = UPLOAD_SIZE_LIMIT.PROFILE_PHOTO,
   crop = DEFAULT_CROP,
   onUploadComplete,

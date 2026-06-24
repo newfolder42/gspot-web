@@ -154,6 +154,24 @@ export function LogoutIcon({ className = "w-4 h-4", strokeWidth = 2 }: IconProps
   );
 }
 
+export function FlagIcon({ className = "w-4 h-4", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 22V3" />
+      <path d="M5 4h11l-2.5 3.5L16 11H5" />
+    </svg>
+  );
+}
+
 // Notification Icons
 export function MapPinIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
   return (
@@ -286,6 +304,24 @@ export function CheckmarkCircleIcon({ className = "w-5 h-5", strokeWidth = 2 }: 
   );
 }
 
+export function XCircleIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
+    </svg>
+  );
+}
+
 export function ListIcon({ className = "w-4 h-4", strokeWidth = 2 }: IconProps) {
   return (
     <svg
@@ -404,6 +440,64 @@ export function CameraIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps
     >
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
       <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
+export function LockIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M8 3v4" />
+      <path d="M16 3v4" />
+    </svg>
+  );
+}
+
+export function MaskIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 9c0-3 3.5-5 8-5s8 2 8 5c0 5-2 10-8 10S4 14 4 9Z" />
+      <path d="M9 10c0 1-.7 2-2 2s-2-1-1.5-2.3C6 9 7 8.5 8 8.7c.6.1 1 .6 1 1.3Z" />
+      <path d="M15 10c0 1 .7 2 2 2s2-1 1.5-2.3c-.5-.7-1.5-1.2-2.5-1c-.6.1-1 .6-1 1.3Z" />
+      <path d="M10 14c.7.6 1.3.6 2 0" />
     </svg>
   );
 }

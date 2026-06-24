@@ -46,14 +46,11 @@ export default async function AccountPage({ params }: { params: Promise<{ userNa
   const data = await getAccountByAlias(userName, currentUserId);
   if (!data) return notFound();
 
-  const isOwnProfile = currentUserId === data.user.id;
-
   return (
     <div>
       {(<Feed type='account'
         userId={currentUserId}
         accountUserId={data.user.id}
-        showFilter={!isOwnProfile}
         view="grid" />)}
     </div>
   );

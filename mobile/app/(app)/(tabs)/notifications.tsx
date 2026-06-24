@@ -32,6 +32,8 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
       return 'camera';
     case 'connection-created-gps-post':
       return 'image';
+    case 'connection-created-quest-post':
+      return 'star';
     case 'gps-post-failed':
       return 'alert-triangle';
     case 'user-started-following':
@@ -40,6 +42,18 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
       return 'award';
     case 'post-comment-created':
       return 'message-circle';
+    case 'zone-member-invitation':
+      return 'compass';
+    case 'zone-quest-objective-submitted':
+      return 'camera';
+    case 'zone-quest-objective-accepted':
+      return 'check-circle';
+    case 'zone-quest-objective-rejected':
+      return 'x-circle';
+    case 'zone-quest-completed':
+      return 'star';
+    case 'connection-completed-zone-quest':
+      return 'star';
     default:
       return 'bell';
   }

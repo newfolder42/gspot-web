@@ -1,21 +1,16 @@
 'use server';
 
-import { getAccountPosts, getConnectionsPosts, getGlobalPosts, getPublicPosts, getZonePosts } from '@/lib/posts';
+import { getAccountPosts, getConnectionsPosts, getGlobalPosts, getPublicPosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
 import { POSTS_PER_PAGE } from '@/types/constants';
-import { FeedFilter, FeedType, GpsPostType } from '@/types/post';
+import { FeedFilter, FeedType, FeedPostType, GpsPostType } from '@/types/post';
 
 type LoadPostsParams = {
   type: FeedType;
   userId?: number | null;
   zoneId?: number | null;
   accountUserId?: number;
-  cursor?: { guessCount: number, date: string; id: number, shownCount: number };
+  cursor?: { date: string; id: number; ids: number[] };
   filter?: FeedFilter;
-  tagId?: number | null;
-  limit?: number;
-} | {
-  type: 'public';
-  cursor?: { guessCount: number, id: number, shownCount: number };
   limit?: number;
 } | {
   type: 'global';
@@ -31,16 +26,27 @@ type LoadPostsParams = {
   filter?: FeedFilter;
   limit?: number;
 } | {
-  type: 'zone';
+  type: 'to-guess';
+  userId?: number | null;
+  cursor?: { date: string; id: number };
+  limit?: number;
+};
+
+type LoadZonePostsParams = {
   zoneId: number;
   userId?: number | null;
   cursor?: { date: string; id: number };
   filter?: FeedFilter;
   tagId?: number | null;
   limit?: number;
-};
+}
 
-export async function loadPosts(params: LoadPostsParams): Promise<GpsPostType[]> {
+type LoadPublicPostsParams = {
+  cursor?: { ids: number[] };
+  limit?: number;
+}
+
+export async function loadPosts(params: LoadPostsParams): Promise<FeedPostType[]> {
   const limit = params.limit ? params.limit : POSTS_PER_PAGE;
   switch (params.type) {
     case 'connection':
@@ -49,10 +55,19 @@ export async function loadPosts(params: LoadPostsParams): Promise<GpsPostType[]>
       return await getAccountPosts(params.accountUserId!, params.userId, limit, params.cursor, params.filter);
     case 'global':
       return await getGlobalPosts(params.userId, limit, params.cursor, params.filter);
-    case 'zone':
-      return await getZonePosts(params.zoneId!, params.userId, limit, params.cursor, params.filter, params.tagId);
-    case 'public':
+    case 'to-guess':
+      return await getToGuessPosts(params.userId!, limit, params.cursor);
     default:
-      return await getPublicPosts(10, limit, params.cursor);
+      return [];
   }
+}
+
+export async function loadZonePosts(params: LoadZonePostsParams): Promise<FeedPostType[]> {
+  const limit = params.limit ? params.limit : POSTS_PER_PAGE;
+  return await getZonePosts(params.zoneId!, params.userId, limit, params.cursor, params.filter, params.tagId);
+}
+
+export async function loadPublicPosts(params: LoadPublicPostsParams = {}): Promise<GpsPostType[]> {
+  const limit = params.limit ? params.limit : POSTS_PER_PAGE;
+  return await getPublicPosts(limit, params.cursor);
 }

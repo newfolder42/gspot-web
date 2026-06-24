@@ -142,6 +142,9 @@ async function sendPushForNotification(userId: number, type: string, details: Re
       body = title ? `${details.authorAlias}-მა გამოაქვეყნა: ${title}` : `${details.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
       break;
     }
+    case 'connection-created-quest-post':
+      body = `${details.authorAlias}-მა შეასრულა მისია: ${details.title}`;
+      break;
     case 'gps-post-failed': {
       const title = details.title?.trim();
       body = title ? `პოსტი "${title}" ვერ განთავსდა` : 'შენი პოსტი ვერ განთავსდა';
@@ -157,6 +160,21 @@ async function sendPushForNotification(userId: number, type: string, details: Re
       body = details.parent
         ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი`
         : `${details.commenterAlias}-მა დატოვა კომენტარი`;
+      break;
+    case 'zone-quest-completed':
+      body = `მისია შესრულებულია: ${details.questTitle}`;
+      break;
+    case 'zone-quest-objective-rejected':
+      body = `ამოცანა "${details.objectiveTitle ?? ''}" დაიწუნა, სცადე თავიდან`;
+      break;
+    case 'zone-quest-objective-accepted':
+      body = `ამოცანა "${details.objectiveTitle ?? ''}" დადასტურდა`;
+      break;
+    case 'zone-quest-objective-submitted':
+      body = `${details.submitterAlias}-მა გამოაგზავნა "${details.objectiveTitle ?? ''}" შესაფასებლად`;
+      break;
+    case 'connection-completed-zone-quest':
+      body = `${details.userAlias}-მა შეასრულა მისია: ${details.questTitle}`;
       break;
   }
 

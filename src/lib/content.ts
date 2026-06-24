@@ -3,7 +3,7 @@
 import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { deleteObject } from './s3';
-import { processGpsPhoto } from './image-pipeline';
+import { processUploadedPhoto } from './image-pipeline';
 import { eventBus } from './eventBus';
 import type { UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 
@@ -62,7 +62,7 @@ export async function storeContent(url: string, type: string, details: any) {
     let publicUrl = url;
     let finalDetails = details;
     if (type === 'gps-photo') {
-      const processed = await processGpsPhoto(url);
+      const processed = await processUploadedPhoto(url);
       if (processed) {
         publicUrl = processed.displayUrl;
         finalDetails = { ...details, variants: processed.variants };

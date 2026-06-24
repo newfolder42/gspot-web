@@ -1,7 +1,7 @@
 import { query } from '@/lib/db';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
-import { processGpsPhoto } from '@/lib/image-pipeline';
+import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { type PostCreatedEvent } from '@/types/events/post-created';
 
 type CreateMobilePostParams = {
@@ -35,7 +35,7 @@ export async function storeMobileGpsPhotoContent({
   try {
     let storedUrl = publicUrl;
     let storedDetails: StoreMobileContentParams['details'] & { variants?: unknown } = details;
-    const processed = await processGpsPhoto(publicUrl);
+    const processed = await processUploadedPhoto(publicUrl);
     if (processed) {
       storedUrl = processed.displayUrl;
       storedDetails = { ...details, variants: processed.variants };

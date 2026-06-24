@@ -1,14 +1,15 @@
 export type PostType = {
   id: number;
-  type: PostTypeType;
   title: string;
   userId: number;
   author: string;
   date: string;
   status: 'processing' | 'published' | 'failed' | 'deleted';
   zoneId: number;
-  zoneSlug?: string;
+  zoneSlug: string;
   zoneProfilePhoto?: string | null;
+  authorLevel?: number | null;
+  commentCount?: number | null;
 };
 
 export enum DifficultyLevel {
@@ -32,19 +33,33 @@ export type PostImageVariants = {
 };
 
 export type GpsPostType = PostType & {
+  type: 'gps-photo';
   image: string;
   imageVariants?: PostImageVariants | null;
   dateTaken?: string | null;
   ratings?: GpsPostRatingType;
   userRating?: DifficultyLevel | null;
   guessCount?: number | null;
-  commentCount?: number | null;
   userHasGuessed?: boolean;
   tag?: { id: number; name: string; color: string } | null;
-  authorLevel?: number | null;
 }
 
+export type QuestCompletionPhotoType = {
+  url: string;
+  objectiveTitle: string | null;
+  variants: PostImageVariants | null;
+};
+
+export type QuestCompletionPostType = PostType & {
+  type: 'quest-completion';
+  photos: QuestCompletionPhotoType[];
+  questId: number;
+  questTitle: string | null;
+}
+
+export type FeedPostType = GpsPostType | QuestCompletionPostType;
+
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
-export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone';
+export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone' | 'to-guess';
 export type FeedView = 'timeline' | 'grid';
-export type PostTypeType = 'gps-photo' | 'text';
+export type PostTypeType = 'gps-photo' | 'text' | 'quest-completion';

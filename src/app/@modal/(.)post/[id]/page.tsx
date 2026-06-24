@@ -20,7 +20,7 @@ export default async function PostModal({ params }: Props) {
   ]);
 
   return (
-    <Modal title={`'${post.author}-ის სურათი`}>
+    <Modal>
       <PostDetailClient
         post={post}
         comments={comments}

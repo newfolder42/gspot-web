@@ -27,15 +27,15 @@ const SMALL_VARIANTS = {
 
 /**
  * Generate WebP derivatives for a just-uploaded master. The master keeps its bare key
- * (`gps-photo/<uuid>`); only `feed`/`thumb` get named keys (`gps-photo/<uuid>/<name>.webp`).
+ * (`<type>/<uuid>`); only `feed`/`thumb` get named keys (`<type>/<uuid>/<name>.webp`).
  * Returns the `feed`/`thumb` variant URLs plus `displayUrl` (the untouched master, used as
  * public_url), or `null` if processing failed — callers must fall back to the original URL so an
- * upload is never blocked.
+ * upload is never blocked. Used for any photo upload (gps-photo, quest-objective-photo, ...).
  */
-export async function processGpsPhoto(publicUrl: string): Promise<ProcessedPhoto | null> {
+export async function processUploadedPhoto(publicUrl: string): Promise<ProcessedPhoto | null> {
   try {
-    const base = publicUrl.split('?')[0];               // .../gps-photo/<uuid>
-    const key = new URL(base).pathname.replace(/^\//, ''); // gps-photo/<uuid>
+    const base = publicUrl.split('?')[0];               // .../<type>/<uuid>
+    const key = new URL(base).pathname.replace(/^\//, ''); // <type>/<uuid>
 
     const source = await getObjectBuffer(key);
 
@@ -56,7 +56,7 @@ export async function processGpsPhoto(publicUrl: string): Promise<ProcessedPhoto
 
     return { displayUrl: base, variants };
   } catch (err) {
-    await logerror('processGpsPhoto error', [err, publicUrl]);
+    await logerror('processUploadedPhoto error', [err, publicUrl]);
     return null;
   }
 }

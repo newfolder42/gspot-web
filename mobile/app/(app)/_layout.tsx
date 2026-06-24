@@ -5,13 +5,6 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/pushNotifications';
 
-/**
- * Root Stack navigator for the authenticated (app) group.
- * - (tabs)  — the bottom-tab shell (headerShown: false so tabs manage their own headers)
- * - post/[id] — Stack screen so back() correctly returns to whichever tab pushed it
- * - zone/[slug] — zone feed
- * - user/[alias] — public profile
- */
 export default function AppLayout() {
   const { user, isLoading } = useAuth();
   const router = useRouter();

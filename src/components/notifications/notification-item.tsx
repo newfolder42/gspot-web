@@ -5,7 +5,7 @@ import Link from "next/link";
 import { NotificationType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
 import TimePassed from "@/components/common/time-passed";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon, CheckmarkCircleIcon, XCircleIcon, FlagIcon } from "@/components/icons";
 
 export function NotificationIcon({ type, className }: { type: NotificationType['type']; className?: string }) {
   const cls = className ?? "w-4 h-4 shrink-0";
@@ -13,11 +13,17 @@ export function NotificationIcon({ type, className }: { type: NotificationType['
     case 'gps-guess': return <MapPinIcon className={cls} />;
     case 'gps-photo-guess': return <CameraIcon className={cls} />;
     case 'connection-created-gps-post': return <ImageIcon className={cls} />;
+    case 'connection-created-quest-post': return <TrophyIcon className={cls} />;
     case 'gps-post-failed': return <AlertTriangleIcon className={cls} />;
     case 'user-started-following': return <UsersIcon className={cls} />;
     case 'user-achievement-achieved': return <TrophyIcon className={cls} />;
     case 'post-comment-created': return <MessageIcon className={cls} />;
     case 'zone-member-invitation': return <CompassIcon className={cls} />;
+    case 'zone-quest-objective-submitted': return <CameraIcon className={cls} />;
+    case 'zone-quest-objective-accepted': return <CheckmarkCircleIcon className={cls} />;
+    case 'zone-quest-objective-rejected': return <XCircleIcon className={cls} />;
+    case 'zone-quest-completed': return <FlagIcon className={cls} />;
+    case 'connection-completed-zone-quest': return <FlagIcon className={cls} />;
     default: return <InfoIcon className={cls} />;
   }
 }

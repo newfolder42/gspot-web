@@ -78,6 +78,10 @@ export async function getZoneById(id: number): Promise<ZoneBaseType | null> {
   }
 }
 
+export async function getZoneQuestsEnabled(zoneId: number): Promise<boolean> {
+  return zoneId == 1;
+}
+
 export async function getZoneMember(zoneId: number, userId: number): Promise<ZoneMemberInfo | null> {
   try {
     const res = await query(

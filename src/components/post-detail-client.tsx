@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PostActions from './post-actions';
 import PostComments from './post-comments';
-import { MapPinIcon, MessageIcon } from './icons';
 import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
 import ZoomableImage from './common/zoomable-image';
-import type { GpsPostType } from '@/types/post';
+import PostStatsBadge from './common/post-stats-badge';
+import { QuestCompletionTitle } from './post-quest';
+import type { FeedPostType } from '@/types/post';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import TimePassed from './common/time-passed';
 import type { PostGuessType } from '@/types/post-guess';
@@ -18,7 +19,7 @@ import type { PostCommentType } from '@/types/post-comment';
 import type { ZoneTag } from '@/types/tag';
 
 type PostDetailClientProps = {
-  post: GpsPostType;
+  post: FeedPostType;
   comments: PostCommentType[];
   currentUser: string;
   alreadyGuessed: boolean;
@@ -27,11 +28,13 @@ type PostDetailClientProps = {
 
 export default function PostDetailClient({ post, comments, currentUser, alreadyGuessed, zoneTags }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
-  const userCanGuess = !!currentUser && !isAuthor && !alreadyGuessed;
+  const questPost = post.type === 'quest-completion' ? post : null;
+  const gpsPost = post.type === 'gps-photo' ? post : null;
+  const userCanGuess = !questPost && !!currentUser && !isAuthor && !alreadyGuessed;
 
   const [isPortrait, setIsPortrait] = useState(false);
   const [canGuess, setCanGuess] = useState(userCanGuess);
-  const [guessCount, setGuessCount] = useState(Number(post.guessCount) || 0);
+  const [guessCount, setGuessCount] = useState(Number(gpsPost?.guessCount) || 0);
 
   const handleGuessSubmitted = (_: PostGuessType) => {
     setCanGuess(false);
@@ -56,7 +59,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
             <div className="flex items-center gap-1.5">
               <Link href={`/zone/${post.zoneSlug}`} className="flex items-center gap-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">
                 <ProfileAvatar
-                  name={post.zoneSlug ?? ''}
+                  name={post.zoneSlug}
                   photoUrl={post.zoneProfilePhoto}
                   className="w-6 h-6 rounded-md flex-shrink-0"
                   initialsClassName="text-[8px] font-bold"
@@ -75,19 +78,48 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
                 </svg>
               )}
             </div>
-            {post.tag && <TagBadge name={post.tag.name} color={post.tag.color} />}
-            <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
+            {gpsPost?.tag && <TagBadge name={gpsPost.tag.name} color={gpsPost.tag.color} />}
+            {gpsPost && (
+              <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
+            )}
+            {questPost && (
+              <Link
+                href={`/zone/${post.zoneSlug}/quests/${questPost.questId}`}
+                className="inline-block mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+              >
+                <QuestCompletionTitle questTitle={questPost.questTitle} />
+              </Link>
+            )}
           </div>
           <div className="flex-shrink-0">
-            <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} currentTagId={post.tag?.id ?? null} zoneTags={zoneTags} />
+            <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} currentTagId={gpsPost?.tag?.id ?? null} zoneTags={zoneTags} />
           </div>
         </div>
 
-        {post.image && (
+        {questPost && (questPost.photos.length > 0 ? (
+          <div className="relative">
+            <div className={`grid gap-0.5 ${questPost.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {questPost.photos.map((photo, idx) => (
+                <ZoomableImage key={idx} className="relative aspect-square">
+                  <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
+                  {photo.objectiveTitle && (
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5 pointer-events-none">
+                      <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
+                    </div>
+                  )}
+                </ZoomableImage>
+              ))}
+            </div>
+            <PostStatsBadge href="#comments" commentCount={commentCount} title="კონტრიბუციის ნახვა" />
+          </div>
+        ) : (
+          <PostStatsBadge href="#comments" commentCount={commentCount} title="კონტრიბუციის ნახვა" className="mx-2 mb-2" />
+        ))}
+        {gpsPost && gpsPost?.image && (
           <div className="relative">
             <ZoomableImage className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'}`}>
               <Image
-                src={post.image}
+                src={gpsPost.image}
                 alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
                 width={1200}
                 height={800}
@@ -98,22 +130,15 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
                 }}
               />
             </ZoomableImage>
-            <Link
-              href={`#comments`}
-              className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"
+            <PostStatsBadge
+              href="#comments"
+              guessCount={guessCount}
+              commentCount={commentCount}
               title="კონტრიბუციის ნახვა"
-              aria-label="კონტრიბუციის ნახვა"
-            >
-              <MapPinIcon className="w-4 h-4" />
-              <span className="text-sm font-semibold">{guessCount}</span>
-              <span className="ml-2 text-sm font-semibold text-zinc-50 flex items-center gap-1">
-                <MessageIcon className="w-4 h-4" />
-                {commentCount}
-              </span>
-            </Link>
-            {post.dateTaken && (
+            />
+            {gpsPost.dateTaken && (
               <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
-                {formatPhotoTakenDate(post.dateTaken)}
+                {formatPhotoTakenDate(gpsPost.dateTaken)}
               </div>
             )}
           </div>
@@ -128,7 +153,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
           isAuthor={isAuthor}
           canGuess={canGuess}
           currentUser={currentUser}
-          postImage={post.image}
+          postImage={gpsPost?.image}
           postTitle={post.title || ''}
           guessCount={guessCount}
           onGuessSubmitted={handleGuessSubmitted}

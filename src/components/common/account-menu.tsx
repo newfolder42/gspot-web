@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { UserIcon, SettingsIcon, LogoutIcon } from "@/components/icons";
+import { UserIcon, SettingsIcon, LogoutIcon, FlagIcon } from "@/components/icons";
 import { OwnAccountData } from "@/types/own-account";
 import ProfileAvatar from "@/components/common/profileAvatar";
 
@@ -54,6 +54,14 @@ export default function AccountMenu({ account }: Props) {
             >
               <UserIcon className="w-4 h-4" />
               <span>შენი სივრცე</span>
+            </Link>
+            <Link
+              href="/quests"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <FlagIcon className="w-4 h-4" />
+              <span>მისიების ჟურნალი</span>
             </Link>
             <Link
               href="/settings"

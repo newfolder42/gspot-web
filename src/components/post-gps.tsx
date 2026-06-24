@@ -8,6 +8,7 @@ import { MapPinIcon, MessageIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
 import TagBadge from "./common/tag-badge";
 import UserLink from "./common/user-link";
+import PostStatsBadge from "./common/post-stats-badge";
 
 export function GpsPostGridItem({ post }: { post: GpsPostType }) {
   return (
@@ -43,7 +44,7 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
     <article className="overflow-hidden">
       <div className="p-2">
         <div className="flex items-center gap-1.5">
-          {showZone && post.zoneSlug && (
+          {showZone && (
             <Link href={`/zone/${post.zoneSlug}`} className="flex items-center gap-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:underline">
               <ProfileAvatar
                 name={post.zoneSlug}
@@ -56,7 +57,7 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
               {post.zoneSlug}
             </Link>
           )}
-          {showZone && post.zoneSlug && (
+          {showZone && (
             <span className="text-xs text-zinc-400">•</span>
           )}
           <UserLink alias={post.author} level={post.authorLevel} className="text-sm" />
@@ -96,19 +97,12 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
             {formatPhotoTakenDate(post.dateTaken)}
           </div>
         )}
-        <Link
+        <PostStatsBadge
           href={`/post/${post.id}#guesses`}
-          className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-2.5 py-1 border border-zinc-100/20 hover:bg-zinc-900/90 transition"
+          guessCount={post.guessCount ?? 0}
+          commentCount={post.commentCount ?? 0}
           title="გამოცნობების ნახვა"
-          aria-label="გამოცნობების ნახვა"
-        >
-          <MapPinIcon className="w-4 h-4" />
-          <span className="text-sm font-semibold">{post.guessCount ?? 0}</span>
-          <span className="ml-2 text-sm font-semibold text-zinc-50 flex items-center gap-1">
-            <MessageIcon className="w-4 h-4" />
-            {post.commentCount ?? 0}
-          </span>
-        </Link>
+        />
       </div>
     </article>
   );

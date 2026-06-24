@@ -1,13 +1,17 @@
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'zone-member-invitation';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'zone-member-invitation' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest';
   user: {
     userId: number;
     alias: string;
   };
   details: NotificationGpsGuessDetailsType | NotificationConnectionPublishedGpsPostDetailsType
+  | NotificationConnectionCreatedQuestPostDetailsType
   | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType
-  | NotificationUserAchievementAchievedDetailsType | NotificationPostCommentCreatedDetailsType | NotificationZoneMemberInvitationDetailsType;
+  | NotificationUserAchievementAchievedDetailsType | NotificationPostCommentCreatedDetailsType | NotificationZoneMemberInvitationDetailsType
+  | NotificationZoneQuestCompletedDetailsType | NotificationZoneQuestObjectiveRejectedDetailsType
+  | NotificationZoneQuestObjectiveAcceptedDetailsType | NotificationZoneQuestObjectiveSubmittedDetailsType
+  | NotificationConnectionCompletedZoneQuestDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -20,6 +24,14 @@ export type NotificationGpsGuessDetailsType = {
 }
 
 export type NotificationConnectionPublishedGpsPostDetailsType = {
+  postId: number,
+  authorId: number,
+  authorAlias: string,
+  postType: string,
+  title: string,
+}
+
+export type NotificationConnectionCreatedQuestPostDetailsType = {
   postId: number,
   authorId: number,
   authorAlias: string,
@@ -71,6 +83,45 @@ export type NotificationZoneMemberInvitationDetailsType = {
   userAlias: number;
 };
 
+export type NotificationZoneQuestCompletedDetailsType = {
+  zoneSlug: string,
+  questId: number,
+  questTitle: string,
+}
+
+export type NotificationZoneQuestObjectiveRejectedDetailsType = {
+  zoneSlug: string,
+  questId: number,
+  objectiveId: number,
+  objectiveTitle?: string | null,
+  rejectionReason?: string | null,
+}
+
+export type NotificationZoneQuestObjectiveAcceptedDetailsType = {
+  zoneSlug: string,
+  questId: number,
+  objectiveId: number,
+  objectiveTitle?: string | null,
+}
+
+export type NotificationZoneQuestObjectiveSubmittedDetailsType = {
+  zoneSlug: string,
+  questId: number,
+  questTitle: string,
+  objectiveId: number,
+  objectiveTitle?: string | null,
+  submitterAlias: string,
+}
+
+export type NotificationConnectionCompletedZoneQuestDetailsType = {
+  userId: number,
+  userAlias: string,
+  zoneId: number,
+  zoneSlug: string,
+  questId: number,
+  questTitle: string,
+}
+
 // Normalize `details` to a plain object regardless of input shape.
 // - If a JSON string, attempts to parse.
 // - If already an object, returns as-is.
@@ -109,6 +160,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
         ? `${d.authorAlias}-მა გამოაქვეყნა: ${title}`
         : `${d.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
     }
+    case 'connection-created-quest-post': {
+      const d = details as NotificationConnectionCreatedQuestPostDetailsType;
+      return `${d.authorAlias}-მა შეასრულა მისია: ${d.title}`;
+    }
     case 'gps-post-failed': {
       const d = details as NotificationGpsPostPublishFailedDetailsType;
       const title = d.title?.trim();
@@ -138,6 +193,26 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationZoneMemberInvitationDetailsType;
       return `${d.userAlias}-მა მოგიწვია საბზონაში: ${d.zoneSlug}`;
     }
+    case 'zone-quest-completed': {
+      const d = details as NotificationZoneQuestCompletedDetailsType;
+      return `მისია შესრულებულია: ${d.questTitle}`;
+    }
+    case 'zone-quest-objective-rejected': {
+      const d = details as NotificationZoneQuestObjectiveRejectedDetailsType;
+      return `ამოცანა "${d.objectiveTitle ?? ''}" დაიწუნა, სცადე თავიდან`;
+    }
+    case 'zone-quest-objective-accepted': {
+      const d = details as NotificationZoneQuestObjectiveAcceptedDetailsType;
+      return `ამოცანა "${d.objectiveTitle ?? ''}" დადასტურდა`;
+    }
+    case 'zone-quest-objective-submitted': {
+      const d = details as NotificationZoneQuestObjectiveSubmittedDetailsType;
+      return `${d.submitterAlias}-მა გამოაგზავნა "${d.objectiveTitle ?? ''}" შესაფასებლად`;
+    }
+    case 'connection-completed-zone-quest': {
+      const d = details as NotificationConnectionCompletedZoneQuestDetailsType;
+      return `${d.userAlias}-მა შეასრულა მისია: ${d.questTitle}`;
+    }
     default:
       return "ახალი შეტყობინება";
   }
@@ -155,6 +230,10 @@ export function getNotificationRoute(notification: NotificationType): string | n
     }
     case 'connection-created-gps-post': {
       const d = notification.details as NotificationConnectionPublishedGpsPostDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'connection-created-quest-post': {
+      const d = notification.details as NotificationConnectionCreatedQuestPostDetailsType;
       return `/post/${d.postId}`;
     }
     case 'gps-post-failed': {
@@ -175,6 +254,26 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'zone-member-invitation': {
       const d = notification.details as NotificationZoneMemberInvitationDetailsType;
       return `/zone/${d.zoneSlug}`;
+    }
+    case 'zone-quest-completed': {
+      const d = notification.details as NotificationZoneQuestCompletedDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+    }
+    case 'zone-quest-objective-rejected': {
+      const d = notification.details as NotificationZoneQuestObjectiveRejectedDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+    }
+    case 'zone-quest-objective-accepted': {
+      const d = notification.details as NotificationZoneQuestObjectiveAcceptedDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+    }
+    case 'zone-quest-objective-submitted': {
+      const d = notification.details as NotificationZoneQuestObjectiveSubmittedDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}/moderation`;
+    }
+    case 'connection-completed-zone-quest': {
+      const d = notification.details as NotificationConnectionCompletedZoneQuestDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
     }
     default:
       return null;

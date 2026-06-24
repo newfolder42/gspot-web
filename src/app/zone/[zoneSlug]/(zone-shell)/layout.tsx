@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/session';
 import { getZone, getZoneMember } from '@/actions/zones';
+import { getZoneQuestsEnabled } from '@/lib/zones';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
@@ -75,7 +76,10 @@ export default async function UserLayout({ children, params }: Props) {
   const zone = await getZone(zoneSlug);
   if (!zone) return notFound();
 
-  const member = currentUserId ? await getZoneMember(zone.id, currentUserId) : null;
+  const [member, questsEnabled] = await Promise.all([
+    currentUserId ? getZoneMember(zone.id, currentUserId) : Promise.resolve(null),
+    getZoneQuestsEnabled(zone.id),
+  ]);
 
   if (zone.visibility === 'private' && (!member || member.status !== 'active')) {
     return notFound();
@@ -86,6 +90,10 @@ export default async function UserLayout({ children, params }: Props) {
     { id: 'members', label: 'წევრები', href: `/zone/${zoneSlug}/members` },
     { id: 'leaderboard', label: 'ლიდერბორდი', href: `/zone/${zoneSlug}/leaderboard` },
   ];
+
+  if (questsEnabled) {
+    tabs.push({ id: 'quests', label: 'მისიები', href: `/zone/${zoneSlug}/quests` });
+  }
 
   if (member?.role == 'owner' || member?.role == 'admin') {
     tabs.push({ id: 'manage', label: 'მართვა', href: `/zone/${zoneSlug}/settings` });

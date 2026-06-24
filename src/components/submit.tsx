@@ -108,7 +108,6 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
       if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
       markerRef.current = null;
     };
-    // Run only once on mount — do not reinitialize the whole map when `coordinates` change.
   }, []);
 
   useEffect(() => {
@@ -165,7 +164,7 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         </button>
       </div>
       <div className="absolute left-2 top-2 z-10 text-xs text-zinc-700 dark:text-zinc-200 bg-white/80 dark:bg-zinc-900/60 backdrop-blur-sm px-2 py-1 rounded border border-zinc-100 dark:border-zinc-800">
-        {formatCoordinates(coordinates?.latitude, coordinates?.longitude, 'No GPS data — მონიშნე რუკაზე')}
+        {formatCoordinates(coordinates?.latitude, coordinates?.longitude, 'No GPS data - მონიშნე რუკაზე')}
       </div>
       <div ref={mapRef} className="w-full h-[400px] bg-zinc-100 dark:bg-zinc-800" />
     </div>

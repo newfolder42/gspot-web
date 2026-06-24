@@ -32,7 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const post = await getPostForView(0, id);
   if (!post) return {};
 
-  const ogImageUrl = post.image || `https://${PUBLIC_SITE_URL}/og-image.png`;
+  const ogImageUrls = post.type === 'gps-photo'
+    ? [post.image]
+    : post.photos.length > 0 ? post.photos.map(p => p.url) : [`https://${PUBLIC_SITE_URL}/og-image.png`];
 
   const defaultTitle = `გამოიცანი ${post.author}-ის ფოტო-სურათის მდებარეობა ${APP_NAME}-ზე`;
   const seoTitle = post.title && post.title.length <= 20
@@ -55,12 +57,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       siteName: PUBLIC_SITE_URL,
       description: seoDescription,
       url: `https://${PUBLIC_SITE_URL}/post/${post.id}`,
-      images: [{
-        url: ogImageUrl,
+      images: ogImageUrls.map((url) => ({
+        url,
         alt: post.title || `${post.author}-ის სურათის | ` + post.title,
         width: 1200,
         height: 630,
-      }],
+      })),
       publishedTime: post.date,
       authors: post.author ? [`${PUBLIC_SITE_URL}/account/${post.author}`] : undefined,
       section: 'გეოგრაფიული გამოცნობა',
@@ -70,7 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       card: 'summary_large_image',
       title: seoTitle,
       description: seoDescription,
-      images: [ogImageUrl],
+      images: ogImageUrls,
     },
   };
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { GpsPost, GpsPostGridItem } from './post-gps';
-import { FeedFilter, FeedType, FeedView, GpsPostType } from '@/types/post';
+import { QuestCompletionPost, QuestCompletionGridItem } from './post-quest';
+import { FeedType, FeedView, FeedPostType } from '@/types/post';
 import { loadPosts } from '@/actions/feed';
 import { POSTS_PER_PAGE, POSTS_PER_PAGE_GRID } from '@/types/constants';
 
@@ -11,7 +12,6 @@ type FeedClientProps = {
   accountUserId?: number;
   type: FeedType;
   zoneId?: number | null;
-  filter: FeedFilter;
   view?: FeedView;
 };
 
@@ -20,17 +20,15 @@ export default function FeedClient({
   accountUserId,
   type,
   zoneId,
-  filter,
   view = 'timeline',
 }: FeedClientProps) {
   const postsPerPage = view === 'grid' ? POSTS_PER_PAGE_GRID : POSTS_PER_PAGE;
 
-  const [posts, setPosts] = useState<GpsPostType[]>([]);
+  const [posts, setPosts] = useState<FeedPostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
-  const prevFilterRef = useRef(filter);
-  const postsRef = useRef<GpsPostType[]>([]);
+  const postsRef = useRef<FeedPostType[]>([]);
   const loadingRef = useRef(true);
 
   useEffect(() => { postsRef.current = posts; }, [posts]);
@@ -40,7 +38,7 @@ export default function FeedClient({
     let cancelled = false;
     const fetchInitial = async () => {
       try {
-        const fetched = await loadPosts({ type, userId, accountUserId, zoneId, filter, limit: postsPerPage });
+        const fetched = await loadPosts({ type, userId, accountUserId, zoneId, limit: postsPerPage });
         if (cancelled) return;
         setPosts(fetched);
         setHasMore(fetched.length === postsPerPage);
@@ -54,34 +52,6 @@ export default function FeedClient({
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    if (prevFilterRef.current !== filter) {
-      prevFilterRef.current = filter;
-
-      const reloadPosts = async () => {
-        setLoading(true);
-        try {
-          const newPosts = await loadPosts({
-            type,
-            userId,
-            accountUserId,
-            zoneId,
-            filter,
-            limit: postsPerPage,
-          });
-          setPosts(newPosts);
-          setHasMore(newPosts.length === postsPerPage);
-        } catch (error) {
-          console.error('Failed to reload posts:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reloadPosts();
-    }
-  }, [filter, type, userId, accountUserId, zoneId]);
-
   const loadMore = async () => {
     if (loadingRef.current || !hasMore) return;
 
@@ -91,10 +61,9 @@ export default function FeedClient({
     const currentPosts = postsRef.current;
     const lastPost = currentPosts[currentPosts.length - 1];
     const cursor = {
-      shownCount: currentPosts.length,
-      guessCount: lastPost.guessCount ?? 0,
       date: lastPost.date,
-      id: +lastPost.id
+      id: +lastPost.id,
+      ids: currentPosts.map(p => +p.id),
     };
 
     try {
@@ -104,7 +73,6 @@ export default function FeedClient({
         accountUserId,
         zoneId,
         cursor,
-        filter,
         limit: postsPerPage,
       });
 
@@ -153,9 +121,10 @@ export default function FeedClient({
           <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '4px' }}>
-          {posts.map(post => (
-            <GpsPostGridItem key={post.id} post={post} />
-          ))}
+          {posts.map(post => post.type === 'quest-completion'
+            ? <QuestCompletionGridItem key={post.id} post={post} />
+            : <GpsPostGridItem key={post.id} post={post} />
+          )}
         </div>
 
         {hasMore && (
@@ -180,9 +149,10 @@ export default function FeedClient({
       {loading && posts.length === 0 && (
         <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
       )}
-      {posts.map(post => (
-        <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
-      ))}
+      {posts.map(post => post.type === 'quest-completion'
+        ? <QuestCompletionPost key={post.id} post={post} showZone={type !== 'zone'} />
+        : <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
+      )}
 
       {hasMore && (
         <div

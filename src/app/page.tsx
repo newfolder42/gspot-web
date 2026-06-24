@@ -1,9 +1,9 @@
 import Feed from "@/components/feed";
+import PublicFeed from "@/components/public-feed";
 import LandingRedirectCapture from "@/components/common/landing-redirect-capture";
 import { getCurrentUser } from "@/lib/session";
 import { buildLandingPath, getLandingAttribution, type LandingAttributionSearchParams } from '@/lib/landing-attribution';
 import { APP_NAME } from "@/types/constants";
-import { FeedType } from "@/types/post";
 import { ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
 import Link from "next/link";
 
@@ -14,7 +14,6 @@ type Props = {
 export default async function Page({ searchParams }: Props) {
   const [user, resolvedSearchParams] = await Promise.all([getCurrentUser(), searchParams]);
 
-  const feedType: FeedType = user ? 'global' : 'public';
   const landing = user ? null : getLandingAttribution(resolvedSearchParams);
   const landingPath = landing ? buildLandingPath(resolvedSearchParams) : null;
 
@@ -53,8 +52,7 @@ export default async function Page({ searchParams }: Props) {
           </div>
         )}
         {/* <GameEmbed iframeClassName="h-[92dvh]"/> */}
-        <Feed type={feedType}
-          userId={user?.userId} />
+        {user ? <Feed type="global" userId={user.userId} /> : <PublicFeed />}
       </div>
     </main>
   );
