@@ -1,9 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
-export function useModalLifecycle(onClose: () => void) {
+// Parallel route slots keep rendering their last matched page when a soft
+// navigation moves to a route they don't intercept, so a modal would
+// otherwise stay on screen over an already-changed background page.
+// usePathname() still updates for it (it's just React context), so comparing
+// against the pathname captured at mount lets the modal detect that it's
+// stale and unmount itself instead of needing a full page reload.
+export function useModalLifecycle(onClose: () => void): boolean {
+  const pathname = usePathname();
+  const openedPathnameRef = useRef(pathname);
+  const isStale = pathname !== openedPathnameRef.current;
+
   useEffect(() => {
+    if (isStale) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -30,5 +43,7 @@ export function useModalLifecycle(onClose: () => void) {
       body.style.overflow = prev.overflow;
       window.scrollTo(0, scrollY);
     };
-  }, [onClose]);
+  }, [onClose, isStale]);
+
+  return isStale;
 }

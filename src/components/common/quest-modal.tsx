@@ -7,7 +7,8 @@ import { useModalLifecycle } from './use-modal-lifecycle';
 export default function QuestModal({ title, children }: { title?: string; children: React.ReactNode }) {
   const router = useRouter();
   const close = () => router.back();
-  useModalLifecycle(close);
+  const isStale = useModalLifecycle(close);
+  if (isStale) return null;
 
   return (
     <div className="fixed inset-0 z-layer-modal flex items-center justify-center p-4">

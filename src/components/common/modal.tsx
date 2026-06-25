@@ -6,7 +6,8 @@ import { useModalLifecycle } from './use-modal-lifecycle';
 
 export default function Modal({ title, children }: { title?: string; children: React.ReactNode }) {
   const router = useRouter();
-  useModalLifecycle(() => router.back());
+  const isStale = useModalLifecycle(() => router.back());
+  if (isStale) return null;
 
   return (
     <div className="fixed inset-0 z-layer-modal flex flex-col bg-zinc-50 dark:bg-zinc-950">
