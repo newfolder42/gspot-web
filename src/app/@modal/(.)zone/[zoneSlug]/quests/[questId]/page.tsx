@@ -55,7 +55,7 @@ export default async function QuestDetailModal({ params }: Props) {
   const isMobile = isMobileUserAgent((await headers()).get('user-agent'));
 
   return (
-    <QuestModal>
+    <QuestModal title={character?.name + '-ის მისია'}>
       <QuestDetail
         zoneSlug={zoneSlug}
         quest={quest}

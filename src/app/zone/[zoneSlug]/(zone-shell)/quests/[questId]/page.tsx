@@ -15,7 +15,7 @@ import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
 import { isMobileUserAgent } from '@/lib/device';
 import QuestDetail from '@/components/zone/quest-detail';
-import { APP_NAME } from '@/types/constants';
+import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 
 type Props = {
   params: Promise<{ zoneSlug: string; questId: string }>;
@@ -23,14 +23,57 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { questId: questIdParam } = await params;
+  const { zoneSlug, questId: questIdParam } = await params;
   const questId = Number(questIdParam);
   if (!Number.isInteger(questId)) return {};
 
   const quest = await getQuestById(questId);
   if (!quest) return {};
 
-  return { title: `${quest.title} | ${APP_NAME}` };
+  const [zone, character] = await Promise.all([
+    getZone(zoneSlug),
+    quest.character_id ? getQuestCharacter(quest.character_id) : Promise.resolve(null),
+  ]);
+
+  const zoneName = zone?.name?.trim() || zoneSlug;
+  const seoTitle = character
+    ? `${quest.title} | ${character.name} | ${zoneName} | ${APP_NAME}`
+    : `${quest.title} | ${zoneName} | ${APP_NAME}`;
+  const seoDescription = quest.description?.trim()
+    || character?.description?.trim()
+    || (character
+      ? `${character.name}-ის მისია „${quest.title}“ — ${zoneName} საბზონაში, ${APP_NAME}-ზე.`
+      : `მისია „${quest.title}“ — ${zoneName} საბზონაში, ${APP_NAME}-ზე.`);
+  const canonical = `https://${PUBLIC_SITE_URL}/zone/${zoneSlug}/quests/${quest.id}`;
+  const seoImage = character?.avatar_url || `https://${PUBLIC_SITE_URL}/og-image.png`;
+
+  return {
+    title: seoTitle,
+    description: seoDescription,
+    alternates: { canonical },
+    openGraph: {
+      type: 'article',
+      title: seoTitle,
+      description: seoDescription,
+      url: canonical,
+      siteName: APP_NAME,
+      locale: 'ka_GE',
+      images: [
+        {
+          url: seoImage,
+          width: 1200,
+          height: 630,
+          alt: character?.name || quest.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seoTitle,
+      description: seoDescription,
+      images: [seoImage],
+    },
+  };
 }
 
 export default async function QuestDetailPage({ params, searchParams }: Props) {

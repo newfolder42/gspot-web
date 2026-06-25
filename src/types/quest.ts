@@ -36,6 +36,7 @@ export type ZoneQuestCharacterType = {
   id: number;
   zone_id: number;
   name: string;
+  slug: string;
   avatar_url: string | null;
   description: string | null;
   created_by: number | null;

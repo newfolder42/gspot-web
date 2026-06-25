@@ -7,6 +7,7 @@ import ProfileAvatar from '@/components/common/profileAvatar';
 import { acceptQuestAction } from '@/actions/quests';
 import { isObjectiveAttemptable } from '@/lib/questProgress';
 import { formatPhotoTakenDate } from '@/lib/dates';
+import { getLevelColor } from '@/lib/level-color';
 import QuestObjectiveCapture from './quest-objective-capture';
 import QuestCompletedGallery from './quest-completed-gallery';
 import { CameraIcon, CheckmarkCircleIcon, LockIcon, CalendarIcon, FlagIcon } from '@/components/icons';
@@ -149,11 +150,13 @@ export default function QuestDetail({
     <div className="space-y-4">
       <div className="flex items-start gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
         {character ? (
-          <ProfileAvatar
-            name={character.name}
-            photoUrl={character.avatar_url}
-            className="shrink-0 w-11 h-11 rounded-full"
-          />
+          <Link href={`/zone/${zoneSlug}/characters/${character.slug}`} className="shrink-0">
+            <ProfileAvatar
+              name={character.name}
+              photoUrl={character.avatar_url}
+              className="w-11 h-11 rounded-full"
+            />
+          </Link>
         ) : (
           <div className="shrink-0 w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
             <FlagIcon className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
@@ -161,32 +164,48 @@ export default function QuestDetail({
         )}
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            {character ? character.name : 'ზონის მისია'}
-          </p>
-          <div className="flex items-center gap-2 flex-wrap mt-0.5">
-            <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{quest.title}</h1>
-            {quest.required_level && (
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                დონე {quest.required_level}+
-              </span>
+            {character ? (
+              <Link href={`/zone/${zoneSlug}/characters/${character.slug}`} className="hover:underline">
+                {character.name}
+              </Link>
+            ) : (
+              'ზონის მისია'
             )}
-          </div>
+          </p>
+          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{quest.title}</h1>
           {quest.description && (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5">{quest.description}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5 whitespace-pre-wrap">{quest.description}</p>
           )}
           <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-2">
             <FlagIcon className="w-3.5 h-3.5" />
             ჯილდო · 200 გამოცდილება
           </div>
-          {(quest.start_date || quest.end_date) && (
-            <p className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              <CalendarIcon className="w-3.5 h-3.5" />
-              {quest.start_date && quest.end_date
-                ? `${formatPhotoTakenDate(quest.start_date)} - ${formatPhotoTakenDate(quest.end_date)}`
-                : quest.start_date
-                  ? `იწყება ${formatPhotoTakenDate(quest.start_date)}`
-                  : `მთავრდება ${formatPhotoTakenDate(quest.end_date)}`}
-            </p>
+          {(quest.start_date || quest.end_date || quest.required_level) && (
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {(quest.start_date || quest.end_date) && (
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  {quest.start_date && quest.end_date
+                    ? `${formatPhotoTakenDate(quest.start_date)} - ${formatPhotoTakenDate(quest.end_date)}`
+                    : quest.start_date
+                      ? `იწყება ${formatPhotoTakenDate(quest.start_date)}`
+                      : `მთავრდება ${formatPhotoTakenDate(quest.end_date)}`}
+                </span>
+              )}
+              {quest.required_level && (
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-medium rounded-md px-1.5 py-0.5 border"
+                  style={{
+                    color: getLevelColor(quest.required_level),
+                    borderColor: getLevelColor(quest.required_level) + '70',
+                    backgroundColor: getLevelColor(quest.required_level) + '18',
+                  }}
+                >
+                  <LockIcon className="w-3 h-3" />
+                  დონე {quest.required_level}+
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
 import { getQuestLockReason } from './questProgress';
+import { slugify } from './slug';
 import type { ImageVariants } from './image-pipeline';
 import type {
   ZoneQuestBaseType,
@@ -625,6 +626,7 @@ export async function getZoneQuestCharacters(zoneId: number): Promise<ZoneQuestC
       id: Number(r.id),
       zone_id: Number(r.zone_id),
       name: r.name,
+      slug: r.slug,
       avatar_url: r.avatar_url,
       description: r.description,
       created_by: r.created_by !== null ? Number(r.created_by) : null,
@@ -645,6 +647,7 @@ export async function getQuestCharacter(characterId: number): Promise<ZoneQuestC
       id: Number(r.id),
       zone_id: Number(r.zone_id),
       name: r.name,
+      slug: r.slug,
       avatar_url: r.avatar_url,
       description: r.description,
       created_by: r.created_by !== null ? Number(r.created_by) : null,
@@ -653,6 +656,45 @@ export async function getQuestCharacter(characterId: number): Promise<ZoneQuestC
   } catch (err) {
     await logerror('getQuestCharacter error', [err]);
     return null;
+  }
+}
+
+export async function getZoneQuestCharacterBySlug(zoneId: number, slug: string): Promise<ZoneQuestCharacterType | null> {
+  try {
+    const res = await query(
+      `select * from zone_quest_characters where zone_id = $1 and slug = $2 limit 1`,
+      [zoneId, slug]
+    );
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: Number(r.id),
+      zone_id: Number(r.zone_id),
+      name: r.name,
+      slug: r.slug,
+      avatar_url: r.avatar_url,
+      description: r.description,
+      created_by: r.created_by !== null ? Number(r.created_by) : null,
+      created_at: r.created_at,
+    };
+  } catch (err) {
+    await logerror('getZoneQuestCharacterBySlug error', [err]);
+    return null;
+  }
+}
+
+async function generateUniqueCharacterSlug(zoneId: number, name: string): Promise<string> {
+  const base = slugify(name) || 'character';
+  let candidate = base;
+  let suffix = 2;
+  while (true) {
+    const res = await query(
+      `select 1 from zone_quest_characters where zone_id = $1 and slug = $2 limit 1`,
+      [zoneId, candidate]
+    );
+    if (res.rows.length === 0) return candidate;
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
   }
 }
 
@@ -707,11 +749,12 @@ export type CreateQuestCharacterInput = {
 
 export async function createQuestCharacter(input: CreateQuestCharacterInput): Promise<ZoneQuestCharacterType | null> {
   try {
+    const slug = await generateUniqueCharacterSlug(input.zoneId, input.name);
     const res = await query(
-      `INSERT INTO zone_quest_characters (zone_id, name, avatar_url, description, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO zone_quest_characters (zone_id, name, slug, avatar_url, description, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [input.zoneId, input.name, input.avatarUrl, input.description, input.createdBy]
+      [input.zoneId, input.name, slug, input.avatarUrl, input.description, input.createdBy]
     );
     if (res.rows.length === 0) return null;
     const r = res.rows[0];
@@ -719,6 +762,7 @@ export async function createQuestCharacter(input: CreateQuestCharacterInput): Pr
       id: Number(r.id),
       zone_id: Number(r.zone_id),
       name: r.name,
+      slug: r.slug,
       avatar_url: r.avatar_url,
       description: r.description,
       created_by: r.created_by !== null ? Number(r.created_by) : null,
