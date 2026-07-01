@@ -28,10 +28,15 @@ export async function GET(req: NextRequest) {
       ),
       query(
         `SELECT p.id, p.title, u.alias as author
-         FROM posts p JOIN users u ON u.id = p.user_id
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+         JOIN zones z ON z.id = p.zone_id
          WHERE lower(p.title) LIKE $1 AND p.status = 'published'
+           AND (z.visibility = 'public' OR EXISTS (
+             SELECT 1 FROM zone_members zm WHERE zm.zone_id = z.id AND zm.user_id = $2 AND zm.status = 'active'
+           ))
          ORDER BY p.created_at DESC LIMIT 10`,
-        [q]
+        [q, userId]
       ),
       query(
         `SELECT z.id, z.slug, z.description,

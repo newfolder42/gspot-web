@@ -9,7 +9,9 @@ type Context = { params: Promise<{ slug: string }> };
 export async function POST(req: NextRequest, context: Context) {
   try {
     const { slug } = await context.params;
-    const { ctx, response } = await resolveZoneContext(req, slug);
+    // Joining is the one action a non-member performs, so it must not require
+    // pre-existing access to the (possibly private) zone.
+    const { ctx, response } = await resolveZoneContext(req, slug, { requireAccess: false });
     if (response) return response;
 
     const result = await requestZoneMembership(ctx.zone.id, ctx.user.userId);
@@ -29,7 +31,8 @@ export async function POST(req: NextRequest, context: Context) {
 export async function DELETE(req: NextRequest, context: Context) {
   try {
     const { slug } = await context.params;
-    const { ctx, response } = await resolveZoneContext(req, slug);
+    // A pending/invited user may decline, so don't require active access here.
+    const { ctx, response } = await resolveZoneContext(req, slug, { requireAccess: false });
     if (response) return response;
 
     const result = await leaveZone(ctx.zone.id, ctx.user.userId);

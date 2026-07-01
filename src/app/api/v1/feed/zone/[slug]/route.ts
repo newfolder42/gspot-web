@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getZonePosts } from '@/lib/posts';
-import { getZone } from '@/lib/zones';
+import { getZone, getZoneMember } from '@/lib/zones';
 import { query } from '@/lib/db';
 import { logerror } from '@/lib/logger';
 import type { FeedFilter } from '@/types/post';
@@ -26,6 +26,13 @@ export async function GET(req: NextRequest, context: Context) {
 
     const zone = await getZone(slug);
     if (!zone) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+
+    if (zone.visibility === 'private') {
+      const member = await getZoneMember(zone.id, auth.user.userId);
+      if (!member || member.status !== 'active') {
+        return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+      }
+    }
 
     const parsed = QuerySchema.safeParse({
       limit: req.nextUrl.searchParams.get('limit') ?? undefined,

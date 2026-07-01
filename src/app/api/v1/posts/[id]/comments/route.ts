@@ -49,15 +49,25 @@ export async function POST(req: NextRequest, context: Context) {
     }
     const { body: commentBody, parentId = null } = parsedBody.data;
 
-    // Verify post exists
     const postCheck = await query(
       `select p.id, p.user_id as post_author_id, u.alias as post_author_alias, p.zone_id, z.slug as zone_slug
        from posts p
        join users u on u.id = p.user_id
        join zones z on z.id = p.zone_id
-       where p.id = $1
+       where p.id = $1 and (
+         p.user_id = $2
+         or (
+           p.status = 'published' and (
+             z.visibility = 'public'
+             or exists (
+               select 1 from zone_members zm
+               where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
+             )
+           )
+         )
+       )
        limit 1`,
-      [postId]
+      [postId, user.userId]
     );
     if ((postCheck.rowCount ?? 0) === 0) {
       return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });

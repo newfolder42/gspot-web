@@ -36,7 +36,6 @@ export async function POST(req: NextRequest, context: Context) {
     }
     const { coordinates } = parsedBody.data;
 
-    // Load post, author, zone and the actual photo coordinates in one query
     const postRow = await query(
       `select p.id, p.user_id, p.type, z.id as zone_id, z.slug as zone_slug,
               u.alias as author_alias, uc.details as content_details
@@ -46,8 +45,15 @@ export async function POST(req: NextRequest, context: Context) {
        join post_content pc on pc.post_id = p.id
        join user_content uc on uc.id = pc.content_id
        where p.id = $1 and p.status = 'published'
+         and (
+           z.visibility = 'public'
+           or exists (
+             select 1 from zone_members zm
+             where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
+           )
+         )
        limit 1`,
-      [postId]
+      [postId, auth.user.userId]
     );
 
     if ((postRow.rowCount ?? 0) === 0) {

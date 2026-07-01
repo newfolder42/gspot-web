@@ -2,6 +2,7 @@
 
 import { query } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
+import { canUserAccessPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import type { PostCommentType } from '@/types/post-comment';
 import { eventBus } from '@/lib/eventBus';
@@ -49,6 +50,8 @@ export async function createPostComment(
   try {
     const user = await getCurrentUser();
     if (!user) return null;
+
+    if (!(await canUserAccessPost(user.userId, postId))) return null;
 
     const trimmed = body.trim();
     if (!trimmed || trimmed.length > 2000) return null;

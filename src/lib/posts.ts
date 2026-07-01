@@ -2,6 +2,7 @@
 
 import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
+import { canUserAccessPost } from './post-access';
 import { logerror } from './logger';
 import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants } from '@/types/post';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
@@ -12,6 +13,23 @@ import { createGuessComment } from '@/lib/comments';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
+
+function zoneVisibleSql(userParam: string): string {
+  return `(
+    z.visibility = 'public'
+    or exists (
+      select 1 from zone_members zm
+      where zm.zone_id = z.id and zm.user_id = ${userParam} and zm.status = 'active'
+    )
+  )`;
+}
+
+function zoneMemberSql(userParam: string): string {
+  return `exists (
+    select 1 from zone_members zm
+    where zm.zone_id = z.id and zm.user_id = ${userParam} and zm.status = 'active'
+  )`;
+}
 
 function buildBasePost(r: any): PostType {
   return {
@@ -159,12 +177,7 @@ join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where ucn.user_id = $2 and p.status in ('published') and p.type in ('gps-photo', 'quest-completion')
-  and (
-    z.visibility = 'public'
-    or exists (
-      select 1 from zone_members zm where zm.zone_id = z.id and zm.user_id = $3 and zm.status = 'active'
-    )
-  )
+  and ${zoneVisibleSql('$3')}
   ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
@@ -252,12 +265,7 @@ left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.status = 'published' and p.type = 'gps-photo' and p.user_id <> $2
   and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2)
-  and (
-    z.visibility = 'public'
-    or exists (
-      select 1 from zone_members zm where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
-    )
-  )
+  and ${zoneMemberSql('$2')}
   ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
@@ -305,12 +313,7 @@ join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
 where p.status = 'published' and p.type in ('gps-photo', 'quest-completion')
-  and (
-    z.visibility = 'public'
-    or exists (
-      select 1 from zone_members zm where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
-    )
-  )
+  and ${zoneMemberSql('$2')}
   ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
@@ -411,6 +414,7 @@ join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 where p.status = 'published' and p.type in ('gps-photo', 'quest-completion')
   and z.id = $2
+  and ${zoneVisibleSql('$3')}
   ${filterCondition} ${tagCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
@@ -793,6 +797,8 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     if (!user) return null;
     const userId = user.userId;
 
+    if (!(await canUserAccessPost(userId, postId))) return null;
+
     const post = await getPostById(postId);
 
     const exists = await query(
@@ -865,6 +871,8 @@ export async function createPhotoGuess({ postId, coordinates, distance, score, i
     if (!user) return null;
     const userId = user.userId;
 
+    if (!(await canUserAccessPost(userId, postId))) return null;
+
     const post = await getPostById(postId);
     if (!post) return null;
 
@@ -934,6 +942,10 @@ export async function createPhotoGuess({ postId, coordinates, distance, score, i
 
 export async function getPhotoCoordinates({ postId }: { postId: number }): Promise<{ coordinates: { latitude: number; longitude: number } } | null> {
   try {
+    const user = await getCurrentUser();
+    if (!user) return null;
+    if (!(await canUserAccessPost(user.userId, postId))) return null;
+
     const data = await query(
       `select details from posts p
     join post_content pc on p.id = pc.post_id

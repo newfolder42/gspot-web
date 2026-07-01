@@ -110,9 +110,11 @@ export default function ZoneShellHeader({ zone, userId, initialStatus, initialRo
         </div>
       </div>
 
-      <div className="px-4 flex items-center justify-between">
-        <AccountTabs tabs={tabs} />
-      </div>
+      {tabs.length > 0 && (
+        <div className="px-4 flex items-center justify-between">
+          <AccountTabs tabs={tabs} />
+        </div>
+      )}
     </>
   );
 }

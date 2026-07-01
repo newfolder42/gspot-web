@@ -81,22 +81,23 @@ export default async function UserLayout({ children, params }: Props) {
     getZoneQuestsEnabled(zone.id),
   ]);
 
-  if (zone.visibility === 'private' && (!member || member.status !== 'active')) {
-    return notFound();
-  }
+  const hasAccess = zone.visibility !== 'private' || member?.status === 'active';
 
-  const tabs = [
-    { id: 'overview', label: 'ძირითადი', href: `/zone/${zoneSlug}` },
-    { id: 'members', label: 'წევრები', href: `/zone/${zoneSlug}/members` },
-    { id: 'leaderboard', label: 'ლიდერბორდი', href: `/zone/${zoneSlug}/leaderboard` },
-  ];
+  const tabs = [];
+  if (hasAccess) {
+    tabs.push(
+      { id: 'overview', label: 'ძირითადი', href: `/zone/${zoneSlug}` },
+      { id: 'members', label: 'წევრები', href: `/zone/${zoneSlug}/members` },
+      { id: 'leaderboard', label: 'ლიდერბორდი', href: `/zone/${zoneSlug}/leaderboard` },
+    );
 
-  if (questsEnabled) {
-    tabs.push({ id: 'quests', label: 'მისიები', href: `/zone/${zoneSlug}/quests` });
-  }
+    if (questsEnabled) {
+      tabs.push({ id: 'quests', label: 'მისიები', href: `/zone/${zoneSlug}/quests` });
+    }
 
-  if (member?.role == 'owner' || member?.role == 'admin') {
-    tabs.push({ id: 'manage', label: 'მართვა', href: `/zone/${zoneSlug}/settings` });
+    if (member?.role == 'owner' || member?.role == 'admin') {
+      tabs.push({ id: 'manage', label: 'მართვა', href: `/zone/${zoneSlug}/settings` });
+    }
   }
 
   return (
@@ -114,7 +115,13 @@ export default async function UserLayout({ children, params }: Props) {
           {member?.status === 'pending' && currentUserId && (
             <PendingMemberBanner zoneId={zone.id} userId={currentUserId} />
           )}
-          {children}
+          {hasAccess ? (
+            children
+          ) : (
+            <p className="py-16 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              ეს საბზონა დახურულია. კონტენტის სანახავად გახდი წევრი.
+            </p>
+          )}
         </main>
       </div>
     </div>

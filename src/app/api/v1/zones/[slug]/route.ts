@@ -8,7 +8,11 @@ type Context = { params: Promise<{ slug: string }> };
 export async function GET(req: NextRequest, context: Context) {
   try {
     const { slug } = await context.params;
-    const { ctx, response } = await resolveZoneContext(req, slug);
+    // The zone's identity (name/description/photo) is public — it's listed in
+    // explore — so non-members may load this. Access to the *content* (posts,
+    // members, leaderboard, quests, …) is gated on those routes instead. The
+    // `visibility` + `membership` returned here let the client hide the tabs.
+    const { ctx, response } = await resolveZoneContext(req, slug, { requireAccess: false });
     if (response) return response;
 
     const { zone, member } = ctx;
