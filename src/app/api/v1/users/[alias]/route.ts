@@ -26,6 +26,8 @@ export async function GET(req: NextRequest, context: Context) {
       },
       profilePhoto: account.profilePhoto,
       level: account.level,
+      isOwnProfile: account.isOwnProfile,
+      isFollowing: !!account.connection,
       posts,
     });
   } catch (err) {

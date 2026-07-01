@@ -146,6 +146,33 @@ export async function leaveZoneMember(zoneId: number, userId: number):
   }
 }
 
+export async function requestZoneMembership(zoneId: number, userId: number): Promise<{ success: boolean; error?: string }> {
+  const zone = await getZoneById(zoneId);
+  if (!zone) return { success: false, error: 'საბზონა არ მოიძებნა' };
+
+  const member = await getZoneMember(zoneId, userId);
+  if (member && (member.status === 'active' || member.status === 'pending')) {
+    return { success: false, error: 'უკვე არის საბზონის წევრი' };
+  }
+
+  const ok = await becomeZoneMember(zoneId, userId, 'member', zone.join_policy === 'open' ? 'active' : 'pending');
+  if (!ok) return { success: false, error: 'გაურკვეველი შეცდომა' };
+  return { success: true };
+}
+
+/** Core "leave zone" logic shared by the web action (`zoneMemberLeave`) and the mobile API route. */
+export async function leaveZone(zoneId: number, userId: number): Promise<{ success: boolean; error?: string }> {
+  const zone = await getZoneById(zoneId);
+  if (!zone) return { success: false, error: 'საბზონა არ მოიძებნა' };
+
+  const member = await getZoneMember(zoneId, userId);
+  if (!member) return { success: false, error: 'მომხმარებელი არაა საბზონის წევრი' };
+  if (member.role === 'owner') return { success: false, error: 'მფლობელი ვერ დატოვებს საბზონას' };
+
+  await leaveZoneMember(zoneId, userId);
+  return { success: true };
+}
+
 export async function acceptZoneInvite(zoneId: number, userId: number): Promise<boolean> {
   try {
     const res = await query(

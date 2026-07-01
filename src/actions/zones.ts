@@ -1,7 +1,7 @@
 "use server"
 
 import { logerror } from '@/lib/logger';
-import { becomeZoneMember, getUserPostZones, getZoneById, getZone as getZoneLib, getZoneMember as getZoneMemberLib, leaveZoneMember, createZone as createZoneLib, checkZoneSlugAvailable, inviteZoneMember as inviteZoneMemberLib, acceptZoneInvite as acceptZoneInviteLib } from '@/lib/zones';
+import { becomeZoneMember, getUserPostZones, getZoneById, getZone as getZoneLib, getZoneMember as getZoneMemberLib, createZone as createZoneLib, checkZoneSlugAvailable, inviteZoneMember as inviteZoneMemberLib, acceptZoneInvite as acceptZoneInviteLib, requestZoneMembership, leaveZone } from '@/lib/zones';
 import { getZoneTags } from '@/lib/tags';
 import type { ZoneBaseType, ZoneMemberInfo } from '@/types/zone';
 import type { ZoneTag } from '@/types/tag';
@@ -92,24 +92,14 @@ export async function getZoneMember(zoneId: number, userId: number): Promise<Zon
 export async function zoneMemberRequest(zoneId: number, userId: number): Promise<{ success: boolean; error?: string }> {
   const startTime = Date.now();
   try {
-    const zone = await getZoneById(zoneId);
-    if (!zone) {
-      return { success: false, error: 'საბზონა არ მოიძებნა' };
-    }
-
-    const member = await getZoneMemberLib(zone.id, userId);
-    if (member && (member.status == 'active' || member.status == 'pending')) {
-      return { success: false, error: 'უკვე არის საბზონის წევრი' };
-    }
-
-    await becomeZoneMember(zone.id, userId, 'member', zone.join_policy === 'open' ? 'active' : 'pending');
+    const result = await requestZoneMembership(zoneId, userId);
 
     const elapsed = Date.now() - startTime;
     if (elapsed < 300) {
       await new Promise(resolve => setTimeout(resolve, 300 - elapsed));
     }
 
-    return { success: true };
+    return result;
   } catch (err) {
     await logerror('zoneMemberRequest error:', [err]);
     return { success: false, error: 'გაურკვეველი შეცდომა' };
@@ -120,28 +110,14 @@ export async function zoneMemberRequest(zoneId: number, userId: number): Promise
 export async function zoneMemberLeave(zoneId: number, userId: number): Promise<{ success: boolean; error?: string }> {
   const startTime = Date.now();
   try {
-    const zone = await getZoneById(zoneId);
-    if (!zone) {
-      return { success: false, error: 'საბზონა არ მოიძებნა' };
-    }
-
-    const member = await getZoneMemberLib(zone.id, userId);
-    if (!member) {
-      return { success: false, error: 'მომხმარებელი არაა საბზონის წევრი' };
-    }
-
-    if (member.role === 'owner') {
-      return { success: false, error: 'მფლობელი ვერ დატოვებს საბზონას' };
-    }
-
-    await leaveZoneMember(zone.id, userId);
+    const result = await leaveZone(zoneId, userId);
 
     const elapsed = Date.now() - startTime;
     if (elapsed < 300) {
       await new Promise(resolve => setTimeout(resolve, 300 - elapsed));
     }
 
-    return { success: true };
+    return result;
   } catch (err) {
     await logerror('zoneMemberLeave error:', [err]);
     return { success: false, error: 'გაურკვეველი შეცდომა' };

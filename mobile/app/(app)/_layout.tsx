@@ -42,10 +42,14 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="post/[id]" options={{ title: 'პოსტი' }} />
-      <Stack.Screen name="zone/[slug]" options={{ title: 'ზონა' }} />
+      <Stack.Screen name="zone/[slug]/index" options={{ title: 'ზონა' }} />
+      <Stack.Screen name="zone/[slug]/quests/[questId]" options={{ title: 'მისია' }} />
+      <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />
       <Stack.Screen name="user/[alias]" options={{ title: 'პროფილი' }} />
       <Stack.Screen name="zones" options={{ title: 'საბზონები' }} />
+      <Stack.Screen name="quest-log" options={{ title: 'მისიების ჟურნალი', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />
+      <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />
     </Stack>
   );
 }

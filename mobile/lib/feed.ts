@@ -1,17 +1,21 @@
 import { apiClient } from '@/lib/api';
 import type { MobilePostType } from '@/types/post';
 
-export type MobileFeedFilter = 'all' | 'guessed' | 'not-guessed';
-
-type GlobalFeedResponse = {
+type FeedResponse = {
   posts: MobilePostType[];
+};
+
+type FeedPageParams = {
+  limit?: number;
+  cursorDate?: string;
+  cursorId?: number;
 };
 
 type ApiErrorBody = { error?: string };
 
 const ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'ავტორიზაცია ამოიწურა. თავიდან შედი ანგარიშზე.',
-  INVALID_INPUT: 'ფილტრის ან გვერდის მონაცემები არასწორია.',
+  INVALID_INPUT: 'გვერდის მონაცემები არასწორია.',
   SERVER_ERROR: 'სერვერის შეცდომა. სცადე მოგვიანებით.',
 };
 
@@ -31,23 +35,23 @@ async function call<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+function loadFeed(path: string, params?: FeedPageParams): Promise<MobilePostType[]> {
+  return call(() =>
+    apiClient
+      .get<FeedResponse>(path, {
+        params: {
+          limit: params?.limit ?? 4,
+          cursorDate: params?.cursorDate,
+          cursorId: params?.cursorId,
+        },
+      })
+      .then((r) => r.data.posts)
+  );
+}
+
 export const feedApi = {
-  loadGlobal: (params?: {
-    limit?: number;
-    filter?: MobileFeedFilter;
-    cursorDate?: string;
-    cursorId?: number;
-  }): Promise<MobilePostType[]> =>
-    call(() =>
-      apiClient
-        .get<GlobalFeedResponse>('/feed/global', {
-          params: {
-            limit: params?.limit ?? 4,
-            filter: params?.filter ?? 'all',
-            cursorDate: params?.cursorDate,
-            cursorId: params?.cursorId,
-          },
-        })
-        .then((r) => r.data.posts)
-    ),
+  /** Global feed – every published post in zones the user can see. */
+  loadGlobal: (params?: FeedPageParams) => loadFeed('/feed/global', params),
+  /** To-guess feed – gps-photo posts the user hasn't guessed yet. */
+  loadToGuess: (params?: FeedPageParams) => loadFeed('/feed/to-guess', params),
 };

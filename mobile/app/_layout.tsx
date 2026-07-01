@@ -2,6 +2,7 @@ import '../global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 const queryClient = new QueryClient({
@@ -15,11 +16,13 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="auto" />
-        <Slot />
-      </QueryClientProvider>
-    </AuthProvider>
+    <KeyboardProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="auto" />
+          <Slot />
+        </QueryClientProvider>
+      </AuthProvider>
+    </KeyboardProvider>
   );
 }

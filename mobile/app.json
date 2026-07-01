@@ -14,7 +14,9 @@
       "package": "ge.gspot.mobile",
       "permissions": [
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.ACCESS_MEDIA_LOCATION"
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "plugins": [
@@ -24,6 +26,12 @@
       "expo-asset",
       "@react-native-community/datetimepicker",
       "@rnmapbox/maps",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "G'Spot იყენებს შენს ლოკაციას მისიის ამოცანების ადგილზე დასადასტურებლად."
+        }
+      ],
       [
         "expo-notifications",
         {

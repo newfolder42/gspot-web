@@ -13,6 +13,8 @@ const s3client = new S3Client({
         accessKeyId: process.env.AWSS3_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWSS3_SECRET_ACCESS_KEY!,
     },
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 export async function generateFileUrl(type: string) {
@@ -21,7 +23,7 @@ export async function generateFileUrl(type: string) {
         Bucket: BUCKET,
         Key: `${type}/${crypto.randomUUID()}`,
         ContentType: "application/octet-stream",
-        ACL: "private",
+        //ACL: "private",
     });
     try {
         const url = await getSignedUrl(s3client, command, { expiresIn: 900 });

@@ -1,8 +1,10 @@
 import { query } from '@/lib/db';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
+import { deleteObject } from '@/lib/s3';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { type PostCreatedEvent } from '@/types/events/post-created';
+import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 
 type CreateMobilePostParams = {
   userId: number;
@@ -54,6 +56,98 @@ export async function storeMobileGpsPhotoContent({
   } catch (err) {
     await logerror('storeMobileGpsPhotoContent error', [err]);
     return null;
+  }
+}
+
+type StoreMobileProfilePhotoParams = {
+  userId: number;
+  userAlias: string;
+  publicUrl: string;
+  details?: Record<string, unknown>;
+};
+
+/**
+ * Store (or replace) a user's profile photo. Mirrors the `profile-photo` branch of
+ * `lib/content.ts#storeContent`, but takes an explicit `userId` so it can be called from
+ * the mobile API layer. Deletes the previous S3 object, upserts `user_content`, and
+ * publishes the `user_profile_photo:changed` event. No image processing — the client
+ * uploads an already-cropped square (matching the web flow).
+ */
+export async function storeMobileProfilePhoto({
+  userId,
+  userAlias,
+  publicUrl,
+  details = {},
+}: StoreMobileProfilePhotoParams): Promise<{ id: number; url: string } | null> {
+  try {
+    const existingRes = await query(
+      `SELECT id, public_url FROM user_content
+       WHERE user_id = $1 AND type = 'profile-photo'
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+
+    if (existingRes.rows.length > 0) {
+      const existing = existingRes.rows[0];
+
+      if (existing.public_url) {
+        try {
+          const key = new URL(existing.public_url).pathname.replace(/^\//, '');
+          await deleteObject(key);
+        } catch (s3Err) {
+          console.warn('Failed to delete existing S3 object for profile-photo', s3Err);
+        }
+      }
+
+      const upd = await query(
+        `UPDATE user_content SET public_url = $1, details = $2, created_at = NOW() WHERE id = $3 RETURNING id`,
+        [publicUrl, JSON.stringify(details), existing.id]
+      );
+
+      if ((upd.rowCount ?? 0) === 0) return null;
+
+      await publishProfilePhotoChanged({
+        contentId: Number(upd.rows[0].id),
+        userId,
+        userAlias,
+        profilePhotoUrl: publicUrl,
+        previousProfilePhotoUrl: existing.public_url ?? null,
+        replacedExisting: true,
+      });
+
+      return { id: Number(upd.rows[0].id), url: publicUrl };
+    }
+
+    const res = await query(
+      `INSERT INTO user_content (user_id, type, public_url, details, created_at)
+       VALUES ($1, 'profile-photo', $2, $3, NOW())
+       RETURNING id`,
+      [userId, publicUrl, JSON.stringify(details)]
+    );
+
+    if ((res.rowCount ?? 0) === 0) return null;
+
+    await publishProfilePhotoChanged({
+      contentId: Number(res.rows[0].id),
+      userId,
+      userAlias,
+      profilePhotoUrl: publicUrl,
+      previousProfilePhotoUrl: null,
+      replacedExisting: false,
+    });
+
+    return { id: Number(res.rows[0].id), url: publicUrl };
+  } catch (err) {
+    await logerror('storeMobileProfilePhoto error', [err]);
+    return null;
+  }
+}
+
+async function publishProfilePhotoChanged(event: UserProfilePhotoChangedEvent) {
+  try {
+    await eventBus.publish('user_profile_photo', 'changed', event);
+  } catch (err) {
+    console.warn('Failed to publish user_profile_photo:changed event', err);
   }
 }
 

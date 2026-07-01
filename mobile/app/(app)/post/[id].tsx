@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -172,7 +173,6 @@ export default function PostPageScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const headerHeight = insets.top + 44;
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<PostCommentType | null>(null);
   const [showGuess, setShowGuess] = useState(false);
@@ -289,13 +289,12 @@ export default function PostPageScreen() {
   const commentsCount = countComments(comments);
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
   const canGuess = post.type === 'gps-photo' && !alreadyGuessed && !isOwner;
+  const isQuest = post.type === 'quest-completion';
+  const questPhotos = post.photos ?? [];
+  const questTitle = post.questTitle ? `შეასრულა მისია ${post.questTitle}` : 'შეასრულა მისია';
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
-    >
+    <View style={{ flex: 1 }}>
       <ScrollView
         className="flex-1 bg-zinc-50 dark:bg-zinc-950"
         contentContainerStyle={{ paddingBottom: 16 }}
@@ -341,17 +340,67 @@ export default function PostPageScreen() {
             ) : null}
           </View>
 
-          {/* Tag – solid colour, white text */}
-          {post.tag ? <TagBadge name={post.tag.name} color={post.tag.color} /> : null}
-
-          {/* Title */}
-          {post.title ? (
-            <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</Text>
-          ) : null}
+          {isQuest ? (
+            /* Quest title – teal link → zone quest detail */
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/zone/[slug]/quests/[questId]',
+                  params: { slug: post.zoneSlug ?? '', questId: String(post.questId ?? '') },
+                })
+              }
+            >
+              <Text className="mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                {questTitle}
+              </Text>
+            </Pressable>
+          ) : (
+            <>
+              {/* Tag – solid colour, white text */}
+              {post.tag ? <TagBadge name={post.tag.name} color={post.tag.color} /> : null}
+              {/* Title */}
+              {post.title ? (
+                <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</Text>
+              ) : null}
+            </>
+          )}
         </View>
 
-        {/* ── Image block with counter overlay ── */}
-        {post.image ? (
+        {/* ── Media block with counter overlay ── */}
+        {isQuest ? (
+          questPhotos.length > 0 ? (
+            <View className="relative">
+              <View className="flex-row flex-wrap">
+                {questPhotos.map((photo, idx) => (
+                  <View
+                    key={idx}
+                    style={{ width: questPhotos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }}
+                  >
+                    <View className="flex-1 relative bg-zinc-100 dark:bg-zinc-900">
+                      <Image
+                        source={{ uri: photo.variants?.feed ?? photo.url }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                      {photo.objectiveTitle ? (
+                        <View className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+                          <Text className="text-xs font-medium text-white" numberOfLines={1}>{photo.objectiveTitle}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <View
+                className="absolute top-3 right-3 flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20"
+                style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
+              >
+                <Feather name="message-circle" size={16} color="#FAFAFA" />
+                <Text className="text-sm font-semibold text-zinc-50">{commentsCount}</Text>
+              </View>
+            </View>
+          ) : null
+        ) : post.image ? (
           <View className="relative bg-black">
             <Image source={{ uri: post.image }} className="w-full h-80" resizeMode="contain" />
             <View
@@ -399,8 +448,9 @@ export default function PostPageScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Sticky bottom comment input ── */}
-      <View className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800" style={{ paddingBottom: insets.bottom }}>
+      {/* ── Sticky bottom comment input – floats above the keyboard ── */}
+      <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+        <View className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800" style={{ paddingBottom: insets.bottom }}>
         {replyTo ? (
           <View className="px-3 pt-2 flex-row items-center justify-between">
             <Text className="text-xs text-teal-700 dark:text-teal-300 flex-1 mr-2" numberOfLines={1}>
@@ -420,11 +470,11 @@ export default function PostPageScreen() {
             placeholderTextColor="#71717A"
             multiline
             maxLength={2000}
+            className="text-zinc-900 dark:text-zinc-50"
             style={{
               flex: 1,
               maxHeight: 96,
               backgroundColor: 'transparent',
-              color: '#18181B',
               fontSize: 14,
               lineHeight: 20,
               paddingVertical: 8,
@@ -441,7 +491,8 @@ export default function PostPageScreen() {
               : <Feather name="send" size={16} color="#fff" />}
           </Pressable>
         </View>
-      </View>
+        </View>
+      </KeyboardStickyView>
       {showGuess ? (
         <NewGuess
           post={post}
@@ -449,6 +500,6 @@ export default function PostPageScreen() {
           onSubmitted={handleGuessSubmitted}
         />
       ) : null}
-    </KeyboardAvoidingView>
+    </View>
   );
 }

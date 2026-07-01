@@ -20,6 +20,8 @@ import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
+import { uploadToSignedUrl } from '@/lib/upload';
+import { processPostPhoto } from '@/lib/image';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
@@ -159,29 +161,6 @@ function validateDate(d: Date | null): string | null {
   return null;
 }
 
-async function uploadWithProgress(
-  signedUrl: string,
-  uri: string,
-  mimeType: string,
-  onProgress: (pct: number) => void
-): Promise<string> {
-  const blob = await fetch(uri).then((r) => r.blob());
-
-  await new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', signedUrl);
-    xhr.setRequestHeader('Content-Type', mimeType || 'application/octet-stream');
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () =>
-      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error('ატვირთვა ვერ მოხერხდა'));
-    xhr.onerror = () => reject(new Error('ატვირთვა ვერ მოხერხდა'));
-    xhr.send(blob);
-  });
-
-  return signedUrl.split('?')[0];
-}
 
 // ─── MapCoordPicker ──────────────────────────────────────────────────────────
 
@@ -399,7 +378,7 @@ export default function SubmitScreen() {
   const [dateTaken, setDateTaken] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [image, setImage] = useState<{ uri: string; name: string; type: string; size: number } | null>(null);
+  const [image, setImage] = useState<{ uri: string; name: string; type: string; size: number; width: number; height: number } | null>(null);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gpsAutoDetected, setGpsAutoDetected] = useState(false);
 
@@ -453,13 +432,18 @@ export default function SubmitScreen() {
       setUploadProgress(0);
 
       try {
+        // Downscale + JPEG re-encode on-device (longest edge ≤ 4096px) so the upload is small
+        // on cellular and the stored master matches the web pipeline. The server still derives
+        // the WebP feed/thumb variants.
+        const processed = await processPostPhoto(image.uri, image.width, image.height, image.name);
+
         const signedUrl = await submitApi.createUploadUrl();
-        const publicUrl = await uploadWithProgress(signedUrl, image.uri, image.type, setUploadProgress);
+        const publicUrl = await uploadToSignedUrl(signedUrl, processed.uri, processed.type, setUploadProgress);
 
         const contentId = await submitApi.saveContent({
           publicUrl,
-          originalFileName: image.name,
-          fileSize: image.size,
+          originalFileName: processed.name,
+          fileSize: processed.size,
           coordinates: coords,
           dateTaken: dateTaken!.toISOString(),
         });
@@ -538,6 +522,8 @@ export default function SubmitScreen() {
         name: asset.fileName ?? `upload-${Date.now()}.jpg`,
         type: asset.mimeType ?? 'image/jpeg',
         size,
+        width: asset.width ?? 0,
+        height: asset.height ?? 0,
       });
 
       let gps: { latitude: number; longitude: number } | null = null;

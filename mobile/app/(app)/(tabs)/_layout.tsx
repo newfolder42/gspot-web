@@ -1,6 +1,6 @@
 import { Tabs, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,28 @@ export default function TabsLayout() {
     </Pressable>
   );
 
+  const HomeHeaderRight = () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
+        <Feather name="flag" size={20} color="#A1A1AA" />
+      </Pressable>
+      <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
+        <Feather name="search" size={20} color="#A1A1AA" />
+      </Pressable>
+    </View>
+  );
+
+  const AccountHeaderRight = () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 18 }}>
+        <Feather name="search" size={20} color="#A1A1AA" />
+      </Pressable>
+      <Pressable onPress={() => router.push('/(app)/settings')} style={{ marginRight: 14 }}>
+        <Feather name="settings" size={20} color="#A1A1AA" />
+      </Pressable>
+    </View>
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -52,6 +74,15 @@ export default function TabsLayout() {
           title: "G'Spot",
           tabBarLabel: 'მთავარი',
           tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
+          headerRight: () => <HomeHeaderRight />,
+        }}
+      />
+      <Tabs.Screen
+        name="to-guess"
+        options={{
+          title: 'გამოსაცნობები',
+          tabBarLabel: 'გამოსაცნობი',
+          tabBarIcon: ({ color, size }) => <Feather name="map-pin" size={size} color={color} />,
           headerRight: () => <SearchButton />,
         }}
       />
@@ -81,7 +112,7 @@ export default function TabsLayout() {
           title: 'შენი სივრცე',
           tabBarLabel: 'შენი სივრცე',
           tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
-          headerRight: () => <SearchButton />,
+          headerRight: () => <AccountHeaderRight />,
         }}
       />
     </Tabs>
