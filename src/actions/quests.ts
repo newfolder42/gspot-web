@@ -31,6 +31,7 @@ import { isObjectiveAttemptable } from '@/lib/questProgress';
 import { createQuestCompletionPost as createQuestCompletionPostLib } from '@/lib/posts';
 import type { ObjectiveTypeId, InRangeLocationConfig, CaptureData, ZoneQuestCharacterType } from '@/types/quest';
 import type { QuestCompletedEvent } from '@/types/events/quest-completed';
+import type { QuestCreatedEvent } from '@/types/events/quest-created';
 
 export type QuestObjectiveOrder = 'ordered' | 'unordered';
 export type ReviewDecision = 'approve' | 'reject';
@@ -94,7 +95,8 @@ export async function createQuestAction(
       return { success: false, error: 'პერსონაჟის შერჩევა სავალდებულოა' };
     }
     const characters = await getZoneQuestCharactersLib(zoneId);
-    if (!characters.some((c) => c.id === input.characterId)) {
+    const character = characters.find((c) => c.id === input.characterId);
+    if (!character) {
       return { success: false, error: 'პერსონაჟი არ მოიძებნა' };
     }
 
@@ -128,6 +130,28 @@ export async function createQuestAction(
       }))
     );
     if (!created) return { success: false, error: 'შეცდომა ამოცანების შექმნისას' };
+
+    const zone = await getZoneByIdLib(zoneId);
+
+    const { eventBus } = await import('@/lib/eventBus');
+    await eventBus.publish<QuestCreatedEvent>('zone_quest', 'created', {
+      questId: quest.id,
+      questTitle: title,
+      description: input.description?.trim() || null,
+      zoneId,
+      zoneSlug: zone?.slug ?? '',
+      character: {
+        id: character.id,
+        name: character.name,
+        slug: character.slug,
+        avatarUrl: character.avatar_url,
+      },
+      requiredLevel: input.requiredLevel ?? null,
+      startDate: input.startDate ?? null,
+      endDate: input.endDate ?? null,
+      createdBy: currentUser.userId,
+      createdByAlias: currentUser.alias,
+    });
 
     return { success: true, questId: quest.id };
   } catch (err) {

@@ -1,6 +1,6 @@
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'zone-member-invitation' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest';
   user: {
     userId: number;
     alias: string;
@@ -9,7 +9,7 @@ export type NotificationType = {
   | NotificationConnectionCreatedQuestPostDetailsType
   | NotificationGpsPostPublishFailedDetailsType | NotificationUserStartedFollowingDetailsType
   | NotificationUserAchievementAchievedDetailsType | NotificationPostCommentCreatedDetailsType | NotificationZoneMemberInvitationDetailsType
-  | NotificationZoneQuestCompletedDetailsType | NotificationZoneQuestObjectiveRejectedDetailsType
+  | NotificationZoneQuestCreatedDetailsType | NotificationZoneQuestCompletedDetailsType | NotificationZoneQuestObjectiveRejectedDetailsType
   | NotificationZoneQuestObjectiveAcceptedDetailsType | NotificationZoneQuestObjectiveSubmittedDetailsType
   | NotificationConnectionCompletedZoneQuestDetailsType;
   timestamp: string | null;
@@ -82,6 +82,22 @@ export type NotificationZoneMemberInvitationDetailsType = {
   zoneSlug: number;
   userAlias: number;
 };
+
+export type NotificationZoneQuestCreatedDetailsType = {
+  questId: number,
+  questTitle: string,
+  zoneId: number,
+  zoneSlug: string,
+  character: {
+    id: number,
+    name: string,
+    slug: string,
+    avatarUrl: string | null,
+  } | null,
+  requiredLevel: number | null,
+  createdBy: number,
+  createdByAlias: string,
+}
 
 export type NotificationZoneQuestCompletedDetailsType = {
   zoneSlug: string,
@@ -178,7 +194,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'user-achievement-achieved': {
       const d = details as NotificationUserAchievementAchievedDetailsType;
       if (d.achievementType === 'progressive')
-        return `ახალი მიღწევა: ${d.milestoneName}`;
+        return `ახალი მიღწევა: ${d.milestoneName ?? d.achievementName}`;
       if (d.achievementType === 'one_time')
         return `ახალი მიღწევა: ${d.achievementName}`;
       return 'ახალი მიღწევა';
@@ -192,6 +208,12 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'zone-member-invitation': {
       const d = details as NotificationZoneMemberInvitationDetailsType;
       return `${d.userAlias}-მა მოგიწვია საბზონაში: ${d.zoneSlug}`;
+    }
+    case 'zone-quest-created': {
+      const d = details as NotificationZoneQuestCreatedDetailsType;
+      return d.character
+        ? `${d.character.name}ს შენთვის ახალი მისია აქვს: ${d.questTitle}`
+        : `ახალი მისია: ${d.questTitle}`;
     }
     case 'zone-quest-completed': {
       const d = details as NotificationZoneQuestCompletedDetailsType;
@@ -254,6 +276,10 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'zone-member-invitation': {
       const d = notification.details as NotificationZoneMemberInvitationDetailsType;
       return `/zone/${d.zoneSlug}`;
+    }
+    case 'zone-quest-created': {
+      const d = notification.details as NotificationZoneQuestCreatedDetailsType;
+      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
     }
     case 'zone-quest-completed': {
       const d = notification.details as NotificationZoneQuestCompletedDetailsType;

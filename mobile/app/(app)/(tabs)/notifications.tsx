@@ -44,6 +44,8 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
       return 'message-circle';
     case 'zone-member-invitation':
       return 'compass';
+    case 'zone-quest-created':
+      return 'flag';
     case 'zone-quest-objective-submitted':
       return 'camera';
     case 'zone-quest-objective-accepted':

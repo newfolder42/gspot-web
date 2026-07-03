@@ -161,6 +161,11 @@ async function sendPushForNotification(userId: number, type: string, details: Re
         ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი`
         : `${details.commenterAlias}-მა დატოვა კომენტარი`;
       break;
+    case 'zone-quest-created':
+      body = details.character?.name
+        ? `${details.character.name}ს შენთვის ახალი მისია აქვს: ${details.questTitle}`
+        : `ახალი მისია: ${details.questTitle}`;
+      break;
     case 'zone-quest-completed':
       body = `მისია შესრულებულია: ${details.questTitle}`;
       break;

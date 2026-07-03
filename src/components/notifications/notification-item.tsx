@@ -19,6 +19,7 @@ export function NotificationIcon({ type, className }: { type: NotificationType['
     case 'user-achievement-achieved': return <TrophyIcon className={cls} />;
     case 'post-comment-created': return <MessageIcon className={cls} />;
     case 'zone-member-invitation': return <CompassIcon className={cls} />;
+    case 'zone-quest-created': return <FlagIcon className={cls} />;
     case 'zone-quest-objective-submitted': return <CameraIcon className={cls} />;
     case 'zone-quest-objective-accepted': return <CheckmarkCircleIcon className={cls} />;
     case 'zone-quest-objective-rejected': return <XCircleIcon className={cls} />;
