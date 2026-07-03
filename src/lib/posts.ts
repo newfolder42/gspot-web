@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { canUserAccessPost } from './post-access';
 import { logerror } from './logger';
-import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants } from '@/types/post';
+import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
 import { PostCreatedEvent } from '@/types/events/post-created';
 import { eventBus } from './eventBus';
@@ -458,6 +458,47 @@ limit 1`,
     return (await enrichPosts(res.rows))[0] ?? null;
   } catch (err) {
     await logerror('getPostForView error', [err]);
+    return null;
+  }
+}
+
+export async function getPostSeoMeta(id: number): Promise<PostSeoMetaType | null> {
+  try {
+    const res = await query(
+      `select p.id, p.type, p.title, p.created_at, u.alias as author_alias,
+         ph.items as photo_items,
+         zq.title as quest_title
+       from posts p
+       join zones z on z.id = p.zone_id
+       join users u on u.id = p.user_id
+       left join lateral (
+         select json_agg(json_build_object('url', uc2.public_url) order by pc2.sort) as items
+         from post_content pc2
+         join user_content uc2 on uc2.id = pc2.content_id
+         where pc2.post_id = p.id
+       ) ph on true
+       left join post_quest_completions pqc on pqc.post_id = p.id
+       left join zone_quests zq on zq.id = pqc.quest_id
+       where p.id = $1 and p.status = 'published' and z.visibility = 'public'
+       limit 1`,
+      [id]
+    );
+
+    if (res.rowCount === 0) return null;
+    const r = res.rows[0];
+    const items: { url: string }[] = r.photo_items ?? [];
+
+    return {
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      date: r.created_at,
+      author: r.author_alias,
+      images: items.map(i => i.url),
+      questTitle: r.quest_title ?? null,
+    };
+  } catch (err) {
+    await logerror('getPostSeoMeta error', [err]);
     return null;
   }
 }

@@ -59,6 +59,16 @@ export type QuestCompletionPostType = PostType & {
 
 export type FeedPostType = GpsPostType | QuestCompletionPostType;
 
+export type PostSeoMetaType = {
+  id: number;
+  type: PostTypeType;
+  title: string;
+  author: string;
+  date: string;
+  images: string[];
+  questTitle?: string | null;
+};
+
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
 export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone' | 'to-guess';
 export type FeedView = 'timeline' | 'grid';

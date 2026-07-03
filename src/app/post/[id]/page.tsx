@@ -1,4 +1,4 @@
-import { getPostForView, postIsGuessedByUser } from '@/lib/posts';
+import { getPostForView, getPostSeoMeta, postIsGuessedByUser } from '@/lib/posts';
 import type { Metadata } from 'next';
 import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
@@ -29,21 +29,24 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const id = Number(idStr);
   if (!isFinite(id)) return {};
 
-  const post = await getPostForView(0, id);
+  const post = await getPostSeoMeta(id);
   if (!post) return {};
 
-  const ogImageUrls = post.type === 'gps-photo'
-    ? [post.image]
-    : post.photos.length > 0 ? post.photos.map(p => p.url) : [`https://${PUBLIC_SITE_URL}/og-image.png`];
+  const isQuest = post.type === 'quest-completion';
+  const ogImageUrls = post.images.length > 0 ? post.images : [`https://${PUBLIC_SITE_URL}/og-image.png`];
 
-  const defaultTitle = `გამოიცანი ${post.author}-ის ფოტო-სურათის მდებარეობა ${APP_NAME}-ზე`;
-  const seoTitle = post.title && post.title.length <= 20
+  const defaultTitle = isQuest
+    ? `${post.author}-მა შეასრულა მისია „${post.questTitle}“ | ${APP_NAME}`
+    : `გამოიცანი ${post.author}-ის ფოტო-სურათის მდებარეობა ${APP_NAME}-ზე`;
+  const seoTitle = !isQuest && post.title && post.title.length <= 20
     ? `${post.title} | ${defaultTitle}`
     : defaultTitle;
 
-  const seoDescription = post.title
-    ? `გამოიცანი ${post.author}-ის პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`
-    : `გამოიცანი ამ პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`;
+  const seoDescription = isQuest
+    ? `ნახე როგორ შეასრულა ${post.author}-მა მისია „${post.questTitle}“ ${APP_NAME}-ზე.`
+    : post.title
+      ? `გამოიცანი ${post.author}-ის პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`
+      : `გამოიცანი ამ პოსტის ზუსტი მდებარეობა ${APP_NAME}-ზე, ნახე ფოტო, მონიშნე შენი პასუხი რუკაზე და შეამოწმე რამდენად ახლოს მოხვდი რეალურ ლოკაციასთან.`;
 
   return {
     title: seoTitle,
@@ -59,14 +62,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       url: `https://${PUBLIC_SITE_URL}/post/${post.id}`,
       images: ogImageUrls.map((url) => ({
         url,
-        alt: post.title || `${post.author}-ის სურათის | ` + post.title,
+        alt: isQuest ? (post.questTitle || defaultTitle) : (post.title || defaultTitle),
         width: 1200,
         height: 630,
       })),
       publishedTime: post.date,
       authors: post.author ? [`${PUBLIC_SITE_URL}/account/${post.author}`] : undefined,
-      section: 'გეოგრაფიული გამოცნობა',
-      tags: ['გამოიცანი', 'გეოგრაფია', 'საქართველო', 'ფოტო', 'ლოკაცია'],
+      section: isQuest ? 'მისიები' : 'გეოგრაფიული გამოცნობა',
+      tags: isQuest
+        ? ['მისია', 'თავგადასავალი', 'საქართველო', APP_NAME]
+        : ['გამოიცანი', 'გეოგრაფია', 'საქართველო', 'ფოტო', 'ლოკაცია'],
     },
     twitter: {
       card: 'summary_large_image',
