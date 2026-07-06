@@ -1,4 +1,5 @@
 import Feed from "@/components/feed";
+import FeedEvents from "@/components/feed-events";
 import PublicFeed from "@/components/public-feed";
 import LandingRedirectCapture from "@/components/common/landing-redirect-capture";
 import { getCurrentUser } from "@/lib/session";
@@ -52,6 +53,7 @@ export default async function Page({ searchParams }: Props) {
           </div>
         )}
         {/* <GameEmbed iframeClassName="h-[92dvh]"/> */}
+        {user && <FeedEvents />}
         {user ? <Feed type="global" userId={user.userId} /> : <PublicFeed />}
       </div>
     </main>

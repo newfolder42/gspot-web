@@ -58,4 +58,13 @@ body {
   .z-layer-critical {
     z-index: var(--z-critical);
   }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
