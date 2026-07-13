@@ -8,6 +8,8 @@ import { addCommentAction } from '@/actions/comments';
 import { ReplyIcon, MapPinIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon } from '@/components/icons';
 import { getInitials } from '@/lib/getInitials';
 import UserLink from '@/components/common/user-link';
+import VoteButtons from '@/components/votes/vote-buttons';
+import RewardButton from '@/components/rewards/reward-button';
 
 type PostCommentProps = {
   comment: PostCommentType;
@@ -164,6 +166,29 @@ export default function PostComment({
 
             {/* Actions */}
             <div className="flex items-center gap-3 mt-1">
+              {!isDeleted && (
+                <>
+                  <VoteButtons
+                    postId={postId}
+                    commentId={comment.id}
+                    score={comment.voteScore ?? 0}
+                    userVote={comment.userVote ?? null}
+                    isLoggedIn={!!currentUser}
+                    size="sm"
+                  />
+                  {isGuess && (
+                    <RewardButton
+                      postId={postId}
+                      commentId={comment.id}
+                      target="comment"
+                      rewards={comment.rewards ?? []}
+                      userReward={comment.userReward ?? null}
+                      isLoggedIn={!!currentUser}
+                      size="sm"
+                    />
+                  )}
+                </>
+              )}
               {currentUser && !isDeleted && (
                 <button
                   type="button"

@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { MapPinIcon, MessageIcon } from "../icons";
+import { MapPinIcon, MessageIcon, UpvoteIcon } from "../icons";
 
 export default function PostStatsBadge({
   href,
   commentCount,
   guessCount,
+  voteScore,
   className = "absolute top-3 right-3",
   title,
 }: {
   href: string;
   commentCount: number;
   guessCount?: number | null;
+  voteScore?: number | null;
   className?: string;
   title?: string;
 }) {
@@ -21,13 +23,19 @@ export default function PostStatsBadge({
       title={title}
       aria-label={title}
     >
-      {guessCount != null && (
-        <>
-          <MapPinIcon className="w-4 h-4" />
-          <span className="text-sm font-semibold">{guessCount}</span>
-        </>
+      {voteScore != null && (
+        <span className="text-sm font-semibold text-zinc-50 flex items-center gap-1">
+          <UpvoteIcon className="w-4 h-4" />
+          {voteScore}
+        </span>
       )}
-      <span className={`text-sm font-semibold text-zinc-50 flex items-center gap-1 ${guessCount != null ? 'ml-2' : ''}`}>
+      {guessCount != null && (
+        <span className={`text-sm font-semibold text-zinc-50 flex items-center gap-1 ${voteScore != null ? 'ml-2' : ''}`}>
+          <MapPinIcon className="w-4 h-4" />
+          {guessCount}
+        </span>
+      )}
+      <span className={`text-sm font-semibold text-zinc-50 flex items-center gap-1 ${guessCount != null || voteScore != null ? 'ml-2' : ''}`}>
         <MessageIcon className="w-4 h-4" />
         {commentCount}
       </span>

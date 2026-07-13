@@ -9,13 +9,14 @@ import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
 import ZoomableImage from './common/zoomable-image';
-import PostStatsBadge from './common/post-stats-badge';
 import { QuestCompletionTitle } from './post-quest';
 import type { FeedPostType } from '@/types/post';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import TimePassed from './common/time-passed';
 import type { PostGuessType } from '@/types/post-guess';
 import type { PostCommentType } from '@/types/post-comment';
+import type { VoteSummaryType } from '@/types/vote';
+import type { RewardSummaryType } from '@/types/reward';
 import type { ZoneTag } from '@/types/tag';
 
 type PostDetailClientProps = {
@@ -24,9 +25,11 @@ type PostDetailClientProps = {
   currentUser: string;
   alreadyGuessed: boolean;
   zoneTags: ZoneTag[];
+  postVotes: VoteSummaryType;
+  postRewards: RewardSummaryType;
 };
 
-export default function PostDetailClient({ post, comments, currentUser, alreadyGuessed, zoneTags }: PostDetailClientProps) {
+export default function PostDetailClient({ post, comments, currentUser, alreadyGuessed, zoneTags, postVotes, postRewards }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
   const questPost = post.type === 'quest-completion' ? post : null;
   const gpsPost = post.type === 'gps-photo' ? post : null;
@@ -96,7 +99,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
           </div>
         </div>
 
-        {questPost && (questPost.photos.length > 0 ? (
+        {questPost && questPost.photos.length > 0 && (
           <div className="relative">
             <div className={`grid gap-0.5 ${questPost.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {questPost.photos.map((photo, idx) => (
@@ -110,11 +113,8 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
                 </ZoomableImage>
               ))}
             </div>
-            <PostStatsBadge href="#comments" commentCount={commentCount} title="კონტრიბუციის ნახვა" />
           </div>
-        ) : (
-          <PostStatsBadge href="#comments" commentCount={commentCount} title="კონტრიბუციის ნახვა" className="mx-2 mb-2" />
-        ))}
+        )}
         {gpsPost && gpsPost?.image && (
           <div className="relative">
             <ZoomableImage className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'}`}>
@@ -130,12 +130,6 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
                 }}
               />
             </ZoomableImage>
-            <PostStatsBadge
-              href="#comments"
-              guessCount={guessCount}
-              commentCount={commentCount}
-              title="კონტრიბუციის ნახვა"
-            />
             {gpsPost.dateTaken && (
               <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
                 {formatPhotoTakenDate(gpsPost.dateTaken)}
@@ -156,6 +150,12 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
           postImage={gpsPost?.image}
           postTitle={post.title || ''}
           guessCount={guessCount}
+          commentCount={commentCount}
+          showGuessStat={!!gpsPost}
+          postVoteScore={postVotes.score}
+          userPostVote={postVotes.userVote}
+          postRewards={postRewards.rewards}
+          userPostReward={postRewards.userReward}
           onGuessSubmitted={handleGuessSubmitted}
           onCommentAdded={handleCommentAdded}
         />

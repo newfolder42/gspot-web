@@ -97,12 +97,13 @@ export function QuestCompletionPost({ post, showZone }: { post: QuestCompletionP
               </Link>
             ))}
           </div>
-          <PostStatsBadge href={`/post/${post.id}#comments`} commentCount={post.commentCount ?? 0} title="კომენტარების ნახვა" />
+          <PostStatsBadge href={`/post/${post.id}#comments`} commentCount={post.commentCount ?? 0} voteScore={post.voteScore ?? 0} title="კომენტარების ნახვა" />
         </div>
       ) : (
         <PostStatsBadge
           href={`/post/${post.id}#comments`}
           commentCount={post.commentCount ?? 0}
+          voteScore={post.voteScore ?? 0}
           title="კომენტარების ნახვა"
           className="mx-2 mb-2"
         />

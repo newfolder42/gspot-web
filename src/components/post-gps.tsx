@@ -4,7 +4,7 @@ import type { GpsPostType } from "@/types/post";
 import { formatPhotoTakenDate } from "@/lib/dates";
 import TimePassed from "./common/time-passed";
 import { useState } from "react";
-import { MapPinIcon, MessageIcon } from "./icons";
+import { MapPinIcon, MessageIcon, UpvoteIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
 import TagBadge from "./common/tag-badge";
 import UserLink from "./common/user-link";
@@ -25,8 +25,12 @@ export function GpsPostGridItem({ post }: { post: GpsPostType }) {
           sizes="(max-width: 640px) 33vw, 300px"
         />
         <div className="absolute top-1.5 right-0 sm:top-3 sm:right-0 inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-zinc-900/80 text-zinc-50 backdrop-blur-sm px-1.5 py-0.5 sm:px-2.5 sm:py-1 border border-zinc-100/20 pointer-events-none">
-          <MapPinIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span className="text-xs sm:text-sm font-semibold">{post.guessCount ?? 0}</span>
+          <UpvoteIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="text-xs sm:text-sm font-semibold">{post.voteScore ?? 0}</span>
+          <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-semibold text-zinc-50 flex items-center gap-1">
+            <MapPinIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+            {post.guessCount ?? 0}
+          </span>
           <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-semibold text-zinc-50 flex items-center gap-1">
             <MessageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
             {post.commentCount ?? 0}
@@ -101,6 +105,7 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
           href={`/post/${post.id}#guesses`}
           guessCount={post.guessCount ?? 0}
           commentCount={post.commentCount ?? 0}
+          voteScore={post.voteScore ?? 0}
           title="გამოცნობების ნახვა"
         />
       </div>

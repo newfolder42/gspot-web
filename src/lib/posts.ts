@@ -43,6 +43,7 @@ function buildBasePost(r: any): PostType {
     zoneProfilePhoto: r.zone_profile_photo_url ?? null,
     status: r.status,
     commentCount: r.comment_count != null ? Number(r.comment_count) : 0,
+    voteScore: r.vote_score != null ? Number(r.vote_score) : 0,
     authorLevel: r.author_level ?? null,
   };
 }
@@ -168,6 +169,7 @@ export async function getConnectionsPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+       (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
        ux.level as author_level
 from user_connections ucn
@@ -218,6 +220,7 @@ export async function getAccountPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+       (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
        ux.level as author_level
 from posts p
@@ -256,6 +259,7 @@ export async function getToGuessPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+       (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
        false as user_has_guessed,
        ux.level as author_level
 from posts p
@@ -305,6 +309,7 @@ export async function getGlobalPosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+       (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed,
        ux.level as author_level
 from posts p
@@ -357,6 +362,7 @@ export async function getPublicPosts(
        select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias,
          (select count(*) from post_guesses pg where pg.post_id = p.id)::int as guesses_count,
          (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment')::int as comment_count,
+         (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null)::int as vote_score,
          ux.level as author_level
        from pool
        join posts p on p.id = pool.id
@@ -406,6 +412,7 @@ export async function getZonePosts(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
        (select count(*) from post_comments cmt where cmt.post_id = p.id and cmt.type = 'comment') as comment_count,
+       (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
        exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $3) as user_has_guessed,
        ux.level as author_level
 from posts p

@@ -161,6 +161,22 @@ async function sendPushForNotification(userId: number, type: string, details: Re
         ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი`
         : `${details.commenterAlias}-მა დატოვა კომენტარი`;
       break;
+    case 'post-vote-created':
+      body = details.value === 1
+        ? `${details.voterAlias}-მა მოიწონა შენი პოსტი`
+        : `${details.voterAlias}-მა არ მოიწონა შენი პოსტი`;
+      break;
+    case 'comment-vote-created':
+      body = details.value === 1
+        ? `${details.voterAlias}-მა მოიწონა შენი კომენტარი`
+        : `${details.voterAlias}-მა არ მოიწონა შენი კომენტარი`;
+      break;
+    case 'post-reward-created':
+      body = `${details.giverAlias}-მა დააჯილდოვა შენი პოსტი: ${details.rewardName}`;
+      break;
+    case 'comment-reward-created':
+      body = `${details.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${details.rewardName}`;
+      break;
     case 'zone-quest-created':
       body = details.character?.name
         ? `${details.character.name}ს შენთვის ახალი მისია აქვს: ${details.questTitle}`

@@ -10,6 +10,7 @@ export type PostType = {
   zoneProfilePhoto?: string | null;
   authorLevel?: number | null;
   commentCount?: number | null;
+  voteScore?: number | null;
 };
 
 export enum DifficultyLevel {

@@ -482,6 +482,53 @@ export function CalendarIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconPro
   );
 }
 
+export function UpvoteIcon({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 3.5a1 1 0 0 1 .78.375l7 8.75A1 1 0 0 1 19 14.25h-4.5V20a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-5.75H5a1 1 0 0 1-.78-1.625l7-8.75A1 1 0 0 1 12 3.5Z" />
+    </svg>
+  );
+}
+
+export function DownvoteIcon({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 20.5a1 1 0 0 1-.78-.375l-7-8.75A1 1 0 0 1 5 9.75h4.5V4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5.75H19a1 1 0 0 1 .78 1.625l-7 8.75a1 1 0 0 1-.78.375Z" />
+    </svg>
+  );
+}
+
+export function GiftIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13" />
+      <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+      <path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8" />
+      <path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8" />
+    </svg>
+  );
+}
+
 export function MaskIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
   return (
     <svg

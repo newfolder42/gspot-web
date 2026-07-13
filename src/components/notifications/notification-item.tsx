@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { NotificationType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
+import { NotificationType, NotificationPostVoteCreatedDetailsType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
 import TimePassed from "@/components/common/time-passed";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon, CheckmarkCircleIcon, XCircleIcon, FlagIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon, CheckmarkCircleIcon, XCircleIcon, FlagIcon, UpvoteIcon, DownvoteIcon, GiftIcon } from "@/components/icons";
 
-export function NotificationIcon({ type, className }: { type: NotificationType['type']; className?: string }) {
+export function NotificationIcon({ type, details, className }: { type: NotificationType['type']; details?: NotificationType['details']; className?: string }) {
   const cls = className ?? "w-4 h-4 shrink-0";
   switch (type) {
     case 'gps-guess': return <MapPinIcon className={cls} />;
@@ -18,6 +18,13 @@ export function NotificationIcon({ type, className }: { type: NotificationType['
     case 'user-started-following': return <UsersIcon className={cls} />;
     case 'user-achievement-achieved': return <TrophyIcon className={cls} />;
     case 'post-comment-created': return <MessageIcon className={cls} />;
+    case 'post-vote-created':
+    case 'comment-vote-created':
+      return (details as NotificationPostVoteCreatedDetailsType | undefined)?.value === -1
+        ? <DownvoteIcon className={cls} />
+        : <UpvoteIcon className={cls} />;
+    case 'post-reward-created': return <GiftIcon className={cls} />;
+    case 'comment-reward-created': return <GiftIcon className={cls} />;
     case 'zone-member-invitation': return <CompassIcon className={cls} />;
     case 'zone-quest-created': return <FlagIcon className={cls} />;
     case 'zone-quest-objective-submitted': return <CameraIcon className={cls} />;
@@ -79,7 +86,7 @@ export default function NotificationItem({ notification, userId, onUpdate, onNav
         className="flex items-start gap-3 min-w-0"
       >
         <div className="mt-0.5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">
-          <NotificationIcon type={notification.type} />
+          <NotificationIcon type={notification.type} details={notification.details} />
         </div>
         <div className="flex-1 flex flex-col gap-1">
           <p className="text-sm text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 line-clamp-2 break-words">

@@ -4,6 +4,8 @@ import PostDetailClient from '@/components/post-detail-client';
 import NotFound from '@/app/not-found';
 import { getCurrentUser } from '@/lib/session';
 import { getZoneTags } from '@/lib/tags';
+import { getVoteSummary } from '@/lib/votes';
+import { getRewardSummary } from '@/lib/rewards';
 import { PUBLIC_SITE_URL, APP_NAME } from '@/types/constants';
 import { loadPostCommentsAction } from '@/actions/comments';
 
@@ -15,13 +17,17 @@ export default async function Page({ params }: Props) {
   const post = await getPostForView(currentUser?.userId || 0, id);
   if (!post) return NotFound();
 
-  const [alreadyGuessed, comments, zoneTags] = await Promise.all([
+  const [alreadyGuessed, comments, zoneTags, postVotes, postRewards] = await Promise.all([
     currentUser ? postIsGuessedByUser(id, currentUser.userId) : Promise.resolve(false),
     loadPostCommentsAction(post.id),
     getZoneTags(post.zoneId),
+    getVoteSummary(post.id, null, currentUser?.userId ?? null),
+    getRewardSummary(post.id, null, currentUser?.userId ?? null),
   ]);
 
-  return <PostDetailClient post={post} comments={comments} currentUser={currentUser?.alias || ''} alreadyGuessed={alreadyGuessed} zoneTags={zoneTags} />;
+  return (
+    <PostDetailClient post={post} comments={comments} currentUser={currentUser?.alias || ''} alreadyGuessed={alreadyGuessed} zoneTags={zoneTags} postVotes={postVotes} postRewards={postRewards} />
+  );
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

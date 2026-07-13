@@ -7,8 +7,12 @@ import { addCommentAction, loadPostCommentsAction } from '@/actions/comments';
 import PostComment from './post-comment';
 import NewGuess from './new-guess';
 import NewPhotoGuess from './new-photo-guess';
+import VoteButtons from './votes/vote-buttons';
+import RewardButton from './rewards/reward-button';
+import type { RewardCountType } from '@/types/reward';
+import type { VoteValue } from '@/types/vote';
 import { getPostGuessMapPoints } from '@/lib/posts';
-import { MapPinIcon, XIcon, CameraIcon } from './icons';
+import { MapPinIcon, XIcon, CameraIcon, MessageIcon } from './icons';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,6 +33,12 @@ type PostCommentsProps = {
   postImage?: string;
   postTitle?: string;
   guessCount: number;
+  commentCount: number;
+  showGuessStat: boolean;
+  postVoteScore: number;
+  userPostVote: VoteValue | null;
+  postRewards: RewardCountType[];
+  userPostReward: string | null;
   onGuessSubmitted?: (guess: PostGuessType) => void;
   onCommentAdded?: (comment: PostCommentType) => void;
 };
@@ -61,6 +71,12 @@ export default function PostComments({
   postImage,
   postTitle,
   guessCount,
+  commentCount,
+  showGuessStat,
+  postVoteScore,
+  userPostVote,
+  postRewards,
+  userPostReward,
   onGuessSubmitted,
   onCommentAdded,
 }: PostCommentsProps) {
@@ -353,7 +369,38 @@ export default function PostComments({
   return (
     <div className="mt-4">
       {/* Header bar */}
-      <div className="px-4 py-2 flex items-center justify-end gap-3">
+      <div className="px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <VoteButtons
+            postId={postId}
+            commentId={null}
+            score={postVoteScore}
+            userVote={userPostVote}
+            isLoggedIn={!!currentUser}
+            size="md"
+          />
+          <RewardButton
+            postId={postId}
+            commentId={null}
+            target="post"
+            rewards={postRewards}
+            userReward={userPostReward}
+            isLoggedIn={!!currentUser}
+            size="md"
+          />
+          <span className="inline-flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+            {showGuessStat && (
+              <span className="inline-flex items-center gap-1" title="გამოცნობები">
+                <MapPinIcon className="w-4 h-4" />
+                <span className="font-semibold">{guessCount2}</span>
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1" title="კომენტარები">
+              <MessageIcon className="w-4 h-4" />
+              <span className="font-semibold">{commentCount}</span>
+            </span>
+          </span>
+        </div>
 
         <div className="flex items-center gap-2">
           {isAuthor && guessCount2 > 0 && (

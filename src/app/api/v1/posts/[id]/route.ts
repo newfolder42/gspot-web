@@ -62,7 +62,7 @@ export async function GET(req: NextRequest, context: Context) {
 
     const [alreadyGuessed, commentsFlat] = await Promise.all([
       postIsGuessedByUser(postId, auth.user.userId),
-      getPostComments(postId),
+      getPostComments(postId, auth.user.userId),
     ]);
 
     return NextResponse.json({
