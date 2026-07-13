@@ -39,6 +39,9 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
 
   const handleGive = async (key: string) => {
     if (givingKey) return;
+    if (status && status.remainingToday <= 0) {
+      return;
+    }
     setError(false);
     setGivingKey(key);
     try {
@@ -79,10 +82,6 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
         <div className="px-4 py-4">
           {loading ? (
             <div className="py-6 text-center text-sm text-zinc-600 dark:text-zinc-300">იტვირთება...</div>
-          ) : status && status.remainingToday <= 0 ? (
-            <div className="py-6 text-center text-sm text-zinc-600 dark:text-zinc-300">
-              დღეს ჯილდოების ლიმიტი ამოწურულია ({status.dailyLimit}/დღეში).
-            </div>
           ) : selectable.length === 0 ? (
             <div className="py-6 text-center text-sm text-zinc-600 dark:text-zinc-300">
               ჯილდოები ამ ადგილას მიუწვდომელია.
@@ -112,7 +111,7 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
           )}
         </div>
 
-        {status && status.remainingToday > 0 && (
+        {status && (
           <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400">
             დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}
           </div>
