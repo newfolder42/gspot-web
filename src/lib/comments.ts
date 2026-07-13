@@ -27,12 +27,13 @@ export async function getPostComments(postId: number, currentUserId?: number | n
        ) vx on true
        left join post_votes uv on uv.comment_id = c.id and uv.user_id = $2 and uv.deleted_at is null
        left join lateral (
-         select json_agg(json_build_object('key', t.reward_key, 'count', t.cnt) order by t.cnt desc, t.reward_key) as rewards
+         select json_agg(json_build_object('key', t.reward_key, 'count', t.cnt, 'name', t.name, 'iconUrl', t.icon_url) order by t.cnt desc, t.reward_key) as rewards
          from (
-           select r.reward_key, count(*)::int as cnt
+           select r.reward_key, count(*)::int as cnt, rw.name, rw.icon_url
            from post_rewards r
+           join rewards rw on rw.key = r.reward_key
            where r.comment_id = c.id and r.deleted_at is null
-           group by r.reward_key
+           group by r.reward_key, rw.name, rw.icon_url
          ) t
        ) rx on true
        left join post_rewards ur on ur.comment_id = c.id and ur.user_id = $2 and ur.deleted_at is null

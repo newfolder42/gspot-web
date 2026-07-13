@@ -33,7 +33,9 @@ export default function RewardButton({
   const router = useRouter();
   const pathname = usePathname();
 
-  const chips = summary.rewards.filter((r) => r.count > 0);
+  const given = summary.rewards.filter((r) => r.count > 0);
+  const topReward = given.length > 0 ? given.reduce((a, b) => (b.count > a.count ? b : a)) : null;
+  const totalCount = given.reduce((sum, r) => sum + r.count, 0);
 
   const sm = size === 'sm';
   const chipBase = sm
@@ -54,19 +56,15 @@ export default function RewardButton({
 
   return (
     <div className="relative inline-flex items-center gap-1.5 flex-wrap">
-      {chips.length > 0 && (
+      {topReward && (
         <button
           type="button"
           onClick={() => setDetailsOpen(true)}
-          className={`${chipBase} border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/70 text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors cursor-pointer`}
+          className={`${chipBase} text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors cursor-pointer`}
           title="ჯილდოს გამცემები"
         >
-          {chips.map((r) => (
-            <span key={r.key} className="inline-flex items-center gap-0.5">
-              <RewardIcon iconUrl={r.iconUrl} name={r.name} className={iconCls} />
-              <span className="font-semibold">{r.count}</span>
-            </span>
-          ))}
+          <RewardIcon iconUrl={topReward.iconUrl} name={topReward.name} className={iconCls} />
+          <span className="font-semibold">{totalCount}</span>
         </button>
       )}
 

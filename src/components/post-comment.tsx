@@ -165,7 +165,7 @@ export default function PostComment({
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-2 mt-1">
               {!isDeleted && (
                 <>
                   <VoteButtons
