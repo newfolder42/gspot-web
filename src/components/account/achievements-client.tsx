@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { AccountAchievement } from '@/types/achievement';
 import type { RewardDefinition } from '@/types/reward';
 import { formatPhotoTakenDate } from '@/lib/dates';
-import { CheckmarkCircleIcon, TrophyIcon, MaskIcon } from '@/components/icons';
+import { TrophyIcon, MaskIcon } from '@/components/icons';
 import { RewardSpecTiles } from '@/components/rewards/reward-tile';
 
 type Props = {
@@ -122,14 +122,14 @@ function AchievementCard({
 
   return (
     <article
-      className="relative rounded-lg border p-3 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+      className="relative rounded-lg border p-3 border-zinc-200 dark:border-zinc-800"
     >
       <div className="flex items-start gap-3">
         <div
           className={`relative shrink-0 h-14 w-14 rounded-md border-2 overflow-hidden flex items-center justify-center ${
             achieved
-              ? 'border-teal-500 dark:border-teal-600 bg-teal-100 dark:bg-teal-900/30'
-              : 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800'
+              ? 'border-teal-500 dark:border-teal-600'
+              : 'border-zinc-300 dark:border-zinc-700'
           }`}
         >
           {secret ? (
@@ -144,12 +144,6 @@ function AchievementCard({
             />
           ) : (
             <TrophyIcon className={`w-6 h-6 ${achieved ? 'text-teal-600' : 'text-zinc-400 dark:text-zinc-600'}`} />
-          )}
-
-          {achieved && (
-            <span className="absolute -bottom-1.5 -right-1.5 rounded-full bg-white dark:bg-zinc-900 p-0.5 shadow">
-              <CheckmarkCircleIcon className="w-4 h-4 text-teal-600" strokeWidth={2.5} />
-            </span>
           )}
         </div>
 
