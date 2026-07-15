@@ -548,3 +548,22 @@ export function MaskIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) 
     </svg>
   );
 }
+
+export function ProgressIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="7" width="18" height="10" rx="2" />
+      <rect x="5" y="9.5" width="3" height="5" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="9.5" y="9.5" width="3" height="5" rx="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

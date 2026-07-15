@@ -11,7 +11,6 @@ import type {
   ZoneQuestWithStatsType,
   ZoneQuestObjectiveWithProgressType,
   UserQuestBaseType,
-  UserQuestObjectiveBaseType,
   PendingObjectiveReviewType,
   CompletedQuestPhotoType,
   ZoneQuestCharacterType,
@@ -21,12 +20,17 @@ import type {
   CaptureData,
   QuestModerationSummaryType,
 } from '@/types/quest';
+import type { RewardSpec } from '@/types/reward';
+
+function mapQuestRewards(raw: unknown): RewardSpec[] {
+  return Array.isArray(raw) ? (raw as RewardSpec[]) : [];
+}
 
 export async function getZoneQuests(zoneId: number, userId: number | null): Promise<ZoneQuestWithStatsType[]> {
   try {
     const res = await query(
       `select zq.id, zq.zone_id, zq.title, zq.description, zq.objective_order, zq.status,
-              zq.character_id, zq.required_level, zq.start_date, zq.end_date,
+              zq.character_id, zq.required_level, zq.start_date, zq.end_date, zq.rewards,
               zq.created_by, zq.created_at, zq.updated_at,
               (select count(*) from zone_quest_objectives zqo where zqo.quest_id = zq.id) as objective_count,
               (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'active') as active_count,
@@ -60,6 +64,7 @@ export async function getZoneQuests(zoneId: number, userId: number | null): Prom
         required_level: requiredLevel,
         start_date: r.start_date,
         end_date: r.end_date,
+        rewards: mapQuestRewards(r.rewards),
         created_by: r.created_by !== null ? Number(r.created_by) : null,
         created_at: r.created_at,
         updated_at: r.updated_at,
@@ -112,6 +117,7 @@ export async function getQuestById(questId: number): Promise<ZoneQuestBaseType |
       required_level: r.required_level !== null ? Number(r.required_level) : null,
       start_date: r.start_date,
       end_date: r.end_date,
+      rewards: mapQuestRewards(r.rewards),
       created_by: r.created_by !== null ? Number(r.created_by) : null,
       created_at: r.created_at,
       updated_at: r.updated_at,
@@ -205,6 +211,7 @@ export type CreateQuestInput = {
   description: string | null;
   objectiveOrder: string;
   createdBy: number;
+  rewards: RewardSpec[];
   characterId?: number | null;
   requiredLevel?: number | null;
   startDate?: string | null;
@@ -215,8 +222,8 @@ export async function createQuest(input: CreateQuestInput): Promise<ZoneQuestBas
   try {
     const res = await query(
       `INSERT INTO zone_quests
-         (zone_id, title, description, objective_order, status, character_id, required_level, start_date, end_date, created_by)
-       VALUES ($1, $2, $3, $4, 'active', $5, $6, $7, $8, $9)
+         (zone_id, title, description, objective_order, status, character_id, required_level, start_date, end_date, rewards, created_by)
+       VALUES ($1, $2, $3, $4, 'active', $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         input.zoneId,
@@ -227,6 +234,7 @@ export async function createQuest(input: CreateQuestInput): Promise<ZoneQuestBas
         input.requiredLevel ?? null,
         input.startDate ?? null,
         input.endDate ?? null,
+        JSON.stringify(input.rewards),
         input.createdBy,
       ]
     );
@@ -243,6 +251,7 @@ export async function createQuest(input: CreateQuestInput): Promise<ZoneQuestBas
       required_level: r.required_level !== null ? Number(r.required_level) : null,
       start_date: r.start_date,
       end_date: r.end_date,
+      rewards: mapQuestRewards(r.rewards),
       created_by: r.created_by !== null ? Number(r.created_by) : null,
       created_at: r.created_at,
       updated_at: r.updated_at,

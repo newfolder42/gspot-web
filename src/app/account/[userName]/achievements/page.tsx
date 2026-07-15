@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { loadAccountAchievements } from '@/actions/achievements';
 import { getAccountByAlias } from '@/lib/account';
+import { getRewardDefinitionsByKeys } from '@/lib/rewards';
+import { getCatalogRewardKeys } from '@/types/reward';
 import AchievementsClient from '@/components/account/achievements-client';
 
 type PageProps = {
@@ -23,5 +25,8 @@ export default async function AccountAchievementsPage({ params }: PageProps) {
     );
   }
 
-  return <AchievementsClient achievements={achievements} />;
+  const rewardKeys = Array.from(new Set(achievements.flatMap((a) => getCatalogRewardKeys(a.rewards))));
+  const rewardDefinitions = await getRewardDefinitionsByKeys(rewardKeys);
+
+  return <AchievementsClient achievements={achievements} rewardDefinitions={rewardDefinitions} />;
 }

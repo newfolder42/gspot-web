@@ -14,6 +14,8 @@ import {
 import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
 import { isMobileUserAgent } from '@/lib/device';
+import { getRewardDefinitionsByKeys } from '@/lib/rewards';
+import { getCatalogRewardKeys } from '@/types/reward';
 import QuestDetail from '@/components/zone/quest-detail';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 
@@ -92,7 +94,10 @@ export default async function QuestDetailPage({ params, searchParams }: Props) {
   const userQuest = currentUser ? await getUserQuest(questId, currentUser.userId) : null;
   const objectives = await getQuestObjectivesWithProgress(questId, userQuest?.id ?? null);
 
-  const character = quest.character_id ? await getQuestCharacter(quest.character_id) : null;
+  const [character, rewardDefinitions] = await Promise.all([
+    quest.character_id ? getQuestCharacter(quest.character_id) : Promise.resolve(null),
+    getRewardDefinitionsByKeys(getCatalogRewardKeys(quest.rewards)),
+  ]);
 
   const callerLevel = currentUser ? await getUserLevel(currentUser.userId) : 0;
   const lockReason = quest.status !== 'active'
@@ -133,6 +138,7 @@ export default async function QuestDetailPage({ params, searchParams }: Props) {
       gallery={gallery}
       isMobile={isMobile}
       highlightAuthorAlias={authorAlias}
+      rewardDefinitions={rewardDefinitions}
     />
   );
 }

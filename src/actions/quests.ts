@@ -32,6 +32,8 @@ import { createQuestCompletionPost as createQuestCompletionPostLib } from '@/lib
 import type { ObjectiveTypeId, InRangeLocationConfig, CaptureData, ZoneQuestCharacterType } from '@/types/quest';
 import type { QuestCompletedEvent } from '@/types/events/quest-completed';
 import type { QuestCreatedEvent } from '@/types/events/quest-created';
+import { QUEST_XP_MIN, QUEST_XP_MAX } from '@/types/reward';
+import type { RewardSpec } from '@/types/reward';
 
 export type QuestObjectiveOrder = 'ordered' | 'unordered';
 export type ReviewDecision = 'approve' | 'reject';
@@ -51,11 +53,28 @@ export type CreateQuestActionInput = {
   description: string | null;
   objectiveOrder: QuestObjectiveOrder;
   objectives: CreateQuestObjectiveActionInput[];
+  rewards: RewardSpec[];
   characterId?: number | null;
   requiredLevel?: number | null;
   startDate?: string | null;
   endDate?: string | null;
 };
+
+// Quest creation only sets the user-xp reward. Other reward types (e.g. catalog
+// unlocks) are attached manually in the DB by developers, so any non-xp entry here
+// is rejected rather than stored.
+function validateQuestRewards(rewards: RewardSpec[]): { rewards?: RewardSpec[]; error?: string } {
+  if (rewards.length !== 1 || rewards[0].type !== 'user-xp') {
+    return { error: 'მისიას უნდა ჰქონდეს მხოლოდ გამოცდილების ჯილდო' };
+  }
+
+  const xpValue = rewards[0].value;
+  if (!Number.isInteger(xpValue) || xpValue < QUEST_XP_MIN || xpValue > QUEST_XP_MAX) {
+    return { error: `გამოცდილება უნდა იყოს ${QUEST_XP_MIN}-დან ${QUEST_XP_MAX}-მდე` };
+  }
+
+  return { rewards: [{ type: 'user-xp', value: xpValue }] };
+}
 
 export async function createQuestAction(
   zoneId: number,
@@ -104,12 +123,18 @@ export async function createQuestAction(
       return { success: false, error: 'დასასრულის თარიღი არ შეიძლება დაწყებამდე იყოს' };
     }
 
+    const validatedRewards = validateQuestRewards(input.rewards ?? []);
+    if (validatedRewards.error || !validatedRewards.rewards) {
+      return { success: false, error: validatedRewards.error ?? 'ჯილდოები არასწორია' };
+    }
+
     const quest = await createQuestLib({
       zoneId,
       title,
       description: input.description?.trim() || null,
       objectiveOrder: input.objectiveOrder,
       createdBy: currentUser.userId,
+      rewards: validatedRewards.rewards,
       characterId: input.characterId ?? null,
       requiredLevel: input.requiredLevel ?? null,
       startDate: input.startDate ?? null,

@@ -36,6 +36,23 @@ async function getRewardDefinitions(): Promise<RewardDefinition[]> {
   }
 }
 
+export async function getRewardDefinitionsByKeys(keys: string[]): Promise<RewardDefinition[]> {
+  if (keys.length === 0) return [];
+  try {
+    const res = await query(
+      `select key, name, applies_to, unlockable, icon_url, status
+       from rewards
+       where key = any($1::varchar[])
+       order by sort_order, key`,
+      [keys]
+    );
+    return res.rows.map(mapRewardRow);
+  } catch (err) {
+    await logerror('getRewardDefinitionsByKeys error', [err]);
+    return [];
+  }
+}
+
 async function getRewardDefinitionByKey(key: string): Promise<RewardDefinition | null> {
   const res = await query(
     `select key, name, applies_to, unlockable, icon_url, status from rewards where key = $1 limit 1`,

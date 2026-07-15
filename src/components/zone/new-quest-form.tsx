@@ -11,6 +11,8 @@ import { mapDefaultCenter } from '@/lib/map';
 import { formatCoordinates } from '@/lib/utils';
 import { OBJECTIVE_TYPE_OPTIONS } from '@/types/quest';
 import type { ObjectiveTypeId, ZoneQuestCharacterType } from '@/types/quest';
+import { QUEST_XP_MIN, QUEST_XP_MAX, QUEST_XP_DEFAULT } from '@/types/reward';
+import type { RewardSpec } from '@/types/reward';
 
 type ObjectiveForm = {
   key: string;
@@ -55,6 +57,7 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
   const [requiredLevel, setRequiredLevel] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [xpValue, setXpValue] = useState(String(QUEST_XP_DEFAULT));
   const [error, setError] = useState<string | null>(null);
 
   function updateObjective(key: string, patch: Partial<ObjectiveForm>) {
@@ -96,6 +99,15 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
       return;
     }
 
+    const xp = Number(xpValue);
+    if (!Number.isInteger(xp) || xp < QUEST_XP_MIN || xp > QUEST_XP_MAX) {
+      setError(`გამოცდილება უნდა იყოს ${QUEST_XP_MIN}-დან ${QUEST_XP_MAX}-მდე`);
+      return;
+    }
+
+    // Catalog reward unlocks are attached manually in the DB by developers, never from this form.
+    const rewards: RewardSpec[] = [{ type: 'user-xp', value: xp }];
+
     const input: CreateQuestActionInput = {
       title: title.trim(),
       description: description.trim() || null,
@@ -108,6 +120,7 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
           ? { latitude: o.latitude, longitude: o.longitude, radiusMeters: o.radiusMeters }
           : {}),
       })),
+      rewards,
       characterId,
       requiredLevel: requiredLevel.trim() ? Number(requiredLevel) : null,
       startDate: startDate ? new Date(`${startDate}T00:00:00`).toISOString() : null,
@@ -217,6 +230,24 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
             min={1}
             max={999}
             className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">ჯილდო</h3>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+            გამოცდილება (XP) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={xpValue}
+            onChange={(e) => setXpValue(e.target.value)}
+            min={QUEST_XP_MIN}
+            max={QUEST_XP_MAX}
+            required
+            className="w-24 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
           />
         </div>
       </div>

@@ -18,6 +18,8 @@ import type {
   CompletedQuestPhotoType,
   ZoneQuestCharacterType,
 } from '@/types/quest';
+import type { RewardDefinition } from '@/types/reward';
+import { RewardSpecTiles } from '@/components/rewards/reward-tile';
 
 const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
   pending_review: 'განხილვაში',
@@ -51,18 +53,30 @@ function ObjectiveRow({
   const canCapture = isCapturable && !requiresMobile;
 
   return (
-    <div className={`flex items-start gap-3 py-3 ${isLocked ? 'opacity-50' : ''}`}>
-      <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mt-0.5 ${
-        isCompleted ? 'bg-teal-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
-      }`}>
-        {isCompleted ? <CheckmarkCircleIcon className="w-3.5 h-3.5" /> : isLocked ? <LockIcon className="w-3 h-3" /> : index + 1}
+    <div className={`flex items-start gap-2.5 py-2 first:pt-0 last:pb-0 ${isLocked ? 'opacity-50' : ''}`}>
+      <div className="shrink-0 w-4 flex items-center justify-center mt-0.5 leading-none">
+        {isCompleted ? (
+          <CheckmarkCircleIcon className="w-3.5 h-3.5 text-teal-600" />
+        ) : isLocked ? (
+          <LockIcon className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
+        ) : (
+          <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">{index + 1}.</span>
+        )}
       </div>
 
       <div className="min-w-0 flex-1 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
             {objective.title && (
-              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{objective.title}</span>
+              <span
+                className={`text-sm font-medium ${
+                  isCompleted
+                    ? 'text-zinc-500 dark:text-zinc-400 line-through decoration-zinc-300 dark:decoration-zinc-700'
+                    : 'text-zinc-900 dark:text-zinc-100'
+                }`}
+              >
+                {objective.title}
+              </span>
             )}
             {statusLabel && (
               <span className="text-xs text-zinc-500 dark:text-zinc-400">· {statusLabel}</span>
@@ -71,7 +85,7 @@ function ObjectiveRow({
               <span className="text-xs text-zinc-400 dark:text-zinc-500">· დაბლოკილია</span>
             )}
           </div>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-0.5">{objective.display_text}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-0.5 leading-relaxed">{objective.display_text}</p>
           {status === 'rejected' && objective.rejectionReason && (
             <p className="text-xs text-red-500 mt-1">მიზეზი: {objective.rejectionReason}</p>
           )}
@@ -111,6 +125,7 @@ export default function QuestDetail({
   gallery,
   isMobile,
   highlightAuthorAlias,
+  rewardDefinitions = [],
 }: {
   zoneSlug: string;
   quest: ZoneQuestBaseType;
@@ -124,6 +139,7 @@ export default function QuestDetail({
   gallery: CompletedQuestPhotoType[];
   isMobile: boolean;
   highlightAuthorAlias?: string | null;
+  rewardDefinitions?: RewardDefinition[];
 }) {
   const router = useRouter();
   const [isAccepting, startAccepting] = useTransition();
@@ -163,7 +179,7 @@ export default function QuestDetail({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs font-semibold tracking-wide uppercase text-zinc-500 dark:text-zinc-400">
             {character ? (
               <Link href={`/zone/${zoneSlug}/characters/${character.slug}`} className="hover:underline">
                 {character.name}
@@ -172,14 +188,12 @@ export default function QuestDetail({
               'ზონის მისია'
             )}
           </p>
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{quest.title}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mt-0.5">{quest.title}</h1>
           {quest.description && (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5 whitespace-pre-wrap">{quest.description}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-2 dark:border-zinc-800 leading-relaxed whitespace-pre-wrap">
+              {quest.description}
+            </p>
           )}
-          <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-            <FlagIcon className="w-3.5 h-3.5" />
-            ჯილდო · 200 გამოცდილება
-          </div>
           {(quest.start_date || quest.end_date || quest.required_level) && (
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {(quest.start_date || quest.end_date) && (
@@ -253,11 +267,11 @@ export default function QuestDetail({
       )}
 
       <div>
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+        <p className="text-xs font-semibold tracking-wide uppercase text-zinc-500 dark:text-zinc-400 mb-2">
           ამოცანები · {objectives.filter((o) => o.progressStatus === 'completed').length}/{objectives.length}
-          {quest.objective_order === 'ordered' && <span> · თანმიმდევრობით</span>}
+          {quest.objective_order === 'ordered' && objectives.length > 1 && <span> · თანმიმდევრობით</span>}
         </p>
-        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <div>
           {objectives.map((objective, idx) => (
             <ObjectiveRow
               key={objective.id}
@@ -271,6 +285,13 @@ export default function QuestDetail({
             />
           ))}
         </div>
+      </div>
+
+      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
+        <p className="text-xs font-semibold tracking-wide uppercase text-zinc-500 dark:text-zinc-400 mb-2">
+          ჯილდო
+        </p>
+        <RewardSpecTiles rewards={quest.rewards} definitions={rewardDefinitions} />
       </div>
 
       {(userQuest?.status === 'completed' || Boolean(highlightAuthorAlias)) && (

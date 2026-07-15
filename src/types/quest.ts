@@ -1,4 +1,5 @@
 import type { ImageVariants } from '@/lib/image-pipeline';
+import type { RewardSpec } from '@/types/reward';
 
 export type ObjectiveTypeId = 'in_range_location' | 'capture_photo';
 
@@ -54,6 +55,7 @@ export type ZoneQuestBaseType = {
   required_level: number | null;
   start_date: string | null;
   end_date: string | null;
+  rewards: RewardSpec[];
   created_by: number | null;
   created_at: string;
   updated_at: string;
@@ -88,20 +90,6 @@ export type CaptureData = {
   distanceMeters?: number;
   captureMethod?: 'exif' | 'live_gps';
   variants?: ImageVariants;
-};
-
-export type UserQuestObjectiveBaseType = {
-  id: number;
-  user_quest_id: number;
-  objective_id: number;
-  status: string;
-  photo_url: string | null;
-  capture_data: CaptureData;
-  submitted_at: string | null;
-  reviewed_by: number | null;
-  reviewed_at: string | null;
-  rejection_reason: string | null;
-  created_at: string;
 };
 
 // Quest list row: header + this caller's own progress + completion stats for the zone tab.

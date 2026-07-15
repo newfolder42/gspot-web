@@ -1,6 +1,7 @@
 import { query } from '@/lib/db';
 import { logerror } from '@/lib/logger';
 import type { AccountAchievement } from '@/types/achievement';
+import type { RewardSpec } from '@/types/reward';
 
 type RawMilestoneRow = {
   track_id: string | number;
@@ -16,6 +17,7 @@ type RawMilestoneRow = {
   current_value: string | number | null;
   ua_status: 'locked' | 'in_progress' | 'achieved' | null;
   unlocked_at: string | null;
+  rewards: RewardSpec[] | null;
 };
 
 function sortMilestones(a: AccountAchievement, b: AccountAchievement) {
@@ -56,7 +58,8 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
           COALESCE(am.image_url, a.image_url) AS image_url,
           COALESCE(ua.current_value, 0) AS current_value,
           ua.status AS ua_status,
-          uam.achieved_at AS unlocked_at
+          uam.achieved_at AS unlocked_at,
+          am.rewards AS rewards
        FROM achievements a
        JOIN achievement_milestones am ON am.achievement_id = a.id
        LEFT JOIN user_achievements ua ON ua.achievement_id = a.id AND ua.user_id = $1
@@ -83,7 +86,8 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
           a.image_url AS image_url,
           COALESCE(ua.current_value, 0) AS current_value,
           ua.status AS ua_status,
-          ua.achieved_at AS unlocked_at
+          ua.achieved_at AS unlocked_at,
+          a.rewards AS rewards
        FROM achievements a
        LEFT JOIN user_achievements ua ON ua.achievement_id = a.id AND ua.user_id = $1
        WHERE a.achievement_type = 'one_time'
@@ -130,6 +134,7 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
         achievedAt,
         inProgress: row.ua_status === 'in_progress' || (progress > 0 && !isAchieved),
         isAchieved,
+        rewards: row.rewards ?? [],
       };
     });
 

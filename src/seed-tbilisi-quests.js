@@ -193,10 +193,10 @@ async function main() {
   for (const q of QUESTS) {
     const questRes = await pool.query(
       `INSERT INTO zone_quests
-         (zone_id, title, description, objective_order, status, character_id, required_level, start_date, end_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (zone_id, title, description, objective_order, status, character_id, required_level, start_date, end_date, rewards)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING id`,
-      [zoneId, q.title, q.description, q.objectiveOrder, q.status, CHARACTER_ID, q.requiredLevel ?? null, q.startDate ?? null, q.endDate ?? null]
+      [zoneId, q.title, q.description, q.objectiveOrder, q.status, CHARACTER_ID, q.requiredLevel ?? null, q.startDate ?? null, q.endDate ?? null, JSON.stringify([{ type: 'user-xp', value: 200 }])]
     );
     const questId = questRes.rows[0].id;
 
