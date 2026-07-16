@@ -56,7 +56,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CharacterDetailPage({ params }: Props) {
   const { zoneSlug, characterSlug } = await params;
 
-  console.log('CharacterDetailPage params:', { zoneSlug, characterSlug });
   const zone = await getZone(zoneSlug);
   if (!zone) return notFound();
 

@@ -2,9 +2,11 @@ import React from 'react';
 import AccountTabs from '@/components/account/account-tabs';
 import FollowButton from '@/components/account/follow-button';
 import XPBar from '@/components/xp-bar';
+import StreakBadge from '@/components/streak-badge';
 import { getAccountByAlias } from '@/lib/account';
 import { formatAge } from '@/lib/dates';
 import { getCurrentUser } from '@/lib/session';
+import { getUserStreakInfo } from '@/lib/streaks';
 import { getLevelFromXp } from '@/lib/xp';
 import ProfileAvatar from '@/components/common/profileAvatar';
 import ImageUpload from '@/components/image-upload';
@@ -17,7 +19,10 @@ type Props = {
 export default async function UserLayout({ children, params }: Props) {
   const [{ userName }, currentUser] = await Promise.all([params, getCurrentUser()]);
   const account = await getAccountByAlias(userName, currentUser?.userId ?? null);
-  const xpInfo = await getLevelFromXp(account?.level?.xp ?? 0);
+  const [xpInfo, streak] = await Promise.all([
+    getLevelFromXp(account?.level?.xp ?? 0),
+    account ? getUserStreakInfo(account.user.id) : null,
+  ]);
   if (!account) {
     return (
       <div className="max-w-5xl mx-auto">
@@ -32,7 +37,7 @@ export default async function UserLayout({ children, params }: Props) {
   const tabs = [
     { id: 'overview', label: 'ძირითადი', href: `/account/${userName}` },
     { id: 'guesses', label: 'გამოცნობები', href: `/account/${userName}/guesses` },
-    { id: 'achievements', label: 'მიღწევები (საცდელი)', href: `/account/${userName}/achievements` },
+    { id: 'achievements', label: 'მიღწევები', href: `/account/${userName}/achievements` },
     { id: 'connections', label: 'კავშირები', href: `/account/${userName}/connections` },
   ];
 
@@ -64,8 +69,11 @@ export default async function UserLayout({ children, params }: Props) {
               <div className="mt-1 space-y-1 text-xs text-zinc-500 dark:text-zinc-500">
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">ასაკი: {formatAge(user.age)}</p>
               </div>
-              <div className="mt-3">
-                <XPBar xp={xpInfo} />
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <XPBar xp={xpInfo} />
+                </div>
+                {streak && <StreakBadge streak={streak} />}
               </div>
             </div>
 
