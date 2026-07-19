@@ -10,11 +10,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   base: 'ძირითადი',
   posts: 'პოსტები',
   guesses: 'გამოცნობები',
+  quests: 'მისიები',
   streaks: 'უწყვეტობა',
   level: 'დონეები',
 };
 
-const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'streaks', 'level'];
+const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'quests', 'streaks', 'level'];
 
 function sortByMilestone(a: AccountAchievement, b: AccountAchievement) {
   const left = a.maxProgress ?? Number.MAX_SAFE_INTEGER;

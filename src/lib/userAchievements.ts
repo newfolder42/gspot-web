@@ -33,8 +33,9 @@ function categoryOrder(category: string) {
     base: 1,
     posts: 2,
     guesses: 3,
-    streaks: 4,
-    level: 5,
+    quests: 4,
+    streaks: 5,
+    level: 6,
   };
 
   return order[category] ?? 99;
@@ -103,8 +104,9 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
            WHEN 'base' THEN 1
            WHEN 'posts' THEN 2
            WHEN 'guesses' THEN 3
-           WHEN 'streaks' THEN 4
-           WHEN 'level' THEN 5
+           WHEN 'quests' THEN 4
+           WHEN 'streaks' THEN 5
+           WHEN 'level' THEN 6
            ELSE 99
          END,
          track_id,
