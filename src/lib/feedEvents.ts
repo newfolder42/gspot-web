@@ -14,6 +14,22 @@ import {
 // feed_events ("ამბები") are only surfaced for 48h.
 const VISIBLE_WINDOW = "NOW() - INTERVAL '48 hours'";
 
+// Who may see an event: follower-scoped types require following the actor;
+// quest_created is scoped to active members of the quest's zone instead.
+// $1 must be the viewer's user id wherever this fragment is embedded.
+const VISIBILITY_FILTER = `(
+  (fe.type <> 'quest_created' AND EXISTS (
+     SELECT 1 FROM user_connections uc
+     WHERE uc.user_id = $1 AND uc.type = 'connection' AND uc.connection_id = fe.actor_id
+  ))
+  OR
+  (fe.type = 'quest_created' AND EXISTS (
+     SELECT 1 FROM zone_members zm
+     WHERE zm.zone_id = (fe.details->>'zoneId')::bigint
+       AND zm.user_id = $1 AND zm.status = 'active'
+  ))
+)`;
+
 function mapEvent(row: any): FeedEvent {
   return {
     id: Number(row.id),
@@ -36,19 +52,14 @@ function mapEvent(row: any): FeedEvent {
 export async function getFeedEventBubbles(userId: number): Promise<FeedEventBubble[]> {
   try {
     const res = await query(
-      `WITH follows AS (
-         SELECT connection_id AS uid
-         FROM user_connections
-         WHERE user_id = $1 AND type = 'connection'
-       ),
-       visible AS (
+      `WITH visible AS (
          SELECT fe.group_key, fe.type, fe.ref_id, fe.details, fe.created_at,
                 (fs.id IS NOT NULL) AS seen
          FROM feed_events fe
-         JOIN follows f ON f.uid = fe.actor_id
          LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
          WHERE fe.created_at > ${VISIBLE_WINDOW}
            AND fe.actor_id <> $1
+           AND ${VISIBILITY_FILTER}
        )
        SELECT
          group_key,
@@ -87,22 +98,17 @@ export async function getFeedEventBubbles(userId: number): Promise<FeedEventBubb
 export async function getFeedEventGroup(userId: number, groupKey: string): Promise<FeedEvent[]> {
   try {
     const res = await query(
-      `WITH follows AS (
-         SELECT connection_id AS uid
-         FROM user_connections
-         WHERE user_id = $1 AND type = 'connection'
-       )
-       SELECT fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
+      `SELECT fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
               u.alias AS actor_alias, ux.level AS actor_level,
               (fs.id IS NOT NULL) AS seen
        FROM feed_events fe
-       JOIN follows f ON f.uid = fe.actor_id
        JOIN users u ON u.id = fe.actor_id
        LEFT JOIN user_xp ux ON ux.user_id = fe.actor_id
        LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
        WHERE fe.group_key = $2
          AND fe.created_at > ${VISIBLE_WINDOW}
          AND fe.actor_id <> $1
+         AND ${VISIBILITY_FILTER}
        ORDER BY seen ASC, fe.created_at DESC`,
       [userId, groupKey]
     );

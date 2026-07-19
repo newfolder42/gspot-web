@@ -1,4 +1,4 @@
-export type FeedEventType = 'quest_completed' | 'achievement_unlocked';
+export type FeedEventType = 'quest_completed' | 'achievement_unlocked' | 'quest_created';
 
 export type FeedEventPhoto = {
   url: string;
@@ -28,7 +28,18 @@ export type AchievementUnlockedDetails = {
   achievedAt: string | null;
 };
 
-export type FeedEventDetails = QuestCompletedDetails | AchievementUnlockedDetails;
+export type QuestCreatedDetails = {
+  questId: number;
+  questTitle: string;
+  zoneId: number;
+  zoneSlug: string;
+  zoneName: string;
+  characterName: string | null;
+  characterAvatar: string | null;
+  createdByAlias?: string;
+};
+
+export type FeedEventDetails = QuestCompletedDetails | AchievementUnlockedDetails | QuestCreatedDetails;
 
 /** A single happening (one user's quest completion / achievement unlock). */
 export type FeedEvent = {
@@ -68,6 +79,10 @@ export function feedEventTitle(details: FeedEventDetails, type: FeedEventType): 
     const d = details as QuestCompletedDetails;
     return d.questTitle;
   }
+  if (type === 'quest_created') {
+    const d = details as QuestCreatedDetails;
+    return d.questTitle;
+  }
   const a = details as AchievementUnlockedDetails;
   return a.milestoneName || a.achievementName;
 }
@@ -76,6 +91,9 @@ export function feedEventPreviewImage(details: FeedEventDetails, type: FeedEvent
   if (type === 'quest_completed') {
     const d = details as QuestCompletedDetails;
     return d.characterAvatar ?? d.photos?.[0]?.thumb ?? d.photos?.[0]?.url ?? null;
+  }
+  if (type === 'quest_created') {
+    return (details as QuestCreatedDetails).characterAvatar ?? null;
   }
   return (details as AchievementUnlockedDetails).imageUrl ?? null;
 }

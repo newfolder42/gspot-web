@@ -8,6 +8,7 @@ import FeedEventViewersModal from './feed-event-viewers-modal';
 import { Slide } from './feed-event-slide-header';
 import { QuestSlide } from './feed-event-quest-slide';
 import { AchievementSlide } from './feed-event-achievement-slide';
+import { QuestCreatedSlide } from './feed-event-quest-created-slide';
 
 type Props = {
   events: Slide[];
@@ -93,6 +94,8 @@ export default function FeedEventViewer({ events, mode, initialIndex = 0, onClos
         <div className="overflow-hidden sm:rounded-xl bg-white dark:bg-zinc-900 pt-6">
           {current.type === 'quest_completed' ? (
             <QuestSlide event={current} />
+          ) : current.type === 'quest_created' ? (
+            <QuestCreatedSlide event={current} />
           ) : (
             <AchievementSlide event={current} />
           )}

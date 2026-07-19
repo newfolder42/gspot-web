@@ -19,7 +19,7 @@ export function BubblePreview({
         <div className="w-full h-full rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
           {image ? (
             <Image src={image} alt={label} width={64} height={64} className="w-full h-full object-cover" />
-          ) : type === 'quest_completed' ? (
+          ) : type === 'quest_completed' || type === 'quest_created' ? (
             <FlagIcon className="w-6 h-6 text-amber-500" />
           ) : (
             <TrophyIcon className="w-6 h-6 text-amber-500" />
