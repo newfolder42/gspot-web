@@ -5,6 +5,7 @@ import { query } from '@/lib/db';
 import { eventBus } from '@/lib/eventBus';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { logerror } from '@/lib/logger';
+import { isInGeorgia } from '@/lib/geo';
 import type { PostGuessedEvent } from '@/types/events/post-guessed';
 
 const ParamsSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest, context: Context) {
       return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
     }
     const { coordinates } = parsedBody.data;
+
+    if (!isInGeorgia(coordinates.latitude, coordinates.longitude)) {
+      return NextResponse.json({ error: 'OUTSIDE_GEORGIA' }, { status: 400 });
+    }
 
     const postRow = await query(
       `select p.id, p.user_id, p.type, z.id as zone_id, z.slug as zone_slug,

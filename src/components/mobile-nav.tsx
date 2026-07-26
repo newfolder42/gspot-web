@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CompassIcon, HomeIcon, InfoIcon, MapPinIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HeatmapIcon, HomeIcon, InfoIcon, MapPinIcon, NewUsersIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 import ProfileAvatar from "@/components/common/profileAvatar";
 
@@ -68,6 +68,17 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
               >
                 <CompassIcon className="w-5 h-5" />
                 <span>საბზონები</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/heatmap"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                onClick={() => setOpen(false)}
+              >
+                <HeatmapIcon className="w-5 h-5" />
+                <span>რუკა</span>
               </Link>
             </li>
           </ul>

@@ -41,6 +41,10 @@ export default async function UserLayout({ children, params }: Props) {
     { id: 'connections', label: 'კავშირები', href: `/account/${userName}/connections` },
   ];
 
+  if (isOwnProfile) {
+    tabs.push({ id: 'heatmap', label: 'რუკა', href: `/account/${userName}/heatmap` });
+  }
+
   return (
     <div className="max-w-5xl mx-auto py-4 px-2">
       <div className="overflow-hidden">

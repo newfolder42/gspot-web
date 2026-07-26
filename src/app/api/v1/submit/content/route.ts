@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { storeMobileGpsPhotoContent } from '@/lib/mobile-submit';
 import { logerror } from '@/lib/logger';
+import { isInGeorgia } from '@/lib/geo';
 
 const BodySchema = z.object({
   publicUrl: z.string().url().max(2048),
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
     const parsed = BodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
+    }
+
+    const { latitude, longitude } = parsed.data.coordinates;
+    if (!isInGeorgia(latitude, longitude)) {
+      return NextResponse.json({ error: 'OUTSIDE_GEORGIA' }, { status: 400 });
     }
 
     const content = await storeMobileGpsPhotoContent({

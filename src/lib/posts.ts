@@ -3,6 +3,7 @@
 import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { canUserAccessPost } from './post-access';
+import { isInGeorgia } from './geo';
 import { logerror } from './logger';
 import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
@@ -844,6 +845,12 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
     const user = await getCurrentUser();
     if (!user) return null;
     const userId = user.userId;
+
+    // The client blocks this too, but the action is directly callable.
+    if (coordinates && !isInGeorgia(coordinates.latitude, coordinates.longitude)) {
+      console.warn('createPostGuess rejected guess outside Georgia', coordinates);
+      return null;
+    }
 
     if (!(await canUserAccessPost(userId, postId))) return null;
 

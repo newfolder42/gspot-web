@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { deleteObject } from './s3';
 import { processUploadedPhoto } from './image-pipeline';
+import { isInGeorgia } from './geo';
 import { eventBus } from './eventBus';
 import type { UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 
@@ -62,6 +63,13 @@ export async function storeContent(url: string, type: string, details: any) {
     let publicUrl = url;
     let finalDetails = details;
     if (type === 'gps-photo') {
+      // The client blocks this too, but the action is directly callable.
+      const coords = details?.coordinates;
+      if (!coords || !isInGeorgia(coords.latitude, coords.longitude)) {
+        console.warn('storeContent rejected gps-photo outside Georgia', coords);
+        return null;
+      }
+
       const processed = await processUploadedPhoto(url);
       if (processed) {
         publicUrl = processed.displayUrl;

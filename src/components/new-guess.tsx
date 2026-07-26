@@ -8,6 +8,7 @@ import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
 import { mapMaxBounds, mapMaxZoom, mapDefaultCenter } from '@/lib/map';
+import { isInGeorgia } from '@/lib/geo';
 import ZoomableImage from '@/components/common/zoomable-image';
 
 declare global {
@@ -111,8 +112,13 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
     }
   }, [showMapOrImage]);
 
+  // The map's maxBounds is a rectangle around the country, so panning still
+  // reaches Turkey, Armenia, Azerbaijan and Russia.
+  const guessInGeorgia = isInGeorgia(selectedCoords.latitude, selectedCoords.longitude);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!guessInGeorgia) return;
     setSubmitting('submitting');
     try {
       const res = await getPhotoCoordinates({ postId });
@@ -278,16 +284,23 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                     )}
 
                     {/* Coordinates */}
-                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 text-xs">
+                    <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-xs ${guessInGeorgia
+                      ? 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100'
+                      : 'bg-red-600/90 text-white'}`}>
                       {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-2 items-center justify-end">
+                  {!guessInGeorgia && submitting === null && (
+                    <span className="mr-auto text-xs text-red-600 dark:text-red-400">
+                      ლოკაცია უნდა იყოს საქართველოში
+                    </span>
+                  )}
                   <button
                     type="submit"
-                    disabled={submitting !== null}
+                    disabled={submitting !== null || !guessInGeorgia}
                     hidden={submitting === 'success' || submitting === 'error'}
                     className="px-4 py-2 rounded-md bg-teal-600 text-white disabled:opacity-50"
                   >

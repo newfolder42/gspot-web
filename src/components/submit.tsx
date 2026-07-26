@@ -10,6 +10,7 @@ import { ACCEPTED_IMAGE_TYPES, UPLOAD_SIZE_LIMIT } from '@/lib/upload-config';
 import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { isInGeorgia } from '@/lib/geo';
 import TagPicker from '@/components/common/tag-picker';
 
 declare global {
@@ -452,12 +453,6 @@ export default function Submit({
     if (dOnly.getTime() > tOnly.getTime()) return 'თარიღი არ უნდა იყოს მომავალში';
     if (y < 2012) return 'თარიღი არ შეიძლება იყოს 2012 წელზე ადრე';
     return null;
-  };
-
-  const isInGeorgia = (lat: number, lng: number) => {
-    // Approximate bounding box for Georgia (country)
-    // latitude roughly between 40.8 and 43.8, longitude between 39.4 and 46.9
-    return lat >= 40.8 && lat <= 43.8 && lng >= 39.4 && lng <= 46.9;
   };
 
   // Centralized mandatory-field validation before creating a post.

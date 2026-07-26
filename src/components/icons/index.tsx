@@ -191,6 +191,25 @@ export function MapPinIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps
   );
 }
 
+export function HeatmapIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="9.5" />
+    </svg>
+  );
+}
+
 export function ImageIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
   return (
     <svg
