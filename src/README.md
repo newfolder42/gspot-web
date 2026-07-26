@@ -139,7 +139,9 @@ Additional variables used by the codebase:
 ```env
 # Email
 EMAIL_PROVIDER=resend
-EMAIL_PROVIDER_KEY=replace-with-provider-api-key
+EMAIL_PROVIDER_KEY=replace-with-resend-api-key
+AWSSES_ACCESS_KEY_ID=your-access-key
+AWSSES_SECRET_ACCESS_KEY=your-secret-key
 
 # Redis
 REDIS_URL=redis://localhost:6379

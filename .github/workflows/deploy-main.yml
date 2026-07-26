@@ -86,6 +86,8 @@ jobs:
                   "NEXTAUTH_URL": "${{ env.BASE_URL }}",
                   "EMAIL_PROVIDER": "${{ env.EMAIL_PROVIDER }}",
                   "EMAIL_PROVIDER_KEY": "${{ secrets.EMAIL_PROVIDER_KEY }}",
+                  "AWSSES_ACCESS_KEY_ID": "${{ secrets.AWSSES_ACCESS_KEY_ID }}",
+                  "AWSSES_SECRET_ACCESS_KEY": "${{ secrets.AWSSES_SECRET_ACCESS_KEY }}",
                   "AWS_REGION": "${{ env.AWS_REGION }}",
                   "S3_BUCKET": "${{ env.S3_BUCKET }}",
                   "AWSS3_ACCESS_KEY_ID": "${{ secrets.AWSS3_ACCESS_KEY_ID }}",
