@@ -18,7 +18,7 @@ jobs:
       LIGHTSAIL_SERVICE_NAME: gspot-web
       POSTGRES_SSL: true
       S3_BUCKET: gspot-uploads
-      EMAIL_PROVIDER: resend
+      EMAIL_PROVIDER: ses
     
     steps:
       - name: Checkout code
