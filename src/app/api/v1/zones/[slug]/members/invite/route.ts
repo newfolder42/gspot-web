@@ -5,6 +5,7 @@ import { inviteZoneMember } from '@/lib/zones';
 import { getUserIdByAlias } from '@/lib/users';
 import { eventBus } from '@/lib/eventBus';
 import { logerror } from '@/lib/logger';
+import type { ZoneMemberAddedEvent } from '@/types/events/zone-member-added';
 
 type Context = { params: Promise<{ slug: string }> };
 
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest, context: Context) {
       );
     }
 
-    await eventBus.publish('zone_member', 'added', {
+    await eventBus.publish<ZoneMemberAddedEvent>('zone_member', 'added', {
       zoneId: ctx.zone.id,
       zoneSlug: ctx.zone.slug,
       userId: targetUserId,

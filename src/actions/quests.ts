@@ -30,8 +30,11 @@ import {
 import { isObjectiveAttemptable } from '@/lib/questProgress';
 import { createQuestCompletionPost as createQuestCompletionPostLib } from '@/lib/posts';
 import type { ObjectiveTypeId, InRangeLocationConfig, CaptureData, ZoneQuestCharacterType } from '@/types/quest';
-import type { QuestCompletedEvent } from '@/types/events/quest-completed';
-import type { QuestCreatedEvent } from '@/types/events/quest-created';
+import type { ZoneQuestCompletedEvent } from '@/types/events/zone-quest-completed';
+import type { ZoneQuestCreatedEvent } from '@/types/events/zone-quest-created';
+import type { ZoneQuestObjectiveSubmittedEvent } from '@/types/events/zone-quest-objective-submitted';
+import type { ZoneQuestObjectiveAcceptedEvent } from '@/types/events/zone-quest-objective-accepted';
+import type { ZoneQuestObjectiveRejectedEvent } from '@/types/events/zone-quest-objective-rejected';
 import { QUEST_XP_MIN, QUEST_XP_MAX } from '@/types/reward';
 import type { RewardSpec } from '@/types/reward';
 
@@ -159,7 +162,7 @@ export async function createQuestAction(
     const zone = await getZoneByIdLib(zoneId);
 
     const { eventBus } = await import('@/lib/eventBus');
-    await eventBus.publish<QuestCreatedEvent>('zone_quest', 'created', {
+    await eventBus.publish<ZoneQuestCreatedEvent>('zone_quest', 'created', {
       questId: quest.id,
       questTitle: title,
       description: input.description?.trim() || null,
@@ -346,7 +349,7 @@ export async function submitObjectiveCaptureAction(
     const zone = await getZoneByIdLib(quest.zone_id);
 
     const { eventBus } = await import('@/lib/eventBus');
-    await eventBus.publish('zone_quest_objective', 'submitted', {
+    await eventBus.publish<ZoneQuestObjectiveSubmittedEvent>('zone_quest_objective', 'submitted', {
       objectiveId,
       objectiveTitle: objective.title,
       questId: quest.id,
@@ -393,7 +396,7 @@ export async function reviewObjectiveAction(
     const { eventBus } = await import('@/lib/eventBus');
 
     if (decision === 'reject') {
-      await eventBus.publish('zone_quest_objective', 'rejected', {
+      await eventBus.publish<ZoneQuestObjectiveRejectedEvent>('zone_quest_objective', 'rejected', {
         objectiveId: context.objectiveId,
         objectiveTitle: objective?.title ?? null,
         questId: context.questId,
@@ -405,7 +408,7 @@ export async function reviewObjectiveAction(
       return { success: true };
     }
 
-    await eventBus.publish('zone_quest_objective', 'accepted', {
+    await eventBus.publish<ZoneQuestObjectiveAcceptedEvent>('zone_quest_objective', 'accepted', {
       objectiveId: context.objectiveId,
       objectiveTitle: objective?.title ?? null,
       questId: context.questId,
@@ -435,7 +438,7 @@ export async function reviewObjectiveAction(
         objectives,
       });
 
-      await eventBus.publish<QuestCompletedEvent>('zone_quest', 'completed', {
+      await eventBus.publish<ZoneQuestCompletedEvent>('zone_quest', 'completed', {
         questId: context.questId,
         questTitle,
         zoneId: context.zoneId,

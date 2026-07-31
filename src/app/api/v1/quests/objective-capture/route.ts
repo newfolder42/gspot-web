@@ -13,6 +13,7 @@ import { haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { getZoneById } from '@/lib/zones';
 import { eventBus } from '@/lib/eventBus';
+import type { ZoneQuestObjectiveSubmittedEvent } from '@/types/events/zone-quest-objective-submitted';
 import { logerror } from '@/lib/logger';
 import type { CaptureData, InRangeLocationConfig } from '@/types/quest';
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     const zone = await getZoneById(quest.zone_id);
-    await eventBus.publish('zone_quest_objective', 'submitted', {
+    await eventBus.publish<ZoneQuestObjectiveSubmittedEvent>('zone_quest_objective', 'submitted', {
       objectiveId,
       objectiveTitle: objective.title,
       questId: quest.id,
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
       zoneId: quest.zone_id,
       zoneSlug: zone?.slug ?? '',
       userId: auth.user.userId,
+      userAlias: auth.user.alias,
     });
 
     return NextResponse.json({ success: true, inRange: true, distanceMeters });

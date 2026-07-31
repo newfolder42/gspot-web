@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/session';
 import { getUserLevel, getUserIdByAlias } from '@/lib/users';
 import { MIN_LEVEL_CREATE_ZONE } from '@/lib/permissions';
 import { getZoneUploadRules } from '@/lib/zone-upload-rules';
+import type { ZoneMemberAddedEvent } from '@/types/events/zone-member-added';
 
 export type ZoneStatus = 'active' | 'archived' | 'disabled';
 export type ZoneVisibility = 'public' | 'private';
@@ -214,7 +215,7 @@ export async function inviteZoneMemberAction(
     }
 
     const { eventBus } = await import('@/lib/eventBus');
-    await eventBus.publish('zone_member', 'added', {
+    await eventBus.publish<ZoneMemberAddedEvent>('zone_member', 'added', {
       zoneId,
       zoneSlug: zone.slug,
       userId: targetUserId,

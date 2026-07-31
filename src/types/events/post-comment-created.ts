@@ -6,7 +6,7 @@ export interface PostCommentCreatedEvent {
     commenterId: number;
     commenterAlias: string;
   } | null;
-  commentType: 'comment' | 'gps-guess-comment';
+  commentType: 'comment' | 'gps-guess-comment' | 'gps-photo-guess-comment';
   commentBody: string;
   postAuthorId: number;
   postAuthorAlias: string;

@@ -3,7 +3,7 @@ import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
 import { deleteObject } from '@/lib/s3';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
-import { type PostCreatedEvent } from '@/types/events/post-created';
+import { type PostPublishedEvent } from '@/types/events/post-published';
 import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 
 type CreateMobilePostParams = {
@@ -238,7 +238,7 @@ export async function createMobilePost({
       authorAlias: userAlias,
       zoneId,
       zoneSlug,
-    } as PostCreatedEvent);
+    } as PostPublishedEvent);
 
     return postId;
   } catch (err) {

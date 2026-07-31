@@ -1,4 +1,4 @@
-export interface PostCreatedEvent {
+export interface PostFailedEvent {
   postId: number;
   postType: string;
   postTitle: string;
@@ -6,4 +6,5 @@ export interface PostCreatedEvent {
   authorAlias: string;
   zoneId: number;
   zoneSlug: string;
+  reason?: string | null;
 }

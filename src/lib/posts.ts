@@ -7,7 +7,7 @@ import { isInGeorgia } from './geo';
 import { logerror } from './logger';
 import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
-import { PostCreatedEvent } from '@/types/events/post-created';
+import { PostPublishedEvent } from '@/types/events/post-published';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
 import { createGuessComment } from '@/lib/comments';
@@ -696,7 +696,7 @@ export async function createPost({
       authorAlias: user.alias,
       zoneId: +zoneId,
       zoneSlug: zoneSlug,
-    } as PostCreatedEvent);
+    } as PostPublishedEvent);
 
     return postId;
   } catch (err) {
@@ -772,7 +772,7 @@ export async function createQuestCompletionPost({
       authorAlias: userAlias,
       zoneId: +zoneId,
       zoneSlug,
-    } as PostCreatedEvent);
+    } as PostPublishedEvent);
 
     return postId;
   } catch (err) {

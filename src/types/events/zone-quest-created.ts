@@ -1,4 +1,4 @@
-export interface QuestCreatedEvent {
+export interface ZoneQuestCreatedEvent {
   questId: number;
   questTitle: string;
   description: string | null;
