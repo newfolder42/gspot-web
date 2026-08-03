@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Linking, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { notificationsApi } from '@/lib/notifications';
-import { getNotificationContentMessage, getNotificationRoute, type NotificationType } from '@/types/notification';
+import {
+  getNotificationContentMessage,
+  getNotificationRoute,
+  type NotificationPostVoteCreatedDetailsType,
+  type NotificationType,
+} from '@/types/notification';
 
 const PAGE_SIZE = 20;
 const NOTIFICATIONS_QUERY_KEY = ['notifications'] as const;
@@ -42,6 +47,9 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
       return 'award';
     case 'post-comment-created':
       return 'message-circle';
+    case 'post-reward-created':
+    case 'comment-reward-created':
+      return 'gift';
     case 'zone-member-invitation':
       return 'compass';
     case 'zone-quest-created':
@@ -59,6 +67,27 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
     default:
       return 'bell';
   }
+}
+
+/**
+ * Mirrors web NotificationIcon — vote notifications pick their arrow from
+ * `details.value`, everything else maps by type alone.
+ */
+function NotificationIcon({ notification }: { notification: NotificationType }) {
+  const { type, details } = notification;
+
+  if (type === 'post-vote-created' || type === 'comment-vote-created') {
+    const isDownvote = (details as NotificationPostVoteCreatedDetailsType | undefined)?.value === -1;
+    return (
+      <MaterialCommunityIcons
+        name={isDownvote ? 'arrow-down-bold' : 'arrow-up-bold'}
+        size={16}
+        color="#71717A"
+      />
+    );
+  }
+
+  return <Feather name={iconNameByType(type)} size={16} color="#71717A" />;
 }
 
 async function openNotificationRoute(notification: NotificationType, router: ReturnType<typeof useRouter>) {
@@ -97,7 +126,7 @@ function NotificationRow({
 
       <View className="flex-row gap-3">
         <View className="pt-0.5">
-          <Feather name={iconNameByType(item.type)} size={16} color="#71717A" />
+          <NotificationIcon notification={item} />
         </View>
 
         <View className="flex-1">

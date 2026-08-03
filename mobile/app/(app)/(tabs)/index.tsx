@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { ScreenLayout } from '@/components/ui/ScreenLayout';
 import { FeedList } from '@/components/feed/FeedList';
+import { FeedEventsStrip } from '@/components/feed/FeedEventsStrip';
 import { AppDrawer } from '@/components/ui/AppDrawer';
 import { feedApi } from '@/lib/feed';
 
@@ -23,7 +24,7 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout>
-      <FeedList queryKey={['global-feed']} loader={feedApi.loadGlobal} />
+      <FeedList queryKey={['global-feed']} loader={feedApi.loadGlobal} header={<FeedEventsStrip />} />
       <AppDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onOpen={() => setDrawerOpen(true)} />
     </ScreenLayout>
   );

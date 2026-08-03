@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
@@ -22,10 +22,13 @@ export function FeedList({
   queryKey,
   loader,
   emptyText = 'პოსტები არ არის',
+  header,
 }: {
   queryKey: readonly unknown[];
   loader: FeedLoader;
   emptyText?: string;
+  /** Rides along as the list header so it scrolls with the feed (e.g. the ამბები strip). */
+  header?: ReactElement;
 }) {
   const query = useInfiniteQuery({
     queryKey,
@@ -72,6 +75,7 @@ export function FeedList({
       data={posts}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => <FeedPostCard item={item} />}
+      ListHeaderComponent={header}
       refreshControl={
         <RefreshControl
           refreshing={query.isRefetching && !query.isFetchingNextPage}

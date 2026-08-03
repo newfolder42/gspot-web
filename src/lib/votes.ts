@@ -57,16 +57,27 @@ export async function getVoteSummary(
 
 // Adds, switches or removes (soft delete) the current user's vote on a post or comment.
 // Returns the fresh summary for the target, or null when the action is not allowed.
+// Web entry point - the mobile API calls toggleVoteForUser directly.
 export async function toggleVote(
   postId: number,
   commentId: number | null,
   value: VoteValue
 ): Promise<VoteSummaryType | null> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return null;
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return toggleVoteForUser(user.userId, user.alias, postId, commentId, value);
+}
 
-    if (!(await canUserAccessPost(user.userId, postId))) return null;
+// Same as toggleVote, by explicit user — shared by the web action and /api/v1.
+export async function toggleVoteForUser(
+  userId: number,
+  alias: string,
+  postId: number,
+  commentId: number | null,
+  value: VoteValue
+): Promise<VoteSummaryType | null> {
+  try {
+    if (!(await canUserAccessPost(userId, postId))) return null;
 
     // resolve target + event payload data in one shot; also validates the comment belongs to the post
     const targetRes = await query(
@@ -94,36 +105,36 @@ export async function toggleVote(
     if ((targetRes.rowCount ?? 0) === 0) return null;
     const target = targetRes.rows[0];
 
-    const existing = await getUserVote(postId, commentId, user.userId);
+    const existing = await getUserVote(postId, commentId, userId);
 
     if (existing === value) {
       // same vote again -> remove it (soft delete)
       await query(
         `update post_votes v set deleted_at = now()
          where v.post_id = $1 and ${targetCondition(commentId)} and v.user_id = $${commentId === null ? 2 : 3} and v.deleted_at is null`,
-        [...targetParams(postId, commentId), user.userId]
+        [...targetParams(postId, commentId), userId]
       );
     } else {
       if (existing !== null) {
         await query(
           `update post_votes v set deleted_at = now()
            where v.post_id = $1 and ${targetCondition(commentId)} and v.user_id = $${commentId === null ? 2 : 3} and v.deleted_at is null`,
-          [...targetParams(postId, commentId), user.userId]
+          [...targetParams(postId, commentId), userId]
         );
       }
 
       await query(
         `insert into post_votes (post_id, comment_id, user_id, value)
          values ($1, $2, $3, $4)`,
-        [postId, commentId, user.userId, value]
+        [postId, commentId, userId, value]
       );
 
       await eventBus.publish('post', 'vote-created', {
         postId: +postId,
         commentId: commentId === null ? null : +commentId,
         value,
-        voterId: user.userId,
-        voterAlias: user.alias,
+        voterId: userId,
+        voterAlias: alias,
         postAuthorId: Number(target.post_author_id),
         postAuthorAlias: target.post_author_alias,
         commentAuthorId: target.comment_author_id !== null ? Number(target.comment_author_id) : null,
@@ -133,9 +144,9 @@ export async function toggleVote(
       } as PostVoteCreatedEvent);
     }
 
-    return await getVoteSummary(postId, commentId, user.userId);
+    return await getVoteSummary(postId, commentId, userId);
   } catch (err) {
-    await logerror('toggleVote error', [err]);
+    await logerror('toggleVoteForUser error', [err]);
     return null;
   }
 }

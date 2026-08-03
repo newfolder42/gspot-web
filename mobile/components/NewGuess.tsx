@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { postsApi } from '@/lib/posts';
@@ -18,6 +19,59 @@ MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
 type Phase = 'placing' | 'submitting' | 'result' | 'error';
 
+/**
+ * Teardrop pin matching the web's default mapbox marker: the tip — not the
+ * centre of a blob — marks the coordinate, since guesses are scored in metres.
+ * Pair with anchor={{ x: 0.5, y: 1 }} so the tip lands on the point.
+ */
+function MapPin({ color }: { color: string }) {
+  return (
+    <View style={{ width: 22, height: 30, alignItems: 'center' }}>
+      {/* White outline of the tail */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          width: 0,
+          height: 0,
+          borderLeftWidth: 6,
+          borderRightWidth: 6,
+          borderTopWidth: 14,
+          borderLeftColor: 'transparent',
+          borderRightColor: 'transparent',
+          borderTopColor: '#fff',
+        }}
+      />
+      {/* Coloured tail, inset so the white outline stays visible */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 3,
+          width: 0,
+          height: 0,
+          borderLeftWidth: 4,
+          borderRightWidth: 4,
+          borderTopWidth: 9,
+          borderLeftColor: 'transparent',
+          borderRightColor: 'transparent',
+          borderTopColor: color,
+        }}
+      />
+      {/* Head */}
+      <View
+        style={{
+          width: 18,
+          height: 18,
+          borderRadius: 9,
+          backgroundColor: color,
+          borderWidth: 2,
+          borderColor: '#fff',
+        }}
+      />
+    </View>
+  );
+}
+
 type Props = {
   post: MobilePostType;
   onClose: () => void;
@@ -26,6 +80,9 @@ type Props = {
 
 export function NewGuess({ post, onClose, onSubmitted }: Props) {
   const cameraRef = useRef<MapboxGL.Camera>(null);
+  // Full-screen modal draws under the system bars on edge-to-edge Android,
+  // so header/action bar have to clear the status and navigation bars themselves.
+  const insets = useSafeAreaInsets();
 
   const [phase, setPhase] = useState<Phase>('placing');
   const [guessCoords, setGuessCoords] = useState<[number, number]>(mapDefaultCenter); // [lng, lat]
@@ -71,7 +128,10 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
       <View className="flex-1 bg-zinc-950">
 
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
+        <View
+          className="flex-row items-center justify-between px-4 pb-3 bg-zinc-900 border-b border-zinc-800"
+          style={{ paddingTop: insets.top + 12 }}
+        >
           <Text className="text-base font-semibold text-zinc-100 flex-1 mr-2" numberOfLines={1}>
             {post.title || 'გამოიცანი'}
           </Text>
@@ -123,32 +183,22 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
             />
 
             {/* Guess marker — teal */}
-            <MapboxGL.PointAnnotation id="guess-marker" coordinate={guessCoords}>
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: '#14B8A6',
-                  borderWidth: 2,
-                  borderColor: '#fff',
-                }}
-              />
+            <MapboxGL.PointAnnotation
+              id="guess-marker"
+              coordinate={guessCoords}
+              anchor={{ x: 0.5, y: 1 }}
+            >
+              <MapPin color="#14B8A6" />
             </MapboxGL.PointAnnotation>
 
             {/* Photo marker — red, shown after result */}
             {photoCoords ? (
-              <MapboxGL.PointAnnotation id="photo-marker" coordinate={photoCoords}>
-                <View
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    backgroundColor: '#ef4444',
-                    borderWidth: 2,
-                    borderColor: '#fff',
-                  }}
-                />
+              <MapboxGL.PointAnnotation
+                id="photo-marker"
+                coordinate={photoCoords}
+                anchor={{ x: 0.5, y: 1 }}
+              >
+                <MapPin color="#ef4444" />
               </MapboxGL.PointAnnotation>
             ) : null}
 
@@ -218,7 +268,10 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
         </View>
 
         {/* Bottom action bar */}
-        <View className="px-4 pt-3 pb-8 bg-zinc-900 border-t border-zinc-800">
+        <View
+          className="px-4 pt-3 bg-zinc-900 border-t border-zinc-800"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           {phase === 'placing' ? (
             <Pressable
               onPress={handleSubmit}

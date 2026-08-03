@@ -1,9 +1,10 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
+import { formatPhotoTakenDate } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
 function formatTimeAgo(timestamp: string): string {
@@ -24,15 +25,38 @@ function questCompletionTitle(questTitle: string | null | undefined): string {
   return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
 }
 
-/** Comment-only stats badge – quest posts have no guesses. */
-function CommentBadge({ count }: { count: number }) {
+/**
+ * Overlay stats badge – mirrors web PostStatsBadge: vote score, then guesses
+ * (gps posts only), then comments.
+ */
+function StatsBadge({
+  voteScore,
+  guessCount,
+  commentCount,
+  className = 'absolute top-3 right-3',
+}: {
+  voteScore: number;
+  guessCount?: number | null;
+  commentCount: number;
+  className?: string;
+}) {
   return (
     <View
-      className="absolute top-3 right-3 flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20"
+      className={`${className} flex-row items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20`}
       style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
     >
-      <Feather name="message-circle" size={16} color="#FAFAFA" />
-      <Text className="text-sm font-semibold text-zinc-50">{count}</Text>
+      <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#FAFAFA" />
+      <Text className="text-sm font-semibold text-zinc-50">{voteScore}</Text>
+      {guessCount != null ? (
+        <View className="flex-row items-center gap-1 ml-2">
+          <Feather name="map-pin" size={16} color="#FAFAFA" />
+          <Text className="text-sm font-semibold text-zinc-50">{guessCount}</Text>
+        </View>
+      ) : null}
+      <View className="flex-row items-center gap-1 ml-2">
+        <Feather name="message-circle" size={16} color="#FAFAFA" />
+        <Text className="text-sm font-semibold text-zinc-50">{commentCount}</Text>
+      </View>
     </View>
   );
 }
@@ -127,17 +151,18 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
                 </View>
               ))}
             </View>
-            <CommentBadge count={item.commentCount ?? 0} />
+            <StatsBadge voteScore={item.voteScore ?? 0} commentCount={item.commentCount ?? 0} />
           </Pressable>
         ) : (
           <Pressable
             onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
             className="mx-2 mb-2 self-start"
           >
-            <View className="flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20" style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}>
-              <Feather name="message-circle" size={16} color="#FAFAFA" />
-              <Text className="text-sm font-semibold text-zinc-50">{item.commentCount ?? 0}</Text>
-            </View>
+            <StatsBadge
+              voteScore={item.voteScore ?? 0}
+              commentCount={item.commentCount ?? 0}
+              className=""
+            />
           </Pressable>
         )
       ) : (
@@ -146,22 +171,26 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
           className="relative"
         >
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: item.imageVariants?.feed ?? item.image }}
             className="w-full h-80 bg-black"
             resizeMode="contain"
           />
-          {/* Counter badge – matches web: bg-zinc-900/80 backdrop-blur border border-zinc-100/20 */}
-          <View
-            className="absolute top-3 right-3 flex-row items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20"
-            style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
-          >
-            <Feather name="map-pin" size={16} color="#FAFAFA" />
-            <Text className="text-sm font-semibold text-zinc-50">{item.guessCount ?? 0}</Text>
-            <View className="flex-row items-center gap-1 ml-2">
-              <Feather name="message-circle" size={16} color="#FAFAFA" />
-              <Text className="text-sm font-semibold text-zinc-50">{item.commentCount ?? 0}</Text>
+          {/* Photo-taken stamp – amber, bottom right, matches web */}
+          {item.dateTaken ? (
+            <View className="absolute bottom-3 right-3">
+              <Text
+                className="text-sm text-amber-400"
+                style={{ fontVariant: ['tabular-nums'], letterSpacing: 2 }}
+              >
+                {formatPhotoTakenDate(item.dateTaken)}
+              </Text>
             </View>
-          </View>
+          ) : null}
+          <StatsBadge
+            voteScore={item.voteScore ?? 0}
+            guessCount={item.guessCount ?? 0}
+            commentCount={item.commentCount ?? 0}
+          />
         </Pressable>
       )}
     </View>

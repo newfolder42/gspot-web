@@ -9,6 +9,10 @@ export type NotificationType = {
     | 'user-started-following'
     | 'user-achievement-achieved'
     | 'post-comment-created'
+    | 'post-vote-created'
+    | 'comment-vote-created'
+    | 'post-reward-created'
+    | 'comment-reward-created'
     | 'zone-member-invitation'
     | 'zone-quest-created'
     | 'zone-quest-objective-submitted'
@@ -28,6 +32,8 @@ export type NotificationType = {
     | NotificationUserStartedFollowingDetailsType
     | NotificationUserAchievementAchievedDetailsType
     | NotificationPostCommentCreatedDetailsType
+    | NotificationPostVoteCreatedDetailsType
+    | NotificationPostRewardCreatedDetailsType
     | NotificationZoneMemberInvitationDetailsType
     | NotificationZoneQuestCreatedDetailsType
     | NotificationZoneQuestObjectiveSubmittedDetailsType
@@ -99,6 +105,24 @@ export type NotificationPostCommentCreatedDetailsType = {
   commenterId: number;
   commenterAlias: string;
   commentType: 'comment' | 'gps-guess-comment' | 'gps-photo-guess-comment';
+};
+
+export type NotificationPostVoteCreatedDetailsType = {
+  postId: number;
+  commentId?: number | null;
+  value: 1 | -1;
+  voterId: number;
+  voterAlias: string;
+};
+
+export type NotificationPostRewardCreatedDetailsType = {
+  postId: number;
+  commentId?: number | null;
+  rewardKey: string;
+  // denormalized at grant time so this reads correctly even if the reward is later renamed/disabled
+  rewardName: string;
+  giverId: number;
+  giverAlias: string;
 };
 
 export type NotificationZoneMemberInvitationDetailsType = {
@@ -199,6 +223,26 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationPostCommentCreatedDetailsType;
       return d.parent ? `${d.commenterAlias}-მა დაგიტოვა კომენტარი` : `${d.commenterAlias}-მა დატოვა კომენტარი პოსტზე`;
     }
+    case 'post-vote-created': {
+      const d = details as NotificationPostVoteCreatedDetailsType;
+      return d.value === 1
+        ? `${d.voterAlias}-მა მოიწონა შენი პოსტი`
+        : `${d.voterAlias}-მა არ მოიწონა შენი პოსტი`;
+    }
+    case 'comment-vote-created': {
+      const d = details as NotificationPostVoteCreatedDetailsType;
+      return d.value === 1
+        ? `${d.voterAlias}-მა მოიწონა შენი კომენტარი`
+        : `${d.voterAlias}-მა არ მოიწონა შენი კომენტარი`;
+    }
+    case 'post-reward-created': {
+      const d = details as NotificationPostRewardCreatedDetailsType;
+      return `${d.giverAlias}-მა დააჯილდოვა შენი პოსტი: ${d.rewardName}`;
+    }
+    case 'comment-reward-created': {
+      const d = details as NotificationPostRewardCreatedDetailsType;
+      return `${d.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${d.rewardName}`;
+    }
     case 'zone-member-invitation': {
       const d = details as NotificationZoneMemberInvitationDetailsType;
       return `${d.userAlias}-მა მოგიწვია საბზონაში: ${d.zoneSlug}`;
@@ -266,6 +310,22 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'post-comment-created': {
       const d = notification.details as NotificationPostCommentCreatedDetailsType;
       return `/post/${d.postId}?commentId=${d.commentId}`;
+    }
+    case 'post-vote-created': {
+      const d = notification.details as NotificationPostVoteCreatedDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'comment-vote-created': {
+      const d = notification.details as NotificationPostVoteCreatedDetailsType;
+      return d.commentId ? `/post/${d.postId}?commentId=${d.commentId}` : `/post/${d.postId}`;
+    }
+    case 'post-reward-created': {
+      const d = notification.details as NotificationPostRewardCreatedDetailsType;
+      return `/post/${d.postId}`;
+    }
+    case 'comment-reward-created': {
+      const d = notification.details as NotificationPostRewardCreatedDetailsType;
+      return d.commentId ? `/post/${d.postId}?commentId=${d.commentId}` : `/post/${d.postId}`;
     }
     case 'zone-member-invitation': {
       const d = notification.details as NotificationZoneMemberInvitationDetailsType;

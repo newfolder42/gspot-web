@@ -239,33 +239,44 @@ async function commentAllowsRewards(commentId: number): Promise<boolean> {
 // can never be removed or switched — there is no undo, by design (keeps rewards meaningful
 // and makes the daily quota easy to reason about).
 // Returns the fresh summary for the target, or null when the action is not allowed.
+// Web entry point — the mobile API calls giveRewardForUser directly.
 export async function giveReward(
   postId: number,
   commentId: number | null,
   rewardKey: string
 ): Promise<RewardSummaryType | null> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return null;
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return giveRewardForUser(user.userId, user.alias, postId, commentId, rewardKey);
+}
 
+// Same as giveReward, by explicit user — shared by the web action and /api/v1.
+export async function giveRewardForUser(
+  userId: number,
+  alias: string,
+  postId: number,
+  commentId: number | null,
+  rewardKey: string
+): Promise<RewardSummaryType | null> {
+  try {
     const def = await getRewardDefinitionByKey(rewardKey);
     if (!def) return null;
     if (def.status !== 'active') return null;
     if (!def.appliesTo.includes(commentId === null ? 'post' : 'comment')) return null;
     if (commentId !== null && !(await commentAllowsRewards(commentId))) return null;
     if (def.unlockable) {
-      const unlocked = await getUnlockedRewardKeys(user.userId);
+      const unlocked = await getUnlockedRewardKeys(userId);
       if (!unlocked.includes(def.key)) return null;
     }
 
-    if (!(await canUserAccessPost(user.userId, postId))) return null;
+    if (!(await canUserAccessPost(userId, postId))) return null;
 
-    const existing = await getUserReward(postId, commentId, user.userId);
+    const existing = await getUserReward(postId, commentId, userId);
     if (existing !== null) return null; // already gave a reward here — no undo, no switching
 
     const [givenToday, dailyLimit] = await Promise.all([
-      getRewardsGivenTodayCount(user.userId),
-      getUserDailyRewardLimit(user.userId),
+      getRewardsGivenTodayCount(userId),
+      getUserDailyRewardLimit(userId),
     ]);
     if (givenToday >= dailyLimit) return null;
 
@@ -298,7 +309,7 @@ export async function giveReward(
     await query(
       `insert into post_rewards (post_id, comment_id, user_id, reward_key)
        values ($1, $2, $3, $4)`,
-      [postId, commentId, user.userId, rewardKey]
+      [postId, commentId, userId, rewardKey]
     );
 
     await eventBus.publish('post', 'reward-created', {
@@ -306,8 +317,8 @@ export async function giveReward(
       commentId: commentId === null ? null : +commentId,
       rewardKey,
       rewardName: def.name,
-      giverId: user.userId,
-      giverAlias: user.alias,
+      giverId: userId,
+      giverAlias: alias,
       postAuthorId: Number(target.post_author_id),
       postAuthorAlias: target.post_author_alias,
       commentAuthorId: target.comment_author_id !== null ? Number(target.comment_author_id) : null,
@@ -316,9 +327,9 @@ export async function giveReward(
       zoneSlug: target.zone_slug,
     } as PostRewardCreatedEvent);
 
-    return await getRewardSummary(postId, commentId, user.userId);
+    return await getRewardSummary(postId, commentId, userId);
   } catch (err) {
-    await logerror('giveReward error', [err]);
+    await logerror('giveRewardForUser error', [err]);
     return null;
   }
 }

@@ -5,10 +5,14 @@ type FeedResponse = {
   posts: MobilePostType[];
 };
 
+/** Mirrors web FeedFilter. */
+export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
+
 type FeedPageParams = {
   limit?: number;
   cursorDate?: string;
   cursorId?: number;
+  filter?: FeedFilter;
 };
 
 type ApiErrorBody = { error?: string };
@@ -43,6 +47,7 @@ function loadFeed(path: string, params?: FeedPageParams): Promise<MobilePostType
           limit: params?.limit ?? 4,
           cursorDate: params?.cursorDate,
           cursorId: params?.cursorId,
+          filter: params?.filter,
         },
       })
       .then((r) => r.data.posts)

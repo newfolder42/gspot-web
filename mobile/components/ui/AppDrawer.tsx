@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
   Animated,
-  Linking,
   Modal,
   PanResponder,
   Pressable,
@@ -72,10 +71,6 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
     router.push(params ? { pathname: path, params } : path);
   };
 
-  const openAbout = () => {
-    onClose();
-    Linking.openURL('https://gspot.ge/about');
-  };
 
   // Swipe right from left edge → open drawer
   const edgePanResponder = useRef(
@@ -158,9 +153,12 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
           </View>
 
           <ScrollView className="flex-1 pt-2">
-            {/* Main nav */}
+            {/* Main nav – mirrors the web left panel ordering */}
             <DrawerLink icon="home" label="მთავარი" onPress={() => nav('/(app)/(tabs)/')} />
+            <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/(tabs)/to-guess')} />
+            <DrawerLink icon="users" label="მომხმარებლები" onPress={() => nav('/(app)/new-users')} />
             <DrawerLink icon="grid" label="საბზონები" onPress={() => nav('/(app)/zones')} />
+            <DrawerLink icon="map" label="რუკა" onPress={() => nav('/(app)/heatmap')} />
             <DrawerLink icon="bell" label="შეტყობინებები" onPress={() => nav('/(app)/(tabs)/notifications')} />
 
             {/* My zones */}
@@ -185,7 +183,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
 
           {/* Pinned bottom – About */}
           <View style={{ paddingBottom: insets.bottom + 4, borderTopWidth: 1, borderTopColor: '#3f3f46' }} className="pt-1">
-            <DrawerLink icon="info" label="ჩვენს შესახებ" onPress={openAbout} />
+            <DrawerLink icon="info" label="ჩვენს შესახებ" onPress={() => nav('/(app)/about')} />
           </View>
         </Animated.View>
       </Modal>

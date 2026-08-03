@@ -13,6 +13,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { PostCommentType } from '@/types/post-comment';
 import { getInitials } from '@/lib/getInitials';
 import { NewGuess } from '@/components/NewGuess';
+import { NewPhotoGuess } from '@/components/NewPhotoGuess';
+import { GuessesMap } from '@/components/GuessesMap';
+import { EditPostSheet } from '@/components/EditPostSheet';
+import { VoteButtons } from '@/components/votes/VoteButtons';
+import { RewardButton } from '@/components/rewards/RewardButton';
 import type { GuessResult } from '@/types/post-guess';
 
 /** Matches web DEPTH_COLORS cycle */
@@ -69,10 +74,12 @@ function addCommentToTree(
 function CommentItem({
   item,
   depth = 0,
+  postId,
   onReply,
 }: {
   item: PostCommentType;
   depth?: number;
+  postId: number;
   onReply: (comment: PostCommentType) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -149,17 +156,36 @@ function CommentItem({
             <Text className="text-sm text-zinc-800 dark:text-zinc-200 leading-5 mb-1">{item.body}</Text>
           )}
 
-          {/* Reply button – all comment types */}
-          <Pressable onPress={() => onReply(item)} className="self-start mt-0.5">
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
-          </Pressable>
+          {/* Actions – votes, reward (guesses only), reply. Mirrors web PostComment. */}
+          <View className="flex-row items-center gap-3 mt-0.5">
+            <VoteButtons
+              postId={postId}
+              commentId={item.id}
+              score={item.voteScore ?? 0}
+              userVote={item.userVote ?? null}
+              size="sm"
+            />
+            {isGuess ? (
+              <RewardButton
+                postId={postId}
+                commentId={item.id}
+                target="comment"
+                rewards={item.rewards ?? []}
+                userReward={item.userReward ?? null}
+                size="sm"
+              />
+            ) : null}
+            <Pressable onPress={() => onReply(item)} hitSlop={6}>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
+            </Pressable>
+          </View>
         </>
       ) : null}
 
       {/* Children */}
       {!collapsed
         ? item.children.map((child) => (
-            <CommentItem key={child.id} item={child} depth={depth + 1} onReply={onReply} />
+            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} onReply={onReply} />
           ))
         : null}
     </View>
@@ -176,6 +202,9 @@ export default function PostPageScreen() {
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<PostCommentType | null>(null);
   const [showGuess, setShowGuess] = useState(false);
+  const [showPhotoGuess, setShowPhotoGuess] = useState(false);
+  const [showGuessMap, setShowGuessMap] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const handleReply = (comment: PostCommentType) => {
@@ -245,16 +274,21 @@ export default function PostPageScreen() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['გაუქმება', 'პოსტის წაშლა'],
+          options: ['გაუქმება', 'რედაქტირება', 'პოსტის წაშლა'],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 1,
+          destructiveButtonIndex: 2,
         },
         (index) => {
-          if (index === 1) handleDeletePress();
+          if (index === 1) setShowEdit(true);
+          if (index === 2) handleDeletePress();
         }
       );
     } else {
-      handleDeletePress();
+      Alert.alert('პოსტი', undefined, [
+        { text: 'გაუქმება', style: 'cancel' },
+        { text: 'რედაქტირება', onPress: () => setShowEdit(true) },
+        { text: 'წაშლა', style: 'destructive', onPress: handleDeletePress },
+      ]);
     }
   };
 
@@ -285,7 +319,7 @@ export default function PostPageScreen() {
     );
   }
 
-  const { post, comments, alreadyGuessed } = query.data;
+  const { post, comments, alreadyGuessed, votes, rewards } = query.data;
   const commentsCount = countComments(comments);
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
   const canGuess = post.type === 'gps-photo' && !alreadyGuessed && !isOwner;
@@ -369,7 +403,7 @@ export default function PostPageScreen() {
         {/* ── Media block with counter overlay ── */}
         {isQuest ? (
           questPhotos.length > 0 ? (
-            <View className="relative">
+            <View>
               <View className="flex-row flex-wrap">
                 {questPhotos.map((photo, idx) => (
                   <View
@@ -391,41 +425,56 @@ export default function PostPageScreen() {
                   </View>
                 ))}
               </View>
-              <View
-                className="absolute top-3 right-3 flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20"
-                style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
-              >
-                <Feather name="message-circle" size={16} color="#FAFAFA" />
-                <Text className="text-sm font-semibold text-zinc-50">{commentsCount}</Text>
-              </View>
             </View>
           ) : null
         ) : post.image ? (
-          <View className="relative bg-black">
+          <View className="bg-black">
             <Image source={{ uri: post.image }} className="w-full h-80" resizeMode="contain" />
-            <View
-              className="absolute top-3 right-3 flex-row items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20"
-              style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
-            >
-              <Feather name="map-pin" size={16} color="#FAFAFA" />
-              <Text className="text-sm font-semibold text-zinc-50">{post.guessCount ?? 0}</Text>
-              <View className="flex-row items-center gap-1 ml-2">
-                <Feather name="message-circle" size={16} color="#FAFAFA" />
-                <Text className="text-sm font-semibold text-zinc-50">{commentsCount}</Text>
-              </View>
-            </View>
           </View>
         ) : null}
 
-        {/* ── Guess button ── */}
+        {/* ── Post action bar – votes, reward, stats. Mirrors web PostComments header. ── */}
+        <View className="flex-row items-center gap-4 px-4 pt-3">
+          <VoteButtons postId={post.id} score={votes.score} userVote={votes.userVote} />
+          <RewardButton
+            postId={post.id}
+            target="post"
+            rewards={rewards.rewards}
+            userReward={rewards.userReward}
+          />
+          <View className="flex-row items-center gap-3 ml-auto">
+            {!isQuest ? (
+              <View className="flex-row items-center gap-1">
+                <Feather name="map-pin" size={15} color="#71717A" />
+                <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+                  {post.guessCount ?? 0}
+                </Text>
+              </View>
+            ) : null}
+            <View className="flex-row items-center gap-1">
+              <Feather name="message-circle" size={15} color="#71717A" />
+              <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{commentsCount}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers,
+             "რუკაზე ნახვა" for the author once guesses exist. ── */}
         {canGuess ? (
-          <View className="px-4 pt-3">
+          <View className="flex-row gap-2 px-4 pt-3">
             <Pressable
               onPress={() => setShowGuess(true)}
-              className="h-11 rounded-xl bg-teal-600 flex-row items-center justify-center gap-2 active:opacity-80"
+              className="flex-1 h-11 rounded-xl bg-teal-600 flex-row items-center justify-center gap-2 active:opacity-80"
             >
               <Feather name="map-pin" size={16} color="#fff" />
-              <Text className="text-sm font-semibold text-white">გამოიცანი</Text>
+              <Text className="text-sm font-semibold text-white">რუკაზე</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowPhotoGuess(true)}
+              className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
+            >
+              <Feather name="camera" size={16} color="#71717A" />
+              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ადგილზე</Text>
             </Pressable>
           </View>
         ) : alreadyGuessed ? (
@@ -437,13 +486,27 @@ export default function PostPageScreen() {
           </View>
         ) : null}
 
+        {isOwner && !isQuest && (post.guessCount ?? 0) > 0 ? (
+          <View className="px-4 pt-3">
+            <Pressable
+              onPress={() => setShowGuessMap(true)}
+              className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
+            >
+              <Feather name="map" size={16} color="#71717A" />
+              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">რუკაზე ნახვა</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {/* ── Comments ── */}
         <View className="px-4 pt-4">
           <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">კომენტარები</Text>
           {comments.length === 0 ? (
             <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
           ) : (
-            comments.map((comment) => <CommentItem key={comment.id} item={comment} onReply={handleReply} />)
+            comments.map((comment) => (
+              <CommentItem key={comment.id} item={comment} postId={postId} onReply={handleReply} />
+            ))
           )}
         </View>
       </ScrollView>
@@ -498,6 +561,27 @@ export default function PostPageScreen() {
           post={post}
           onClose={() => setShowGuess(false)}
           onSubmitted={handleGuessSubmitted}
+        />
+      ) : null}
+      {showPhotoGuess ? (
+        <NewPhotoGuess
+          postId={post.id}
+          onClose={() => setShowPhotoGuess(false)}
+          onSubmitted={() => queryClient.invalidateQueries({ queryKey })}
+        />
+      ) : null}
+      {showGuessMap ? (
+        <GuessesMap postId={post.id} onClose={() => setShowGuessMap(false)} />
+      ) : null}
+      {showEdit ? (
+        <EditPostSheet
+          postId={post.id}
+          zoneSlug={post.zoneSlug ?? ''}
+          currentTitle={post.title ?? ''}
+          currentTagId={post.tag?.id ?? null}
+          showTags={!isQuest}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey })}
         />
       ) : null}
     </View>

@@ -26,12 +26,18 @@ function buildPoints(rows: any[]): HeatmapPointType[] {
   return points;
 }
 
+// Web entry point — the mobile API calls getPostsHeatmapForUser directly.
 export async function getOwnPostsHeatmap(accountUserId: number): Promise<HeatmapDataType> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return { points: [], totalPosts: 0 };
-    if (Number(user.userId) !== Number(accountUserId)) return { points: [], totalPosts: 0 };
+  const user = await getCurrentUser();
+  if (!user) return { points: [], totalPosts: 0 };
+  if (Number(user.userId) !== Number(accountUserId)) return { points: [], totalPosts: 0 };
+  return getPostsHeatmapForUser(accountUserId);
+}
 
+// A single user's own post heatmap. Callers must have already established that
+// the viewer is that user — this is never another account's data.
+export async function getPostsHeatmapForUser(accountUserId: number): Promise<HeatmapDataType> {
+  try {
     const ownSteps = heatmapGridSteps(heatmapGridMeters);
 
     const res = await query(
@@ -68,7 +74,7 @@ export async function getOwnPostsHeatmap(accountUserId: number): Promise<Heatmap
       totalPosts: Number(res.rows[0]?.total_posts ?? 0),
     };
   } catch (err) {
-    await logerror('getOwnPostsHeatmap error', [err]);
+    await logerror('getPostsHeatmapForUser error', [err]);
     return { points: [], totalPosts: 0 };
   }
 }

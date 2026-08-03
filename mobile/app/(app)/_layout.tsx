@@ -47,6 +47,9 @@ export default function AppLayout() {
       <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />
       <Stack.Screen name="user/[alias]" options={{ title: 'პროფილი' }} />
       <Stack.Screen name="zones" options={{ title: 'საბზონები' }} />
+      <Stack.Screen name="new-users" options={{ title: 'ახალი მომხმარებლები' }} />
+      <Stack.Screen name="heatmap" options={{ title: 'პოსტების რუკა' }} />
+      <Stack.Screen name="about" options={{ title: 'ჩვენ შესახებ', headerRight: () => null }} />
       <Stack.Screen name="quest-log" options={{ title: 'მისიების ჟურნალი', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />
       <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />

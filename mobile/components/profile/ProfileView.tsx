@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { StreakBadge } from '@/components/ui/StreakBadge';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { GuessesTab } from '@/components/profile/GuessesTab';
 import { AchievementsTab } from '@/components/profile/AchievementsTab';
@@ -83,7 +84,9 @@ function PostsTab({ posts, header }: { posts: MobilePostType[]; header: ReactEle
           {row.map((post) => {
             const isQuest = post.type === 'quest-completion';
             const cover = isQuest ? post.photos?.[0] : null;
-            const coverUri = isQuest ? (cover?.variants?.thumb ?? cover?.url) : post.image;
+            const coverUri = isQuest
+              ? (cover?.variants?.thumb ?? cover?.url)
+              : (post.imageVariants?.thumb ?? post.image);
             return (
               <Pressable
                 key={post.id}
@@ -187,7 +190,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     );
   }
 
-  const { user, profilePhoto, level, posts } = data;
+  const { user, profilePhoto, level, posts, streak } = data;
 
   // Header card + tab bar, shared by both the virtualized (posts/connections)
   // and the lightweight ScrollView (guesses/achievements) layouts below.
@@ -213,11 +216,15 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
             {user.age != null ? (
               <Text className="text-xs text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
             ) : null}
-            {level ? (
-              <View className="mt-3">
-                <XPBar xp={level.xp} level={level.level} />
-              </View>
-            ) : null}
+            {/* XP bar + streak flame, mirroring the web account header row. */}
+            <View className="mt-3 flex-row items-center gap-3">
+              {level ? (
+                <View className="flex-1">
+                  <XPBar xp={level.xp} level={level.level} />
+                </View>
+              ) : null}
+              {streak ? <StreakBadge streak={streak} /> : null}
+            </View>
           </View>
           {!isOwn ? <FollowButton alias={alias} initialFollowing={data.isFollowing} /> : null}
         </View>

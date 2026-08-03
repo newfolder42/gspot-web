@@ -1,0 +1,40 @@
+/**
+ * About-page content shared by the web page and the mobile screen
+ * (served to mobile via /api/v1/about).
+ */
+
+export type AboutEntry = {
+  title: string;
+  desc: string;
+};
+
+export type RoadmapEntry = {
+  title: string;
+  status: string;
+  note: string;
+};
+
+export const aboutFeatures: AboutEntry[] = [
+  { title: "საბზონები", desc: "კატეგორიზირებული საბზონები: ეკლესიები, გრაფიტები, საქალაქო ტრაფარეტები, სურათები კონკრეტული ქალაქებიდან. თამაშის თავისი წესებით, რომელსაც ადმინი განსაზღვრავს" },
+  { title: "მიღწევები", desc: "საიტზე განხორციელებულ სხვადასხვა ქმედებას და აქტივობას მოყვება მიღწევები" },
+  { title: "ლიდერბორდი", desc: "მომხმარებელთა ლიდერბორდი გამოცნობებით დაგროვილი ქულების მიხედვით" },
+  { title: "ნოთიფიკაციები", desc: "სხვა მომხმარებლის ან საკუთარი აქტივობების ნოთიფიკაცია" },
+  { title: "მომხმარებლის ანგარიში", desc: "რეგისტრაცია/ავტორიზავია, სესიები, პროფილის ნახვა" },
+  { title: "კავშირები", desc: "სხვა მომხმარებლებთან დაკავშირება" },
+  { title: "ფოტო-სურათის ატვირთვა", desc: "პოსტის ატვირთვა და GPS ლოკაციის განსაზღვრა" },
+  { title: "ძებნა", desc: "პოსტისა და მომხმარებლების ძიება" },
+];
+
+export const aboutRoadmap: RoadmapEntry[] = [
+  { title: "საბზონები", status: "მიმდინარე", note: "საბზონების შექმნა მომხმარებლის მიერ და მართი მართვა" },
+];
+
+export const aboutTechnologies: string[] = [
+  'Next.js',
+  'PostgreSQL',
+  'Redis pub/sub',
+  'AWS Hosting',
+  'AWS S3',
+  'Mapbox',
+  'Resend.com',
+];

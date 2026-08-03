@@ -4,6 +4,8 @@ import type { MobilePostType } from '@/types/post';
 import type { UserGuess } from '@/types/guess';
 import type { AccountAchievement } from '@/types/achievement';
 import type { ClientConnection } from '@/types/connection';
+import type { UserStreakInfo } from '@/components/ui/StreakBadge';
+import type { NewUser } from '@/types/user';
 
 export type PublicUserProfile = {
   user: { id: number; alias: string; age: number | null };
@@ -11,6 +13,7 @@ export type PublicUserProfile = {
   level: { xp: number; level: number } | null;
   isOwnProfile: boolean;
   isFollowing: boolean;
+  streak: UserStreakInfo;
   posts: MobilePostType[];
 };
 
@@ -19,6 +22,12 @@ const enc = encodeURIComponent;
 export const usersApi = {
   getProfile: (alias: string): Promise<PublicUserProfile> =>
     apiClient.get<PublicUserProfile>(`/users/${enc(alias)}`).then((r) => r.data),
+
+  /** Most recently registered users. `total` is only sent for the first page. */
+  getNewUsers: (limit = 20, offset = 0): Promise<{ users: NewUser[]; total: number | null }> =>
+    apiClient
+      .get<{ users: NewUser[]; total: number | null }>('/users', { params: { limit, offset } })
+      .then((r) => r.data),
 
   getGuesses: (alias: string): Promise<UserGuess[]> =>
     apiClient.get<{ guesses: UserGuess[] }>(`/users/${enc(alias)}/guesses`).then((r) => r.data.guesses),

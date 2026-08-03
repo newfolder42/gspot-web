@@ -1,21 +1,10 @@
 import { APP_NAME } from "@/types/constants";
 import ChangelogList from "@/components/about/changelog-list";
+import { aboutFeatures, aboutRoadmap } from "@/lib/about";
 
 export default function AboutPage() {
-  const features = [
-    { title: "საბზონები", desc: "კატეგორიზირებული საბზონები: ეკლესიები, გრაფიტები, საქალაქო ტრაფარეტები, სურათები კონკრეტული ქალაქებიდან. თამაშის თავისი წესებით, რომელსაც ადმინი განსაზღვრავს" },
-    { title: "მიღწევები", desc: "საიტზე განხორციელებულ სხვადასხვა ქმედებას და აქტივობას მოყვება მიღწევები" },
-    { title: "ლიდერბორდი", desc: "მომხმარებელთა ლიდერბორდი გამოცნობებით დაგროვილი ქულების მიხედვით" },
-    { title: "ნოთიფიკაციები", desc: "სხვა მომხმარებლის ან საკუთარი აქტივობების ნოთიფიკაცია" },
-    { title: "მომხმარებლის ანგარიში", desc: "რეგისტრაცია/ავტორიზავია, სესიები, პროფილის ნახვა" },
-    { title: "კავშირები", desc: "სხვა მომხმარებლებთან დაკავშირება" },
-    { title: "ფოტო-სურათის ატვირთვა", desc: "პოსტის ატვირთვა და GPS ლოკაციის განსაზღვრა" },
-    { title: "ძებნა", desc: "პოსტისა და მომხმარებლების ძიება" },
-  ];
-
-  const roadmap = [
-    { title: "საბზონები", status: "მიმდინარე", note: "საბზონების შექმნა მომხმარებლის მიერ და მართი მართვა" },
-  ];
+  const features = aboutFeatures;
+  const roadmap = aboutRoadmap;
 
   return (
     <div className="max-w-5xl mx-auto my-auto px-2 py-2 md:py-4 space-y-6">

@@ -4,6 +4,7 @@ import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { query } from '@/lib/db';
 import { eventBus } from '@/lib/eventBus';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
+import { getPostGuessMapPointsForUser } from '@/lib/posts';
 import { logerror } from '@/lib/logger';
 import { isInGeorgia } from '@/lib/geo';
 import type { PostGuessedEvent } from '@/types/events/post-guessed';
@@ -17,6 +18,28 @@ const BodySchema = z.object({
 });
 
 type Context = { params: Promise<{ id: string }> };
+
+// GET /api/v1/posts/:id/guesses — every guess placed on the post plus the real
+// photo location, for the author's "guesses on a map" view. Author-only:
+// getPostGuessMapPointsForUser returns empty for anyone else.
+export async function GET(req: NextRequest, context: Context) {
+  try {
+    const auth = await requireMobileUser(req);
+    if (auth.response) return auth.response;
+
+    const params = await context.params;
+    const parsed = ParamsSchema.safeParse({ id: params.id });
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
+    }
+
+    const data = await getPostGuessMapPointsForUser(auth.user.userId, parsed.data.id);
+    return NextResponse.json(data);
+  } catch (err) {
+    await logerror('GET /api/v1/posts/[id]/guesses error', { error: String(err) });
+    return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest, context: Context) {
   try {

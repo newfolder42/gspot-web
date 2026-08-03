@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getAccountByAlias } from '@/lib/account';
 import { getAccountPosts } from '@/lib/posts';
+import { getUserStreakInfo } from '@/lib/streaks';
 import { logerror } from '@/lib/logger';
 
 type Context = { params: Promise<{ alias: string }> };
@@ -16,7 +17,10 @@ export async function GET(req: NextRequest, context: Context) {
     const account = await getAccountByAlias(alias, auth.user.userId);
     if (!account) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
 
-    const posts = await getAccountPosts(account.user.id, auth.user.userId, 20);
+    const [posts, streak] = await Promise.all([
+      getAccountPosts(account.user.id, auth.user.userId, 20),
+      getUserStreakInfo(account.user.id),
+    ]);
 
     return NextResponse.json({
       user: {
@@ -28,6 +32,7 @@ export async function GET(req: NextRequest, context: Context) {
       level: account.level,
       isOwnProfile: account.isOwnProfile,
       isFollowing: !!account.connection,
+      streak,
       posts,
     });
   } catch (err) {

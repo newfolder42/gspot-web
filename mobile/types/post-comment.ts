@@ -1,3 +1,6 @@
+import type { RewardCountType } from '@/types/reward';
+import type { VoteValue } from '@/types/vote';
+
 export type PostCommentType = {
   id: number;
   postId: number;
@@ -12,4 +15,8 @@ export type PostCommentType = {
   deletedAt: string | null;
   children: PostCommentType[];
   authorLevel?: number | null;
+  voteScore?: number;
+  userVote?: VoteValue | null;
+  rewards?: RewardCountType[];
+  userReward?: string | null;
 };

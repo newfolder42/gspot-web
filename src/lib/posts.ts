@@ -914,18 +914,33 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
   }
 }
 
-export async function createPhotoGuess({ postId, coordinates, distance, score, imageUrl }: {
+// Web entry point — the mobile API calls createPhotoGuessForUser directly.
+export async function createPhotoGuess(input: {
   postId: number;
   coordinates: { latitude: number; longitude: number };
   distance: number;
   score: number;
   imageUrl: string;
 }): Promise<PostGuessType | null> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return null;
-    const userId = user.userId;
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return createPhotoGuessForUser(user.userId, user.alias, input);
+}
 
+// Same as createPhotoGuess, by explicit user — shared by the web flow and /api/v1.
+// Idempotent: a user who already guessed this post gets their existing guess back.
+export async function createPhotoGuessForUser(
+  userId: number,
+  alias: string,
+  { postId, coordinates, distance, score, imageUrl }: {
+    postId: number;
+    coordinates: { latitude: number; longitude: number };
+    distance: number;
+    score: number;
+    imageUrl: string;
+  }
+): Promise<PostGuessType | null> {
+  try {
     if (!(await canUserAccessPost(userId, postId))) return null;
 
     const post = await getPostById(postId);
@@ -972,8 +987,8 @@ export async function createPhotoGuess({ postId, coordinates, distance, score, i
       guessType: 'gps-photo-guess',
       authorId: +post.userId,
       authorAlias: post.author,
-      userId: +user.userId,
-      userAlias: user.alias,
+      userId: +userId,
+      userAlias: alias,
       score,
       zoneId: +(post.zoneId ?? 0),
       zoneSlug: post.zoneSlug || 'public',
@@ -983,23 +998,32 @@ export async function createPhotoGuess({ postId, coordinates, distance, score, i
       id: guessId,
       postId: postId,
       userId: userId,
-      author: user.alias,
+      author: alias,
       type: 'gps-photo-guess',
       createdAt: data.rows[0].created_at,
       distance: distance,
       score: score,
     };
   } catch (err) {
-    await logerror('createPhotoGuess error', [err]);
+    await logerror('createPhotoGuessForUser error', [err]);
     return null;
   }
 }
 
+// Web entry point — the mobile API calls getPhotoCoordinatesForUser directly.
 export async function getPhotoCoordinates({ postId }: { postId: number }): Promise<{ coordinates: { latitude: number; longitude: number } } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return getPhotoCoordinatesForUser(user.userId, postId);
+}
+
+// The post photo's true coordinates — access-gated, used to score a photo guess.
+export async function getPhotoCoordinatesForUser(
+  userId: number,
+  postId: number
+): Promise<{ coordinates: { latitude: number; longitude: number } } | null> {
   try {
-    const user = await getCurrentUser();
-    if (!user) return null;
-    if (!(await canUserAccessPost(user.userId, postId))) return null;
+    if (!(await canUserAccessPost(userId, postId))) return null;
 
     const data = await query(
       `select details from posts p
@@ -1011,23 +1035,32 @@ where p.id = $1`,
 
     return { coordinates: data.rows[0].details.coordinates };
   } catch (err) {
-    await logerror('getPhotoCoordinates error', [err]);
+    await logerror('getPhotoCoordinatesForUser error', [err]);
     return null;
   }
 }
 
+// Web entry point — the mobile API calls getPostGuessMapPointsForUser directly.
 export async function getPostGuessMapPoints(postId: number): Promise<PostGuessMapDataType> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return { guessPoints: [], photoCoordinates: null };
+  const user = await getCurrentUser();
+  if (!user) return { guessPoints: [], photoCoordinates: null };
+  return getPostGuessMapPointsForUser(user.userId, postId);
+}
 
+// Every guess placed on a post, plus the real photo location. Author-only —
+// revealing the true coordinates to anyone else would give the answer away.
+export async function getPostGuessMapPointsForUser(
+  userId: number,
+  postId: number
+): Promise<PostGuessMapDataType> {
+  try {
     const ownerRes = await query(
       `select user_id from posts where id = $1 limit 1`,
       [postId]
     );
 
     if (ownerRes.rowCount === 0) return { guessPoints: [], photoCoordinates: null };
-    if (Number(ownerRes.rows[0].user_id) !== Number(user.userId)) return { guessPoints: [], photoCoordinates: null };
+    if (Number(ownerRes.rows[0].user_id) !== Number(userId)) return { guessPoints: [], photoCoordinates: null };
 
     const data = await query(
       `select pg.details, u.alias as author_alias
@@ -1071,24 +1104,30 @@ order by pg.created_at desc`,
 
     return { guessPoints: points, photoCoordinates };
   } catch (err) {
-    await logerror('getPostGuessMapPoints error', [err]);
+    await logerror('getPostGuessMapPointsForUser error', [err]);
     return { guessPoints: [], photoCoordinates: null };
   }
 }
 
+// Web entry point — the mobile API calls updatePostTitleForUser directly.
 export async function updatePostTitle(postId: number, newTitle: string) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return false;
+  const user = await getCurrentUser();
+  if (!user) return false;
+  return updatePostTitleForUser(user.userId, postId, newTitle);
+}
 
+// Renames a post. The `user_id` predicate is the ownership check — a non-owner
+// simply matches no rows.
+export async function updatePostTitleForUser(userId: number, postId: number, newTitle: string) {
+  try {
     const res = await query(
       `update posts set title = $1 where id = $2 and user_id = $3 returning id`,
-      [newTitle, postId, user.userId]
+      [newTitle, postId, userId]
     );
 
     return res.rowCount === 1;
   } catch (err) {
-    await logerror('updatePostTitle error', [err]);
+    await logerror('updatePostTitleForUser error', [err]);
     return false;
   }
 }
