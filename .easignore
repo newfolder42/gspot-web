@@ -11,6 +11,18 @@ mobile/node_modules/
 mobile/.expo/
 mobile/dist/
 
+# Local Android build output. android/ itself is committed and must be uploaded,
+# but these generated dirs bake in absolute Windows paths (autolinking.json,
+# CMake caches) which break the Linux build server. A .easignore makes EAS skip
+# .gitignore entirely, so they have to be listed here explicitly.
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/app/.cxx/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/build/
+mobile/ios/Pods/
+
 # Secrets
 mobile/.env
 .env
