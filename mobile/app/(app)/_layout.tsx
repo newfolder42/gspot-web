@@ -3,11 +3,21 @@ import { Stack, Redirect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushToken } from '@/lib/pushNotifications';
+import { openPushNotification } from '@/lib/notificationRouting';
+
+/**
+ * A cold start replays the tap that launched the app. Remembering which one we
+ * already routed keeps a remount from navigating away a second time.
+ */
+let handledColdStartId: string | null = null;
 
 export default function AppLayout() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!user) return;
@@ -15,6 +25,42 @@ export default function AppLayout() {
       .then((token) => { if (token) savePushToken(token); })
       .catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshBadge = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    };
+
+    const handleTap = (response: Notifications.NotificationResponse) => {
+      refreshBadge();
+      openPushNotification(response.notification.request.content.data, router).catch(() => {});
+    };
+
+    // Tapped while the app was running (foreground or background)
+    const tapSub = Notifications.addNotificationResponseReceivedListener(handleTap);
+
+    // Arrived while the app was open — the tab badge is otherwise up to 20s stale
+    const receiveSub = Notifications.addNotificationReceivedListener(refreshBadge);
+
+    // Tapped while the app was closed
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (!response) return;
+        const id = response.notification.request.identifier;
+        if (handledColdStartId === id) return;
+        handledColdStartId = id;
+        handleTap(response);
+      })
+      .catch(() => {});
+
+    return () => {
+      tapSub.remove();
+      receiveSub.remove();
+    };
+  }, [user?.id, router, queryClient]);
 
   if (isLoading) {
     return (

@@ -12,6 +12,7 @@ export type MobileZone = {
   name: string;
   description: string | null;
   profilePhotoUrl: string | null;
+  bannerUrl: string | null;
   visibility: string;
   joinPolicy: string;
   isMember: boolean;

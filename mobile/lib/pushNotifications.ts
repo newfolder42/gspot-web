@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { apiClient } from '@/lib/api';
+import { storage } from '@/lib/storage';
 
 // Configure how notifications appear when app is in foreground
 // Only set in non-Expo-Go environments (SDK 53+ restriction)
@@ -53,7 +54,24 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 export async function savePushToken(token: string): Promise<void> {
   try {
     await apiClient.post('/push-token', { token });
+    await storage.setPushToken(token);
   } catch {
     // Non-fatal: token will be retried on next app open
+  }
+}
+
+/**
+ * Unregisters this device so the server stops pushing to it after logout.
+ * Must run before the auth tokens are cleared — the request needs them.
+ */
+export async function clearPushToken(): Promise<void> {
+  try {
+    const token = await storage.getPushToken();
+    if (!token) return;
+    await apiClient.delete('/push-token', { data: { token } });
+  } catch {
+    // Non-fatal: a token left behind is pruned once Expo reports it as stale
+  } finally {
+    await storage.deletePushToken();
   }
 }

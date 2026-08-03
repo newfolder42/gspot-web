@@ -7,6 +7,7 @@ export type ZoneInfo = {
   name: string;
   description: string | null;
   profilePhotoUrl: string | null;
+  bannerUrl: string | null;
 };
 
 export type ZoneTag = {

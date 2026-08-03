@@ -8,6 +8,7 @@ import React, {
 import { authApi, type LoginResult } from '@/lib/auth';
 import { storage, type StoredUser } from '@/lib/storage';
 import { setOnAuthFailed } from '@/lib/api';
+import { clearPushToken } from '@/lib/pushNotifications';
 
 type AuthContextType = {
   user: StoredUser | null;
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    await clearPushToken();
     await storage.clear();
     setUser(null);
   }, []);

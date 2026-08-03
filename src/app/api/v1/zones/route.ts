@@ -12,9 +12,11 @@ export async function GET(req: NextRequest) {
       `SELECT z.id, z.slug, z.name, z.description,
               z.visibility, z.join_policy, z.state,
               zcp.public_url as profile_photo_url,
+              zcb.public_url as banner_url,
               (zm.id IS NOT NULL) as is_member
        FROM zones z
        LEFT JOIN content_store zcp ON zcp.reference_type = 'zone' AND zcp.reference_id = z.id AND zcp.content_type = 'profile-photo'
+       left join content_store zcb on zcb.reference_type = 'zone' and zcb.reference_id = z.id and zcb.content_type = 'banner'
        LEFT JOIN zone_members zm ON zm.zone_id = z.id AND zm.user_id = $1 AND zm.status = 'active'
        WHERE z.visibility = 'public' AND z.state = 'active'
        ORDER BY is_member DESC, z.slug ASC`,
@@ -27,6 +29,7 @@ export async function GET(req: NextRequest) {
       name: r.name,
       description: r.description ?? null,
       profilePhotoUrl: r.profile_photo_url ?? null,
+      bannerUrl: r.banner_url ?? null,
       visibility: r.visibility,
       joinPolicy: r.join_policy,
       isMember: Boolean(r.is_member),

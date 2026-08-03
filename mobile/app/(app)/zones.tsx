@@ -19,9 +19,9 @@ function ZoneCard({ zone }: { zone: MobileZone }) {
     >
       {/* Banner / cover image */}
       <View className="w-full bg-zinc-200 dark:bg-zinc-800" style={{ height: CARD_WIDTH * 0.55 }}>
-        {zone.profilePhotoUrl ? (
+        {zone.bannerUrl ? (
           <Image
-            source={{ uri: zone.profilePhotoUrl }}
+            source={{ uri: zone.bannerUrl }}
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
           />

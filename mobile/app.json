@@ -11,6 +11,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#09090B"
       },
+      "googleServicesFile": "./google-services.json",
       "package": "ge.gspot.mobile",
       "permissions": [
         "android.permission.READ_MEDIA_IMAGES",

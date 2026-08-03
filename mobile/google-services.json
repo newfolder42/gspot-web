@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "562207478575",
+    "project_id": "gspot-mobile",
+    "storage_bucket": "gspot-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562207478575:android:78ab60a6f34e764592c7da",
+        "android_client_info": {
+          "package_name": "ge.gspot.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhFz28H4sYpK9taxudUi7Y6KgTS4TQp_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { notificationsApi } from '@/lib/notifications';
+import { openNotificationRoute } from '@/lib/notificationRouting';
 import {
   getNotificationContentMessage,
   getNotificationRoute,
@@ -88,21 +89,6 @@ function NotificationIcon({ notification }: { notification: NotificationType }) 
   }
 
   return <Feather name={iconNameByType(type)} size={16} color="#71717A" />;
-}
-
-async function openNotificationRoute(notification: NotificationType, router: ReturnType<typeof useRouter>) {
-  const route = getNotificationRoute(notification);
-  if (!route) return;
-
-  const postMatch = route.match(/^\/post\/(\d+)/);
-  if (postMatch) {
-    router.push({ pathname: '/(app)/post/[id]', params: { id: postMatch[1] } });
-    return;
-  }
-
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'https://gspot.ge';
-  const url = `${baseUrl.replace(/\/$/, '')}${route}`;
-  await Linking.openURL(url);
 }
 
 function NotificationRow({
@@ -209,7 +195,7 @@ export default function NotificationsScreen() {
       await setSeenMutation.mutateAsync({ id: item.id, seen: true });
     }
     try {
-      await openNotificationRoute(item, router);
+      await openNotificationRoute(getNotificationRoute(item), router);
     } catch {
       Alert.alert('ინფორმაცია', 'შეტყობინების ბმულის გახსნა ვერ მოხერხდა');
     }

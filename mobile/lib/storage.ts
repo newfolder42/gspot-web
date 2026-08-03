@@ -4,6 +4,7 @@ const KEYS = {
   ACCESS_TOKEN: 'gspot_access_token',
   REFRESH_TOKEN: 'gspot_refresh_token',
   USER: 'gspot_user',
+  PUSH_TOKEN: 'gspot_push_token',
 } as const;
 
 export type StoredUser = {
@@ -42,11 +43,25 @@ export const storage = {
     await SecureStore.setItemAsync(KEYS.USER, JSON.stringify(user));
   },
 
+  /** The Expo push token last accepted by the server, kept so logout can unregister it. */
+  async getPushToken(): Promise<string | null> {
+    return SecureStore.getItemAsync(KEYS.PUSH_TOKEN);
+  },
+
+  async setPushToken(token: string): Promise<void> {
+    await SecureStore.setItemAsync(KEYS.PUSH_TOKEN, token);
+  },
+
+  async deletePushToken(): Promise<void> {
+    await SecureStore.deleteItemAsync(KEYS.PUSH_TOKEN);
+  },
+
   async clear(): Promise<void> {
     await Promise.all([
       SecureStore.deleteItemAsync(KEYS.ACCESS_TOKEN),
       SecureStore.deleteItemAsync(KEYS.REFRESH_TOKEN),
       SecureStore.deleteItemAsync(KEYS.USER),
+      SecureStore.deleteItemAsync(KEYS.PUSH_TOKEN),
     ]);
   },
 };
