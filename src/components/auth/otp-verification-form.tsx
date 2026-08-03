@@ -207,9 +207,12 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
         )}
       </div>
 
-      <div className="mt-6 p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+      <div className="mt-6 p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg space-y-1">
         <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
           💡 კოდი მოქმედებს 10 წუთის განმავლობაში
+        </p>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
+          📩 თუ წერილი არ ჩანს, გთხოვ შეამოწმო სპამის (Spam/Junk) საქაღალდეც
         </p>
       </div>
     </div>

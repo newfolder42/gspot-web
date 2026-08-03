@@ -96,12 +96,15 @@ packagingOptions {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'ge.gspot.mobile'
-    // Use CMake 4.1.2 (ninja 1.12.1) for the app's codegen native build so the
-    // long (>260 char) Windows object paths in the new-architecture codegen
-    // (e.g. react-native-gesture-handler shadow nodes) build successfully.
-    externalNativeBuild {
-        cmake {
-            version '4.1.2'
+    // Windows only: use CMake 4.1.2 (ninja 1.12.1) for the app's codegen native
+    // build so the long (>260 char) Windows object paths in the new-architecture
+    // codegen (e.g. react-native-gesture-handler shadow nodes) build successfully.
+    // Other hosts keep AGP's default, which is what EAS Build has installed.
+    if (rootProject.ext.isWindowsHost) {
+        externalNativeBuild {
+            cmake {
+                version '4.1.2'
+            }
         }
     }
     defaultConfig {

@@ -79,7 +79,13 @@ export default function VerifyOTPScreen() {
         <Text className="text-zinc-500 dark:text-zinc-400 text-sm mb-1">
           გთხოვ შეიყვანე 6-ნიშნა კოდი რომელიც გამოგზავნილია:
         </Text>
-        <Text className="text-zinc-700 dark:text-zinc-300 font-medium text-sm mb-6">{email}</Text>
+        <Text className="text-zinc-700 dark:text-zinc-300 font-medium text-sm mb-3">{email}</Text>
+
+        <View className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-3 mb-6">
+          <Text className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
+            📩 თუ წერილი არ ჩანს, გთხოვ შეამოწმო სპამის (Spam/Junk) საქაღალდეც
+          </Text>
+        </View>
 
         {/* 6-box OTP input */}
         <View className="flex-row justify-center gap-2 mb-6">
