@@ -6,7 +6,12 @@ node_modules/
 dist/
 build/
 
-# Android / iOS local build outputs
+# Android / iOS local build outputs.
+# These are NOT uploaded, so EAS regenerates them with `expo prebuild` from
+# app.json — app.json is the single source of truth for anything that ships.
+# Never hand-edit android/: change app.json and re-run `npx expo prebuild -p android`.
+# The committed android/ exists only for local Windows builds (see the CMake 4.1.2
+# pin in android/build.gradle, which is Windows-guarded and absent on EAS by design).
 android/
 ios/
 

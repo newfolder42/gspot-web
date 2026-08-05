@@ -1,9 +1,15 @@
 import '../global.css';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+
+// Keep the native splash up until the stored session has been read, so the app
+// never flashes the login screen at an already-signed-in user.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,13 +20,27 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Lives inside AuthProvider so it can watch the session restore, which is the
+ * last thing the splash is waiting on.
+ */
+function SplashGate() {
+  const { isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading) SplashScreen.hideAsync().catch(() => {});
+  }, [isLoading]);
+
+  return <Slot />;
+}
+
 export default function RootLayout() {
   return (
     <KeyboardProvider>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <StatusBar style="auto" />
-          <Slot />
+          <SplashGate />
         </QueryClientProvider>
       </AuthProvider>
     </KeyboardProvider>

@@ -20,6 +20,13 @@
         "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
+    "ios": {
+      "bundleIdentifier": "ge.gspot.mobile",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
@@ -39,6 +46,21 @@
           "icon": "./assets/icon.png",
           "color": "#14B8A6",
           "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAFAFA",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "imageWidth": 220,
+            "resizeMode": "contain",
+            "backgroundColor": "#09090B"
+          }
         }
       ]
     ],
