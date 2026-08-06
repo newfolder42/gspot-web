@@ -83,7 +83,7 @@ export default function VerifyOTPScreen() {
 
         <View className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-3 mb-6">
           <Text className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
-            📩 თუ წერილი არ ჩანს, გთხოვ შეამოწმო სპამის (Spam/Junk) საქაღალდეც
+            📩 გთხოვ მეილი ასევე შეამოწმო სპამის (Spam/Junk) საქაღალდეშიც
           </Text>
         </View>
 

@@ -212,7 +212,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
           💡 კოდი მოქმედებს 10 წუთის განმავლობაში
         </p>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
-          📩 თუ წერილი არ ჩანს, გთხოვ შეამოწმო სპამის (Spam/Junk) საქაღალდეც
+          📩 გთხოვ მეილი ასევე შეამოწმო სპამის (Spam/Junk) საქაღალდეშიც
         </p>
       </div>
     </div>
