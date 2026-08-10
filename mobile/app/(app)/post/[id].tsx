@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { postsApi } from '@/lib/posts';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PostCommentType } from '@/types/post-comment';
@@ -410,18 +411,19 @@ export default function PostPageScreen() {
                     key={idx}
                     style={{ width: questPhotos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }}
                   >
-                    <View className="flex-1 relative bg-zinc-100 dark:bg-zinc-900">
-                      <Image
-                        source={{ uri: photo.variants?.feed ?? photo.url }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
+                    <ZoomableImage
+                      uri={photo.variants?.feed ?? photo.url}
+                      fullUri={photo.url}
+                      title={photo.objectiveTitle}
+                      className="flex-1 relative bg-zinc-100 dark:bg-zinc-900"
+                      resizeMode="cover"
+                    >
                       {photo.objectiveTitle ? (
-                        <View className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+                        <View pointerEvents="none" className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
                           <Text className="text-xs font-medium text-white" numberOfLines={1}>{photo.objectiveTitle}</Text>
                         </View>
                       ) : null}
-                    </View>
+                    </ZoomableImage>
                   </View>
                 ))}
               </View>
@@ -429,7 +431,12 @@ export default function PostPageScreen() {
           ) : null
         ) : post.image ? (
           <View className="bg-black">
-            <Image source={{ uri: post.image }} className="w-full h-80" resizeMode="contain" />
+            <ZoomableImage
+              uri={post.image}
+              title={post.title}
+              className="w-full h-80"
+              resizeMode="contain"
+            />
           </View>
         ) : null}
 

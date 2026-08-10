@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { QuestObjectiveCapture } from '@/components/zone/QuestObjectiveCapture';
 import { questsApi } from '@/lib/quests';
 import { formatPhotoTakenDate } from '@/lib/dates';
@@ -212,7 +213,13 @@ export default function QuestDetailScreen() {
           <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">სხვების ნამუშევრები</Text>
           <View className="flex-row flex-wrap gap-2">
             {gallery.map((photo) => (
-              <Image key={`${photo.userId}-${photo.objectiveId}`} source={{ uri: photo.photoUrl }} className="w-24 h-24 rounded-md bg-zinc-200 dark:bg-zinc-800" resizeMode="cover" />
+              <ZoomableImage
+                key={`${photo.userId}-${photo.objectiveId}`}
+                uri={photo.photoUrl}
+                title={photo.userAlias}
+                className="w-24 h-24 rounded-md overflow-hidden bg-zinc-200 dark:bg-zinc-800"
+                resizeMode="cover"
+              />
             ))}
           </View>
         </View>

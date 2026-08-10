@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Modal,
   Pressable,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { PinchZoomImage } from '@/components/ui/ZoomableImage';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { postsApi } from '@/lib/posts';
 import type { MobilePostType } from '@/types/post';
@@ -18,6 +19,15 @@ import type { GuessResult } from '@/types/post-guess';
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
 type Phase = 'placing' | 'submitting' | 'result' | 'error';
+
+/**
+ * The photo is either hidden, sharing the screen with the map as a band, or
+ * blown up over the map — the web toggles image/map the same way, except there
+ * the photo always takes the whole screen.
+ */
+type ImageMode = 'hidden' | 'band' | 'full';
+
+const IMAGE_BAND_HEIGHT = 260;
 
 /**
  * Teardrop pin matching the web's default mapbox marker: the tip — not the
@@ -87,7 +97,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   const [phase, setPhase] = useState<Phase>('placing');
   const [guessCoords, setGuessCoords] = useState<[number, number]>(mapDefaultCenter); // [lng, lat]
   const [result, setResult] = useState<GuessResult | null>(null);
-  const [showImage, setShowImage] = useState(false);
+  const [imageMode, setImageMode] = useState<ImageMode>('hidden');
 
   const handleMapPress = (e: GeoJSON.Feature<GeoJSON.Point>) => {
     if (phase !== 'placing') return;
@@ -95,6 +105,8 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   };
 
   const handleSubmit = async () => {
+    // The result lands on the map, so get the photo out of the way first.
+    setImageMode((m) => (m === 'full' ? 'band' : m));
     setPhase('submitting');
     try {
       const res = await postsApi.addGuess(post.id, {
@@ -138,11 +150,15 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           <View className="flex-row items-center gap-2">
             {post.image ? (
               <Pressable
-                onPress={() => setShowImage((v) => !v)}
+                onPress={() => setImageMode((m) => (m === 'hidden' ? 'band' : 'hidden'))}
                 className="p-2 rounded-md bg-zinc-800"
                 hitSlop={8}
               >
-                <Feather name={showImage ? 'map-pin' : 'image'} size={18} color="#E4E4E7" />
+                <Feather
+                  name={imageMode === 'hidden' ? 'image' : 'map-pin'}
+                  size={18}
+                  color="#E4E4E7"
+                />
               </Pressable>
             ) : null}
             <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
@@ -151,14 +167,17 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           </View>
         </View>
 
-        {/* Image panel — toggleable */}
-        {showImage && post.image ? (
-          <View className="w-full bg-black" style={{ height: 260 }}>
-            <Image
-              source={{ uri: post.image }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="contain"
-            />
+        {/* Image panel — toggleable, pinch and double-tap to zoom */}
+        {imageMode === 'band' && post.image ? (
+          <View className="w-full bg-black" style={{ height: IMAGE_BAND_HEIGHT }}>
+            <PinchZoomImage uri={post.image} style={{ flex: 1 }} resizeMode="contain" />
+            <Pressable
+              onPress={() => setImageMode('full')}
+              className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
+              hitSlop={8}
+            >
+              <Feather name="maximize-2" size={16} color="#E4E4E7" />
+            </Pressable>
           </View>
         ) : null}
 
@@ -263,6 +282,20 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
               <View className="rounded-xl bg-rose-950 px-4 py-3">
                 <Text className="text-sm text-rose-200 text-center">შეცდომა. სცადე ხელახლა.</Text>
               </View>
+            </View>
+          ) : null}
+
+          {/* Expanded photo - covers the map, which stays mounted underneath */}
+          {imageMode === 'full' && post.image ? (
+            <View style={StyleSheet.absoluteFill} className="bg-black">
+              <PinchZoomImage uri={post.image} style={{ flex: 1 }} resizeMode="contain" />
+              <Pressable
+                onPress={() => setImageMode('band')}
+                className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
+                hitSlop={8}
+              >
+                <Feather name="minimize-2" size={16} color="#E4E4E7" />
+              </Pressable>
             </View>
           ) : null}
         </View>
