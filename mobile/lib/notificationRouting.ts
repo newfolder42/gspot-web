@@ -18,6 +18,12 @@ export async function openNotificationRoute(route: string | null, router: Router
   const segments = path.split('/').filter(Boolean);
   const commentId = search.match(/(?:^|&)commentId=([^&]+)/)?.[1];
 
+  // /?story=own — the feed-event reaction notification opens your own "ამბები"
+  if (segments.length === 0 && /(?:^|&)story=own(?:&|$)/.test(search)) {
+    router.push({ pathname: '/(app)/(tabs)', params: { story: 'own' } });
+    return;
+  }
+
   // /post/:id[?commentId=]
   if (segments[0] === 'post' && segments[1]) {
     router.push({

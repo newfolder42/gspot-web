@@ -23,6 +23,7 @@ export function NotificationIcon({ type, details, className }: { type: Notificat
       return (details as NotificationPostVoteCreatedDetailsType | undefined)?.value === -1
         ? <DownvoteIcon className={cls} />
         : <UpvoteIcon className={cls} />;
+    case 'feed-event-reaction': return <UpvoteIcon className={cls} />;
     case 'post-reward-created': return <GiftIcon className={cls} />;
     case 'comment-reward-created': return <GiftIcon className={cls} />;
     case 'zone-member-invitation': return <CompassIcon className={cls} />;

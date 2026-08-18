@@ -31,11 +31,20 @@ export default function FeedEvents() {
 
   useEffect(() => {
     let cancelled = false;
+    // ?story=own — deep link used by the "მოიწონა შენი ამბავი" notification
+    const wantsOwn = new URLSearchParams(window.location.search).get('story') === 'own';
+
     loadFeedEventStrip()
       .then(({ bubbles, own }) => {
         if (cancelled) return;
         setBubbles(bubbles);
         setOwn(own);
+        if (wantsOwn && own.length > 0) {
+          setViewer({ mode: 'own', events: own });
+          const url = new URL(window.location.href);
+          url.searchParams.delete('story');
+          window.history.replaceState(null, '', url.pathname + url.search);
+        }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

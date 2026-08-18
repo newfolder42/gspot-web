@@ -6,6 +6,7 @@ type ApiErrorBody = { error?: string };
 const ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'ავტორიზაცია ამოიწურა. თავიდან შედი ანგარიშზე.',
   INVALID_INPUT: 'შეყვანილი მონაცემები არასწორია.',
+  NOT_ALLOWED: 'ამ ამბავზე რეაქცია ვერ დაფიქსირდა.',
   SERVER_ERROR: 'სერვერის შეცდომა. სცადე მოგვიანებით.',
 };
 
@@ -44,6 +45,14 @@ export const feedEventsApi = {
 
   markSeen: (eventId: number): Promise<void> =>
     call(() => apiClient.post(`/feed/events/${eventId}/seen`).then(() => undefined)),
+
+  /** One-time upvote on someone else's event. Idempotent server-side. */
+  react: (eventId: number): Promise<{ ok: boolean; reacted: boolean }> =>
+    call(() =>
+      apiClient
+        .post<{ ok: boolean; reacted: boolean }>(`/feed/events/${eventId}/react`)
+        .then((r) => r.data)
+    ),
 
   /** Followers who viewed your own event. Empty unless you authored it. */
   getViewers: (eventId: number): Promise<FeedEventViewer[]> =>

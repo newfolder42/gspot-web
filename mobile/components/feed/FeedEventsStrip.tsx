@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { FeedEventViewer } from '@/components/feed/FeedEventViewer';
@@ -59,6 +60,8 @@ function BubblePreview({
  */
 export function FeedEventsStrip() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { story } = useLocalSearchParams<{ story?: string }>();
   const [openingKey, setOpeningKey] = useState<string | null>(null);
   const [viewer, setViewer] = useState<
     { mode: 'others'; events: FeedEvent[] } | { mode: 'own'; events: OwnFeedEvent[] } | null
@@ -72,6 +75,14 @@ export function FeedEventsStrip() {
 
   const bubbles = data?.bubbles ?? [];
   const own = data?.own ?? [];
+
+  // story=own — deep link used by the "მოიწონა შენი ამბავი" notification. The
+  // param is cleared once consumed so returning to the tab doesn't reopen it.
+  useEffect(() => {
+    if (story !== 'own' || own.length === 0) return;
+    setViewer({ mode: 'own', events: own });
+    router.setParams({ story: undefined });
+  }, [story, own, router]);
 
   const openGroup = async (groupKey: string) => {
     if (openingKey) return;

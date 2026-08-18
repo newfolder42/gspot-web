@@ -7,6 +7,7 @@ import {
   getFeedEventViewers,
   getOwnFeedEvents,
   markFeedEventSeen,
+  reactToFeedEvent,
 } from '@/lib/feedEvents';
 import { FeedEvent, FeedEventBubble, FeedEventViewer, OwnFeedEvent } from '@/types/feed-event';
 
@@ -33,6 +34,12 @@ export async function seeFeedEvent(eventId: number): Promise<{ ok: boolean }> {
   if (!user) return { ok: false };
   await markFeedEventSeen(user.userId, eventId);
   return { ok: true };
+}
+
+export async function reactFeedEvent(eventId: number): Promise<{ ok: boolean; reacted: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, reacted: false };
+  return reactToFeedEvent(user.userId, user.alias, eventId);
 }
 
 export async function loadFeedEventViewers(eventId: number): Promise<FeedEventViewer[]> {

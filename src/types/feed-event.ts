@@ -51,6 +51,8 @@ export type FeedEvent = {
   actorAlias: string;
   actorLevel: number | null;
   seen: boolean;
+  /** Whether the current viewer has already reacted (upvoted) to this event. */
+  reacted: boolean;
   details: FeedEventDetails;
 };
 
@@ -65,13 +67,14 @@ export type FeedEventBubble = {
   latestAt: string;
 };
 
-/** Own event, augmented with how many followers have viewed it. */
-export type OwnFeedEvent = FeedEvent & { seenCount: number };
+/** Own event, augmented with how many followers have viewed / reacted to it. */
+export type OwnFeedEvent = FeedEvent & { seenCount: number; reactionCount: number };
 
 export type FeedEventViewer = {
   alias: string;
   level: number | null;
   seenAt: string;
+  reacted: boolean;
 };
 
 export function feedEventTitle(details: FeedEventDetails, type: FeedEventType): string {

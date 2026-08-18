@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { OwnFeedEvent } from '@/types/feed-event';
-import { seeFeedEvent } from '@/actions/feedEvents';
-import { XIcon } from './icons';
+import { seeFeedEvent, reactFeedEvent } from '@/actions/feedEvents';
+import { UpvoteIcon, XIcon } from './icons';
 import FeedEventViewersModal from './feed-event-viewers-modal';
 import { Slide } from './feed-event-slide-header';
 import { QuestSlide } from './feed-event-quest-slide';
@@ -36,6 +36,10 @@ function ChevronRight({ className = 'w-6 h-6' }: { className?: string }) {
 export default function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Props) {
   const [index, setIndex] = useState(initialIndex);
   const [viewersFor, setViewersFor] = useState<number | null>(null);
+  // ids reacted to in this session — the slide objects are mutated too, this
+  // set is what actually re-renders the button
+  const [reactedIds, setReactedIds] = useState<Set<number>>(new Set());
+  const [reacting, setReacting] = useState(false);
 
   const current = events[index];
   const count = events.length;
@@ -55,6 +59,22 @@ export default function FeedEventViewer({ events, mode, initialIndex = 0, onClos
       current.seen = true;
     }
   }, [current, mode]);
+
+  const hasReacted = !!current && (current.reacted || reactedIds.has(current.id));
+
+  const react = async () => {
+    if (!current || reacting || hasReacted) return;
+    setReacting(true);
+    try {
+      const res = await reactFeedEvent(current.id);
+      if (res.reacted) {
+        current.reacted = true;
+        setReactedIds((prev) => new Set(prev).add(current.id));
+      }
+    } finally {
+      setReacting(false);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -100,16 +120,36 @@ export default function FeedEventViewer({ events, mode, initialIndex = 0, onClos
             <AchievementSlide event={current} />
           )}
 
-          {mode === 'own' && (
+          {mode === 'own' ? (
             <button
               onClick={() => setViewersFor(current.id)}
-              className="w-full flex items-center justify-center gap-1.5 py-3 text-sm text-zinc-500 hover:text-zinc-800 dark:text-white/80 dark:hover:text-white border-t border-zinc-200 dark:border-white/10"
+              className="w-full flex items-center justify-center gap-4 py-3 text-sm text-zinc-500 hover:text-zinc-800 dark:text-white/80 dark:hover:text-white border-t border-zinc-200 dark:border-white/10"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              ნანახია {(current as OwnFeedEvent).seenCount}
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                ნანახია {(current as OwnFeedEvent).seenCount}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <UpvoteIcon className="w-4 h-4" />
+                {(current as OwnFeedEvent).reactionCount}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={react}
+              disabled={hasReacted || reacting}
+              aria-pressed={hasReacted}
+              className={`w-full flex items-center justify-center gap-1.5 py-3 text-sm border-t border-zinc-200 dark:border-white/10 disabled:cursor-default ${
+                hasReacted
+                  ? 'text-teal-600 dark:text-teal-400'
+                  : 'text-zinc-500 hover:text-teal-600 dark:text-white/80 dark:hover:text-teal-400 cursor-pointer'
+              }`}
+            >
+              <UpvoteIcon className="w-4 h-4" />
+              {hasReacted ? 'მოწონებული' : 'მომწონს'}
             </button>
           )}
         </div>

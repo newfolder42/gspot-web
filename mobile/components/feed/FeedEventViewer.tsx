@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dimensions, Image, Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { FeedEventViewersModal } from '@/components/feed/FeedEventViewersModal';
@@ -192,6 +192,10 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
   const router = useRouter();
   const [index, setIndex] = useState(initialIndex);
   const [viewersFor, setViewersFor] = useState<number | null>(null);
+  // ids reacted to in this session — the slide objects are mutated too, this
+  // set is what actually re-renders the button
+  const [reactedIds, setReactedIds] = useState<Set<number>>(new Set());
+  const [reacting, setReacting] = useState(false);
 
   const current = events[index];
   const count = events.length;
@@ -206,6 +210,24 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
       feedEventsApi.markSeen(current.id).catch(() => {});
     }
   }, [current, mode]);
+
+  const hasReacted = !!current && (current.reacted || reactedIds.has(current.id));
+
+  const react = async () => {
+    if (!current || reacting || hasReacted) return;
+    setReacting(true);
+    try {
+      const res = await feedEventsApi.react(current.id);
+      if (res.reacted) {
+        current.reacted = true;
+        setReactedIds((prev) => new Set(prev).add(current.id));
+      }
+    } catch {
+      // a failed reaction just leaves the button as it was
+    } finally {
+      setReacting(false);
+    }
+  };
 
   const navigate = (path: any, params?: any) => {
     onClose();
@@ -251,14 +273,43 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
             {mode === 'own' ? (
               <Pressable
                 onPress={() => setViewersFor(current.id)}
+                className="flex-row items-center justify-center gap-4 py-3 border-t border-zinc-200 dark:border-zinc-800"
+              >
+                <View className="flex-row items-center gap-1.5">
+                  <Feather name="eye" size={15} color="#71717A" />
+                  <Text className="text-sm text-zinc-500 dark:text-zinc-400">
+                    ნანახია {(current as OwnFeedEvent).seenCount}
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                  <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#71717A" />
+                  <Text className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {(current as OwnFeedEvent).reactionCount}
+                  </Text>
+                </View>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={react}
+                disabled={hasReacted || reacting}
                 className="flex-row items-center justify-center gap-1.5 py-3 border-t border-zinc-200 dark:border-zinc-800"
               >
-                <Feather name="eye" size={15} color="#71717A" />
-                <Text className="text-sm text-zinc-500 dark:text-zinc-400">
-                  ნანახია {(current as OwnFeedEvent).seenCount}
+                <MaterialCommunityIcons
+                  name="arrow-up-bold"
+                  size={16}
+                  color={hasReacted ? '#14B8A6' : '#71717A'}
+                />
+                <Text
+                  className={
+                    hasReacted
+                      ? 'text-sm text-teal-600 dark:text-teal-400'
+                      : 'text-sm text-zinc-500 dark:text-zinc-400'
+                  }
+                >
+                  {hasReacted ? 'მოწონებული' : 'მომწონს'}
                 </Text>
               </Pressable>
-            ) : null}
+            )}
           </View>
 
           {/* Paging taps – left third back, right third forward. Sits above the

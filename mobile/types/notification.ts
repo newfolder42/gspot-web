@@ -13,6 +13,7 @@ export type NotificationType = {
     | 'comment-vote-created'
     | 'post-reward-created'
     | 'comment-reward-created'
+    | 'feed-event-reaction'
     | 'zone-member-invitation'
     | 'zone-quest-created'
     | 'zone-quest-objective-submitted'
@@ -34,6 +35,7 @@ export type NotificationType = {
     | NotificationPostCommentCreatedDetailsType
     | NotificationPostVoteCreatedDetailsType
     | NotificationPostRewardCreatedDetailsType
+    | NotificationFeedEventReactionDetailsType
     | NotificationZoneMemberInvitationDetailsType
     | NotificationZoneQuestCreatedDetailsType
     | NotificationZoneQuestObjectiveSubmittedDetailsType
@@ -123,6 +125,14 @@ export type NotificationPostRewardCreatedDetailsType = {
   rewardName: string;
   giverId: number;
   giverAlias: string;
+};
+
+export type NotificationFeedEventReactionDetailsType = {
+  eventId: number;
+  eventType: string;
+  reaction: 'upvote';
+  reactorId: number;
+  reactorAlias: string;
 };
 
 export type NotificationZoneMemberInvitationDetailsType = {
@@ -243,6 +253,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationPostRewardCreatedDetailsType;
       return `${d.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${d.rewardName}`;
     }
+    case 'feed-event-reaction': {
+      const d = details as NotificationFeedEventReactionDetailsType;
+      return `${d.reactorAlias}-მა მოიწონა შენი ამბავი`;
+    }
     case 'zone-member-invitation': {
       const d = details as NotificationZoneMemberInvitationDetailsType;
       return `${d.userAlias}-მა მოგიწვია საბზონაში: ${d.zoneSlug}`;
@@ -326,6 +340,10 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'comment-reward-created': {
       const d = notification.details as NotificationPostRewardCreatedDetailsType;
       return d.commentId ? `/post/${d.postId}?commentId=${d.commentId}` : `/post/${d.postId}`;
+    }
+    case 'feed-event-reaction': {
+      // opens the "ამბები" strip on the home feed with the user's own stories
+      return `/?story=own`;
     }
     case 'zone-member-invitation': {
       const d = notification.details as NotificationZoneMemberInvitationDetailsType;

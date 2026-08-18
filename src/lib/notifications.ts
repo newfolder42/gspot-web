@@ -174,6 +174,9 @@ async function sendPushForNotification(userId: number, type: string, details: Re
     case 'post-reward-created':
       body = `${details.giverAlias}-მა დააჯილდოვა შენი პოსტი: ${details.rewardName}`;
       break;
+    case 'feed-event-reaction':
+      body = `${details.reactorAlias}-მა მოიწონა შენი ამბავი`;
+      break;
     case 'comment-reward-created':
       body = `${details.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${details.rewardName}`;
       break;

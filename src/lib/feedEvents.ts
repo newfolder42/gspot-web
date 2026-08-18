@@ -1,5 +1,7 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
+import { eventBus } from './eventBus';
+import type { FeedEventReactedEvent } from '@/types/events/feed-event-reacted';
 import {
   FeedEvent,
   FeedEventBubble,
@@ -40,6 +42,7 @@ function mapEvent(row: any): FeedEvent {
     actorAlias: row.actor_alias,
     actorLevel: row.actor_level != null ? Number(row.actor_level) : null,
     seen: Boolean(row.seen),
+    reacted: Boolean(row.reacted),
     details: row.details as FeedEventDetails,
   };
 }
@@ -100,11 +103,13 @@ export async function getFeedEventGroup(userId: number, groupKey: string): Promi
     const res = await query(
       `SELECT fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
               u.alias AS actor_alias, ux.level AS actor_level,
-              (fs.id IS NOT NULL) AS seen
+              (fs.id IS NOT NULL) AS seen,
+              (fr.id IS NOT NULL) AS reacted
        FROM feed_events fe
        JOIN users u ON u.id = fe.actor_id
        LEFT JOIN user_xp ux ON ux.user_id = fe.actor_id
        LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
+       LEFT JOIN feed_event_reactions fr ON fr.event_id = fe.id AND fr.user_id = $1
        WHERE fe.group_key = $2
          AND fe.created_at > ${VISIBLE_WINDOW}
          AND fe.actor_id <> $1
@@ -126,7 +131,8 @@ export async function getOwnFeedEvents(userId: number): Promise<OwnFeedEvent[]> 
     const res = await query(
       `SELECT fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
               u.alias AS actor_alias, ux.level AS actor_level,
-              (SELECT COUNT(*)::int FROM feed_event_seens s WHERE s.event_id = fe.id) AS seen_count
+              (SELECT COUNT(*)::int FROM feed_event_seens s WHERE s.event_id = fe.id) AS seen_count,
+              (SELECT COUNT(*)::int FROM feed_event_reactions r WHERE r.event_id = fe.id) AS reaction_count
        FROM feed_events fe
        JOIN users u ON u.id = fe.actor_id
        LEFT JOIN user_xp ux ON ux.user_id = fe.actor_id
@@ -137,8 +143,9 @@ export async function getOwnFeedEvents(userId: number): Promise<OwnFeedEvent[]> 
     );
 
     return res.rows.map((row: any) => ({
-      ...mapEvent({ ...row, seen: true }),
+      ...mapEvent({ ...row, seen: true, reacted: false }),
       seenCount: Number(row.seen_count),
+      reactionCount: Number(row.reaction_count),
     }));
   } catch (err) {
     await logerror('getOwnFeedEvents error', [err]);
@@ -164,13 +171,14 @@ export async function markFeedEventSeen(userId: number, eventId: number): Promis
 export async function getFeedEventViewers(ownerId: number, eventId: number): Promise<FeedEventViewer[]> {
   try {
     const res = await query(
-      `SELECT u.alias, ux.level, s.seen_at
+      `SELECT u.alias, ux.level, s.seen_at, (r.id IS NOT NULL) AS reacted
        FROM feed_event_seens s
        JOIN feed_events fe ON fe.id = s.event_id
        JOIN users u ON u.id = s.user_id
        LEFT JOIN user_xp ux ON ux.user_id = s.user_id
+       LEFT JOIN feed_event_reactions r ON r.event_id = s.event_id AND r.user_id = s.user_id
        WHERE s.event_id = $1 AND fe.actor_id = $2
-       ORDER BY s.seen_at DESC`,
+       ORDER BY reacted DESC, s.seen_at DESC`,
       [eventId, ownerId]
     );
 
@@ -178,9 +186,65 @@ export async function getFeedEventViewers(ownerId: number, eventId: number): Pro
       alias: row.alias,
       level: row.level != null ? Number(row.level) : null,
       seenAt: row.seen_at instanceof Date ? row.seen_at.toISOString() : String(row.seen_at),
+      reacted: Boolean(row.reacted),
     }));
   } catch (err) {
     await logerror('getFeedEventViewers error', [err]);
     return [];
+  }
+}
+
+/**
+ * Record the current user's one-time reaction (upvote) to someone else's event.
+ * Only allowed for events the user is actually able to see, and only once —
+ * a repeat call is a no-op that still reports `reacted: true`.
+ * Publishes `feed_event:reacted` on the first insert so the owner gets notified.
+ */
+export async function reactToFeedEvent(
+  userId: number,
+  alias: string,
+  eventId: number
+): Promise<{ ok: boolean; reacted: boolean }> {
+  try {
+    // authorize: the event must be visible to this user (and not their own)
+    const eventRes = await query(
+      `SELECT fe.id, fe.type, fe.actor_id, u.alias AS actor_alias
+       FROM feed_events fe
+       JOIN users u ON u.id = fe.actor_id
+       WHERE fe.id = $2
+         AND fe.created_at > ${VISIBLE_WINDOW}
+         AND fe.actor_id <> $1
+         AND ${VISIBILITY_FILTER}
+       LIMIT 1`,
+      [userId, eventId]
+    );
+    if ((eventRes.rowCount ?? 0) === 0) return { ok: false, reacted: false };
+    const event = eventRes.rows[0];
+
+    const insertRes = await query(
+      `INSERT INTO feed_event_reactions (event_id, user_id, type)
+       VALUES ($1, $2, 'upvote')
+       ON CONFLICT (event_id, user_id) DO NOTHING
+       RETURNING id`,
+      [eventId, userId]
+    );
+
+    // already reacted before -> nothing new to announce
+    if ((insertRes.rowCount ?? 0) === 0) return { ok: true, reacted: true };
+
+    await eventBus.publish('feed_event', 'reacted', {
+      eventId: +eventId,
+      eventType: event.type,
+      reaction: 'upvote',
+      reactorId: userId,
+      reactorAlias: alias,
+      ownerId: Number(event.actor_id),
+      ownerAlias: event.actor_alias,
+    } as FeedEventReactedEvent);
+
+    return { ok: true, reacted: true };
+  } catch (err) {
+    await logerror('reactToFeedEvent error', [err]);
+    return { ok: false, reacted: false };
   }
 }

@@ -77,6 +77,10 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
 function NotificationIcon({ notification }: { notification: NotificationType }) {
   const { type, details } = notification;
 
+  if (type === 'feed-event-reaction') {
+    return <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#71717A" />;
+  }
+
   if (type === 'post-vote-created' || type === 'comment-vote-created') {
     const isDownvote = (details as NotificationPostVoteCreatedDetailsType | undefined)?.value === -1;
     return (
