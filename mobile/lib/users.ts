@@ -3,18 +3,36 @@ import { uploadToSignedUrl } from '@/lib/upload';
 import type { MobilePostType } from '@/types/post';
 import type { UserGuess } from '@/types/guess';
 import type { AccountAchievement } from '@/types/achievement';
+import type { RewardDefinition } from '@/types/reward';
 import type { ClientConnection } from '@/types/connection';
 import type { UserStreakInfo } from '@/components/ui/StreakBadge';
 import type { NewUser } from '@/types/user';
+
+/** Mirrors web `XPInfo` from src/lib/xp.ts. */
+export type XPInfo = {
+  level: number;
+  currentXP: number;
+  xpForNextLevel: number;
+  totalXP: number;
+  levelStartXP: number;
+  levelEndXP: number;
+};
 
 export type PublicUserProfile = {
   user: { id: number; alias: string; age: number | null };
   profilePhoto: { id: number; url: string } | null;
   level: { xp: number; level: number } | null;
+  /** Table-driven level/progress, as shown by the web account header. */
+  xpInfo?: XPInfo | null;
   isOwnProfile: boolean;
   isFollowing: boolean;
   streak: UserStreakInfo;
   posts: MobilePostType[];
+};
+
+export type AchievementsResponse = {
+  achievements: AccountAchievement[];
+  rewardDefinitions: RewardDefinition[];
 };
 
 const enc = encodeURIComponent;
@@ -32,10 +50,13 @@ export const usersApi = {
   getGuesses: (alias: string): Promise<UserGuess[]> =>
     apiClient.get<{ guesses: UserGuess[] }>(`/users/${enc(alias)}/guesses`).then((r) => r.data.guesses),
 
-  getAchievements: (alias: string): Promise<AccountAchievement[]> =>
+  getAchievements: (alias: string): Promise<AchievementsResponse> =>
     apiClient
-      .get<{ achievements: AccountAchievement[] }>(`/users/${enc(alias)}/achievements`)
-      .then((r) => r.data.achievements),
+      .get<AchievementsResponse>(`/users/${enc(alias)}/achievements`)
+      .then((r) => ({
+        achievements: r.data.achievements ?? [],
+        rewardDefinitions: r.data.rewardDefinitions ?? [],
+      })),
 
   getConnections: (alias: string): Promise<ClientConnection[]> =>
     apiClient

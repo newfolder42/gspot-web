@@ -1,7 +1,7 @@
 import { Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { formatPhotoTakenDate } from '@/lib/dates';
@@ -23,42 +23,6 @@ function formatTimeAgo(timestamp: string): string {
 /** Mirrors web QuestCompletionTitle */
 function questCompletionTitle(questTitle: string | null | undefined): string {
   return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
-}
-
-/**
- * Overlay stats badge – mirrors web PostStatsBadge: vote score, then guesses
- * (gps posts only), then comments.
- */
-function StatsBadge({
-  voteScore,
-  guessCount,
-  commentCount,
-  className = 'absolute top-3 right-3',
-}: {
-  voteScore: number;
-  guessCount?: number | null;
-  commentCount: number;
-  className?: string;
-}) {
-  return (
-    <View
-      className={`${className} flex-row items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20`}
-      style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
-    >
-      <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#FAFAFA" />
-      <Text className="text-sm font-semibold text-zinc-50">{voteScore}</Text>
-      {guessCount != null ? (
-        <View className="flex-row items-center gap-1 ml-2">
-          <Feather name="map-pin" size={16} color="#FAFAFA" />
-          <Text className="text-sm font-semibold text-zinc-50">{guessCount}</Text>
-        </View>
-      ) : null}
-      <View className="flex-row items-center gap-1 ml-2">
-        <Feather name="message-circle" size={16} color="#FAFAFA" />
-        <Text className="text-sm font-semibold text-zinc-50">{commentCount}</Text>
-      </View>
-    </View>
-  );
 }
 
 /** Shared feed card – used by the global feed and the to-guess feed. */
@@ -151,14 +115,14 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
                 </View>
               ))}
             </View>
-            <StatsBadge voteScore={item.voteScore ?? 0} commentCount={item.commentCount ?? 0} />
+            <PostStatsBadge voteScore={item.voteScore ?? 0} commentCount={item.commentCount ?? 0} />
           </Pressable>
         ) : (
           <Pressable
             onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
             className="mx-2 mb-2 self-start"
           >
-            <StatsBadge
+            <PostStatsBadge
               voteScore={item.voteScore ?? 0}
               commentCount={item.commentCount ?? 0}
               className=""
@@ -186,7 +150,7 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
               </Text>
             </View>
           ) : null}
-          <StatsBadge
+          <PostStatsBadge
             voteScore={item.voteScore ?? 0}
             guessCount={item.guessCount ?? 0}
             commentCount={item.commentCount ?? 0}

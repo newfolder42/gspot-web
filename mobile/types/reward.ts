@@ -4,6 +4,25 @@ export type RewardTarget = 'post' | 'comment';
 
 export type RewardStatus = 'active' | 'disabled';
 
+/** A typed reward granted by a quest/achievement/milestone, shown as a tile. */
+export type UserXpRewardSpec = {
+  type: 'user-xp';
+  value: number;
+};
+
+export type CatalogRewardSpec = {
+  type: 'reward';
+  key: string;
+};
+
+/** Permanently raises the user's daily reward-giving quota by `value`. */
+export type RewardLimitRewardSpec = {
+  type: 'reward-limit';
+  value: number;
+};
+
+export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec;
+
 export type RewardDefinition = {
   key: string;
   name: string;

@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 /** Matches web LevelBadge exactly: tier-coloured rounded square, format "{N}დ". */
-function getLevelColor(level: number): string {
+export function getLevelColor(level: number): string {
   if (level >= 42) return '#F59E0B'; // amber-500
   if (level >= 30) return '#8B5CF6'; // violet-500
   if (level >= 20) return '#0EA5E9'; // sky-500

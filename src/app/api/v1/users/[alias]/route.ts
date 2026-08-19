@@ -3,6 +3,7 @@ import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getAccountByAlias } from '@/lib/account';
 import { getAccountPosts } from '@/lib/posts';
 import { getUserStreakInfo } from '@/lib/streaks';
+import { getLevelFromXp } from '@/lib/xp';
 import { logerror } from '@/lib/logger';
 
 type Context = { params: Promise<{ alias: string }> };
@@ -17,9 +18,10 @@ export async function GET(req: NextRequest, context: Context) {
     const account = await getAccountByAlias(alias, auth.user.userId);
     if (!account) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
 
-    const [posts, streak] = await Promise.all([
+    const [posts, streak, xpInfo] = await Promise.all([
       getAccountPosts(account.user.id, auth.user.userId, 20),
       getUserStreakInfo(account.user.id),
+      getLevelFromXp(account.level?.xp ?? 0),
     ]);
 
     return NextResponse.json({
@@ -30,6 +32,7 @@ export async function GET(req: NextRequest, context: Context) {
       },
       profilePhoto: account.profilePhoto,
       level: account.level,
+      xpInfo,
       isOwnProfile: account.isOwnProfile,
       isFollowing: !!account.connection,
       streak,

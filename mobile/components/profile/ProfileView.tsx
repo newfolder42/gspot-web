@@ -15,17 +15,21 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
+import { getLevelColor } from '@/components/ui/LevelBadge';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { GuessesTab } from '@/components/profile/GuessesTab';
 import { AchievementsTab } from '@/components/profile/AchievementsTab';
 import { ConnectionsTab } from '@/components/profile/ConnectionsTab';
-import { usersApi } from '@/lib/users';
+import { usersApi, type XPInfo } from '@/lib/users';
 import { processProfilePhoto } from '@/lib/image';
 import { formatAge } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
-const XP_PER_LEVEL = 100;
+const MAX_LEVEL = 42;
+/** Only used if the API response predates `xpInfo`. */
+const FALLBACK_XP_PER_LEVEL = 100;
 const COLUMNS = 3;
 const GAP = 2;
 const CELL_SIZE = (Dimensions.get('window').width - GAP * (COLUMNS + 1)) / COLUMNS;
@@ -40,16 +44,42 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'connections', label: 'კავშირები' },
 ];
 
-function XPBar({ xp, level }: { xp: number; level: number }) {
-  const progress = (xp % XP_PER_LEVEL) / XP_PER_LEVEL;
+/** Mirrors web QuestCompletionTitle. */
+function questCompletionTitle(questTitle: string | null | undefined): string {
+  return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
+}
+
+/** Thousands separator, standing in for web's `toLocaleString`. */
+function formatXp(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Mirrors web `components/xp-bar`: tier-coloured level label on the left,
+ * "progress / needed გმ" on the right, amber progress bar underneath.
+ */
+function XPBar({ info }: { info: XPInfo }) {
+  const isMaxLevel = info.level >= MAX_LEVEL;
+  const progress = info.xpForNextLevel > 0 ? info.currentXP / info.xpForNextLevel : 1;
+
   return (
-    <View>
-      <View className="flex-row justify-between mb-1">
-        <Text className="text-xs text-zinc-500 dark:text-zinc-400">დონე {level}</Text>
-        <Text className="text-xs text-zinc-500 dark:text-zinc-400">{xp} XP</Text>
+    <View className="w-full">
+      <View className="flex-row justify-between items-center gap-2 mb-2">
+        <Text numberOfLines={1} className="text-xs font-semibold" style={{ color: getLevelColor(info.level) }}>
+          დონე {info.level}
+          {isMaxLevel ? ' (მაქს)' : ''}
+        </Text>
+        <Text numberOfLines={1} className="text-xs text-zinc-500 dark:text-zinc-400">
+          {isMaxLevel
+            ? `${formatXp(info.totalXP)} გმ`
+            : `${formatXp(info.currentXP)} / ${formatXp(info.xpForNextLevel)} გმ`}
+        </Text>
       </View>
       <View className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
-        <View className="h-full rounded-full bg-amber-500" style={{ width: `${Math.min(progress * 100, 100)}%` }} />
+        <View
+          className="h-full rounded-full bg-amber-500"
+          style={{ width: `${Math.min(progress * 100, 100)}%` }}
+        />
       </View>
     </View>
   );
@@ -101,10 +131,30 @@ function PostsTab({ posts, header }: { posts: MobilePostType[]; header: ReactEle
                   </View>
                 )}
                 {isQuest ? (
-                  <View className="absolute top-1.5 left-1.5">
-                    <Feather name="flag" size={16} color="#FBBF24" />
-                  </View>
+                  <>
+                    <View className="absolute top-1.5 left-1.5">
+                      <Feather name="flag" size={16} color="#FBBF24" />
+                    </View>
+                    {post.questTitle ? (
+                      <View
+                        className="absolute bottom-0 inset-x-0 px-1.5 pt-3 pb-1"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+                      >
+                        <Text className="text-[10px] font-medium text-white" numberOfLines={1}>
+                          {questCompletionTitle(post.questTitle)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </>
                 ) : null}
+                {/* Vote / guess / comment counts, as on the web profile grid. */}
+                <PostStatsBadge
+                  className="absolute top-1.5 right-1.5"
+                  size="sm"
+                  voteScore={post.voteScore ?? 0}
+                  guessCount={isQuest ? null : (post.guessCount ?? 0)}
+                  commentCount={post.commentCount ?? 0}
+                />
               </Pressable>
             );
           })}
@@ -191,12 +241,24 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   }
 
   const { user, profilePhoto, level, posts, streak } = data;
+  // The API computes level/progress from the xp table (as web does); fall back to
+  // the raw user_xp row if the response predates `xpInfo`.
+  const xpInfo: XPInfo = data.xpInfo ?? {
+    level: level?.level ?? 1,
+    currentXP: (level?.xp ?? 0) % FALLBACK_XP_PER_LEVEL,
+    xpForNextLevel: FALLBACK_XP_PER_LEVEL,
+    totalXP: level?.xp ?? 0,
+    levelStartXP: 0,
+    levelEndXP: FALLBACK_XP_PER_LEVEL,
+  };
 
   // Header card + tab bar, shared by both the virtualized (posts/connections)
   // and the lightweight ScrollView (guesses/achievements) layouts below.
   const header = (
     <>
-      {/* Header */}
+      {/* Header card — same three blocks as the web account layout: identity row,
+          XP + streak row, then the tab bar. The XP row spans the full card width
+          so the follow button can never squeeze it (as it did on other profiles). */}
       <View className="mx-4 mt-4 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800">
         <View className="flex-row gap-4 items-center">
           <Pressable onPress={changeAvatar} disabled={!isOwn} className="relative">
@@ -211,51 +273,49 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
               </View>
             ) : null}
           </Pressable>
-          <View className="flex-1">
-            <Text className="text-xl font-bold text-zinc-900 dark:text-zinc-50">&apos;{user.alias}</Text>
+          <View className="flex-1" style={{ minWidth: 0 }}>
+            <Text numberOfLines={1} className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+              &apos;{user.alias}
+            </Text>
             {user.age != null ? (
               <Text className="text-xs text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
             ) : null}
-            {/* XP bar + streak flame, mirroring the web account header row. */}
-            <View className="mt-3 flex-row items-center gap-3">
-              {level ? (
-                <View className="flex-1">
-                  <XPBar xp={level.xp} level={level.level} />
-                </View>
-              ) : null}
-              {streak ? <StreakBadge streak={streak} /> : null}
-            </View>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{posts.length} პოსტი</Text>
           </View>
-          {!isOwn ? <FollowButton alias={alias} initialFollowing={data.isFollowing} /> : null}
+          {!isOwn ? (
+            <View style={{ flexShrink: 0 }}>
+              <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
+            </View>
+          ) : null}
         </View>
-        <View className="mt-3">
-          <Text className="text-sm text-zinc-500 dark:text-zinc-400">{posts.length} პოსტი</Text>
+
+        {/* XP bar + streak flame, mirroring the web account header row. */}
+        <View className="mt-4 flex-row items-center gap-3">
+          <View className="flex-1" style={{ minWidth: 0 }}>
+            <XPBar info={xpInfo} />
+          </View>
+          {streak ? <StreakBadge streak={streak} /> : null}
         </View>
       </View>
 
-      {/* Segmented tab bar */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}
-      >
+      {/* Underlined tab bar, mirroring web AccountTabs (wraps instead of scrolling). */}
+      <View className="flex-row flex-wrap px-4 pt-3 pb-1">
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
-            <Pressable
-              key={t.id}
-              onPress={() => setTab(t.id)}
-              className={`px-4 py-2 rounded-full border ${
-                active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-              }`}
-            >
-              <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
+            <Pressable key={t.id} onPress={() => setTab(t.id)} className="px-2 pt-2 pb-1 items-center">
+              <Text
+                className={`text-sm font-medium ${
+                  active ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'
+                }`}
+              >
                 {t.label}
               </Text>
+              <View className={`mt-1 h-0.5 w-full rounded ${active ? 'bg-teal-600' : 'bg-transparent'}`} />
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </>
   );
 

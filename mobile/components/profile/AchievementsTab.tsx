@@ -5,6 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { usersApi } from '@/lib/users';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import type { AccountAchievement } from '@/types/achievement';
+import type { RewardDefinition } from '@/types/reward';
+import { RewardSpecTiles } from '@/components/rewards/RewardSpecTiles';
 
 const CATEGORY_LABELS: Record<string, string> = {
   base: 'ძირითადი',
@@ -66,7 +68,18 @@ function progressPercent(item: AccountAchievement) {
   return Math.round((Math.min(item.progress, item.maxProgress) / item.maxProgress) * 100);
 }
 
-function AchievementCard({ item }: { item: AccountAchievement }) {
+// Reward tiles stay hidden for not-yet-started hidden achievements, as on web.
+function isSecret(item: AccountAchievement) {
+  return item.state === 'hidden' && !item.isAchieved && !item.inProgress;
+}
+
+function AchievementCard({
+  item,
+  rewardDefinitions,
+}: {
+  item: AccountAchievement;
+  rewardDefinitions: RewardDefinition[];
+}) {
   return (
     <View className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 mb-3">
       <View className="flex-row items-start gap-3">
@@ -99,6 +112,12 @@ function AchievementCard({ item }: { item: AccountAchievement }) {
           ) : null}
         </View>
       </View>
+
+      {!isSecret(item) && (item.rewards?.length ?? 0) > 0 ? (
+        <View className="mt-3">
+          <RewardSpecTiles rewards={item.rewards} definitions={rewardDefinitions} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -112,7 +131,8 @@ export function AchievementsTab({ alias }: { alias: string }) {
     enabled: !!alias,
   });
 
-  const achievements = useMemo(() => data ?? [], [data]);
+  const achievements = useMemo(() => data?.achievements ?? [], [data]);
+  const rewardDefinitions = useMemo(() => data?.rewardDefinitions ?? [], [data]);
 
   const visible = useMemo(
     () => (showAll ? achievements : compactMilestones(achievements)),
@@ -183,7 +203,7 @@ export function AchievementsTab({ alias }: { alias: string }) {
             {CATEGORY_LABELS[category] ?? category}
           </Text>
           {grouped[category].map((item) => (
-            <AchievementCard key={item.key} item={item} />
+            <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} />
           ))}
         </View>
       ))}

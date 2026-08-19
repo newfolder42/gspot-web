@@ -1,3 +1,5 @@
+import type { RewardSpec } from '@/types/reward';
+
 export type AchievementState = 'visible' | 'hidden';
 
 export type AccountAchievement = {
@@ -14,4 +16,5 @@ export type AccountAchievement = {
   achievedAt: string | null;
   inProgress: boolean;
   isAchieved: boolean;
+  rewards: RewardSpec[];
 };
