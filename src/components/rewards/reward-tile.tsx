@@ -1,5 +1,5 @@
 import type { RewardSpec, RewardDefinition } from '@/types/reward';
-import { ProgressIcon } from '@/components/icons';
+import { GiftIcon, ProgressIcon } from '@/components/icons';
 import RewardIcon from './reward-icons';
 
 export type RewardTileSize = 'sm' | 'md';
@@ -46,6 +46,17 @@ export function XpRewardTile({ xp, size = 'md' }: { xp: number; size?: RewardTil
   );
 }
 
+export function RewardLimitTile({ value, size = 'md' }: { value: number; size?: RewardTileSize }) {
+  return (
+    <div className="flex flex-col items-center gap-1 w-16">
+      <TileFrame size={size}>
+        <GiftIcon className={ICON_SIZE[size]} />
+      </TileFrame>
+      <TileLabel size={size}>+{value}</TileLabel>
+    </div>
+  );
+}
+
 export function CatalogRewardTile({ definition, size = 'md' }: { definition: RewardDefinition; size?: RewardTileSize }) {
   return (
     <div className="flex flex-col items-center gap-1 w-16">
@@ -73,6 +84,9 @@ export function RewardSpecTiles({
       {rewards.map((reward) => {
         if (reward.type === 'user-xp') {
           return <XpRewardTile key="user-xp" xp={reward.value} size={size} />;
+        }
+        if (reward.type === 'reward-limit') {
+          return <RewardLimitTile key="reward-limit" value={reward.value} size={size} />;
         }
         const definition = definitions.find((d) => d.key === reward.key);
         if (!definition) return null;

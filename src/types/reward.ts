@@ -10,7 +10,12 @@ export type CatalogRewardSpec = {
   key: string;
 };
 
-export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec;
+export type RewardLimitRewardSpec = {
+  type: 'reward-limit';
+  value: number;
+};
+
+export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec;
 
 export const QUEST_XP_MIN = 100;
 export const QUEST_XP_MAX = 1000;
@@ -19,6 +24,12 @@ export const QUEST_XP_DEFAULT = 200;
 export function getRewardSpecXp(rewards: RewardSpec[]): number | null {
   const spec = rewards.find((r): r is UserXpRewardSpec => r.type === 'user-xp');
   return spec ? spec.value : null;
+}
+
+export function getRewardSpecLimitIncrease(rewards: RewardSpec[]): number {
+  return rewards
+    .filter((r): r is RewardLimitRewardSpec => r.type === 'reward-limit')
+    .reduce((sum, r) => sum + r.value, 0);
 }
 
 export function getCatalogRewardKeys(rewards: RewardSpec[]): string[] {

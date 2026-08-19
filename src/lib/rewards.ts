@@ -120,6 +120,20 @@ export async function setUserDailyRewardLimit(userId: number, dailyLimit: number
   }
 }
 
+export async function increaseUserDailyRewardLimit(userId: number, increase: number): Promise<void> {
+  try {
+    await query(
+      `insert into user_reward_limits (user_id, daily_limit) values ($1, $2)
+       on conflict (user_id) do update
+         set daily_limit = user_reward_limits.daily_limit + $3,
+             updated_at = now()`,
+      [userId, DEFAULT_DAILY_REWARD_LIMIT + increase, increase]
+    );
+  } catch (err) {
+    await logerror('increaseUserDailyRewardLimit error', [err]);
+  }
+}
+
 async function getRewardsGivenTodayCount(userId: number): Promise<number> {
   const res = await query(
     `select count(*)::int as cnt from post_rewards
