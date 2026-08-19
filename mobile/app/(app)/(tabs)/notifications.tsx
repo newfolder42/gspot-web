@@ -107,7 +107,7 @@ function NotificationRow({
   return (
     <Pressable
       onPress={() => onPress(item)}
-      className="relative pl-6 pr-4 py-2 border-b border-zinc-100 dark:border-zinc-800 active:bg-zinc-100 dark:active:bg-zinc-700"
+      className="relative pl-6 pr-12 py-2 border-b border-zinc-100 dark:border-zinc-800 active:bg-zinc-100 dark:active:bg-zinc-700"
     >
       {/* Unseen dot – matches web: left-2 top-4 h-1 w-1 bg-teal-600 */}
       {!item.seen ? (
@@ -121,14 +121,25 @@ function NotificationRow({
 
         <View className="flex-1">
           <Text className="text-sm text-zinc-600 dark:text-zinc-400 leading-5">{getNotificationContentMessage(item.type, item.details)}</Text>
-          <View className="mt-1 flex-row items-center justify-between">
-            <Text className="text-xs text-zinc-500">{formatTimeAgo(item.timestamp)}</Text>
-            <Pressable onPress={() => onToggleSeen(item)} hitSlop={8}>
-              <Text className="text-xs text-teal-600 dark:text-teal-400">{item.seen ? 'მონიშნე წაუკითხავად' : 'მონიშნე წაკითხულად'}</Text>
-            </Pressable>
-          </View>
+          <Text className="mt-1 text-xs text-zinc-500">{formatTimeAgo(item.timestamp)}</Text>
         </View>
       </View>
+
+      {/* Web puts this behind a ⋯ menu; on mobile a one-item menu is two taps for
+          nothing, so the same action is a single icon in the same corner. */}
+      <Pressable
+        onPress={() => onToggleSeen(item)}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={item.seen ? 'მონიშნე წაუკითხავად' : 'მონიშნე წაკითხულად'}
+        className="absolute right-1.5 top-1.5 w-9 h-9 items-center justify-center rounded-full active:bg-zinc-200 dark:active:bg-zinc-800"
+      >
+        <MaterialCommunityIcons
+          name={item.seen ? 'email-outline' : 'email-open-outline'}
+          size={18}
+          color={item.seen ? '#71717A' : '#14B8A6'}
+        />
+      </Pressable>
     </Pressable>
   );
 }
@@ -228,11 +239,18 @@ export default function NotificationsScreen() {
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
       <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-between">
         <Text className="text-base font-semibold text-zinc-900 dark:text-zinc-50">შეტყობინებები</Text>
-        <Pressable onPress={markAllAsRead} disabled={markingAll || unseenCount === 0}>
-          <Text className={`text-xs ${markingAll || unseenCount === 0 ? 'text-zinc-400' : 'text-teal-600 dark:text-teal-400'}`}>
-            ყველას წაკითხულად მონიშვნა
-          </Text>
-        </Pressable>
+        {unseenCount > 0 ? (
+          <Pressable onPress={markAllAsRead} disabled={markingAll} hitSlop={6} className="flex-row items-center gap-1.5">
+            <MaterialCommunityIcons
+              name="email-open-multiple-outline"
+              size={16}
+              color={markingAll ? '#71717A' : '#14B8A6'}
+            />
+            <Text className={`text-xs ${markingAll ? 'text-zinc-400' : 'text-teal-600 dark:text-teal-400'}`}>
+              ყველას წაკითხულად მონიშვნა
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <FlatList

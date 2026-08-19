@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react';
+import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
@@ -23,12 +23,15 @@ export function FeedList({
   loader,
   emptyText = 'პოსტები არ არის',
   header,
+  onRefresh,
 }: {
   queryKey: readonly unknown[];
   loader: FeedLoader;
   emptyText?: string;
   /** Rides along as the list header so it scrolls with the feed (e.g. the ამბები strip). */
   header?: ReactElement;
+  /** Refetched alongside the feed on pull-to-refresh — the header runs its own query. */
+  onRefresh?: () => Promise<unknown> | void;
 }) {
   const query = useInfiniteQuery({
     queryKey,
@@ -47,6 +50,19 @@ export function FeedList({
   });
 
   const posts = useMemo(() => query.data?.pages.flat() ?? [], [query.data]);
+
+  // `query.isRefetching` clears as soon as the feed lands, so the spinner is
+  // driven manually to also cover the header's refresh.
+  const [refreshing, setRefreshing] = useState(false);
+  const { refetch } = query;
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetch(), onRefresh?.()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch, onRefresh]);
 
   if (query.isLoading) {
     return (
@@ -78,8 +94,8 @@ export function FeedList({
       ListHeaderComponent={header}
       refreshControl={
         <RefreshControl
-          refreshing={query.isRefetching && !query.isFetchingNextPage}
-          onRefresh={() => query.refetch()}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           colors={['#14B8A6']}
           tintColor="#14B8A6"
         />

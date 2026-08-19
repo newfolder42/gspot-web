@@ -4,7 +4,7 @@ import { feedApi } from '@/lib/feed';
 
 export default function ToGuessScreen() {
   return (
-    <ScreenLayout>
+    <ScreenLayout edges={[]}>
       <FeedList
         queryKey={['to-guess-feed']}
         loader={feedApi.loadToGuess}

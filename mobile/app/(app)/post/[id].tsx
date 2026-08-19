@@ -83,6 +83,7 @@ function CommentItem({
   postId: number;
   onReply: (comment: PostCommentType) => void;
 }) {
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const marginLeft = Math.min(depth * 14, 42);
   const borderColor = DEPTH_BORDER_COLORS[depth % DEPTH_BORDER_COLORS.length];
@@ -102,85 +103,112 @@ function CommentItem({
     ? { marginLeft, borderLeftWidth: 2, borderLeftColor: borderColor, paddingLeft: 10 }
     : {};
 
+  const openAuthor = () =>
+    router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } });
+
   return (
     <View style={wrapper} className="py-2">
-      {/* Author row */}
-      <View className="flex-row items-center gap-1.5 mb-1 flex-wrap">
-        <Pressable
-          onPress={() => setCollapsed((v) => !v)}
-          className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 items-center justify-center flex-shrink-0"
-        >
-          <Text className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300">{initials}</Text>
-        </Pressable>
-        <Text className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
-        {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
-        {isGuess ? (
-          <Feather name={isPhotoGuess ? 'camera' : 'map-pin'} size={11} color="#14B8A6" />
-        ) : null}
-        <Text className="text-xs text-zinc-400">•</Text>
-        <Text className="text-xs text-zinc-400">{formatTimeAgo(item.createdAt)}</Text>
-        {collapsed ? (
-          <Text className="text-xs text-zinc-400" numberOfLines={1}>• {collapsedPreview}</Text>
-        ) : null}
-      </View>
-
-      {!collapsed ? (
-        <>
-          {/* Body */}
-          {isGuess ? (
-            <View className="mb-1">
-              {isPhotoGuess && item.metadata?.imageUrl ? (
-                <View className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5">
-                  <Image
-                    source={{ uri: item.metadata.imageUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="contain"
-                  />
-                </View>
-              ) : null}
-              <View className="flex-row items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 self-start">
-                {item.metadata?.score != null ? (
-                  <View className="flex-row items-center gap-1">
-                    <Text className="text-xs text-zinc-500 dark:text-zinc-400">ქულა </Text>
-                    <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">{item.metadata.score}</Text>
-                  </View>
-                ) : null}
-                {item.metadata?.distance != null ? (
-                  <View className="flex-row items-center gap-1">
-                    <Text className="text-xs text-zinc-500 dark:text-zinc-400">მანძილი </Text>
-                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.metadata.distance.toLocaleString('ka-GE')} მ</Text>
-                  </View>
-                ) : null}
+      {/* Tapping the comment itself collapses it (Reddit-style); the author is a
+          nested Pressable, so it wins the touch and opens the profile instead. */}
+      <Pressable
+        onPress={() => setCollapsed((v) => !v)}
+        className="flex-row items-start gap-1.5"
+        accessibilityRole="button"
+        accessibilityLabel={collapsed ? 'კომენტარის გაშლა' : 'კომენტარის დაკეცვა'}
+      >
+        <View className="flex-1">
+          {/* Author row */}
+          <View className="flex-row items-center gap-1.5 mb-1 flex-wrap">
+            <Pressable
+              onPress={openAuthor}
+              hitSlop={4}
+              className="flex-row items-center gap-1.5"
+              accessibilityRole="link"
+              accessibilityLabel={`${item.author}-ის პროფილი`}
+            >
+              <View className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 items-center justify-center flex-shrink-0">
+                <Text className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300">{initials}</Text>
               </View>
-            </View>
-          ) : (
-            <Text className="text-sm text-zinc-800 dark:text-zinc-200 leading-5 mb-1">{item.body}</Text>
-          )}
+              <Text className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
+              {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
+            </Pressable>
+            {isGuess ? (
+              <Feather name={isPhotoGuess ? 'camera' : 'map-pin'} size={11} color="#14B8A6" />
+            ) : null}
+            <Text className="text-xs text-zinc-400">•</Text>
+            <Text className="text-xs text-zinc-400">{formatTimeAgo(item.createdAt)}</Text>
+            {collapsed ? (
+              <Text className="text-xs text-zinc-400 flex-1" numberOfLines={1}>• {collapsedPreview}</Text>
+            ) : null}
+          </View>
 
-          {/* Actions – votes, reward (guesses only), reply. Mirrors web PostComment. */}
-          <View className="flex-row items-center gap-3 mt-0.5">
-            <VoteButtons
+          {/* Body */}
+          {!collapsed ? (
+            isGuess ? (
+              <View className="mb-1">
+                {isPhotoGuess && item.metadata?.imageUrl ? (
+                  <View className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5">
+                    <Image
+                      source={{ uri: item.metadata.imageUrl }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ) : null}
+                <View className="flex-row items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 self-start">
+                  {item.metadata?.score != null ? (
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-xs text-zinc-500 dark:text-zinc-400">ქულა </Text>
+                      <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">{item.metadata.score}</Text>
+                    </View>
+                  ) : null}
+                  {item.metadata?.distance != null ? (
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-xs text-zinc-500 dark:text-zinc-400">მანძილი </Text>
+                      <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.metadata.distance.toLocaleString('ka-GE')} მ</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            ) : (
+              <Text className="text-sm text-zinc-800 dark:text-zinc-200 leading-5 mb-1">{item.body}</Text>
+            )
+          ) : null}
+        </View>
+
+        <Feather
+          name={collapsed ? 'chevron-down' : 'chevron-up'}
+          size={14}
+          color="#71717A"
+          style={{ marginTop: 5 }}
+        />
+      </Pressable>
+
+      {/* Actions – votes, reward (guesses only), reply. Mirrors web PostComment.
+          Kept outside the collapse Pressable so a mis-tap never folds the thread. */}
+      {!collapsed ? (
+        <View className="flex-row items-center gap-3 mt-0.5">
+          <VoteButtons
+            postId={postId}
+            commentId={item.id}
+            score={item.voteScore ?? 0}
+            userVote={item.userVote ?? null}
+            size="sm"
+          />
+          {isGuess ? (
+            <RewardButton
               postId={postId}
               commentId={item.id}
-              score={item.voteScore ?? 0}
-              userVote={item.userVote ?? null}
+              target="comment"
+              rewards={item.rewards ?? []}
+              userReward={item.userReward ?? null}
               size="sm"
             />
-            {isGuess ? (
-              <RewardButton
-                postId={postId}
-                commentId={item.id}
-                target="comment"
-                rewards={item.rewards ?? []}
-                userReward={item.userReward ?? null}
-                size="sm"
-              />
-            ) : null}
-            <Pressable onPress={() => onReply(item)} hitSlop={6}>
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
-            </Pressable>
-          </View>
-        </>
+          ) : null}
+          <Pressable onPress={() => onReply(item)} hitSlop={6}>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
+          </Pressable>
+        </View>
       ) : null}
 
       {/* Children */}

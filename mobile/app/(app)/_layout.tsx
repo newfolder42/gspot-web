@@ -5,7 +5,11 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, savePushToken } from '@/lib/pushNotifications';
+import {
+  markPushNotificationRead,
+  registerForPushNotificationsAsync,
+  savePushToken,
+} from '@/lib/pushNotifications';
 import { openPushNotification } from '@/lib/notificationRouting';
 
 /**
@@ -35,8 +39,11 @@ export default function AppLayout() {
     };
 
     const handleTap = (response: Notifications.NotificationResponse) => {
-      refreshBadge();
-      openPushNotification(response.notification.request.content.data, router).catch(() => {});
+      const { data } = response.notification.request.content;
+      // Opening the push is the user reading it — clear it server-side, then
+      // refresh so the tab badge and the list agree.
+      markPushNotificationRead(data).finally(refreshBadge);
+      openPushNotification(data, router).catch(() => {});
     };
 
     // Tapped while the app was running (foreground or background)

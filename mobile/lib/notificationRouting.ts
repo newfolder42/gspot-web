@@ -59,7 +59,7 @@ export async function openNotificationRoute(route: string | null, router: Router
 
 /**
  * Routes a tapped push notification. The server flattens payloads as
- * `{ type, ...details }` (see web src/lib/push.ts), so the shape
+ * `{ type, ...details }` (see gspot-services src/lib/notifications.ts), so the shape
  * getNotificationRoute expects has to be rebuilt first.
  */
 export async function openPushNotification(data: unknown, router: Router): Promise<void> {

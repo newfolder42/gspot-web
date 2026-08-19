@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { apiClient } from '@/lib/api';
+import { notificationsApi } from '@/lib/notifications';
 import { storage } from '@/lib/storage';
 
 // Configure how notifications appear when app is in foreground
@@ -73,5 +74,20 @@ export async function clearPushToken(): Promise<void> {
     // Non-fatal: a token left behind is pruned once Expo reports it as stale
   } finally {
     await storage.deletePushToken();
+  }
+}
+
+/**
+ * Marks the row behind a tapped push as read. The server flattens the payload as
+ * `{ type, notificationId, ...details }` (see gspot-services src/lib/notifications.ts);
+ * pushes sent before that field existed simply have nothing to mark.
+ */
+export async function markPushNotificationRead(data: unknown): Promise<void> {
+  const notificationId = (data as { notificationId?: unknown } | null)?.notificationId;
+  if (notificationId == null) return;
+  try {
+    await notificationsApi.setSeen(String(notificationId), true);
+  } catch {
+    // Non-fatal: the badge still clears when the list is opened
   }
 }
