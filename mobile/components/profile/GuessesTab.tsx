@@ -1,47 +1,69 @@
-import { useMemo, useState } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { usersApi } from '@/lib/users';
 import { formatPhotoTakenDate } from '@/lib/dates';
+import { formatGuessDistance, getGuessScoreColor, GUESS_INDEX_MIN_GUESSES } from '@/lib/guessIndex';
+import { GuessIndexPanel } from '@/components/profile/GuessIndexPanel';
 import type { UserGuess } from '@/types/guess';
 
-type SortType = 'date' | 'distance';
+const LIST_SIZE = 5;
 
-function formatDistance(distance: number | null): string | null {
-  if (distance == null) return null;
-  if (distance < 1000) return `${Math.round(distance)} მ`;
-  return `${(distance / 1000).toFixed(1)} კმ`;
-}
-
-function GuessCard({ guess }: { guess: UserGuess }) {
+function GuessRow({ guess, isLast }: { guess: UserGuess; isLast: boolean }) {
   const router = useRouter();
-  const distance = formatDistance(guess.distance);
+  const scoreColor = guess.score != null ? getGuessScoreColor(guess.score) : null;
+
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(guess.postId) } })}
-      className="px-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800"
+      className={`flex-row items-start gap-3 px-3 py-2.5 ${isLast ? '' : 'border-b border-zinc-200 dark:border-zinc-800'}`}
     >
-      <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-50" numberOfLines={2}>
-        &apos;{guess.postAuthor}-ის პოსტი{guess.postTitle ? `: ${guess.postTitle}` : ''}
-      </Text>
-      <View className="flex-row items-center gap-3 mt-1.5">
-        {distance ? (
-          <View className="flex-row items-center gap-1">
-            <Feather name="map-pin" size={13} color="#71717A" />
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{distance}</Text>
-          </View>
-        ) : null}
-        {guess.score != null ? (
-          <View className="flex-row items-center gap-1">
-            <Feather name="star" size={13} color="#71717A" />
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{guess.score}</Text>
-          </View>
-        ) : null}
-        <Text className="text-xs text-zinc-400 ml-auto">{formatPhotoTakenDate(guess.createdAt)}</Text>
+      {scoreColor ? (
+        <View
+          className="mt-0.5 h-9 w-9 items-center justify-center rounded-md"
+          style={{ borderWidth: 1, borderColor: scoreColor + '70', backgroundColor: scoreColor + '18' }}
+        >
+          <Text className="text-sm font-bold" style={{ color: scoreColor }}>
+            {guess.score}
+          </Text>
+        </View>
+      ) : (
+        <View className="mt-0.5 h-9 w-9 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800">
+          <Text className="text-sm text-zinc-400">—</Text>
+        </View>
+      )}
+
+      <View className="flex-1">
+        <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-50" numberOfLines={1}>
+          &apos;{guess.postAuthor}-ის პოსტი{guess.postTitle ? `: ${guess.postTitle}` : ''}
+        </Text>
+        <View className="mt-0.5 flex-row items-center gap-3">
+          {guess.distance != null ? (
+            <View className="flex-row items-center gap-1">
+              <Feather name="map-pin" size={13} color="#71717A" />
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatGuessDistance(guess.distance)}</Text>
+            </View>
+          ) : null}
+          <Text className="text-xs text-zinc-400 ml-auto">{formatPhotoTakenDate(guess.createdAt)}</Text>
+        </View>
       </View>
     </Pressable>
+  );
+}
+
+function GuessList({ title, icon, guesses }: { title: string; icon: ReactNode; guesses: UserGuess[] }) {
+  return (
+    <View className="overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+      <View className="flex-row items-center gap-1.5 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        {icon}
+        <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</Text>
+      </View>
+      {guesses.map((guess, i) => (
+        <GuessRow key={guess.id} guess={guess} isLast={i === guesses.length - 1} />
+      ))}
+    </View>
   );
 }
 
@@ -51,25 +73,33 @@ const EMPTY_MESSAGES = [
 ];
 
 export function GuessesTab({ alias }: { alias: string }) {
-  const [sortType, setSortType] = useState<SortType>('date');
-
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['guesses', alias],
     queryFn: () => usersApi.getGuesses(alias),
     enabled: !!alias,
   });
 
-  const sorted = useMemo(() => {
-    const list = data ?? [];
-    return [...list]
-      .sort((a, b) => {
-        if (sortType === 'date') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-        return (a.distance ?? Infinity) - (b.distance ?? Infinity);
-      })
-      .slice(0, 15);
-  }, [data, sortType]);
+  const guesses = useMemo(() => data ?? [], [data]);
+
+  const latest = useMemo(
+    () =>
+      [...guesses]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, LIST_SIZE),
+    [guesses]
+  );
+
+  const top = useMemo(
+    () =>
+      [...guesses]
+        .sort((a, b) => {
+          const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
+          if (scoreDiff !== 0) return scoreDiff;
+          return (a.distance ?? Infinity) - (b.distance ?? Infinity);
+        })
+        .slice(0, LIST_SIZE),
+    [guesses]
+  );
 
   if (isLoading) {
     return <View className="py-10 items-center"><ActivityIndicator color="#14B8A6" /></View>;
@@ -86,7 +116,7 @@ export function GuessesTab({ alias }: { alias: string }) {
     );
   }
 
-  if ((data?.length ?? 0) === 0) {
+  if (guesses.length === 0) {
     return (
       <View className="py-10 items-center px-8">
         <Text className="text-sm text-zinc-500 dark:text-zinc-400 text-center">{EMPTY_MESSAGES[0]}</Text>
@@ -94,32 +124,27 @@ export function GuessesTab({ alias }: { alias: string }) {
     );
   }
 
+  // with only a handful of guesses the index says nothing and the top list just
+  // mirrors the latest one, so both stay hidden until there is some history
+  const showIndex = guesses.length > GUESS_INDEX_MIN_GUESSES;
+
   return (
-    <View>
-      <View className="px-4 py-2 flex-row items-center justify-between">
-        <View className="flex-row gap-2">
-          {(['date', 'distance'] as const).map((s) => {
-            const active = s === sortType;
-            return (
-              <Pressable
-                key={s}
-                onPress={() => setSortType(s)}
-                className={`px-3 py-1.5 rounded-full border ${
-                  active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-                }`}
-              >
-                <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                  {s === 'date' ? 'თარიღით' : 'მანძილით'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{data?.length ?? 0}</Text>
-      </View>
-      {sorted.map((g) => (
-        <GuessCard key={g.id} guess={g} />
-      ))}
+    <View className="px-4 py-3 gap-3">
+      {showIndex ? <GuessIndexPanel guesses={guesses} /> : null}
+
+      {showIndex ? (
+        <GuessList
+          title="საუკეთესო გამოცნობები"
+          icon={<Feather name="award" size={16} color="#F59E0B" />}
+          guesses={top}
+        />
+      ) : null}
+
+      <GuessList
+        title="ბოლო გამოცნობები"
+        icon={<Feather name="list" size={16} color="#71717A" />}
+        guesses={latest}
+      />
     </View>
   );
 }

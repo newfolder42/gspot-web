@@ -324,8 +324,8 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   if (tab === 'posts') return <PostsTab posts={posts} header={header} />;
   if (tab === 'connections') return <ConnectionsTab alias={alias} isOwn={isOwn} header={header} />;
 
-  // Guesses (capped) and achievements (compacted) are small; a plain ScrollView
-  // stays smooth and keeps their internal sort/group UI untouched.
+  // Guesses (two five-row lists plus the index panel) and achievements
+  // (compacted) are small; a plain ScrollView stays smooth here.
   return (
     <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingBottom: 40 }}>
       {header}

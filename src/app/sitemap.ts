@@ -1,38 +1,50 @@
 import { MetadataRoute } from 'next';
+import { PUBLIC_SITE_URL } from '@/types/constants';
+import { getSitemapPosts, getSitemapProfiles, getSitemapZones } from '@/lib/sitemap';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://gspot.ge';
+const baseUrl = `https://${PUBLIC_SITE_URL}`;
+
+/** Rebuilt hourly — new posts should not wait for a deploy to be discoverable. */
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1 },
+    { url: `${baseUrl}/explore-zones`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/new-users`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${baseUrl}/heatmap`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
+    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+  ];
+
+  const [posts, zones, profiles] = await Promise.all([
+    getSitemapPosts(),
+    getSitemapZones(),
+    getSitemapProfiles(),
+  ]);
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/leaderboard`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/new-users`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
+    ...staticRoutes,
+    ...zones.map(zone => ({
+      url: `${baseUrl}${zone.path}`,
+      lastModified: zone.lastModified,
+      changeFrequency: 'daily' as const,
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/heatmap`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
+    })),
+    // the actual content: every post is a unique photo with a unique location
+    ...posts.map(post => ({
+      url: `${baseUrl}${post.path}`,
+      lastModified: post.lastModified,
+      changeFrequency: 'weekly' as const,
       priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.5,
-    },
+    })),
+    ...profiles.map(profile => ({
+      url: `${baseUrl}${profile.path}`,
+      lastModified: profile.lastModified,
+      changeFrequency: 'weekly' as const,
+      priority: 0.4,
+    })),
   ];
 }

@@ -4,6 +4,16 @@ import { getAccountByAlias } from '@/lib/account';
 import { getRewardDefinitionsByKeys } from '@/lib/rewards';
 import { getCatalogRewardKeys } from '@/types/reward';
 import AchievementsClient from '@/components/account/achievements-client';
+import type { Metadata } from 'next';
+
+/**
+ * Near-duplicate of every other profile's achievements tab: the achievement
+ * catalog is the same for everyone, only the checkmarks differ. Kept crawlable
+ * (follow) but out of the index.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
 
 type PageProps = {
   params: Promise<{ userName: string }>;
