@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { UpdateNotice } from '@/components/ui/UpdateNotice';
 
 // Keep the native splash up until the stored session has been read, so the app
 // never flashes the login screen at an already-signed-in user.
@@ -31,7 +32,13 @@ function SplashGate() {
     if (!isLoading) SplashScreen.hideAsync().catch(() => {});
   }, [isLoading]);
 
-  return <Slot />;
+  return (
+    <>
+      <Slot />
+      {/* Temporary: runs on every start, login screen included. */}
+      {isLoading ? null : <UpdateNotice />}
+    </>
+  );
 }
 
 export default function RootLayout() {

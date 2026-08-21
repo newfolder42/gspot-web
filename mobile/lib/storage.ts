@@ -5,6 +5,8 @@ const KEYS = {
   REFRESH_TOKEN: 'gspot_refresh_token',
   USER: 'gspot_user',
   PUSH_TOKEN: 'gspot_push_token',
+  DEVICE_KEY: 'gspot_device_key',
+  DISMISSED_UPDATE: 'gspot_dismissed_update',
 } as const;
 
 export type StoredUser = {
@@ -54,6 +56,27 @@ export const storage = {
 
   async deletePushToken(): Promise<void> {
     await SecureStore.deleteItemAsync(KEYS.PUSH_TOKEN);
+  },
+
+  /**
+   * Random id created once per install, so the version check can count a device
+   * once instead of adding a row on every app open. Survives logout on purpose.
+   */
+  async getDeviceKey(): Promise<string> {
+    const existing = await SecureStore.getItemAsync(KEYS.DEVICE_KEY);
+    if (existing) return existing;
+    const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    await SecureStore.setItemAsync(KEYS.DEVICE_KEY, key);
+    return key;
+  },
+
+  /** The version whose update notice was dismissed, so it is shown only once. */
+  async getDismissedUpdate(): Promise<string | null> {
+    return SecureStore.getItemAsync(KEYS.DISMISSED_UPDATE);
+  },
+
+  async setDismissedUpdate(version: string): Promise<void> {
+    await SecureStore.setItemAsync(KEYS.DISMISSED_UPDATE, version);
   },
 
   async clear(): Promise<void> {
