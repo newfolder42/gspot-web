@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -242,6 +242,8 @@ export default function PostPageScreen() {
   };
 
   const handleGuessSubmitted = (_result: GuessResult) => {
+    // Optimistic bump so the counter reacts instantly, then refetch so the
+    // freshly created guess comment shows up in the thread too.
     queryClient.setQueryData(queryKey, (old: any) => {
       if (!old) return old;
       return {
@@ -253,6 +255,7 @@ export default function PostPageScreen() {
         },
       };
     });
+    queryClient.invalidateQueries({ queryKey });
   };
 
   const queryKey = useMemo(() => ['post-detail', postId] as const, [postId]);
@@ -262,6 +265,19 @@ export default function PostPageScreen() {
     queryFn: () => postsApi.getPostDetail(postId),
     enabled: Number.isFinite(postId) && postId > 0,
   });
+
+  // Pull-to-refresh: driven manually so the spinner stays up for the whole
+  // refetch rather than clearing the moment cached data is served.
+  const [refreshing, setRefreshing] = useState(false);
+  const { refetch } = query;
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => postsApi.addComment(postId, commentBody.trim(), replyTo?.id ?? null),
@@ -362,6 +378,14 @@ export default function PostPageScreen() {
         className="flex-1 bg-zinc-50 dark:bg-zinc-950"
         contentContainerStyle={{ paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={['#14B8A6']}
+            tintColor="#14B8A6"
+          />
+        }
       >
         {/* ── Header – mirrors web PostDetailClient flex items-start p-2 ── */}
         <View className="p-2">

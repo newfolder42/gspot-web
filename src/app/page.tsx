@@ -5,7 +5,7 @@ import LandingRedirectCapture from "@/components/common/landing-redirect-capture
 import { getCurrentUser } from "@/lib/session";
 import { buildLandingPath, getLandingAttribution, type LandingAttributionSearchParams } from '@/lib/landing-attribution';
 import { APP_NAME } from "@/types/constants";
-import { ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
+import { FlagIcon, ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
 import Link from "next/link";
 
 type Props = {
@@ -27,17 +27,50 @@ export default async function Page({ searchParams }: Props) {
         {!user && (
           <div className="overflow-hidden text-zinc-900 dark:text-zinc-100 px-8 py-10">
             <h1 className="text-3xl font-extrabold mb-3">კეთილი იყოს შენი მობრძანება {APP_NAME}-ზე</h1>
-            <p className="text-teal-50 mb-6 leading-relaxed max-w-2xl">
-              შემოუერთდი ქართულ ლოკაციის გამომცნობ თამაშს - ატვირთე სურათი საქართველოს ტერიტორიაზე გადაღებული,
-              გამოიცანი სხვისი გადაღებული სურათის მდებარეობა, დააგროვე ქულები და მოხვდი{" "}
-              <Link href="/zone/public/leaderboard" className="underline underline-offset-2 font-semibold hover:text-white">
-                ლიბერბოდში
+            <p className="text-zinc-600 dark:text-zinc-300 mb-8 leading-relaxed max-w-2xl">
+              შემოუერთდი ქართულ ლოკაციის გამომცნობ თამაშს - ატვირთე საქართველოში გადაღებული სურათები,
+              გამოიცანი სხვების ატვირთული ფოტოს მდებარეობა რუკაზე, შეასრულე{" "}
+              <Link href="/zone/public/quests" className="underline underline-offset-2 font-semibold hover:text-teal-500">
+                მისიები
+              </Link>{" "}
+              საბზონებში და დააგროვე ქულები, რომ აიწიო{" "}
+              <Link href="/zone/public/leaderboard" className="underline underline-offset-2 font-semibold hover:text-teal-500">
+                ლიდერბორდში
               </Link>.
             </p>
-            <ul className="flex flex-wrap gap-x-8 gap-2 mb-8 text-sm font-medium">
-              <li className="flex items-center gap-1.5"><ImageIcon className="w-4 h-4" /> ატვირთე სურათი</li>
-              <li className="flex items-center gap-1.5"><MapPinIcon className="w-4 h-4" /> გამოიცანი მდებარეობა</li>
-              <li className="flex items-center gap-1.5"><TrophyIcon className="w-4 h-4" /> დააგროვე ქულები</li>
+            <ul className="grid gap-4 sm:grid-cols-2 mb-8">
+              <li className="flex gap-3">
+                <ImageIcon className="w-5 h-5 mt-0.5 shrink-0 text-teal-500" />
+                <div>
+                  <p className="text-sm font-semibold">ატვირთე სურათი</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">გამოაქვეყნე საქართველოში გადაღებული ფოტო.</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <MapPinIcon className="w-5 h-5 mt-0.5 shrink-0 text-teal-500" />
+                <div>
+                  <p className="text-sm font-semibold">გამოიცანი მდებარეობა</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">მონიშნე რუკაზე სავარაუდო ადგილი. რაც უფრო ახლოს ხარ, მით მეტ ქულას იღებ.</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <FlagIcon className="w-5 h-5 mt-0.5 shrink-0 text-teal-500" />
+                <div>
+                  <p className="text-sm font-semibold">შეასრულე მისიები</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    საბზონების{" "}
+                    <Link href="/zone/public/quests" className="underline underline-offset-2 hover:text-teal-500">მისიები</Link>{" "}
+                    კონკრეტული ადგილების მოსანახულებლად და ფოტოების ასატვირთად.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <TrophyIcon className="w-5 h-5 mt-0.5 shrink-0 text-teal-500" />
+                <div>
+                  <p className="text-sm font-semibold">გახსენი მიღწევები</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">აქტივობისთვის დააგროვე ქულები, გახსენი მიღწევები, მიიღე ჯილდოები და აიწიე ლიდერბორდში.</p>
+                </div>
+              </li>
             </ul>
             <div className="flex gap-3">
               <Link href="/auth/signin" className="text-teal-500 hover:text-teal-600 font-medium uppercase">
@@ -47,7 +80,7 @@ export default async function Page({ searchParams }: Props) {
                 რეგისტრაცია
               </Link>
             </div>
-            <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+            <p className="mt-8 text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
               გაეცანი პოპულარულ პოსტებს
             </p>
           </div>

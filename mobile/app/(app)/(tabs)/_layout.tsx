@@ -65,7 +65,8 @@ export default function TabsLayout() {
         },
         tabBarActiveTintColor: '#14B8A6',
         tabBarInactiveTintColor: '#71717A',
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
+        // Icons only — the labels are kept as `tabBarLabel` for accessibility.
+        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen

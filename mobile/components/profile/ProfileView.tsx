@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -6,9 +6,11 @@ import {
   FlatList,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
+  type RefreshControlProps,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -91,7 +93,15 @@ function XPBar({ info }: { info: XPInfo }) {
  * The profile header + tab bar ride along as the list header so they scroll with
  * the grid, exactly as in the previous single-ScrollView layout.
  */
-function PostsTab({ posts, header }: { posts: MobilePostType[]; header: ReactElement }) {
+function PostsTab({
+  posts,
+  header,
+  refreshControl,
+}: {
+  posts: MobilePostType[];
+  header: ReactElement;
+  refreshControl: ReactElement<RefreshControlProps>;
+}) {
   const router = useRouter();
   const rows = useMemo(() => {
     const r: MobilePostType[][] = [];
@@ -105,6 +115,7 @@ function PostsTab({ posts, header }: { posts: MobilePostType[]; header: ReactEle
       data={rows}
       keyExtractor={(row) => String(row[0].id)}
       ListHeaderComponent={header}
+      refreshControl={refreshControl}
       contentContainerStyle={{ paddingBottom: 40 }}
       initialNumToRender={6}
       windowSize={7}
@@ -184,6 +195,33 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     queryFn: () => usersApi.getProfile(alias),
     enabled: !!alias,
   });
+
+  // Pull-to-refresh. The profile query only backs the header and the posts
+  // grid, so the mounted tab's own query is refetched alongside it. The
+  // spinner is driven manually so it covers the whole round trip.
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetch(),
+        queryClient.refetchQueries({ queryKey: ['guesses', alias], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['achievements', alias], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['connections', alias], type: 'active' }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch, queryClient, alias]);
+
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      colors={['#14B8A6']}
+      tintColor="#14B8A6"
+    />
+  );
 
   async function changeAvatar() {
     if (!isOwn || uploading) return;
@@ -321,13 +359,18 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
 
   // Heavy, unbounded, image-bearing tabs are virtualized via their own FlatList
   // (header rides along as ListHeaderComponent) so rows are windowed and recycled.
-  if (tab === 'posts') return <PostsTab posts={posts} header={header} />;
-  if (tab === 'connections') return <ConnectionsTab alias={alias} isOwn={isOwn} header={header} />;
+  if (tab === 'posts') return <PostsTab posts={posts} header={header} refreshControl={refreshControl} />;
+  if (tab === 'connections')
+    return <ConnectionsTab alias={alias} isOwn={isOwn} header={header} refreshControl={refreshControl} />;
 
   // Guesses (two five-row lists plus the index panel) and achievements
   // (compacted) are small; a plain ScrollView stays smooth here.
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView
+      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+      contentContainerStyle={{ paddingBottom: 40 }}
+      refreshControl={refreshControl}
+    >
       {header}
       {tab === 'guesses' ? <GuessesTab alias={alias} /> : null}
       {tab === 'achievements' ? <AchievementsTab alias={alias} /> : null}

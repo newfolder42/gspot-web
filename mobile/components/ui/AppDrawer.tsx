@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Modal,
@@ -16,8 +16,10 @@ import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type MobileZone } from '@/lib/search';
 
 const DRAWER_WIDTH = 280;
-const EDGE_ZONE_WIDTH = 20;
+const EDGE_ZONE_WIDTH = 24;
+/** Past this much drag (or a flick this fast) the panel settles open/closed. */
 const SWIPE_THRESHOLD = 50;
+const FLING_VELOCITY = 0.35;
 
 type Props = {
   open: boolean;
@@ -49,55 +51,103 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  // The backdrop tracks the panel, so a half-open drag is half-dimmed.
+  const opacity = translateX.interpolate({
+    inputRange: [-DRAWER_WIDTH, 0],
+    outputRange: [0, 1],
+  });
 
+  // While a finger owns the panel the modal has to stay mounted even though
+  // `open` is still false (opening drag) or already false (closing drag).
+  const [dragging, setDragging] = useState(false);
+  const draggingRef = useRef(false);
+  const setDrag = useCallback((value: boolean) => {
+    draggingRef.current = value;
+    setDragging(value);
+  }, []);
+
+  // Programmatic open/close (menu button, navigation). Skipped mid-drag so the
+  // animation never fights the finger.
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: open ? 0 : -DRAWER_WIDTH,
-        duration: 240,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: open ? 1 : 0,
-        duration: 240,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (draggingRef.current) return;
+    Animated.timing(translateX, {
+      toValue: open ? 0 : -DRAWER_WIDTH,
+      duration: 240,
+      useNativeDriver: true,
+    }).start();
   }, [open]);
+
+  // Callbacks read through refs so the pan responders can stay stable across
+  // renders — swapping panHandlers mid-gesture would drop the drag.
+  const onOpenRef = useRef(onOpen);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onOpenRef.current = onOpen;
+    onCloseRef.current = onClose;
+  });
+
+  // Release handler: snap to whichever end the drag was headed for.
+  const settleRef = useRef((toOpen: boolean) => {
+    Animated.spring(translateX, {
+      toValue: toOpen ? 0 : -DRAWER_WIDTH,
+      useNativeDriver: true,
+      bounciness: 0,
+      speed: 14,
+      // A grab that interrupts the settle reports `finished: false`; the new
+      // drag owns the panel from then on, so leave its flag alone.
+    }).start(({ finished }) => { if (finished) setDrag(false); });
+    if (toOpen) onOpenRef.current?.();
+    else onCloseRef.current();
+  });
 
   const nav = (path: any, params?: any) => {
     onClose();
     router.push(params ? { pathname: path, params } : path);
   };
 
+  const clamp = (value: number) => Math.max(-DRAWER_WIDTH, Math.min(0, value));
 
-  // Swipe right from left edge → open drawer
+  // Drag right from the left edge – the panel follows the finger from the very
+  // first pixel instead of popping in once the gesture ends.
   const edgePanResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) =>
-        gs.dx > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dx > SWIPE_THRESHOLD) onOpen?.();
+        gs.dx > 6 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+        setDrag(true);
       },
+      onPanResponderMove: (_, gs) => translateX.setValue(clamp(-DRAWER_WIDTH + gs.dx)),
+      // The feed sits underneath; don't hand a started drag back to it.
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gs) =>
+        settleRef.current(gs.dx > SWIPE_THRESHOLD || gs.vx > FLING_VELOCITY),
+      onPanResponderTerminate: (_, gs) => settleRef.current(gs.dx > SWIPE_THRESHOLD),
     })
   ).current;
 
-  // Swipe left on drawer panel → close drawer
+  // Drag left on the open panel – same tracking, in reverse.
   const drawerPanResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) =>
-        gs.dx < -8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dx < -SWIPE_THRESHOLD) onClose();
+        gs.dx < -6 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+        setDrag(true);
       },
+      onPanResponderMove: (_, gs) => translateX.setValue(clamp(gs.dx)),
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gs) =>
+        settleRef.current(!(gs.dx < -SWIPE_THRESHOLD || gs.vx < -FLING_VELOCITY)),
+      onPanResponderTerminate: (_, gs) => settleRef.current(!(gs.dx < -SWIPE_THRESHOLD)),
     })
   ).current;
 
   const { data: zonesData } = useQuery({
     queryKey: ['zones-list'],
     queryFn: () => searchApi.getZones(),
-    enabled: open,
+    // Fetch as soon as the panel starts sliding in, not once it lands.
+    enabled: open || dragging,
     staleTime: 60_000,
   });
 
@@ -105,7 +155,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
 
   return (
     <>
-      {/* Left-edge swipe zone – always mounted, opens drawer on right-swipe */}
+      {/* Left-edge drag zone – mounted whenever the panel is closed */}
       {!open && (
         <View
           {...edgePanResponder.panHandlers}
@@ -115,7 +165,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
       )}
 
       <Modal
-        visible={open}
+        visible={open || dragging}
         transparent
         animationType="none"
         onRequestClose={onClose}

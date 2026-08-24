@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
@@ -36,10 +36,12 @@ export function ConnectionsTab({
   alias,
   isOwn,
   header,
+  refreshControl,
 }: {
   alias: string;
   isOwn: boolean;
   header: ReactElement;
+  refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['connections', alias],
@@ -53,6 +55,7 @@ export function ConnectionsTab({
       data={data ?? []}
       keyExtractor={(c) => c.alias}
       ListHeaderComponent={header}
+      refreshControl={refreshControl}
       contentContainerStyle={{ paddingBottom: 40 }}
       initialNumToRender={10}
       windowSize={7}
