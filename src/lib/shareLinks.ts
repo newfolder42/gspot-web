@@ -1,4 +1,5 @@
 import { query } from './db';
+import { PUBLIC_SITE_URL } from '@/types/constants';
 
 export type ShareLink = {
   alias: string;
@@ -44,8 +45,19 @@ export async function resolveShareLink(alias: string): Promise<ShareLink | null>
 }
 
 /**
+ * The origin relative targets resolve against. Never the request origin in
+ * production: behind the proxy Next can see `localhost:3000`, which would send
+ * a scanner to their own device. Locally the request origin is what we want.
+ */
+export function getSiteOrigin(requestOrigin: string): string {
+  return process.env.NODE_ENV === 'production'
+    ? `https://${PUBLIC_SITE_URL}`
+    : requestOrigin;
+}
+
+/**
  * Turn a stored target into an absolute URL. Relative targets ("/?utm_source=…")
- * resolve against the site the sticker was scanned on. Query params that came in
+ * resolve against the site origin. Query params that came in
  * with the scan are carried over unless the target already sets them, so a
  * campaign can add ?utm_campaign=… without a new row.
  */

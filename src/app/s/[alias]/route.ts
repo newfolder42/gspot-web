@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildRedirectUrl, resolveShareLink } from '@/lib/shareLinks';
+import { buildRedirectUrl, getSiteOrigin, resolveShareLink } from '@/lib/shareLinks';
 import { logerror } from '@/lib/logger';
 
 type Context = {
@@ -14,7 +14,8 @@ type Context = {
  * cached 307) would be memorised by the browser and defeat the indirection.
  */
 export async function GET(req: NextRequest, context: Context) {
-  const { origin, searchParams } = req.nextUrl;
+  const { searchParams } = req.nextUrl;
+  const origin = getSiteOrigin(req.nextUrl.origin);
   let destination = `${origin}/`;
 
   try {
