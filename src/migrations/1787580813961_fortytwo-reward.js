@@ -26,7 +26,7 @@ export const up = (pgm) => {
     INSERT INTO achievements (key, name, category, achievement_type, state, image_url, rewards)
     VALUES (
       'guess_score_42',
-      'ყველაფრის პასუხი',
+      '42 ქულა',
       'guesses',
       'one_time',
       'hidden',

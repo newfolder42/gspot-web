@@ -17,16 +17,14 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         '/api/',
         '/auth/',
-        // redirect anonymous visitors straight to /auth/signin
+        '/s/',
         '/settings',
         '/notifications',
         '/submit',
         '/to-guess',
         '/new-zone',
         '/quests',
-        // owner-only: 404s for every crawler
         '/account/*/heatmap',
-        // zone routes gated on membership or moderator rights
         '/zone/*/settings',
         '/zone/*/submit',
         '/zone/*/quests/new',
