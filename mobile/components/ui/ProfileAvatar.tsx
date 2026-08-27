@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { getProfileColor } from '@/lib/profileColors';
 
 type Props = {
@@ -22,8 +23,8 @@ export function ProfileAvatar({ name, photoUrl, size = 24, shape = 'md', initial
 
   if (photoUrl) {
     return (
-      <Image
-        source={{ uri: photoUrl }}
+      <RemoteImage
+        uri={photoUrl}
         style={{ width: size, height: size, borderRadius: radius }}
         resizeMode="cover"
       />

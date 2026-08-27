@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { FeedEventViewer } from '@/components/feed/FeedEventViewer';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { feedEventsApi } from '@/lib/feedEvents';
 import { feedEventPreviewImage } from '@/types/feed-event';
 import type { FeedEvent, FeedEventType, OwnFeedEvent } from '@/types/feed-event';
@@ -42,7 +43,7 @@ function BubblePreview({
           {busy ? (
             <ActivityIndicator size="small" color="#14B8A6" />
           ) : image ? (
-            <Image source={{ uri: image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            <RemoteImage uri={image} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
             <Feather name={type === 'achievement_unlocked' ? 'award' : 'flag'} size={24} color="#F59E0B" />
           )}

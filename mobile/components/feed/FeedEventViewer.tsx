@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { FeedEventViewersModal } from '@/components/feed/FeedEventViewersModal';
 import { feedEventsApi } from '@/lib/feedEvents';
 import { formatTimePassed } from '@/lib/dates';
@@ -121,7 +122,7 @@ function AchievementSlide({ event }: { event: Slide }) {
         style={{ aspectRatio: 1 }}
       >
         {d.imageUrl ? (
-          <Image source={{ uri: d.imageUrl }} style={{ width: 160, height: 160 }} resizeMode="contain" />
+          <RemoteImage uri={d.imageUrl} style={{ width: 160, height: 160 }} resizeMode="contain" />
         ) : (
           <Feather name="award" size={112} color="#FBBF24" />
         )}
@@ -164,8 +165,8 @@ function QuestCreatedSlide({
         style={{ aspectRatio: 1 }}
       >
         {d.characterAvatar ? (
-          <Image
-            source={{ uri: d.characterAvatar }}
+          <RemoteImage
+            uri={d.characterAvatar}
             style={{ width: 160, height: 160, borderRadius: 80 }}
             resizeMode="cover"
           />
