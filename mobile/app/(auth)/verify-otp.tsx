@@ -4,8 +4,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ScreenLayout } from '@/components/ui/ScreenLayout';
+import { useTheme } from '@/constants/colors';
 
 export default function VerifyOTPScreen() {
+  const theme = useTheme();
   const { email } = useLocalSearchParams<{ email: string }>();
   const { verifyOTP, resendOTP } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -99,7 +101,7 @@ export default function VerifyOTPScreen() {
               keyboardType="number-pad"
               maxLength={1}
               editable={!loading}
-              placeholderTextColor="#71717A"
+              placeholderTextColor={theme.textMuted}
               className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
             />
           ))}
@@ -116,7 +118,7 @@ export default function VerifyOTPScreen() {
           disabled={resendCooldown > 0}
           className="mt-4 items-center"
         >
-          <Text className={`text-sm ${resendCooldown > 0 ? 'text-zinc-400' : 'text-brand'}`}>
+          <Text className={`text-sm ${resendCooldown > 0 ? 'text-zinc-500 dark:text-zinc-400' : 'text-brand'}`}>
             {resendCooldown > 0
               ? `კოდის ხელახალი გაგზავნა (${resendCooldown}წმ)`
               : 'კოდის ხელახალი გაგზავნა'}

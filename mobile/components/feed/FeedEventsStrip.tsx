@@ -7,6 +7,7 @@ import { FeedEventViewer } from '@/components/feed/FeedEventViewer';
 import { feedEventsApi } from '@/lib/feedEvents';
 import { feedEventPreviewImage } from '@/types/feed-event';
 import type { FeedEvent, FeedEventType, OwnFeedEvent } from '@/types/feed-event';
+import { useTheme } from '@/constants/colors';
 
 const BUBBLE = 64;
 
@@ -59,6 +60,7 @@ function BubblePreview({
  * nothing to show, so it costs no vertical space on a quiet feed.
  */
 export function FeedEventsStrip() {
+  const theme = useTheme();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { story } = useLocalSearchParams<{ story?: string }>();
@@ -131,7 +133,7 @@ export function FeedEventsStrip() {
             <BubblePreview
               image={b.previewImage}
               type={b.type}
-              ringColor={b.hasUnseen ? '#14B8A6' : '#3F3F46'}
+              ringColor={b.hasUnseen ? '#14B8A6' : theme.borderStrong}
               label={b.title}
               busy={openingKey === b.groupKey}
             />

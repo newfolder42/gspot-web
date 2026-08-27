@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
 
 /**
  * Mobile counterpart of the web's `ZoomableImage`. On the web a click zooms the
@@ -326,7 +327,7 @@ export function ImageZoomViewer({
             <View style={{ flex: 1 }} />
           )}
           <Pressable onPress={onClose} hitSlop={10} className="p-2 rounded-lg bg-zinc-900/80">
-            <Feather name="x" size={18} color="#E4E4E7" />
+            <Feather name="x" size={18} color={Colors.onImageMuted} />
           </Pressable>
         </View>
       </View>

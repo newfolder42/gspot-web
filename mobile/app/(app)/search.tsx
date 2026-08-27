@@ -12,6 +12,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type SearchResults } from '@/lib/search';
+import { Colors, useTheme } from '@/constants/colors';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -23,6 +24,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function SearchScreen() {
+  const theme = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,33 +38,33 @@ export default function SearchScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View className="flex-1 flex-row items-center bg-zinc-800 rounded-xl px-3 py-1.5 gap-2 mx-2">
-          <Feather name="search" size={16} color="#71717A" />
+        <View className="flex-1 flex-row items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 py-1.5 gap-2 mx-2">
+          <Feather name="search" size={16} color={theme.icon} />
           <TextInput
             ref={inputRef}
             value={query}
             onChangeText={setQuery}
             placeholder="ძებნა..."
-            placeholderTextColor="#71717A"
-            className="flex-1 text-sm text-zinc-100"
+            placeholderTextColor={theme.textMuted}
+            className="flex-1 text-sm text-zinc-900 dark:text-zinc-100"
             autoFocus
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
           {query.length > 0 ? (
             <Pressable onPress={() => setQuery('')}>
-              <Feather name="x" size={16} color="#71717A" />
+              <Feather name="x" size={16} color={theme.icon} />
             </Pressable>
           ) : null}
         </View>
       ),
       headerRight: () => (
         <Pressable onPress={() => router.back()} className="mr-2">
-          <Text className="text-sm text-teal-400">გაუქმება</Text>
+          <Text className="text-sm text-teal-600 dark:text-teal-400">გაუქმება</Text>
         </Pressable>
       ),
     });
-  }, [query]);
+  }, [query, theme]);
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.length < 2) {
@@ -103,7 +105,7 @@ export default function SearchScreen() {
                   &apos;{u.alias}
                 </Text>
                 {u.age != null ? (
-                  <Text className="text-xs text-zinc-400">{u.age} დღე</Text>
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400">{u.age} დღე</Text>
                 ) : null}
               </View>
             </Pressable>
@@ -130,7 +132,7 @@ export default function SearchScreen() {
                   {z.slug}
                 </Text>
                 {z.description ? (
-                  <Text className="text-xs text-zinc-400" numberOfLines={1}>
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400" numberOfLines={1}>
                     {z.description}
                   </Text>
                 ) : null}
@@ -153,12 +155,12 @@ export default function SearchScreen() {
                 router.push({ pathname: '/(app)/post/[id]', params: { id: String(p.id) } })
               }
             >
-              <Feather name="image" size={20} color="#71717A" />
+              <Feather name="image" size={20} color={theme.icon} />
               <View className="flex-1">
                 <Text className="text-sm text-zinc-900 dark:text-zinc-50" numberOfLines={1}>
                   {p.title || '(სათაური არ არის)'}
                 </Text>
-                <Text className="text-xs text-zinc-400">&apos;{p.author}</Text>
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">&apos;{p.author}</Text>
               </View>
             </Pressable>
           ),
@@ -177,7 +179,7 @@ export default function SearchScreen() {
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
       {loading ? (
         <View className="pt-8 items-center">
-          <ActivityIndicator color="#14B8A6" />
+          <ActivityIndicator color={Colors.brand} />
         </View>
       ) : noResults ? (
         <View className="pt-16 items-center px-8">
@@ -201,7 +203,7 @@ export default function SearchScreen() {
         />
       ) : (
         <View className="pt-16 items-center px-8">
-          <Feather name="search" size={40} color="#3F3F46" />
+          <Feather name="search" size={40} color={theme.iconFaint} />
           <Text className="mt-4 text-sm text-zinc-500 dark:text-zinc-400 text-center">
             ძებნისთვის მინიმუმ 2 სიმბოლო შეიყვანე
           </Text>

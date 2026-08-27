@@ -23,6 +23,7 @@ import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { useTheme } from '@/constants/colors';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
@@ -368,6 +369,7 @@ function MapCoordPicker({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function SubmitScreen() {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   const [zonePickerOpen, setZonePickerOpen] = useState(false);
@@ -636,14 +638,14 @@ export default function SubmitScreen() {
           <Text className={selectedZone ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
             {selectedZone ? selectedZone.slug : 'აირჩიე საბზონა'}
           </Text>
-          <Feather name={zonePickerOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#71717A" />
+          <Feather name={zonePickerOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.icon} />
         </Pressable>
 
         {zonePickerOpen ? (
           <View className="mt-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
             {sortedZones.length === 0 ? (
               <View className="px-4 py-3">
-                <Text className="text-sm text-zinc-400">შენ არ ხარ არცერთი საბზონის წევრი</Text>
+                <Text className="text-sm text-zinc-500 dark:text-zinc-400">შენ არ ხარ არცერთი საბზონის წევრი</Text>
               </View>
             ) : (
               sortedZones.map((zone) => (
@@ -666,7 +668,7 @@ export default function SubmitScreen() {
                     {zone.slug}
                   </Text>
                   {zone.description ? (
-                    <Text className="text-xs text-zinc-400 mt-0.5">{zone.description}</Text>
+                    <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{zone.description}</Text>
                   ) : null}
                 </Pressable>
               ))
@@ -713,7 +715,7 @@ export default function SubmitScreen() {
               <Text className={dateTaken ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
                 {dateTaken ? dateTaken.toISOString().split('T')[0] : 'თარიღის არჩევა'}
               </Text>
-              <Feather name="calendar" size={18} color="#71717A" />
+              <Feather name="calendar" size={18} color={theme.icon} />
             </Pressable>
             {showDatePicker ? (
               <DateTimePicker
@@ -770,14 +772,14 @@ export default function SubmitScreen() {
           <View className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4">
             <ActivityIndicator size="large" color="#14B8A6" />
             <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">ფოტოს დამუშავება...</Text>
-            <Text className="text-xs text-zinc-400 mt-1">GPS და თარიღის ამოღება EXIF-იდან</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">GPS და თარიღის ამოღება EXIF-იდან</Text>
           </View>
         ) : (
           <Pressable
             onPress={handlePickOptions}
             className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4 active:opacity-70"
           >
-            <Feather name="camera" size={28} color="#71717A" />
+            <Feather name="camera" size={28} color={theme.icon} />
             <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
               ფოტოს არჩევა ან გადაღება
             </Text>
@@ -798,7 +800,7 @@ export default function SubmitScreen() {
                   <Text className="text-xs text-teal-700 dark:text-teal-300">GPS ფოტოდან</Text>
                 </View>
               ) : !coords ? (
-                <Text className="text-xs text-zinc-400">შეეხე რუკას პინის დასაყენებლად</Text>
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">შეეხე რუკას პინის დასაყენებლად</Text>
               ) : null}
             </View>
             <MapCoordPicker

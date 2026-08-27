@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { Colors, useTheme } from '@/constants/colors';
 
 /**
  * Tabs navigator for the main (tabs) group.
@@ -12,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function TabsLayout() {
   const router = useRouter();
   const { user } = useAuth();
+  const theme = useTheme();
 
   const { data: unreadData } = useQuery({
     queryKey: ['notifications-unread-count'],
@@ -25,17 +27,17 @@ export default function TabsLayout() {
 
   const SearchButton = () => (
     <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
-      <Feather name="search" size={20} color="#A1A1AA" />
+      <Feather name="search" size={20} color={theme.icon} />
     </Pressable>
   );
 
   const HomeHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
-        <Feather name="flag" size={20} color="#A1A1AA" />
+        <Feather name="flag" size={20} color={theme.icon} />
       </Pressable>
       <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
-        <Feather name="search" size={20} color="#A1A1AA" />
+        <Feather name="search" size={20} color={theme.icon} />
       </Pressable>
     </View>
   );
@@ -43,10 +45,10 @@ export default function TabsLayout() {
   const AccountHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 18 }}>
-        <Feather name="search" size={20} color="#A1A1AA" />
+        <Feather name="search" size={20} color={theme.icon} />
       </Pressable>
       <Pressable onPress={() => router.push('/(app)/settings')} style={{ marginRight: 14 }}>
-        <Feather name="settings" size={20} color="#A1A1AA" />
+        <Feather name="settings" size={20} color={theme.icon} />
       </Pressable>
     </View>
   );
@@ -54,17 +56,18 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#18181B' },
-        headerTintColor: '#EDEDED',
+        headerStyle: { backgroundColor: theme.headerBg },
+        headerTintColor: theme.headerTint,
         headerTitleStyle: { fontWeight: '700', fontSize: 17 },
         headerShadowVisible: false,
+        sceneStyle: { backgroundColor: theme.bg },
         tabBarStyle: {
-          backgroundColor: '#18181B',
-          borderTopColor: '#27272A',
+          backgroundColor: theme.tabBarBg,
+          borderTopColor: theme.tabBarBorder,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: '#14B8A6',
-        tabBarInactiveTintColor: '#71717A',
+        tabBarActiveTintColor: Colors.brand,
+        tabBarInactiveTintColor: theme.textMuted,
         // Icons only — the labels are kept as `tabBarLabel` for accessibility.
         tabBarShowLabel: false,
       }}

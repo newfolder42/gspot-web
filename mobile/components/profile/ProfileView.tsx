@@ -12,6 +12,7 @@ import {
   View,
   type RefreshControlProps,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -103,6 +104,7 @@ function PostsTab({
   refreshControl: ReactElement<RefreshControlProps>;
 }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const rows = useMemo(() => {
     const r: MobilePostType[][] = [];
     for (let i = 0; i < posts.length; i += COLUMNS) r.push(posts.slice(i, i + COLUMNS));
@@ -116,7 +118,7 @@ function PostsTab({
       keyExtractor={(row) => String(row[0].id)}
       ListHeaderComponent={header}
       refreshControl={refreshControl}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
       initialNumToRender={6}
       windowSize={7}
       removeClippedSubviews
@@ -187,6 +189,7 @@ function PostsTab({
 
 export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean }) {
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('posts');
   const [uploading, setUploading] = useState(false);
 
@@ -316,7 +319,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
               &apos;{user.alias}
             </Text>
             {user.age != null ? (
-              <Text className="text-xs text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
             ) : null}
             <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{posts.length} პოსტი</Text>
           </View>
@@ -368,7 +371,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   return (
     <ScrollView
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
       refreshControl={refreshControl}
     >
       {header}

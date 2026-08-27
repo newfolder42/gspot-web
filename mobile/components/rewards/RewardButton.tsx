@@ -5,6 +5,7 @@ import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { RewardSheet } from '@/components/rewards/RewardSheet';
 import { RewardDetailsModal } from '@/components/rewards/RewardDetailsModal';
 import type { RewardCountType, RewardSummaryType, RewardTarget } from '@/types/reward';
+import { useTheme } from '@/constants/colors';
 
 type Props = {
   postId: number;
@@ -34,6 +35,7 @@ export function RewardButton({
   const [summary, setSummary] = useState<RewardSummaryType>({ rewards, userReward });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const theme = useTheme();
 
   const given = summary.rewards.filter((r) => r.count > 0);
   const topReward = given.length > 0 ? given.reduce((a, b) => (b.count > a.count ? b : a)) : null;
@@ -71,7 +73,7 @@ export function RewardButton({
           className="items-center justify-center rounded-full border border-dashed border-zinc-300 dark:border-zinc-600"
           style={{ height: chipHeight, width: chipHeight }}
         >
-          <Feather name="gift" size={iconSize} color="#71717A" />
+          <Feather name="gift" size={iconSize} color={theme.icon} />
         </Pressable>
       ) : null}
 

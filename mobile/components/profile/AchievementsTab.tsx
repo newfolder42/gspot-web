@@ -7,6 +7,7 @@ import { formatPhotoTakenDate } from '@/lib/dates';
 import type { AccountAchievement } from '@/types/achievement';
 import type { RewardDefinition } from '@/types/reward';
 import { RewardSpecTiles } from '@/components/rewards/RewardSpecTiles';
+import { Colors, useTheme } from '@/constants/colors';
 
 const CATEGORY_LABELS: Record<string, string> = {
   base: 'ძირითადი',
@@ -87,7 +88,7 @@ function AchievementCard({
           {item.imageUrl ? (
             <Image source={{ uri: item.imageUrl }} className="h-full w-full" resizeMode="cover" />
           ) : (
-            <Text className="text-zinc-400 text-xs">სრთ</Text>
+            <Text className="text-zinc-500 dark:text-zinc-400 text-xs">სრთ</Text>
           )}
         </View>
         <View className="flex-1 min-w-0">
@@ -123,6 +124,7 @@ function AchievementCard({
 }
 
 export function AchievementsTab({ alias }: { alias: string }) {
+  const theme = useTheme();
   const [showAll, setShowAll] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -185,8 +187,8 @@ export function AchievementsTab({ alias }: { alias: string }) {
           <Switch
             value={showAll}
             onValueChange={setShowAll}
-            trackColor={{ false: '#d4d4d8', true: '#14B8A6' }}
-            thumbColor="#ffffff"
+            trackColor={{ false: theme.switchTrackOff, true: Colors.brand }}
+            thumbColor={Colors.onAccent}
           />
           <Text className="text-sm text-zinc-700 dark:text-zinc-300">დეტალური ჩვენება</Text>
         </View>

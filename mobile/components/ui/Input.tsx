@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { Text, TextInput, TextInputProps, View } from 'react-native';
+import { useTheme } from '@/constants/colors';
 
 type InputProps = TextInputProps & {
   label?: string;
@@ -8,6 +9,8 @@ type InputProps = TextInputProps & {
 
 export const Input = forwardRef<TextInput, InputProps>(
   ({ label, error, ...props }, ref) => {
+    const theme = useTheme();
+
     return (
       <View className="mb-4">
         {label ? (
@@ -27,7 +30,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               ? 'border-red-400 dark:border-red-500'
               : 'border-zinc-200 dark:border-zinc-700',
           ].join(' ')}
-          placeholderTextColor="#71717A"
+          placeholderTextColor={theme.textMuted}
           {...props}
         />
 

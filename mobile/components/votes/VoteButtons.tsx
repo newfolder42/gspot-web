@@ -3,10 +3,10 @@ import { Pressable, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { votesApi } from '@/lib/votes';
 import type { VoteSummaryType, VoteValue } from '@/types/vote';
+import { useTheme } from '@/constants/colors';
 
 const TEAL = '#14B8A6';
 const ROSE = '#F43F5E';
-const ZINC = '#A1A1AA';
 
 type Props = {
   postId: number;
@@ -29,6 +29,7 @@ export function VoteButtons({
 }: Props) {
   const [summary, setSummary] = useState<VoteSummaryType>({ score, userVote });
   const [pending, setPending] = useState(false);
+  const theme = useTheme();
 
   const handleVote = async (value: VoteValue) => {
     if (pending) return;
@@ -59,18 +60,18 @@ export function VoteButtons({
   return (
     <View className="flex-row items-center gap-1" style={{ opacity: pending ? 0.5 : 1 }}>
       <Pressable onPress={() => handleVote(1)} disabled={pending} hitSlop={6} className="p-0.5">
-        <MaterialCommunityIcons name="arrow-up-bold" size={iconSize} color={upActive ? TEAL : ZINC} />
+        <MaterialCommunityIcons name="arrow-up-bold" size={iconSize} color={upActive ? TEAL : theme.icon} />
       </Pressable>
 
       <Text
         className={`font-semibold ${sm ? 'text-xs' : 'text-sm'}`}
-        style={{ color: upActive ? TEAL : downActive ? ROSE : '#71717A' }}
+        style={{ color: upActive ? TEAL : downActive ? ROSE : theme.textMuted }}
       >
         {summary.score}
       </Text>
 
       <Pressable onPress={() => handleVote(-1)} disabled={pending} hitSlop={6} className="p-0.5">
-        <MaterialCommunityIcons name="arrow-down-bold" size={iconSize} color={downActive ? ROSE : ZINC} />
+        <MaterialCommunityIcons name="arrow-down-bold" size={iconSize} color={downActive ? ROSE : theme.icon} />
       </Pressable>
     </View>
   );

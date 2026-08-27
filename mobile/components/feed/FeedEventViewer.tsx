@@ -7,6 +7,7 @@ import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { FeedEventViewersModal } from '@/components/feed/FeedEventViewersModal';
 import { feedEventsApi } from '@/lib/feedEvents';
 import { formatTimePassed } from '@/lib/dates';
+import { useTheme } from '@/constants/colors';
 import type {
   AchievementUnlockedDetails,
   FeedEvent,
@@ -34,8 +35,8 @@ function SlideHeader({ event, icon }: { event: Slide; icon: React.ReactNode }) {
         &apos;{event.actorAlias}
       </Text>
       {event.actorLevel != null ? <LevelBadge level={event.actorLevel} /> : null}
-      <Text className="text-xs text-zinc-400">•</Text>
-      <Text className="text-xs text-zinc-400">{formatTimePassed(event.createdAt)}</Text>
+      <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+      <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(event.createdAt)}</Text>
     </View>
   );
 }
@@ -189,6 +190,7 @@ function QuestCreatedSlide({
  * events are marked seen as they surface.
  */
 export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Props) {
+  const theme = useTheme();
   const router = useRouter();
   const [index, setIndex] = useState(initialIndex);
   const [viewersFor, setViewersFor] = useState<number | null>(null);
@@ -259,7 +261,7 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
           <View className="rounded-2xl overflow-hidden bg-white dark:bg-zinc-900">
             {/* Close */}
             <Pressable onPress={onClose} hitSlop={10} className="absolute top-3 right-3 z-10 p-1">
-              <Feather name="x" size={20} color="#A1A1AA" />
+              <Feather name="x" size={20} color={theme.icon} />
             </Pressable>
 
             {current.type === 'quest_completed' ? (
@@ -276,13 +278,13 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
                 className="flex-row items-center justify-center gap-4 py-3 border-t border-zinc-200 dark:border-zinc-800"
               >
                 <View className="flex-row items-center gap-1.5">
-                  <Feather name="eye" size={15} color="#71717A" />
+                  <Feather name="eye" size={15} color={theme.icon} />
                   <Text className="text-sm text-zinc-500 dark:text-zinc-400">
                     ნანახია {(current as OwnFeedEvent).seenCount}
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-1.5">
-                  <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#71717A" />
+                  <MaterialCommunityIcons name="arrow-up-bold" size={16} color={theme.icon} />
                   <Text className="text-sm text-zinc-500 dark:text-zinc-400">
                     {(current as OwnFeedEvent).reactionCount}
                   </Text>
@@ -297,7 +299,7 @@ export function FeedEventViewer({ events, mode, initialIndex = 0, onClose }: Pro
                 <MaterialCommunityIcons
                   name="arrow-up-bold"
                   size={16}
-                  color={hasReacted ? '#14B8A6' : '#71717A'}
+                  color={hasReacted ? '#14B8A6' : theme.icon}
                 />
                 <Text
                   className={

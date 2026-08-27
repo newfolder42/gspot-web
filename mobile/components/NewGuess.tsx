@@ -10,6 +10,7 @@ import {
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
 import { PinchZoomImage } from '@/components/ui/ZoomableImage';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { postsApi } from '@/lib/posts';
@@ -157,12 +158,12 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                 <Feather
                   name={imageMode === 'hidden' ? 'image' : 'map-pin'}
                   size={18}
-                  color="#E4E4E7"
+                  color={Colors.onImageMuted}
                 />
               </Pressable>
             ) : null}
             <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
-              <Feather name="x" size={18} color="#E4E4E7" />
+              <Feather name="x" size={18} color={Colors.onImageMuted} />
             </Pressable>
           </View>
         </View>
@@ -176,7 +177,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
               className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
               hitSlop={8}
             >
-              <Feather name="maximize-2" size={16} color="#E4E4E7" />
+              <Feather name="maximize-2" size={16} color={Colors.onImageMuted} />
             </Pressable>
           </View>
         ) : null}
@@ -294,7 +295,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                 className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
                 hitSlop={8}
               >
-                <Feather name="minimize-2" size={16} color="#E4E4E7" />
+                <Feather name="minimize-2" size={16} color={Colors.onImageMuted} />
               </Pressable>
             </View>
           ) : null}

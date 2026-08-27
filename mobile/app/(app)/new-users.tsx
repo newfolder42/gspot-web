@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
@@ -31,6 +32,7 @@ function UserCard({ user }: { user: NewUser }) {
 
 /** Mirrors web /new-users — most recently registered users, newest first. */
 export default function NewUsersScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function NewUsersScreen() {
       data={users}
       keyExtractor={(u) => String(u.id)}
       renderItem={({ item }) => <UserCard user={item} />}
-      contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
+      contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 + insets.bottom }}
       ListHeaderComponent={
         total != null ? (
           <Text className="px-4 pb-3 text-sm text-zinc-500 dark:text-zinc-400">

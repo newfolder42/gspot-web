@@ -20,6 +20,7 @@ import { EditPostSheet } from '@/components/EditPostSheet';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import type { GuessResult } from '@/types/post-guess';
+import { useTheme } from '@/constants/colors';
 
 /** Matches web DEPTH_COLORS cycle */
 const DEPTH_BORDER_COLORS = [
@@ -84,6 +85,7 @@ function CommentItem({
   onReply: (comment: PostCommentType) => void;
 }) {
   const router = useRouter();
+  const theme = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const marginLeft = Math.min(depth * 14, 42);
   const borderColor = DEPTH_BORDER_COLORS[depth % DEPTH_BORDER_COLORS.length];
@@ -135,10 +137,10 @@ function CommentItem({
             {isGuess ? (
               <Feather name={isPhotoGuess ? 'camera' : 'map-pin'} size={11} color="#14B8A6" />
             ) : null}
-            <Text className="text-xs text-zinc-400">•</Text>
-            <Text className="text-xs text-zinc-400">{formatTimeAgo(item.createdAt)}</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(item.createdAt)}</Text>
             {collapsed ? (
-              <Text className="text-xs text-zinc-400 flex-1" numberOfLines={1}>• {collapsedPreview}</Text>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400 flex-1" numberOfLines={1}>• {collapsedPreview}</Text>
             ) : null}
           </View>
 
@@ -179,7 +181,7 @@ function CommentItem({
         <Feather
           name={collapsed ? 'chevron-down' : 'chevron-up'}
           size={14}
-          color="#71717A"
+          color={theme.icon}
           style={{ marginTop: 5 }}
         />
       </Pressable>
@@ -222,6 +224,7 @@ function CommentItem({
 }
 
 export default function PostPageScreen() {
+  const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const postId = Number(id);
   const queryClient = useQueryClient();
@@ -399,7 +402,7 @@ export default function PostPageScreen() {
                 <ProfileAvatar name={post.zoneSlug ?? ''} photoUrl={post.zoneProfilePhoto} size={24} shape="md" />
                 <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{post.zoneSlug}</Text>
               </Pressable>
-              <Text className="text-xs text-zinc-400">•</Text>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
               {/* Author + level – tappable */}
               <Pressable
                 className="flex-row items-center gap-1"
@@ -408,8 +411,8 @@ export default function PostPageScreen() {
                 <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{post.author}</Text>
                 {post.authorLevel != null ? <LevelBadge level={post.authorLevel} /> : null}
               </Pressable>
-              <Text className="text-xs text-zinc-400">•</Text>
-              <Text className="text-xs text-zinc-400">{formatTimeAgo(post.date)}</Text>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(post.date)}</Text>
               {post.status === 'failed' ? (
                 <View className="w-3 h-3 rounded-full bg-rose-600" />
               ) : null}
@@ -422,7 +425,7 @@ export default function PostPageScreen() {
                 hitSlop={10}
                 className="ml-2 p-1"
               >
-                <Feather name="more-horizontal" size={18} color="#71717A" />
+                <Feather name="more-horizontal" size={18} color={theme.icon} />
               </Pressable>
             ) : null}
           </View>
@@ -504,14 +507,14 @@ export default function PostPageScreen() {
           <View className="flex-row items-center gap-3 ml-auto">
             {!isQuest ? (
               <View className="flex-row items-center gap-1">
-                <Feather name="map-pin" size={15} color="#71717A" />
+                <Feather name="map-pin" size={15} color={theme.icon} />
                 <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
                   {post.guessCount ?? 0}
                 </Text>
               </View>
             ) : null}
             <View className="flex-row items-center gap-1">
-              <Feather name="message-circle" size={15} color="#71717A" />
+              <Feather name="message-circle" size={15} color={theme.icon} />
               <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{commentsCount}</Text>
             </View>
           </View>
@@ -532,7 +535,7 @@ export default function PostPageScreen() {
               onPress={() => setShowPhotoGuess(true)}
               className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
             >
-              <Feather name="camera" size={16} color="#71717A" />
+              <Feather name="camera" size={16} color={theme.icon} />
               <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ადგილზე</Text>
             </Pressable>
           </View>
@@ -551,7 +554,7 @@ export default function PostPageScreen() {
               onPress={() => setShowGuessMap(true)}
               className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
             >
-              <Feather name="map" size={16} color="#71717A" />
+              <Feather name="map" size={16} color={theme.icon} />
               <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">რუკაზე ნახვა</Text>
             </Pressable>
           </View>
@@ -589,7 +592,7 @@ export default function PostPageScreen() {
             value={commentBody}
             onChangeText={setCommentBody}
             placeholder={replyTo ? 'დაწერე პასუხი...' : 'დაწერე კომენტარი...'}
-            placeholderTextColor="#71717A"
+            placeholderTextColor={theme.textMuted}
             multiline
             maxLength={2000}
             className="text-zinc-900 dark:text-zinc-50"

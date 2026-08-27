@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { zonesApi, type ZoneSettings } from '@/lib/zones';
+import { useTheme } from '@/constants/colors';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
 
@@ -31,6 +33,8 @@ export function ManageTab({ slug }: { slug: string }) {
 }
 
 function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
   const [description, setDescription] = useState(initial.description);
@@ -82,7 +86,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
   }
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
+    <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 48 + insets.bottom }}>
       {/* Description */}
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">აღწერა</Text>
       <TextInput
@@ -90,7 +94,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
         onChangeText={setDescription}
         multiline
         placeholder="საბზონის აღწერა"
-        placeholderTextColor="#71717A"
+        placeholderTextColor={theme.textMuted}
         className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700 min-h-[80px]"
         style={{ textAlignVertical: 'top' }}
       />
@@ -102,7 +106,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
         onChangeText={setRulesText}
         multiline
         placeholder="თითო წესი ახალ ხაზზე"
-        placeholderTextColor="#71717A"
+        placeholderTextColor={theme.textMuted}
         className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700 min-h-[120px]"
         style={{ textAlignVertical: 'top' }}
       />
@@ -148,7 +152,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="ახალი თეგი"
-          placeholderTextColor="#71717A"
+          placeholderTextColor={theme.textMuted}
           className="flex-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700"
         />
         <Pressable

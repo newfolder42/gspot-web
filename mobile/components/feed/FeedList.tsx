@@ -118,7 +118,7 @@ export function FeedList({
           </View>
         ) : posts.length > 0 && !query.hasNextPage ? (
           <View className="py-4 items-center">
-            <Text className="text-xs text-zinc-400">მეტი პოსტი არ არის</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">მეტი პოსტი არ არის</Text>
           </View>
         ) : null
       }

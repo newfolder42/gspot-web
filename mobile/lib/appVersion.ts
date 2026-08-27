@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import axios from 'axios';
 import { storage } from '@/lib/storage';
@@ -13,9 +14,14 @@ export type VersionCheckResponse = {
   notes: string | null;
 };
 
-/** The version from app.json — the single place a release is stamped. */
+/**
+ * The version baked into the installed binary — `versionName` on Android,
+ * `CFBundleShortVersionString` on iOS. That is what the user actually has, so
+ * it is what gets compared against mobile_app_versions. Falls back to the
+ * app.json value in Expo Go / dev, where there is no native version of ours.
+ */
 export function currentAppVersion(): string {
-  return Constants.expoConfig?.version ?? '0.0.0';
+  return Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '0.0.0';
 }
 
 /**

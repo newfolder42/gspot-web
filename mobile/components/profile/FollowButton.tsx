@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { usersApi } from '@/lib/users';
+import { Colors, useTheme } from '@/constants/colors';
 
 type Props = {
   alias: string;
@@ -13,6 +14,7 @@ type Props = {
 
 /** Follow / unfollow toggle with optimistic UI, mirroring web `components/account/follow-button`. */
 export function FollowButton({ alias, initialFollowing, size = 'default' }: Props) {
+  const theme = useTheme();
   const queryClient = useQueryClient();
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);
@@ -52,13 +54,13 @@ export function FollowButton({ alias, initialFollowing, size = 'default' }: Prop
       } ${loading ? 'opacity-60' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={following ? '#71717A' : '#ffffff'} />
+        <ActivityIndicator size="small" color={following ? theme.textMuted : Colors.onAccent} />
       ) : (
         <>
           <Feather
             name={following ? 'user-check' : 'user-plus'}
             size={compact ? 13 : 15}
-            color={following ? '#71717A' : '#ffffff'}
+            color={following ? theme.textMuted : Colors.onAccent}
           />
           <Text
             className={`${textSize} font-semibold ${

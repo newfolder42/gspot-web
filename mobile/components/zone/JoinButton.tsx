@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { zonesApi, type ZoneMembershipStatus, type ZoneMemberRole } from '@/lib/zones';
+import { Colors, useTheme } from '@/constants/colors';
 
 type Props = {
   slug: string;
@@ -13,6 +14,7 @@ type Props = {
 /** Join / request / leave control, mirroring web `become-zone-member-button`. */
 export function JoinButton({ slug, status, role, joinPolicy }: Props) {
   const queryClient = useQueryClient();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
 
   const isMember = status === 'active';
@@ -58,7 +60,7 @@ export function JoinButton({ slug, status, role, joinPolicy }: Props) {
       } ${loading ? 'opacity-60' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={isJoined ? '#71717A' : '#ffffff'} />
+        <ActivityIndicator size="small" color={isJoined ? theme.textMuted : Colors.onAccent} />
       ) : (
         <Text className={`text-sm font-medium ${isJoined ? 'text-zinc-700 dark:text-zinc-300' : 'text-white'}`}>
           {label}

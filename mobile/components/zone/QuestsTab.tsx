@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { questsApi } from '@/lib/quests';
 import type { ZoneQuestWithStatsType } from '@/types/quest';
+import { useTheme } from '@/constants/colors';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   active: { label: 'მიმდინარე', cls: 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400' },
@@ -13,6 +14,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 
 function QuestRow({ quest, slug }: { quest: ZoneQuestWithStatsType; slug: string }) {
   const router = useRouter();
+  const theme = useTheme();
   const locked = !!quest.lockReason;
   const status = quest.myStatus ? STATUS_LABELS[quest.myStatus] : null;
 
@@ -40,16 +42,16 @@ function QuestRow({ quest, slug }: { quest: ZoneQuestWithStatsType; slug: string
         ) : null}
         {locked ? (
           <View className="flex-row items-center gap-1 mt-0.5">
-            <Feather name="lock" size={11} color="#a1a1aa" />
-            <Text className="text-xs text-zinc-400">{quest.lockReason}</Text>
+            <Feather name="lock" size={11} color={theme.icon} />
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{quest.lockReason}</Text>
           </View>
         ) : (
-          <Text className="text-xs text-zinc-400 mt-0.5">
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {quest.objectiveCount} ამოცანა · {quest.completedCount} დაასრულა
           </Text>
         )}
       </View>
-      <Feather name="chevron-right" size={18} color="#a1a1aa" />
+      <Feather name="chevron-right" size={18} color={theme.icon} />
     </Pressable>
   );
 }

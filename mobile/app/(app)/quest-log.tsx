@@ -1,13 +1,16 @@
 import { ActivityIndicator, Pressable, Text, View, FlatList } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { questsApi } from '@/lib/quests';
 import type { UserQuestLogEntryType } from '@/types/quest';
+import { useTheme } from '@/constants/colors';
 
 function LogRow({ entry }: { entry: UserQuestLogEntryType }) {
   const router = useRouter();
+  const theme = useTheme();
   const isCompleted = entry.status === 'completed';
   return (
     <Pressable
@@ -36,12 +39,13 @@ function LogRow({ entry }: { entry: UserQuestLogEntryType }) {
           {entry.zoneName} · {entry.completedObjectiveCount}/{entry.objectiveCount} ამოცანა
         </Text>
       </View>
-      <Feather name="chevron-right" size={18} color="#a1a1aa" />
+      <Feather name="chevron-right" size={18} color={theme.icon} />
     </Pressable>
   );
 }
 
 export default function QuestLogScreen() {
+  const insets = useSafeAreaInsets();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['quest-log'],
     queryFn: () => questsApi.getLog(),
@@ -68,7 +72,7 @@ export default function QuestLogScreen() {
   return (
     <FlatList
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 16 + insets.bottom }}
       data={data}
       keyExtractor={(e) => String(e.userQuestId)}
       renderItem={({ item }) => <LogRow entry={item} />}

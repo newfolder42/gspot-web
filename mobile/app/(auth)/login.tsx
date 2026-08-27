@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ScreenLayout } from '@/components/ui/ScreenLayout';
+import { useTheme } from '@/constants/colors';
 
 const schema = z.object({
   email: z.string().email('მიუთითე სწორი მეილი'),
@@ -17,6 +18,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginScreen() {
+  const theme = useTheme();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -94,7 +96,7 @@ export default function LoginScreen() {
                     autoComplete="current-password"
                     returnKeyType="done"
                     onSubmitEditing={handleSubmit(onSubmit)}
-                    placeholderTextColor="#71717A"
+                    placeholderTextColor={theme.textMuted}
                     className={[
                       'bg-zinc-100 dark:bg-zinc-800',
                       'text-zinc-900 dark:text-zinc-100',

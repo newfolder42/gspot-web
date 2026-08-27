@@ -3,6 +3,7 @@ import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
 import { postsApi } from '@/lib/posts';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 
@@ -38,7 +39,7 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
         >
           <Text className="text-base font-semibold text-zinc-100">გამოცნობები რუკაზე</Text>
           <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
-            <Feather name="x" size={18} color="#E4E4E7" />
+            <Feather name="x" size={18} color={Colors.onImageMuted} />
           </Pressable>
         </View>
 

@@ -8,8 +8,10 @@ import { FeedList } from '@/components/feed/FeedList';
 import { FeedEventsStrip } from '@/components/feed/FeedEventsStrip';
 import { AppDrawer } from '@/components/ui/AppDrawer';
 import { feedApi } from '@/lib/feed';
+import { useTheme } from '@/constants/colors';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigation = useNavigation();
   const queryClient = useQueryClient();
@@ -18,11 +20,11 @@ export default function HomeScreen() {
     navigation.setOptions({
       headerLeft: () => (
         <Pressable onPress={() => setDrawerOpen(true)} style={{ marginLeft: 14 }}>
-          <Feather name="menu" size={22} color="#A1A1AA" />
+          <Feather name="menu" size={22} color={theme.icon} />
         </Pressable>
       ),
     });
-  }, [navigation]);
+  }, [navigation, theme]);
 
   // The ამბები strip runs its own query, so pull-to-refresh has to refetch it too.
   const refreshStrip = useCallback(

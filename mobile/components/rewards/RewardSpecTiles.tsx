@@ -2,11 +2,9 @@ import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
 import type { RewardDefinition, RewardSpec } from '@/types/reward';
+import { useTheme } from '@/constants/colors';
 
 /** Mirrors web src/components/rewards/reward-tile.tsx. */
-
-// Mid zinc — readable on both the light and dark tile backgrounds, as in RewardButton.
-const ICON_COLOR = '#71717A';
 
 function TileFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -34,6 +32,8 @@ export function RewardSpecTiles({
   rewards: RewardSpec[];
   definitions: RewardDefinition[];
 }) {
+  const ICON_COLOR = useTheme().icon;
+
   if (rewards.length === 0) return null;
 
   return (

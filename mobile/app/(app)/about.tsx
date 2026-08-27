@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { aboutApi } from '@/lib/about';
@@ -20,6 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 /** Mirrors web /about — intro, features, roadmap, tech chips and the changelog. */
 export default function AboutScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [expanded, setExpanded] = useState(false);
 
@@ -57,7 +59,7 @@ export default function AboutScreen() {
   const releases = expanded ? data.changelog : data.changelog.slice(0, INITIAL_RELEASES);
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 + insets.bottom }}>
       {/* Intro */}
       <Section title={`${data.appName}-ის შესახებ`}>
         <View className="px-4 py-3">

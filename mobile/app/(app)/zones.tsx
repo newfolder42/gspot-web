@@ -5,12 +5,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type MobileZone } from '@/lib/search';
+import { useTheme } from '@/constants/colors';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - 12 * 3) / 2; // 2-column grid, 12px gaps
 
 function ZoneCard({ zone }: { zone: MobileZone }) {
   const router = useRouter();
+  const theme = useTheme();
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: zone.slug } })}
@@ -27,7 +29,7 @@ function ZoneCard({ zone }: { zone: MobileZone }) {
           />
         ) : (
           <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            <Feather name="image" size={28} color="#71717A" />
+            <Feather name="image" size={28} color={theme.icon} />
           </View>
         )}
         {zone.isMember ? (
@@ -51,7 +53,7 @@ function ZoneCard({ zone }: { zone: MobileZone }) {
       <View className="px-2.5 pt-1 pb-3">
         <Text className="text-sm font-bold text-zinc-900 dark:text-zinc-50" numberOfLines={1}>{zone.slug}</Text>
         {zone.description ? (
-          <Text className="text-[11px] text-zinc-400 mt-0.5" numberOfLines={2}>{zone.description}</Text>
+          <Text className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5" numberOfLines={2}>{zone.description}</Text>
         ) : null}
       </View>
     </Pressable>

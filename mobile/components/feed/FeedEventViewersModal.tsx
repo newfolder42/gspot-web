@@ -1,17 +1,21 @@
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { feedEventsApi } from '@/lib/feedEvents';
 import { formatTimePassed } from '@/lib/dates';
+import { useTheme } from '@/constants/colors';
 
 /** Mirrors web FeedEventViewersModal — a bottom sheet of who saw your event. */
 export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; onClose: () => void }) {
+  const theme = useTheme();
   const { data: viewers, isLoading } = useQuery({
     queryKey: ['feed-event-viewers', eventId],
     queryFn: () => feedEventsApi.getViewers(eventId),
   });
 
+  const insets = useSafeAreaInsets();
   const reactionCount = viewers?.filter((v) => v.reacted).length ?? 0;
 
   return (
@@ -23,7 +27,7 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="bg-white dark:bg-zinc-900 rounded-t-3xl"
-          style={{ maxHeight: '70%' }}
+          style={{ maxHeight: '70%', paddingBottom: insets.bottom }}
         >
           <View className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
@@ -40,7 +44,7 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
               ) : null}
             </View>
             <Pressable onPress={onClose} hitSlop={8}>
-              <Feather name="x" size={18} color="#A1A1AA" />
+              <Feather name="x" size={18} color={theme.icon} />
             </Pressable>
           </View>
 
@@ -49,7 +53,7 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
               <ActivityIndicator color="#14B8A6" />
             </View>
           ) : !viewers || viewers.length === 0 ? (
-            <Text className="p-6 text-center text-zinc-400 text-sm">ჯერ არავის უნახავს</Text>
+            <Text className="p-6 text-center text-zinc-500 dark:text-zinc-400 text-sm">ჯერ არავის უნახავს</Text>
           ) : (
             <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
               {viewers.map((v, i) => (
@@ -66,7 +70,7 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
                       <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#14B8A6" />
                     ) : null}
                   </View>
-                  <Text className="text-xs text-zinc-400">{formatTimePassed(v.seenAt)}</Text>
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(v.seenAt)}</Text>
                 </View>
               ))}
             </ScrollView>

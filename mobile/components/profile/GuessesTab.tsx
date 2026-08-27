@@ -8,10 +8,12 @@ import { formatPhotoTakenDate } from '@/lib/dates';
 import { formatGuessDistance, getGuessScoreColor, GUESS_INDEX_MIN_GUESSES } from '@/lib/guessIndex';
 import { GuessIndexPanel } from '@/components/profile/GuessIndexPanel';
 import type { UserGuess } from '@/types/guess';
+import { useTheme } from '@/constants/colors';
 
 const LIST_SIZE = 5;
 
 function GuessRow({ guess, isLast }: { guess: UserGuess; isLast: boolean }) {
+  const theme = useTheme();
   const router = useRouter();
   const scoreColor = guess.score != null ? getGuessScoreColor(guess.score) : null;
 
@@ -31,7 +33,7 @@ function GuessRow({ guess, isLast }: { guess: UserGuess; isLast: boolean }) {
         </View>
       ) : (
         <View className="mt-0.5 h-9 w-9 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800">
-          <Text className="text-sm text-zinc-400">—</Text>
+          <Text className="text-sm text-zinc-500 dark:text-zinc-400">—</Text>
         </View>
       )}
 
@@ -42,11 +44,11 @@ function GuessRow({ guess, isLast }: { guess: UserGuess; isLast: boolean }) {
         <View className="mt-0.5 flex-row items-center gap-3">
           {guess.distance != null ? (
             <View className="flex-row items-center gap-1">
-              <Feather name="map-pin" size={13} color="#71717A" />
+              <Feather name="map-pin" size={13} color={theme.icon} />
               <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatGuessDistance(guess.distance)}</Text>
             </View>
           ) : null}
-          <Text className="text-xs text-zinc-400 ml-auto">{formatPhotoTakenDate(guess.createdAt)}</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400 ml-auto">{formatPhotoTakenDate(guess.createdAt)}</Text>
         </View>
       </View>
     </Pressable>
@@ -73,6 +75,7 @@ const EMPTY_MESSAGES = [
 ];
 
 export function GuessesTab({ alias }: { alias: string }) {
+  const theme = useTheme();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['guesses', alias],
     queryFn: () => usersApi.getGuesses(alias),
@@ -142,7 +145,7 @@ export function GuessesTab({ alias }: { alias: string }) {
 
       <GuessList
         title="ბოლო გამოცნობები"
-        icon={<Feather name="list" size={16} color="#71717A" />}
+        icon={<Feather name="list" size={16} color={theme.icon} />}
         guesses={latest}
       />
     </View>

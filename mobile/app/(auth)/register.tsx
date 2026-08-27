@@ -6,12 +6,14 @@ import { authApi } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ScreenLayout } from '@/components/ui/ScreenLayout';
+import { useTheme } from '@/constants/colors';
 
 type AliasStatus = 'checking' | 'available' | 'taken' | 'invalid' | null;
 type EmailStatus = 'valid' | 'invalid' | 'blocked' | null;
 type PasswordStatus = 'invalid' | null;
 
 export default function RegisterScreen() {
+  const theme = useTheme();
   const { register } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -115,7 +117,7 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="next"
-              placeholderTextColor="#71717A"
+              placeholderTextColor={theme.textMuted}
               className={[
                 'bg-zinc-100 dark:bg-zinc-800',
                 'text-zinc-900 dark:text-zinc-100',
@@ -131,7 +133,7 @@ export default function RegisterScreen() {
             {alias ? (
               <View className="absolute right-3 top-0 bottom-0 justify-center">
                 {aliasStatus === 'checking' && (
-                  <View className="w-4 h-4 rounded-full border-2 border-zinc-400 border-t-zinc-700" />
+                  <View className="w-4 h-4 rounded-full border-2 border-zinc-400 border-t-zinc-700 dark:border-zinc-600 dark:border-t-zinc-300" />
                 )}
                 {aliasStatus === 'available' && (
                   <Text className="text-green-500 font-bold text-base">✓</Text>
@@ -166,7 +168,7 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               autoComplete="email"
               returnKeyType="next"
-              placeholderTextColor="#71717A"
+              placeholderTextColor={theme.textMuted}
               className={[
                 'bg-zinc-100 dark:bg-zinc-800',
                 'text-zinc-900 dark:text-zinc-100',
@@ -212,7 +214,7 @@ export default function RegisterScreen() {
               autoComplete="new-password"
               returnKeyType="done"
               onSubmitEditing={onSubmit}
-              placeholderTextColor="#71717A"
+              placeholderTextColor={theme.textMuted}
               className={[
                 'bg-zinc-100 dark:bg-zinc-800',
                 'text-zinc-900 dark:text-zinc-100',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +10,7 @@ import { QuestObjectiveCapture } from '@/components/zone/QuestObjectiveCapture';
 import { questsApi } from '@/lib/quests';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import type { ZoneQuestObjectiveWithProgressType } from '@/types/quest';
+import { useTheme } from '@/constants/colors';
 
 const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
   pending_review: 'განხილვაში',
@@ -34,6 +36,8 @@ function isObjectiveAttemptable(
 }
 
 export default function QuestDetailScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { slug, questId: questIdParam } = useLocalSearchParams<{ slug: string; questId: string }>();
   const questId = Number(questIdParam);
   const router = useRouter();
@@ -90,7 +94,7 @@ export default function QuestDetailScreen() {
   const captureObjective = captureObjectiveId != null ? objectives.find((o) => o.id === captureObjectiveId) ?? null : null;
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingBottom: 48 + insets.bottom }}>
       {/* Header */}
       <View className="flex-row items-start gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
         {character ? (
@@ -99,7 +103,7 @@ export default function QuestDetailScreen() {
           </Pressable>
         ) : (
           <View className="h-11 w-11 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center">
-            <Feather name="flag" size={20} color="#a1a1aa" />
+            <Feather name="flag" size={20} color={theme.icon} />
           </View>
         )}
         <View className="flex-1">
@@ -107,13 +111,13 @@ export default function QuestDetailScreen() {
           <Text className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{quest.title}</Text>
           {quest.description ? <Text className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5">{quest.description}</Text> : null}
           <View className="flex-row items-center gap-1.5 mt-2">
-            <Feather name="flag" size={13} color="#a1a1aa" />
+            <Feather name="flag" size={13} color={theme.icon} />
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">ჯილდო · 200 გამოცდილება</Text>
           </View>
           <View className="flex-row items-center gap-2 flex-wrap mt-1">
             {quest.start_date || quest.end_date ? (
               <View className="flex-row items-center gap-1.5">
-                <Feather name="calendar" size={13} color="#a1a1aa" />
+                <Feather name="calendar" size={13} color={theme.icon} />
                 <Text className="text-xs text-zinc-500 dark:text-zinc-400">
                   {quest.start_date && quest.end_date
                     ? `${formatPhotoTakenDate(quest.start_date)} - ${formatPhotoTakenDate(quest.end_date)}`
@@ -125,7 +129,7 @@ export default function QuestDetailScreen() {
             ) : null}
             {quest.required_level ? (
               <View className="flex-row items-center gap-1 rounded-md px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800">
-                <Feather name="lock" size={11} color="#a1a1aa" />
+                <Feather name="lock" size={11} color={theme.icon} />
                 <Text className="text-xs font-medium text-zinc-600 dark:text-zinc-300">დონე {quest.required_level}+</Text>
               </View>
             ) : null}
@@ -135,7 +139,7 @@ export default function QuestDetailScreen() {
 
       {!userQuest && lockReason ? (
         <View className="flex-row items-start gap-2 mt-4">
-          <Feather name="lock" size={15} color="#a1a1aa" />
+          <Feather name="lock" size={15} color={theme.icon} />
           <Text className="text-sm text-zinc-500 dark:text-zinc-400 flex-1">{lockReason}</Text>
         </View>
       ) : null}
@@ -178,7 +182,7 @@ export default function QuestDetailScreen() {
                 {isCompleted ? (
                   <Feather name="check" size={13} color="#fff" />
                 ) : isLocked ? (
-                  <Feather name="lock" size={12} color="#a1a1aa" />
+                  <Feather name="lock" size={12} color={theme.icon} />
                 ) : (
                   <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{idx + 1}</Text>
                 )}

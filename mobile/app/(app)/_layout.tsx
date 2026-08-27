@@ -11,6 +11,7 @@ import {
   savePushToken,
 } from '@/lib/pushNotifications';
 import { openPushNotification } from '@/lib/notificationRouting';
+import { Colors, useTheme } from '@/constants/colors';
 
 /**
  * A cold start replays the tap that launched the app. Remembering which one we
@@ -22,6 +23,7 @@ export default function AppLayout() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const theme = useTheme();
 
   useEffect(() => {
     if (!user) return;
@@ -72,7 +74,7 @@ export default function AppLayout() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <ActivityIndicator size="large" color="#14B8A6" />
+        <ActivityIndicator size="large" color={Colors.brand} />
       </View>
     );
   }
@@ -82,13 +84,14 @@ export default function AppLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#18181B' },
-        headerTintColor: '#EDEDED',
+        headerStyle: { backgroundColor: theme.headerBg },
+        headerTintColor: theme.headerTint,
         headerTitleStyle: { fontWeight: '700', fontSize: 17 },
         headerShadowVisible: false,
+        contentStyle: { backgroundColor: theme.bg },
         headerRight: () => (
           <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 4 }}>
-            <Feather name="search" size={20} color="#A1A1AA" />
+            <Feather name="search" size={20} color={theme.icon} />
           </Pressable>
         ),
       }}

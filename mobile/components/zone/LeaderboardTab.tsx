@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { zonesApi, type LeaderboardEntry } from '@/lib/zones';
+import { useTheme } from '@/constants/colors';
 
 const PODIUM_META = [
   { height: 64, bg: '#cbd5e1', label: '#2' },
@@ -13,6 +15,7 @@ const PODIUM_META = [
 
 function Podium({ top3 }: { top3: (LeaderboardEntry | undefined)[] }) {
   const router = useRouter();
+  const theme = useTheme();
   // order: 2nd, 1st, 3rd
   const order = [top3[1], top3[0], top3[2]];
   return (
@@ -31,7 +34,7 @@ function Podium({ top3 }: { top3: (LeaderboardEntry | undefined)[] }) {
                 <Text className="text-xs text-zinc-500 dark:text-zinc-400">{entry.rating} ქ.</Text>
               </Pressable>
             ) : null}
-            <View className="w-full rounded-t-md" style={{ height: meta.height, backgroundColor: entry ? meta.bg : '#e4e4e7' }} />
+            <View className="w-full rounded-t-md" style={{ height: meta.height, backgroundColor: entry ? meta.bg : theme.surfaceAlt }} />
           </View>
         );
       })}
@@ -40,6 +43,7 @@ function Podium({ top3 }: { top3: (LeaderboardEntry | undefined)[] }) {
 }
 
 export function LeaderboardTab({ slug }: { slug: string }) {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [period, setPeriod] = useState<string | undefined>(undefined);
 
@@ -67,7 +71,7 @@ export function LeaderboardTab({ slug }: { slug: string }) {
   const rest = data.entries.slice(3);
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
         {data.periods.map((p) => {
           const active = (period ?? 'total') === p.key;

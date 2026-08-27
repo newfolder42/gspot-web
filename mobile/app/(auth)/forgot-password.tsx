@@ -6,10 +6,12 @@ import { authApi } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ScreenLayout } from '@/components/ui/ScreenLayout';
+import { useTheme } from '@/constants/colors';
 
 type Step = 'email' | 'otp' | 'password';
 
 export default function ForgotPasswordScreen() {
+  const theme = useTheme();
   const { resetPassword } = useAuth();
   const [step, setStep] = useState<Step>('email');
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,7 @@ export default function ForgotPasswordScreen() {
                 keyboardType="number-pad"
                 maxLength={1}
                 editable={!loading}
-                placeholderTextColor="#71717A"
+                placeholderTextColor={theme.textMuted}
                 className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50"
               />
             ))}
@@ -155,7 +157,7 @@ export default function ForgotPasswordScreen() {
             disabled={resendCooldown > 0 || loading}
             className="mt-4 items-center"
           >
-            <Text className={`text-sm ${resendCooldown > 0 ? 'text-zinc-400' : 'text-brand'}`}>
+            <Text className={`text-sm ${resendCooldown > 0 ? 'text-zinc-500 dark:text-zinc-400' : 'text-brand'}`}>
               {resendCooldown > 0
                 ? `კოდის ხელახალი გაგზავნა (${resendCooldown}წმ)`
                 : 'კოდის ხელახალი გაგზავნა'}
@@ -194,7 +196,7 @@ export default function ForgotPasswordScreen() {
                 secureTextEntry={!showPassword}
                 autoComplete="new-password"
                 returnKeyType="next"
-                placeholderTextColor="#71717A"
+                placeholderTextColor={theme.textMuted}
                 className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3.5 text-base pr-16 border border-zinc-200 dark:border-zinc-700"
               />
               <Pressable

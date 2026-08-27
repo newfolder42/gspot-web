@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
 
 type Props = {
   voteScore?: number | null;
@@ -36,18 +37,18 @@ export function PostStatsBadge({
     >
       {voteScore != null ? (
         <View className="flex-row items-center gap-1">
-          <MaterialCommunityIcons name="arrow-up-bold" size={iconSize} color="#FAFAFA" />
+          <MaterialCommunityIcons name="arrow-up-bold" size={iconSize} color={Colors.onImage} />
           <Text className={textClass}>{voteScore}</Text>
         </View>
       ) : null}
       {guessCount != null ? (
         <View className={`flex-row items-center gap-1 ${voteScore != null ? gapClass : ''}`}>
-          <Feather name="map-pin" size={iconSize} color="#FAFAFA" />
+          <Feather name="map-pin" size={iconSize} color={Colors.onImage} />
           <Text className={textClass}>{guessCount}</Text>
         </View>
       ) : null}
       <View className={`flex-row items-center gap-1 ${voteScore != null || guessCount != null ? gapClass : ''}`}>
-        <Feather name="message-circle" size={iconSize} color="#FAFAFA" />
+        <Feather name="message-circle" size={iconSize} color={Colors.onImage} />
         <Text className={textClass}>{commentCount}</Text>
       </View>
     </View>

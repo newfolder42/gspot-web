@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, View }
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { zonesApi, type MobileZoneFeedFilter, type ZoneTag } from '@/lib/zones';
@@ -91,8 +92,8 @@ function PostCard({ item }: { item: MobilePostType }) {
             <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
             {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
           </Pressable>
-          <Text className="text-xs text-zinc-400">•</Text>
-          <Text className="text-xs text-zinc-400">{formatTimePassed(item.date)}</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(item.date)}</Text>
           {item.status === 'failed' ? <View className="w-3 h-3 rounded-full bg-rose-600" /> : null}
         </View>
         {isQuest ? (
@@ -137,7 +138,7 @@ function PostCard({ item }: { item: MobilePostType }) {
               className="absolute top-3 right-3 flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20"
               style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
             >
-              <Feather name="message-circle" size={16} color="#FAFAFA" />
+              <Feather name="message-circle" size={16} color={Colors.onImage} />
               <Text className="text-sm font-semibold text-zinc-50">{item.commentCount ?? 0}</Text>
             </View>
           </Pressable>
@@ -147,7 +148,7 @@ function PostCard({ item }: { item: MobilePostType }) {
             className="mx-2 mb-2 self-start"
           >
             <View className="flex-row items-center gap-1 rounded-full px-2.5 py-1 border border-white/20" style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}>
-              <Feather name="message-circle" size={16} color="#FAFAFA" />
+              <Feather name="message-circle" size={16} color={Colors.onImage} />
               <Text className="text-sm font-semibold text-zinc-50">{item.commentCount ?? 0}</Text>
             </View>
           </Pressable>
@@ -162,10 +163,10 @@ function PostCard({ item }: { item: MobilePostType }) {
             className="absolute top-3 right-3 flex-row items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20"
             style={{ backgroundColor: 'rgba(24,24,27,0.8)' }}
           >
-            <Feather name="map-pin" size={16} color="#FAFAFA" />
+            <Feather name="map-pin" size={16} color={Colors.onImage} />
             <Text className="text-sm font-semibold text-zinc-50">{item.guessCount ?? 0}</Text>
             <View className="flex-row items-center gap-1 ml-2">
-              <Feather name="message-circle" size={16} color="#FAFAFA" />
+              <Feather name="message-circle" size={16} color={Colors.onImage} />
               <Text className="text-sm font-semibold text-zinc-50">{item.commentCount ?? 0}</Text>
             </View>
           </View>
@@ -243,7 +244,7 @@ export function ZoneFeedTab({ slug }: { slug: string }) {
               <View className="py-4"><ActivityIndicator color="#14B8A6" /></View>
             ) : posts.length > 0 && !feedQuery.hasNextPage ? (
               <View className="py-4 items-center">
-                <Text className="text-xs text-zinc-400">მეტი პოსტი არ არის</Text>
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">მეტი პოსტი არ არის</Text>
               </View>
             ) : null
           }

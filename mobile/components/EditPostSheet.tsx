@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { postsApi } from '@/lib/posts';
 import { submitApi, type ZoneTag } from '@/lib/submit';
+import { useTheme } from '@/constants/colors';
 
 type Props = {
   postId: number;
@@ -26,6 +27,7 @@ export function EditPostSheet({
   onClose,
   onSaved,
 }: Props) {
+  const theme = useTheme();
   const [title, setTitle] = useState(currentTitle ?? '');
   const [tagId, setTagId] = useState<number | null>(currentTagId);
   const [saving, setSaving] = useState(false);
@@ -75,7 +77,7 @@ export function EditPostSheet({
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">რედაქტირება</Text>
             <Pressable onPress={onClose} hitSlop={8} className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800">
-              <Feather name="x" size={15} color="#71717A" />
+              <Feather name="x" size={15} color={theme.icon} />
             </Pressable>
           </View>
 
@@ -84,7 +86,7 @@ export function EditPostSheet({
               value={title}
               onChangeText={setTitle}
               placeholder="პოსტის სათაური"
-              placeholderTextColor="#71717A"
+              placeholderTextColor={theme.textMuted}
               maxLength={500}
               className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700"
             />

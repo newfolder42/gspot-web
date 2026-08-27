@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'rea
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
+import { useTheme } from '@/constants/colors';
 import { rewardsApi } from '@/lib/rewards';
 import { getSelectableRewardsForTarget } from '@/types/reward';
 import type { RewardSummaryType, RewardTarget } from '@/types/reward';
@@ -20,6 +21,7 @@ type Props = {
  * remaining quota are fetched on open (never on feed/post load), matching web.
  */
 export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Props) {
+  const theme = useTheme();
   const [givingKey, setGivingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +68,7 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">ჯილდოს გაცემა</Text>
             <Pressable onPress={onClose} hitSlop={8} className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800">
-              <Feather name="x" size={15} color="#71717A" />
+              <Feather name="x" size={15} color={theme.icon} />
             </Pressable>
           </View>
 
@@ -119,7 +121,7 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
           {/* Remaining quota */}
           {status ? (
             <View className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800">
-              <Text className="text-center text-xs text-zinc-400">
+              <Text className="text-center text-xs text-zinc-500 dark:text-zinc-400">
                 დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}
               </Text>
             </View>

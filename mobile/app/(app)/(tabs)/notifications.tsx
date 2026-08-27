@@ -11,6 +11,7 @@ import {
   type NotificationPostVoteCreatedDetailsType,
   type NotificationType,
 } from '@/types/notification';
+import { Colors, useTheme } from '@/constants/colors';
 
 const PAGE_SIZE = 20;
 const NOTIFICATIONS_QUERY_KEY = ['notifications'] as const;
@@ -76,9 +77,10 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
  */
 function NotificationIcon({ notification }: { notification: NotificationType }) {
   const { type, details } = notification;
+  const theme = useTheme();
 
   if (type === 'feed-event-reaction') {
-    return <MaterialCommunityIcons name="arrow-up-bold" size={16} color="#71717A" />;
+    return <MaterialCommunityIcons name="arrow-up-bold" size={16} color={theme.icon} />;
   }
 
   if (type === 'post-vote-created' || type === 'comment-vote-created') {
@@ -87,12 +89,12 @@ function NotificationIcon({ notification }: { notification: NotificationType }) 
       <MaterialCommunityIcons
         name={isDownvote ? 'arrow-down-bold' : 'arrow-up-bold'}
         size={16}
-        color="#71717A"
+        color={theme.icon}
       />
     );
   }
 
-  return <Feather name={iconNameByType(type)} size={16} color="#71717A" />;
+  return <Feather name={iconNameByType(type)} size={16} color={theme.icon} />;
 }
 
 function NotificationRow({
@@ -104,6 +106,8 @@ function NotificationRow({
   onToggleSeen: (item: NotificationType) => void;
   onPress: (item: NotificationType) => void;
 }) {
+  const theme = useTheme();
+
   return (
     <Pressable
       onPress={() => onPress(item)}
@@ -137,7 +141,7 @@ function NotificationRow({
         <MaterialCommunityIcons
           name={item.seen ? 'email-outline' : 'email-open-outline'}
           size={18}
-          color={item.seen ? '#71717A' : '#14B8A6'}
+          color={item.seen ? theme.icon : Colors.brand}
         />
       </Pressable>
     </Pressable>
@@ -146,6 +150,7 @@ function NotificationRow({
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const queryClient = useQueryClient();
   const [markingAll, setMarkingAll] = useState(false);
 
@@ -244,9 +249,9 @@ export default function NotificationsScreen() {
             <MaterialCommunityIcons
               name="email-open-multiple-outline"
               size={16}
-              color={markingAll ? '#71717A' : '#14B8A6'}
+              color={markingAll ? theme.icon : Colors.brand}
             />
-            <Text className={`text-xs ${markingAll ? 'text-zinc-400' : 'text-teal-600 dark:text-teal-400'}`}>
+            <Text className={`text-xs ${markingAll ? 'text-zinc-500 dark:text-zinc-400' : 'text-teal-600 dark:text-teal-400'}`}>
               ყველას წაკითხულად მონიშვნა
             </Text>
           </Pressable>

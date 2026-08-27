@@ -6,6 +6,7 @@ import { LevelBadge } from '@/components/ui/LevelBadge';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { rewardsApi } from '@/lib/rewards';
 import { formatTimePassed } from '@/lib/dates';
+import { useTheme } from '@/constants/colors';
 
 type Props = {
   postId: number;
@@ -15,6 +16,7 @@ type Props = {
 
 /** Mirrors web RewardDetailsModal — givers grouped by reward, newest group first. */
 export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
+  const theme = useTheme();
   const router = useRouter();
 
   const { data: users, isLoading } = useQuery({
@@ -45,7 +47,7 @@ export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">ჯილდოს გამცემები</Text>
             <Pressable onPress={onClose} hitSlop={8} className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800">
-              <Feather name="x" size={15} color="#71717A" />
+              <Feather name="x" size={15} color={theme.icon} />
             </Pressable>
           </View>
 
@@ -65,7 +67,7 @@ export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
                     <View className="flex-row items-center gap-2 mb-2">
                       <RewardIcon iconUrl={iconUrl} size={20} />
                       <Text className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{name}</Text>
-                      <Text className="text-xs text-zinc-400">{group.length}</Text>
+                      <Text className="text-xs text-zinc-500 dark:text-zinc-400">{group.length}</Text>
                     </View>
                     {group.map((u) => (
                       <Pressable
@@ -77,8 +79,8 @@ export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
                           &apos;{u.alias}
                         </Text>
                         {u.level != null ? <LevelBadge level={u.level} /> : null}
-                        <Text className="text-xs text-zinc-400">•</Text>
-                        <Text className="text-xs text-zinc-400">{formatTimePassed(u.createdAt)}</Text>
+                        <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+                        <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(u.createdAt)}</Text>
                       </Pressable>
                     ))}
                   </View>

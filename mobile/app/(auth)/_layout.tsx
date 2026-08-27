@@ -1,14 +1,16 @@
 import { Stack, Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import { Colors, useTheme } from '@/constants/colors';
 
 export default function AuthLayout() {
   const { user, isLoading } = useAuth();
+  const theme = useTheme();
 
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <ActivityIndicator size="large" color="#14B8A6" />
+        <ActivityIndicator size="large" color={Colors.brand} />
       </View>
     );
   }
@@ -19,11 +21,11 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#18181B',
+          backgroundColor: theme.headerBg,
         },
-        headerTintColor: '#EDEDED',
+        headerTintColor: theme.headerTint,
         headerTitleStyle: { fontWeight: '600' },
-        contentStyle: { backgroundColor: '#FAFAFA' },
+        contentStyle: { backgroundColor: theme.bg },
         headerShadowVisible: false,
       }}
     >

@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type MobileZone } from '@/lib/search';
+import { useTheme } from '@/constants/colors';
 
 const DRAWER_WIDTH = 280;
 const EDGE_ZONE_WIDTH = 24;
@@ -36,12 +37,14 @@ function DrawerLink({
   label: string;
   onPress: () => void;
 }) {
+  const theme = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
       className="flex-row items-center gap-3 px-4 py-3 rounded-xl active:bg-zinc-100 dark:active:bg-zinc-800"
     >
-      <Feather name={icon} size={20} color="#71717A" />
+      <Feather name={icon} size={20} color={theme.icon} />
       <Text className="text-sm text-zinc-900 dark:text-zinc-100">{label}</Text>
     </Pressable>
   );
@@ -50,6 +53,7 @@ function DrawerLink({
 export function AppDrawer({ open, onClose, onOpen }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   // The backdrop tracks the panel, so a half-open drag is half-dimmed.
   const opacity = translateX.interpolate({
@@ -173,7 +177,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
       >
         {/* Backdrop */}
         <Animated.View
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', opacity }}
+          style={{ flex: 1, backgroundColor: theme.overlay, opacity }}
           pointerEvents={open ? 'auto' : 'none'}
         >
           <Pressable style={{ flex: 1 }} onPress={onClose} />
@@ -193,11 +197,11 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
           className="bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800"
         >
           {/* Header */}
-          <View style={{ paddingTop: insets.top + 12, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#3f3f46' }}>
+          <View style={{ paddingTop: insets.top + 12, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
             <View className="flex-row items-center justify-between">
               <Text className="text-lg font-bold text-zinc-900 dark:text-zinc-50">G'Spot</Text>
               <Pressable onPress={onClose}>
-                <Feather name="x" size={20} color="#71717A" />
+                <Feather name="x" size={20} color={theme.icon} />
               </Pressable>
             </View>
           </View>
@@ -215,7 +219,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
             {myZones.length > 0 ? (
               <View className="mt-4">
                 <View className="px-4 pb-2">
-                  <Text className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">ჩემი საბზონები</Text>
+                  <Text className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">ჩემი საბზონები</Text>
                 </View>
                 {myZones.map((zone) => (
                   <Pressable
@@ -232,7 +236,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
           </ScrollView>
 
           {/* Pinned bottom – About */}
-          <View style={{ paddingBottom: insets.bottom + 4, borderTopWidth: 1, borderTopColor: '#3f3f46' }} className="pt-1">
+          <View style={{ paddingBottom: insets.bottom + 4, borderTopWidth: 1, borderTopColor: theme.border }} className="pt-1">
             <DrawerLink icon="info" label="ჩვენს შესახებ" onPress={() => nav('/(app)/about')} />
           </View>
         </Animated.View>

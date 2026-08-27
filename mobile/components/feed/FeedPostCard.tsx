@@ -44,7 +44,7 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
             <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
             <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.zoneSlug}</Text>
           </Pressable>
-          <Text className="text-xs text-zinc-400">•</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
           {/* Author + level badge – tappable → user profile */}
           <Pressable
             className="flex-row items-center gap-1"
@@ -53,8 +53,8 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
             <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
             {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
           </Pressable>
-          <Text className="text-xs text-zinc-400">•</Text>
-          <Text className="text-xs text-zinc-400">{formatTimeAgo(item.date)}</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(item.date)}</Text>
           {/* Failed dot */}
           {item.status === 'failed' ? (
             <View className="w-3 h-3 rounded-full bg-rose-600" />

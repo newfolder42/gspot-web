@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
@@ -43,6 +44,7 @@ export function ConnectionsTab({
   header: ReactElement;
   refreshControl?: ReactElement<RefreshControlProps>;
 }) {
+  const insets = useSafeAreaInsets();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['connections', alias],
     queryFn: () => usersApi.getConnections(alias),
@@ -56,7 +58,7 @@ export function ConnectionsTab({
       keyExtractor={(c) => c.alias}
       ListHeaderComponent={header}
       refreshControl={refreshControl}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
       initialNumToRender={10}
       windowSize={7}
       removeClippedSubviews

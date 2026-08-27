@@ -6,6 +6,7 @@ import { postsApi } from '@/lib/posts';
 import { processPostPhoto } from '@/lib/image';
 import { extractGPSFromExif, type Coords } from '@/lib/location';
 import type { PhotoGuessResult } from '@/types/post-guess';
+import { useTheme } from '@/constants/colors';
 
 type Stage = 'idle' | 'processing' | 'no-gps' | 'success' | 'error';
 
@@ -21,6 +22,7 @@ type Props = {
  * server-side, so no coordinates of the target photo are ever sent to the client.
  */
 export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
+  const theme = useTheme();
   const [stage, setStage] = useState<Stage>('idle');
   const [result, setResult] = useState<PhotoGuessResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">გამოცნობა ადგილზე</Text>
             <Pressable onPress={onClose} hitSlop={8} className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800">
-              <Feather name="x" size={15} color="#71717A" />
+              <Feather name="x" size={15} color={theme.icon} />
             </Pressable>
           </View>
 
@@ -127,7 +129,7 @@ export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
                   onPress={() => pick('library')}
                   className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2"
                 >
-                  <Feather name="image" size={16} color="#71717A" />
+                  <Feather name="image" size={16} color={theme.icon} />
                   <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">გალერეიდან არჩევა</Text>
                 </Pressable>
               </>
@@ -152,7 +154,7 @@ export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
                     <Text className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">ქულა</Text>
                     <Text className="text-3xl font-bold text-teal-600 dark:text-teal-400">{result.score}</Text>
                   </View>
-                  <View style={{ width: 1, height: 40, backgroundColor: '#3f3f46' }} />
+                  <View style={{ width: 1, height: 40, backgroundColor: theme.border }} />
                   <View className="items-center">
                     <Text className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">მანძილი</Text>
                     <Text className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">

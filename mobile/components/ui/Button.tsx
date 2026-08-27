@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { Colors, useTheme } from '@/constants/colors';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -26,12 +27,9 @@ const textClasses: Record<Variant, string> = {
   danger: 'text-white text-base font-semibold',
 };
 
-const spinnerColor: Record<Variant, string> = {
-  primary: '#ffffff',
-  secondary: '#71717A',
-  ghost: '#14B8A6',
-  danger: '#ffffff',
-};
+/** `secondary` sits on a neutral fill, so its spinner follows the scheme. */
+const spinnerColor = (variant: Variant, muted: string): string =>
+  variant === 'secondary' ? muted : variant === 'ghost' ? Colors.brand : Colors.onAccent;
 
 export function Button({
   title,
@@ -40,6 +38,7 @@ export function Button({
   disabled = false,
   variant = 'primary',
 }: ButtonProps) {
+  const theme = useTheme();
   const isDisabled = disabled || loading;
 
   return (
@@ -47,10 +46,10 @@ export function Button({
       className={`${base} ${variantClasses[variant]} ${isDisabled ? 'opacity-50' : ''}`}
       onPress={onPress}
       disabled={isDisabled}
-      android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: false }}
+      android_ripple={{ color: theme.ripple, borderless: false }}
     >
       {loading ? (
-        <ActivityIndicator color={spinnerColor[variant]} />
+        <ActivityIndicator color={spinnerColor(variant, theme.textMuted)} />
       ) : (
         <Text className={textClasses[variant]}>{title}</Text>
       )}

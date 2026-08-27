@@ -7,6 +7,7 @@ import { processPostPhoto } from '@/lib/image';
 import { haversineMeters } from '@/lib/guessScore';
 import { extractGPSFromExif, getLiveLocation, type Coords } from '@/lib/location';
 import type { ObjectiveTypeId, ObjectiveConfig, InRangeLocationConfig, CaptureMethod } from '@/types/quest';
+import { useTheme } from '@/constants/colors';
 
 type Stage = 'idle' | 'processing' | 'no-location' | 'out-of-range' | 'success' | 'error';
 
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function QuestObjectiveCapture({ userQuestId, objectiveId, type, config, onClose, onSubmitted }: Props) {
+  const theme = useTheme();
   const [stage, setStage] = useState<Stage>('idle');
   const [distance, setDistance] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export function QuestObjectiveCapture({ userQuestId, objectiveId, type, config, 
                 onPress={capture}
                 className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-8 items-center"
               >
-                <Feather name="camera" size={28} color="#a1a1aa" />
+                <Feather name="camera" size={28} color={theme.icon} />
                 <Text className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 text-center">
                   {needsLocation ? 'გადაიღე ფოტო ადგილზე ამოცანის შესასრულებლად.' : 'გადაიღე ფოტო ამოცანის შესასრულებლად.'}
                 </Text>

@@ -395,6 +395,36 @@ colors: { brand: { DEFAULT: '#14B8A6', dark: '#0D9488' } }
 
 Use as `bg-brand`, `text-brand`, `active:bg-brand-dark`.
 
+### Light / dark mode
+
+`darkMode: 'media'` in `tailwind.config.js` means `dark:` follows the OS
+appearance — there is no in-app toggle, matching the web app's
+`prefers-color-scheme`. Every surface, text and border colour therefore needs a
+pair: `bg-white dark:bg-zinc-900`, `text-zinc-500 dark:text-zinc-400`.
+
+Class names cover most of it, but React Native has props that only take a colour
+value — `color` on `Feather`/`MaterialCommunityIcons`, `placeholderTextColor`,
+`ActivityIndicator`, `Switch` `trackColor`, `RefreshControl`, `android_ripple`,
+and every navigator's `screenOptions`. Those read from `constants/colors.ts`:
+
+```tsx
+import { Colors, useTheme } from '@/constants/colors';
+
+const theme = useTheme();          // resolves against the OS appearance
+<Feather name="search" size={20} color={theme.icon} />
+<ActivityIndicator color={Colors.brand} />
+```
+
+`Colors` holds what never changes (brand, semantics, foregrounds that sit on a
+fixed ground); `useTheme()` holds what does (`bg`, `surface`, `border`, `text`,
+`textMuted`, `icon`, `iconFaint`, `headerBg`, `tabBarBg`, `overlay`, `ripple`, …).
+
+Some surfaces stay dark in **both** schemes by design — the full-screen map
+modals (`NewGuess`, `GuessesMap`), the photo viewer (`ZoomableImage`), the photo
+letterbox in `submit`, and the badges/scrims drawn over post images. Their
+`bg-zinc-900` / `text-zinc-400` classes are correct as-is; use `Colors.onImage`
+and `Colors.onImageMuted` for chrome on top of them rather than theme tokens.
+
 ---
 
 ## 15. Data Fetching — TanStack Query
