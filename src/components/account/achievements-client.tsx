@@ -18,11 +18,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   posts: 'პოსტები',
   guesses: 'გამოცნობები',
   quests: 'მისიები',
+  hide_and_seek: 'დამალობანა',
   streaks: 'უწყვეტობა',
   level: 'დონეები',
 };
 
-const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'quests', 'streaks', 'level'];
+const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'quests', 'hide_and_seek', 'streaks', 'level'];
 
 const OVERVIEW = '__overview__';
 
