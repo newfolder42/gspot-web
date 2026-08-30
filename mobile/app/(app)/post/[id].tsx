@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -149,13 +149,13 @@ function CommentItem({
             isGuess ? (
               <View className="mb-1">
                 {isPhotoGuess && item.metadata?.imageUrl ? (
-                  <View className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5">
-                    <Image
-                      source={{ uri: item.metadata.imageUrl }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="contain"
-                    />
-                  </View>
+                  <ZoomableImage
+                    uri={item.metadata.imageVariants?.thumb ?? item.metadata.imageUrl}
+                    fullUri={item.metadata.imageUrl}
+                    title={`'${item.author} — გამოცნობა ადგილზე`}
+                    resizeMode="contain"
+                    className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5"
+                  />
                 ) : null}
                 <View className="flex-row items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 self-start">
                   {item.metadata?.score != null ? (

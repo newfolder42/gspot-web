@@ -10,6 +10,7 @@ import { getInitials } from '@/lib/getInitials';
 import UserLink from '@/components/common/user-link';
 import VoteButtons from '@/components/votes/vote-buttons';
 import RewardButton from '@/components/rewards/reward-button';
+import ImageLightbox from '@/components/common/image-lightbox';
 
 type PostCommentProps = {
   comment: PostCommentType;
@@ -43,6 +44,7 @@ export default function PostComment({
   const [submitting, setSubmitting] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [showReplies, setShowReplies] = useState(depth < MAX_EXPANDED_DEPTH);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -133,15 +135,21 @@ export default function PostComment({
             ) : isGuess ? (
               <div className="mb-1 space-y-1.5">
                 {isPhotoGuess && comment.metadata?.imageUrl && (
-                  <div className="w-52 h-40 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="block w-52 h-40 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 cursor-zoom-in"
+                    aria-label="გამოცნობის ფოტოს გახსნა"
+                    title="გახსნა"
+                  >
                     <Image
-                      src={comment.metadata.imageUrl}
+                      src={comment.metadata.imageVariants?.thumb ?? comment.metadata.imageUrl}
                       alt="guess photo"
                       width={208}
                       height={160}
                       className="w-full h-full object-contain"
                     />
-                  </div>
+                  </button>
                 )}
                 <div className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 inline-flex items-center gap-2">
                   {comment.metadata?.score != null && (
@@ -265,6 +273,15 @@ export default function PostComment({
           </div>
         )}
       </div>
+
+      {lightboxOpen && comment.metadata?.imageUrl && (
+        <ImageLightbox
+          src={comment.metadata.imageUrl}
+          alt="guess photo"
+          title={`'${comment.author} — გამოცნობა ადგილზე`}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }

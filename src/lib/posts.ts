@@ -11,6 +11,7 @@ import { PostPublishedEvent } from '@/types/events/post-published';
 import { eventBus } from './eventBus';
 import { PostGuessedEvent } from '@/types/events/post-guessed';
 import { createGuessComment } from '@/lib/comments';
+import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
@@ -974,13 +975,20 @@ export async function createPhotoGuessForUser(
 
     const guessId = data.rows[0].id;
 
+    // Same treatment post photos get: downscaled feed/thumb WebPs beside the master,
+    // so the comment thread renders a small image instead of the full-size upload.
+    // On failure `processed` is null and the master URL is used alone, as before.
+    const processed = await processUploadedPhoto(imageUrl);
+    const storedUrl = processed?.displayUrl ?? imageUrl;
+    const imageVariants = processed?.variants ?? null;
+
     await query(
       `insert into user_content (user_id, type, public_url, details)
        values ($1, 'guess-photo', $2, $3)`,
-      [userId, imageUrl, JSON.stringify({ guessId, postId })]
+      [userId, storedUrl, JSON.stringify({ guessId, postId, ...(imageVariants ? { variants: imageVariants } : {}) })]
     );
 
-    await createGuessComment({ postId, userId, guessId, score, distance, type: 'gps-photo-guess-comment', imageUrl });
+    await createGuessComment({ postId, userId, guessId, score, distance, type: 'gps-photo-guess-comment', imageUrl: storedUrl, imageVariants });
 
     await eventBus.publish('post', 'guessed', {
       postId: +postId,

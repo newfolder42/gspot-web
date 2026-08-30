@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/session';
 import { canUserAccessPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import type { PostCommentType } from '@/types/post-comment';
+import type { PostImageVariants } from '@/types/post';
 import { eventBus } from '@/lib/eventBus';
 import type { PostCommentCreatedEvent } from '@/types/events/post-comment-created';
 
@@ -167,6 +168,7 @@ export async function createGuessComment({
   distance,
   type = 'gps-guess-comment',
   imageUrl,
+  imageVariants,
 }: {
   postId: number;
   userId: number;
@@ -175,6 +177,7 @@ export async function createGuessComment({
   distance: number;
   type?: 'gps-guess-comment' | 'gps-photo-guess-comment';
   imageUrl?: string;
+  imageVariants?: PostImageVariants | null;
 }): Promise<void> {
   try {
     await query(
@@ -184,7 +187,12 @@ export async function createGuessComment({
         postId,
         userId,
         type,
-        JSON.stringify({ score, distance, ...(imageUrl ? { imageUrl } : {}) }),
+        JSON.stringify({
+          score,
+          distance,
+          ...(imageUrl ? { imageUrl } : {}),
+          ...(imageVariants ? { imageVariants } : {}),
+        }),
         guessId,
       ]
     );
