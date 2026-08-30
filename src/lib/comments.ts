@@ -6,8 +6,26 @@ import { canUserAccessPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import type { PostCommentType } from '@/types/post-comment';
 import type { PostImageVariants } from '@/types/post';
+import { canSeeCheckPhoto } from '@/types/hide-and-seek';
 import { eventBus } from '@/lib/eventBus';
 import type { PostCommentCreatedEvent } from '@/types/events/post-comment-created';
+
+/**
+ * Check photos stay hidden while a დამალობანა runs — only the seeker who took it and
+ * the host can see it before the game ends. Distance is public by design. Stripping here
+ * rather than in the component matters: the URL must never reach the client at all.
+ */
+function redactCheckPhoto(row: any, viewerId?: number | null): PostCommentType['metadata'] {
+  const metadata = row.metadata ?? null;
+  if (!metadata || row.type !== 'hide-and-seek-check-comment') return metadata;
+
+  if (canSeeCheckPhoto(viewerId, Number(row.user_id), Number(row.game_host_id), row.game_status)) {
+    return metadata;
+  }
+
+  const { imageUrl: _imageUrl, imageVariants: _imageVariants, ...visible } = metadata;
+  return visible;
+}
 
 export async function getPostComments(postId: number, currentUserId?: number | null): Promise<PostCommentType[]> {
   try {
@@ -17,7 +35,8 @@ export async function getPostComments(postId: number, currentUserId?: number | n
               coalesce(vx.score, 0) as vote_score,
               uv.value as user_vote,
               coalesce(rx.rewards, '[]'::json) as rewards,
-              ur.reward_key as user_reward
+              ur.reward_key as user_reward,
+              hsg.user_id as game_host_id, hsg.status as game_status
        from post_comments c
        join users u on u.id = c.user_id
        left join user_xp ux on ux.user_id = u.id
@@ -38,6 +57,7 @@ export async function getPostComments(postId: number, currentUserId?: number | n
          ) t
        ) rx on true
        left join post_rewards ur on ur.comment_id = c.id and ur.user_id = $2 and ur.deleted_at is null
+       left join hide_and_seek_games hsg on hsg.post_id = c.post_id
        where c.post_id = $1
        order by c.created_at desc, c.id desc`,
       [postId, currentUserId ?? 0]
@@ -51,7 +71,7 @@ export async function getPostComments(postId: number, currentUserId?: number | n
       parentId: r.parent_id ?? null,
       body: r.body,
       type: r.type,
-      metadata: r.metadata ?? null,
+      metadata: redactCheckPhoto(r, currentUserId),
       guessId: r.guess_id ?? null,
       createdAt: r.created_at,
       deletedAt: r.deleted_at ?? null,

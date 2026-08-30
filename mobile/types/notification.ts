@@ -20,7 +20,12 @@ export type NotificationType = {
     | 'zone-quest-objective-accepted'
     | 'zone-quest-objective-rejected'
     | 'zone-quest-completed'
-    | 'connection-completed-zone-quest';
+    | 'connection-completed-zone-quest'
+    | 'hide-and-seek-created'
+    | 'hide-and-seek-joined'
+    | 'hide-and-seek-checked'
+    | 'hide-and-seek-found'
+    | 'hide-and-seek-ended';
   user: {
     userId: number;
     alias: string;
@@ -35,6 +40,7 @@ export type NotificationType = {
     | NotificationPostCommentCreatedDetailsType
     | NotificationPostVoteCreatedDetailsType
     | NotificationPostRewardCreatedDetailsType
+    | NotificationHideAndSeekDetailsType
     | NotificationFeedEventReactionDetailsType
     | NotificationZoneMemberInvitationDetailsType
     | NotificationZoneQuestCreatedDetailsType
@@ -120,11 +126,27 @@ export type NotificationPostVoteCreatedDetailsType = {
 export type NotificationPostRewardCreatedDetailsType = {
   postId: number;
   commentId?: number | null;
+  // what the reward was attached to; absent on rows written before this existed
+  targetType?: 'post' | 'comment' | 'guess-comment' | 'hide-and-seek-check';
   rewardKey: string;
   // denormalized at grant time so this reads correctly even if the reward is later renamed/disabled
   rewardName: string;
   giverId: number;
   giverAlias: string;
+};
+
+export type NotificationHideAndSeekDetailsType = {
+  gameId: number;
+  postId: number;
+  title: string;
+  hostId: number;
+  hostAlias: string;
+  // the recipient's own side of the game, so one event can word itself two ways
+  role: 'host' | 'seeker';
+  userId?: number;
+  userAlias?: string;
+  distanceMeters?: number;
+  reason?: 'expired' | 'host_ended';
 };
 
 export type NotificationFeedEventReactionDetailsType = {
@@ -251,6 +273,8 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'comment-reward-created': {
       const d = details as NotificationPostRewardCreatedDetailsType;
+      if (d.targetType === 'hide-and-seek-check') return `${d.giverAlias}: ${d.rewardName}`;
+      if (d.targetType === 'comment') return `${d.giverAlias}-მა დააჯილდოვა შენი კომენტარი: ${d.rewardName}`;
       return `${d.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${d.rewardName}`;
     }
     case 'feed-event-reaction': {
@@ -286,6 +310,26 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'connection-completed-zone-quest': {
       const d = details as NotificationConnectionCompletedZoneQuestDetailsType;
       return `${d.userAlias}-მა შეასრულა მისია: ${d.questTitle}`;
+    }
+    case 'hide-and-seek-created': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.hostAlias}-მა დაიწყო დამალობანა: ${d.title}`;
+    }
+    case 'hide-and-seek-joined': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.userAlias} შენს დამალობანაში ჩაერთო`;
+    }
+    case 'hide-and-seek-checked': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.userAlias} მოგიახლოვდა ${d.distanceMeters} მეტრზე`;
+    }
+    case 'hide-and-seek-found': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return d.role === 'host' ? `${d.userAlias}-მა გიპოვა!` : `იპოვე ${d.hostAlias}!`;
+    }
+    case 'hide-and-seek-ended': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `დამალობანა დასრულდა: ${d.title}`;
     }
     default:
       return 'ახალი შეტყობინება';
@@ -372,6 +416,14 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'connection-completed-zone-quest': {
       const d = notification.details as NotificationConnectionCompletedZoneQuestDetailsType;
       return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+    }
+    case 'hide-and-seek-created':
+    case 'hide-and-seek-joined':
+    case 'hide-and-seek-checked':
+    case 'hide-and-seek-found':
+    case 'hide-and-seek-ended': {
+      const d = notification.details as NotificationHideAndSeekDetailsType;
+      return `/post/${d.postId}`;
     }
     default:
       return null;

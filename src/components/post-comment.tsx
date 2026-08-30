@@ -11,6 +11,8 @@ import UserLink from '@/components/common/user-link';
 import VoteButtons from '@/components/votes/vote-buttons';
 import RewardButton from '@/components/rewards/reward-button';
 import ImageLightbox from '@/components/common/image-lightbox';
+import { formatDistance } from '@/types/hide-and-seek';
+import { EyeIcon, CheckmarkCircleIcon, LockIcon } from '@/components/icons';
 
 type PostCommentProps = {
   comment: PostCommentType;
@@ -18,6 +20,8 @@ type PostCommentProps = {
   currentUser: string;
   postId: number;
   postAuthorAlias: string;
+  /** The viewer hosts this game — only they can give ცხელა/თბილა/ცივა on a check. */
+  isHideAndSeekHost?: boolean;
   onCommentAdded: (comment: PostCommentType) => void;
 };
 
@@ -37,6 +41,7 @@ export default function PostComment({
   currentUser,
   postId,
   postAuthorAlias,
+  isHideAndSeekHost = false,
   onCommentAdded,
 }: PostCommentProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -73,12 +78,20 @@ export default function PostComment({
   const isDeleted = !!comment.deletedAt;
   const isGuess = comment.type === 'gps-guess-comment' || comment.type === 'gps-photo-guess-comment';
   const isPhotoGuess = comment.type === 'gps-photo-guess-comment';
+  const isCheck = comment.type === 'hide-and-seek-check-comment';
+  const isJoin = comment.type === 'hide-and-seek-join-comment';
+  // absent means the game is still running and the viewer is neither the seeker nor the host
+  const checkPhotoHidden = isCheck && !comment.metadata?.imageUrl;
   const isPostAuthor = comment.author === postAuthorAlias;
   const hasChildren = comment.children.length > 0;
   const borderColor = DEPTH_COLORS[depth % DEPTH_COLORS.length];
   const initials = getInitials(comment.author);
   const collapsedPreview = isDeleted
     ? 'კომენტარი წაიშალა'
+    : isJoin
+      ? 'ჩაერთო ძებნაში'
+    : isCheck
+      ? (comment.metadata?.found ? 'იპოვა!' : comment.metadata?.distance != null ? formatDistance(comment.metadata.distance) : 'შემოწმება')
     : isGuess
       ? [
         comment.metadata?.score != null ? `${comment.metadata.score}` : null,
@@ -118,6 +131,11 @@ export default function PostComment({
               {isPhotoGuess ? <CameraIcon className="w-3 h-3" /> : <MapPinIcon className="w-3 h-3" />}
             </span>
           )}
+          {(isCheck || isJoin) && (
+            <span className="inline-flex items-center text-teal-600 dark:text-teal-400" title="დამალობანა" aria-label="დამალობანა">
+              <EyeIcon className="w-3 h-3" />
+            </span>
+          )}
           <span className="text-xs text-zinc-400">•</span>
           <TimePassed date={comment.createdAt} className="text-xs text-zinc-400" />
           {collapsed && (
@@ -132,6 +150,46 @@ export default function PostComment({
           <div>
             {isDeleted ? (
               <p className="text-xs italic text-zinc-400 mb-1">კომენტარი წაიშალა</p>
+            ) : isJoin ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">ჩაერთო ძებნაში</p>
+            ) : isCheck ? (
+              <div className="mb-1 space-y-1.5">
+                {comment.metadata?.imageUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="block w-52 h-40 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 cursor-zoom-in"
+                    aria-label="ფოტოს გახსნა"
+                    title="გახსნა"
+                  >
+                    <Image
+                      src={comment.metadata.imageVariants?.thumb ?? comment.metadata.imageUrl}
+                      alt="hide and seek check"
+                      width={208}
+                      height={160}
+                      className="w-full h-full object-contain"
+                    />
+                  </button>
+                ) : checkPhotoHidden ? (
+                  <div className="flex w-52 h-40 items-center justify-center gap-1.5 rounded-md border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400">
+                    <LockIcon className="w-3.5 h-3.5" />
+                    ფოტო თამაშის ბოლოს
+                  </div>
+                ) : null}
+                <div className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 inline-flex items-center gap-2">
+                  {comment.metadata?.found ? (
+                    <span className="inline-flex items-center gap-1 font-semibold text-teal-600 dark:text-teal-400">
+                      <CheckmarkCircleIcon className="w-4 h-4" />
+                      იპოვა
+                    </span>
+                  ) : comment.metadata?.distance != null ? (
+                    <span>
+                      <span className="text-zinc-500 dark:text-zinc-400 text-xs">მანძილი </span>
+                      <span className="font-semibold tabular-nums">{formatDistance(comment.metadata.distance)}</span>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             ) : isGuess ? (
               <div className="mb-1 space-y-1.5">
                 {isPhotoGuess && comment.metadata?.imageUrl && (
@@ -192,6 +250,18 @@ export default function PostComment({
                       rewards={comment.rewards ?? []}
                       userReward={comment.userReward ?? null}
                       isLoggedIn={!!currentUser}
+                      size="sm"
+                    />
+                  )}
+                  {isCheck && (
+                    <RewardButton
+                      postId={postId}
+                      commentId={comment.id}
+                      target="hide-and-seek-check"
+                      rewards={comment.rewards ?? []}
+                      userReward={comment.userReward ?? null}
+                      isLoggedIn={!!currentUser}
+                      canGive={isHideAndSeekHost}
                       size="sm"
                     />
                   )}
@@ -263,6 +333,7 @@ export default function PostComment({
                         currentUser={currentUser}
                         postId={postId}
                         postAuthorAlias={postAuthorAlias}
+                        isHideAndSeekHost={isHideAndSeekHost}
                         onCommentAdded={onCommentAdded}
                       />
                     ))}

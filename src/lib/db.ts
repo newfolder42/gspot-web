@@ -1,6 +1,6 @@
 "use server";
 
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 import { logerror } from './logger';
 
 const pool = new Pool({
@@ -42,5 +42,24 @@ export async function query(text: string, params?: any[]) {
     });
 
     throw error;
+  }
+}
+
+// Runs `fn` inside a single transaction, rolling back on any throw. Needed where a write
+// spans several tables and a partial write would leave an invariant broken — a hide-and-seek
+// check, for instance, writes the check, its comment and the player status together.
+export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 }

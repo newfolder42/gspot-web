@@ -585,6 +585,24 @@ export function MaskIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) 
   );
 }
 
+export function EyeIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export function ProgressIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
   return (
     <svg

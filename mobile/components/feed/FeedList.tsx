@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
+import { HideAndSeekCard } from '@/components/hideandseek/HideAndSeekCard';
 import type { MobilePostType } from '@/types/post';
 
 const PAGE_SIZE = 4;
@@ -90,7 +91,9 @@ export function FeedList({
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
       data={posts}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <FeedPostCard item={item} />}
+      renderItem={({ item }) =>
+        item.type === 'hide-and-seek' ? <HideAndSeekCard item={item} /> : <FeedPostCard item={item} />
+      }
       ListHeaderComponent={header}
       refreshControl={
         <RefreshControl

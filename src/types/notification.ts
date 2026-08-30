@@ -1,6 +1,8 @@
+import type { RewardTargetKind } from './reward';
+
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest' | 'hide-and-seek-created' | 'hide-and-seek-joined' | 'hide-and-seek-checked' | 'hide-and-seek-found' | 'hide-and-seek-ended';
   user: {
     userId: number;
     alias: string;
@@ -14,7 +16,8 @@ export type NotificationType = {
   | NotificationZoneMemberInvitationDetailsType
   | NotificationZoneQuestCreatedDetailsType | NotificationZoneQuestCompletedDetailsType | NotificationZoneQuestObjectiveRejectedDetailsType
   | NotificationZoneQuestObjectiveAcceptedDetailsType | NotificationZoneQuestObjectiveSubmittedDetailsType
-  | NotificationConnectionCompletedZoneQuestDetailsType;
+  | NotificationConnectionCompletedZoneQuestDetailsType
+  | NotificationHideAndSeekDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -92,6 +95,8 @@ export type NotificationPostVoteCreatedDetailsType = {
 export type NotificationPostRewardCreatedDetailsType = {
   postId: number,
   commentId?: number | null,
+  // what the reward was attached to; absent on rows written before this existed
+  targetType?: RewardTargetKind,
   rewardKey: string,
   // denormalized at grant time so this reads correctly even if the reward is later renamed/disabled
   rewardName: string,
@@ -165,6 +170,20 @@ export type NotificationConnectionCompletedZoneQuestDetailsType = {
   zoneSlug: string,
   questId: number,
   questTitle: string,
+}
+
+export type NotificationHideAndSeekDetailsType = {
+  gameId: number,
+  postId: number,
+  title: string,
+  hostId: number,
+  hostAlias: string,
+  // the recipient's own side of the game, so one event can word itself two ways
+  role: 'host' | 'seeker',
+  userId?: number,
+  userAlias?: string,
+  distanceMeters?: number,
+  reason?: 'expired' | 'host_ended',
 }
 
 // Normalize `details` to a plain object regardless of input shape.
@@ -252,6 +271,8 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'comment-reward-created': {
       const d = details as NotificationPostRewardCreatedDetailsType;
+      if (d.targetType === 'hide-and-seek-check') return `${d.giverAlias}: ${d.rewardName}`;
+      if (d.targetType === 'comment') return `${d.giverAlias}-მა დააჯილდოვა შენი კომენტარი: ${d.rewardName}`;
       return `${d.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${d.rewardName}`;
     }
     case 'feed-event-reaction': {
@@ -287,6 +308,28 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     case 'connection-completed-zone-quest': {
       const d = details as NotificationConnectionCompletedZoneQuestDetailsType;
       return `${d.userAlias}-მა შეასრულა მისია: ${d.questTitle}`;
+    }
+    case 'hide-and-seek-created': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.hostAlias}-მა დაიწყო დამალობანა: ${d.title}`;
+    }
+    case 'hide-and-seek-joined': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.userAlias} შენს დამალობანაში ჩაერთო`;
+    }
+    case 'hide-and-seek-checked': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `${d.userAlias} მოგიახლოვდა ${d.distanceMeters} მეტრზე`;
+    }
+    case 'hide-and-seek-found': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return d.role === 'host'
+        ? `${d.userAlias}-მა გიპოვა!`
+        : `იპოვე ${d.hostAlias}!`;
+    }
+    case 'hide-and-seek-ended': {
+      const d = details as NotificationHideAndSeekDetailsType;
+      return `დამალობანა დასრულდა: ${d.title}`;
     }
     default:
       return "ახალი შეტყობინება";
@@ -373,6 +416,14 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'connection-completed-zone-quest': {
       const d = notification.details as NotificationConnectionCompletedZoneQuestDetailsType;
       return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+    }
+    case 'hide-and-seek-created':
+    case 'hide-and-seek-joined':
+    case 'hide-and-seek-checked':
+    case 'hide-and-seek-found':
+    case 'hide-and-seek-ended': {
+      const d = notification.details as NotificationHideAndSeekDetailsType;
+      return `/post/${d.postId}`;
     }
     default:
       return null;

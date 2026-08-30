@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
-import { getPostForView, postIsGuessedByUser } from '@/lib/posts';
+import { getPostDetail } from '@/lib/post-detail';
 import { getPostComments } from '@/lib/comments';
 import { getVoteSummary } from '@/lib/votes';
 import { getRewardSummary } from '@/lib/rewards';
@@ -58,7 +58,9 @@ export async function GET(req: NextRequest, context: Context) {
     }
 
     const postId = parsed.data.id;
-    const post = await getPostForView(auth.user.userId, postId);
+    // Same loader the web detail page uses, so both get a post carrying its own
+    // type-specific payload (a hide-and-seek post arrives with its game and players).
+    const post = await getPostDetail(auth.user.userId, postId);
 
     if (!post) {
       return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
@@ -66,8 +68,7 @@ export async function GET(req: NextRequest, context: Context) {
 
     // Comments already carry their own vote/reward summaries (see getPostComments);
     // these two cover the post itself.
-    const [alreadyGuessed, commentsFlat, votes, rewards] = await Promise.all([
-      postIsGuessedByUser(postId, auth.user.userId),
+    const [commentsFlat, votes, rewards] = await Promise.all([
       getPostComments(postId, auth.user.userId),
       getVoteSummary(postId, null, auth.user.userId),
       getRewardSummary(postId, null, auth.user.userId),
@@ -75,7 +76,9 @@ export async function GET(req: NextRequest, context: Context) {
 
     return NextResponse.json({
       post,
-      alreadyGuessed,
+      // kept at the top level for the app's existing PostDetailResponse shape;
+      // it also rides along inside `post` on a gps-photo.
+      alreadyGuessed: post.type === 'gps-photo' ? post.alreadyGuessed : false,
       comments: buildCommentTree(commentsFlat),
       votes,
       rewards,

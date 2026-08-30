@@ -1,4 +1,20 @@
-export type RewardTarget = 'post' | 'comment';
+/** Where a reward may be given — matches the values in `rewards.applies_to`. */
+export type RewardTarget = 'post' | 'comment' | 'hide-and-seek-check';
+
+/**
+ * What a reward was attached to. Travels on the reward event and is persisted in the
+ * notification's `details`, not on `post_rewards` — nothing queries rewards by it.
+ * Finer-grained than RewardTarget: guess comments select from the plain 'comment'
+ * catalog but need their own notification copy.
+ */
+export type RewardTargetKind = 'post' | 'comment' | 'guess-comment' | 'hide-and-seek-check';
+
+/** ცხელა / თბილა / ცივა — host-only flavour on a hide-and-seek check. */
+export const HIDE_AND_SEEK_REWARD_KEYS = ['hot', 'warm', 'cold'] as const;
+
+export function isHideAndSeekReward(key: string): boolean {
+  return (HIDE_AND_SEEK_REWARD_KEYS as readonly string[]).includes(key);
+}
 
 export type UserXpRewardSpec = {
   type: 'user-xp';
@@ -51,6 +67,19 @@ export type RewardDefinition = {
 
 export function getSelectableRewardsForTarget(definitions: RewardDefinition[], target: RewardTarget): RewardDefinition[] {
   return definitions.filter((d) => d.status === 'active' && d.appliesTo.includes(target));
+}
+
+/** The reward target a comment selects from, given its comment type. */
+export function rewardTargetForCommentType(commentType: string): RewardTarget {
+  return commentType === 'hide-and-seek-check-comment' ? 'hide-and-seek-check' : 'comment';
+}
+
+/** The kind stored on the reward row, which decides the notification wording. */
+export function rewardTargetKindForCommentType(commentType: string | null): RewardTargetKind {
+  if (commentType === null) return 'post';
+  if (commentType === 'hide-and-seek-check-comment') return 'hide-and-seek-check';
+  if (commentType === 'gps-guess-comment' || commentType === 'gps-photo-guess-comment') return 'guess-comment';
+  return 'comment';
 }
 
 export type RewardCountType = {

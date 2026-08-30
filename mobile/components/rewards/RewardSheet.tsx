@@ -31,6 +31,10 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
     staleTime: 30_000,
   });
 
+  // ცხელა/თბილა/ცივა are game flavour, not a compliment — the server exempts them
+  // from the daily quota, so the sheet must not gate on it either.
+  const countsAgainstQuota = target !== 'hide-and-seek-check';
+
   const selectable = status
     ? getSelectableRewardsForTarget(status.definitions, target).filter(
         (d) => !d.unlockable || status.unlockedKeys.includes(d.key)
@@ -39,7 +43,7 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
 
   const handleGive = async (key: string) => {
     if (givingKey) return;
-    if (status && status.remainingToday <= 0) return;
+    if (countsAgainstQuota && status && status.remainingToday <= 0) return;
     setError(null);
     setGivingKey(key);
     try {
@@ -119,7 +123,7 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
           </View>
 
           {/* Remaining quota */}
-          {status ? (
+          {status && countsAgainstQuota ? (
             <View className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800">
               <Text className="text-center text-xs text-zinc-500 dark:text-zinc-400">
                 დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}

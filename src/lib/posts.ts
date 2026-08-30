@@ -5,7 +5,7 @@ import { getCurrentUser } from './session';
 import { canUserAccessPost } from './post-access';
 import { isInGeorgia } from './geo';
 import { logerror } from './logger';
-import type { PostType, GpsPostType, FeedPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
+import type { PostType, GpsPostType, FeedPostType, HideAndSeekPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
 import type { PostGuessMapDataType, PostGuessMapPointType, PostGuessType } from '@/types/post-guess';
 import { PostPublishedEvent } from '@/types/events/post-published';
 import { eventBus } from './eventBus';
@@ -98,6 +98,43 @@ async function fetchGpsExtras(ids: number[]): Promise<Map<number, any>> {
   return map;
 }
 
+function enrichHideAndSeekPost(base: PostType, r: any): HideAndSeekPostType {
+  return {
+    ...base,
+    type: 'hide-and-seek',
+    gameId: r.game_id != null ? Number(r.game_id) : 0,
+    gameStatus: r.game_status ?? 'ended',
+    visibility: r.game_visibility ?? 'public',
+    endsAt: r.ends_at,
+    maxChecks: r.max_checks != null ? Number(r.max_checks) : 0,
+    playerCount: r.player_count != null ? Number(r.player_count) : 0,
+    foundCount: r.found_count != null ? Number(r.found_count) : 0,
+    viewerRole: r.viewer_role ?? null,
+  };
+}
+
+async function fetchHideAndSeekExtras(ids: number[], viewerId?: number | null): Promise<Map<number, any>> {
+  const map = new Map<number, any>();
+  if (ids.length === 0) return map;
+
+  const res = await query(
+    `select g.post_id as id, g.id as game_id, g.status as game_status, g.visibility as game_visibility,
+            g.ends_at, g.max_checks,
+            (select count(*)::int from hide_and_seek_players x
+              where x.game_id = g.id and x.role = 'seeker') as player_count,
+            (select count(*)::int from hide_and_seek_players x
+              where x.game_id = g.id and x.status = 'found') as found_count,
+            pl.role as viewer_role
+       from hide_and_seek_games g
+       left join hide_and_seek_players pl on pl.game_id = g.id and pl.user_id = $2
+      where g.post_id = any($1::bigint[])`,
+    [ids, viewerId ?? 0]
+  );
+
+  for (const r of res.rows) map.set(Number(r.id), r);
+  return map;
+}
+
 async function fetchQuestExtras(ids: number[]): Promise<Map<number, any>> {
   const map = new Map<number, any>();
   if (ids.length === 0) return map;
@@ -121,13 +158,15 @@ async function fetchQuestExtras(ids: number[]): Promise<Map<number, any>> {
   return map;
 }
 
-async function enrichPosts(rows: any[]): Promise<FeedPostType[]> {
+async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedPostType[]> {
   const gpsIds = rows.filter(r => r.type === 'gps-photo').map(r => Number(r.id));
   const questIds = rows.filter(r => r.type === 'quest-completion').map(r => Number(r.id));
+  const hideAndSeekIds = rows.filter(r => r.type === 'hide-and-seek').map(r => Number(r.id));
 
-  const [gpsExtras, questExtras] = await Promise.all([
+  const [gpsExtras, questExtras, hideAndSeekExtras] = await Promise.all([
     fetchGpsExtras(gpsIds),
     fetchQuestExtras(questIds),
+    fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
   ]);
 
   return rows.map(r => {
@@ -137,6 +176,10 @@ async function enrichPosts(rows: any[]): Promise<FeedPostType[]> {
     if (r.type === 'quest-completion') {
       const extra = questExtras.get(id) ?? {};
       return enrichQuestPost(base, extra, extra.photo_items ?? []);
+    }
+
+    if (r.type === 'hide-and-seek') {
+      return enrichHideAndSeekPost(base, { ...r, ...(hideAndSeekExtras.get(id) ?? {}) });
     }
 
     const extra = gpsExtras.get(id) ?? {};
@@ -180,7 +223,7 @@ join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
-where ucn.user_id = $2 and p.status in ('published') and p.type in ('gps-photo', 'quest-completion')
+where ucn.user_id = $2 and p.status in ('published') and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek')
   and ${zoneVisibleSql('$3')}
   ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
@@ -188,7 +231,7 @@ limit $1`,
       params
     );
 
-    return await enrichPosts(res.rows);
+    return await enrichPosts(res.rows, userId);
   } catch (err) {
     await logerror('getConnectionsPosts error', [err]);
     return [];
@@ -230,13 +273,13 @@ join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
-where p.user_id = $2 and p.status = 'published' and p.type in ('gps-photo', 'quest-completion') and z.visibility = 'public' ${filterCondition} ${cursorCondition}
+where p.user_id = $2 and p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek') and z.visibility = 'public' ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
     );
 
-    return await enrichPosts(res.rows);
+    return await enrichPosts(res.rows, userId);
   } catch (err) {
     await logerror('getAccountPosts error', [err]);
     return [];
@@ -319,7 +362,7 @@ join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
-where p.status = 'published' and p.type in ('gps-photo', 'quest-completion')
+where p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek')
   and ${zoneMemberSql('$2')}
   ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
@@ -327,7 +370,7 @@ limit $1`,
       params2
     );
 
-    return await enrichPosts(res.rows);
+    return await enrichPosts(res.rows, userId);
   } catch (err) {
     await logerror('getGlobalPosts error', [err]);
     return [];
@@ -421,7 +464,7 @@ from posts p
 join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
-where p.status = 'published' and p.type in ('gps-photo', 'quest-completion')
+where p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek')
   and z.id = $2
   and ${zoneVisibleSql('$3')}
   ${filterCondition} ${tagCondition} ${cursorCondition}
@@ -430,7 +473,7 @@ limit $1`,
       params
     );
 
-    return await enrichPosts(res.rows);
+    return await enrichPosts(res.rows, userId);
   } catch (err) {
     await logerror('getZonePosts error', [err]);
     return [];
@@ -448,6 +491,7 @@ join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+left join hide_and_seek_games hsg on hsg.post_id = p.id
 where p.id = $1 and (
   $2 = p.user_id
   or (
@@ -457,6 +501,13 @@ where p.id = $1 and (
         select 1 from zone_members zm where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
       )
     )
+    and (
+      hsg.id is null
+      or hsg.visibility = 'public'
+      or exists (
+        select 1 from hide_and_seek_invites hi where hi.game_id = hsg.id and hi.user_id = $2
+      )
+    )
   )
 )
 limit 1`,
@@ -464,7 +515,7 @@ limit 1`,
     );
 
     if (res.rowCount === 0) return null;
-    return (await enrichPosts(res.rows))[0] ?? null;
+    return (await enrichPosts(res.rows, userId))[0] ?? null;
   } catch (err) {
     await logerror('getPostForView error', [err]);
     return null;

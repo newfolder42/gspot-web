@@ -210,6 +210,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
             {/* Main nav – mirrors the web left panel ordering */}
             <DrawerLink icon="home" label="მთავარი" onPress={() => nav('/(app)/(tabs)/')} />
             <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/(tabs)/to-guess')} />
+            <DrawerLink icon="eye" label="დამალობანა" onPress={() => nav('/(app)/hide-and-seek')} />
             <DrawerLink icon="users" label="მომხმარებლები" onPress={() => nav('/(app)/new-users')} />
             <DrawerLink icon="grid" label="საბზონები" onPress={() => nav('/(app)/zones')} />
             <DrawerLink icon="map" label="რუკა" onPress={() => nav('/(app)/heatmap')} />

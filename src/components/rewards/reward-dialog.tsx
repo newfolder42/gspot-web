@@ -37,9 +37,13 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
     ? getSelectableRewardsForTarget(status.definitions, target).filter((d) => !d.unlockable || status.unlockedKeys.includes(d.key))
     : [];
 
+  // ცხელა/თბილა/ცივა are game flavour, not a compliment — the server exempts them
+  // from the daily quota, so the dialog must not gate on it either.
+  const countsAgainstQuota = target !== 'hide-and-seek-check';
+
   const handleGive = async (key: string) => {
     if (givingKey) return;
-    if (status && status.remainingToday <= 0) {
+    if (countsAgainstQuota && status && status.remainingToday <= 0) {
       return;
     }
     setError(false);
@@ -111,7 +115,7 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
           )}
         </div>
 
-        {status && (
+        {status && countsAgainstQuota && (
           <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400">
             დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}
           </div>

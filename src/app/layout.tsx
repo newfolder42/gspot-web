@@ -7,6 +7,7 @@ import LeftPanel from "@/components/left-panel";
 import { getCurrentUser } from "@/lib/session";
 import { getUserPostZones } from "@/lib/zones";
 import { getOwnAccount } from "@/lib/account";
+import OngoingGameButton from "@/components/hide-and-seek/ongoing-game-button";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -87,6 +88,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer />
+        {user && <OngoingGameButton />}
       </body>
     </html>
   );

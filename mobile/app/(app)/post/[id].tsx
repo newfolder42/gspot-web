@@ -20,7 +20,9 @@ import { EditPostSheet } from '@/components/EditPostSheet';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import type { GuessResult } from '@/types/post-guess';
-import { useTheme } from '@/constants/colors';
+import { Colors, useTheme } from '@/constants/colors';
+import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
+import { formatDistance } from '@/types/hide-and-seek';
 
 /** Matches web DEPTH_COLORS cycle */
 const DEPTH_BORDER_COLORS = [
@@ -77,11 +79,14 @@ function CommentItem({
   item,
   depth = 0,
   postId,
+  isHideAndSeekHost = false,
   onReply,
 }: {
   item: PostCommentType;
   depth?: number;
   postId: number;
+  /** The viewer hosts this game — only they can give ცხელა/თბილა/ცივა on a check. */
+  isHideAndSeekHost?: boolean;
   onReply: (comment: PostCommentType) => void;
 }) {
   const router = useRouter();
@@ -93,8 +98,16 @@ function CommentItem({
 
   const isGuess = item.type === 'gps-guess-comment' || item.type === 'gps-photo-guess-comment';
   const isPhotoGuess = item.type === 'gps-photo-guess-comment';
+  const isCheck = item.type === 'hide-and-seek-check-comment';
+  const isJoin = item.type === 'hide-and-seek-join-comment';
+  // absent means the game is live and the viewer is neither the seeker nor the host
+  const checkPhotoHidden = isCheck && !item.metadata?.imageUrl;
 
-  const collapsedPreview = isGuess
+  const collapsedPreview = isJoin
+    ? 'ჩაერთო ძებნაში'
+    : isCheck
+    ? (item.metadata?.found ? 'იპოვა!' : item.metadata?.distance != null ? formatDistance(item.metadata.distance) : 'შემოწმება')
+    : isGuess
     ? [
         item.metadata?.score != null ? String(item.metadata.score) : null,
         item.metadata?.distance != null ? `${item.metadata.distance.toLocaleString('ka-GE')} მ` : null,
@@ -137,6 +150,9 @@ function CommentItem({
             {isGuess ? (
               <Feather name={isPhotoGuess ? 'camera' : 'map-pin'} size={11} color="#14B8A6" />
             ) : null}
+            {isCheck || isJoin ? (
+              <Feather name="eye" size={11} color="#14B8A6" />
+            ) : null}
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(item.createdAt)}</Text>
             {collapsed ? (
@@ -146,7 +162,39 @@ function CommentItem({
 
           {/* Body */}
           {!collapsed ? (
-            isGuess ? (
+            isJoin ? (
+              <Text className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">ჩაერთო ძებნაში</Text>
+            ) : isCheck ? (
+              <View className="mb-1">
+                {item.metadata?.imageUrl ? (
+                  <ZoomableImage
+                    uri={item.metadata.imageVariants?.thumb ?? item.metadata.imageUrl}
+                    fullUri={item.metadata.imageUrl}
+                    title={`'${item.author} — შემოწმება`}
+                    resizeMode="contain"
+                    className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5"
+                  />
+                ) : checkPhotoHidden ? (
+                  <View className="w-44 h-32 rounded-md mb-1.5 items-center justify-center flex-row gap-1.5" style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border }}>
+                    <Feather name="lock" size={13} color={theme.iconFaint} />
+                    <Text className="text-xs" style={{ color: theme.iconFaint }}>ფოტო თამაშის ბოლოს</Text>
+                  </View>
+                ) : null}
+                <View className="flex-row items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 rounded px-2 py-1.5 self-start">
+                  {item.metadata?.found ? (
+                    <View className="flex-row items-center gap-1">
+                      <Feather name="check-circle" size={14} color={Colors.brand} />
+                      <Text className="text-sm font-semibold" style={{ color: Colors.brand }}>იპოვა</Text>
+                    </View>
+                  ) : item.metadata?.distance != null ? (
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-xs text-zinc-500 dark:text-zinc-400">მანძილი </Text>
+                      <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{formatDistance(item.metadata.distance)}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            ) : isGuess ? (
               <View className="mb-1">
                 {isPhotoGuess && item.metadata?.imageUrl ? (
                   <ZoomableImage
@@ -207,6 +255,17 @@ function CommentItem({
               size="sm"
             />
           ) : null}
+          {isCheck ? (
+            <RewardButton
+              postId={postId}
+              commentId={item.id}
+              target="hide-and-seek-check"
+              rewards={item.rewards ?? []}
+              userReward={item.userReward ?? null}
+              canGive={isHideAndSeekHost}
+              size="sm"
+            />
+          ) : null}
           <Pressable onPress={() => onReply(item)} hitSlop={6}>
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
           </Pressable>
@@ -216,7 +275,7 @@ function CommentItem({
       {/* Children */}
       {!collapsed
         ? item.children.map((child) => (
-            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} onReply={onReply} />
+            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={onReply} />
           ))
         : null}
     </View>
@@ -268,6 +327,14 @@ export default function PostPageScreen() {
     queryFn: () => postsApi.getPostDetail(postId),
     enabled: Number.isFinite(postId) && postId > 0,
   });
+
+  const refreshGame = useCallback(() => {
+    // the post detail carries the game, so refetching it is enough
+    queryClient.invalidateQueries({ queryKey });
+    // the floating button and the games list read the same participation rows
+    queryClient.invalidateQueries({ queryKey: ['hide-and-seek', 'active'] });
+    queryClient.invalidateQueries({ queryKey: ['hide-and-seek', 'list'] });
+  }, [queryClient, queryKey]);
 
   // Pull-to-refresh: driven manually so the spinner stays up for the whole
   // refetch rather than clearing the moment cached data is served.
@@ -372,6 +439,9 @@ export default function PostPageScreen() {
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
   const canGuess = post.type === 'gps-photo' && !alreadyGuessed && !isOwner;
   const isQuest = post.type === 'quest-completion';
+  const game = post.type === 'hide-and-seek' ? post.game ?? null : null;
+  const gamePlayers = post.type === 'hide-and-seek' ? post.players ?? [] : [];
+  const isHideAndSeekHost = !!game && Number(user?.id) === game.hostId;
   const questPhotos = post.photos ?? [];
   const questTitle = post.questTitle ? `შეასრულა მისია ${post.questTitle}` : 'შეასრულა მისია';
 
@@ -560,6 +630,17 @@ export default function PostPageScreen() {
           </View>
         ) : null}
 
+        {game ? (
+          <View className="pt-3">
+            <HideAndSeekPanel
+              game={game}
+              players={gamePlayers}
+              currentUserId={user?.id != null ? Number(user.id) : null}
+              onChanged={refreshGame}
+            />
+          </View>
+        ) : null}
+
         {/* ── Comments ── */}
         <View className="px-4 pt-4">
           <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">კომენტარები</Text>
@@ -567,7 +648,7 @@ export default function PostPageScreen() {
             <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
           ) : (
             comments.map((comment) => (
-              <CommentItem key={comment.id} item={comment} postId={postId} onReply={handleReply} />
+              <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={handleReply} />
             ))
           )}
         </View>

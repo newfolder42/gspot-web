@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GpsPost } from '../post-gps';
 import { QuestCompletionPost } from '../post-quest';
+import { HideAndSeekPost } from '../hide-and-seek/hide-and-seek-post';
 import { FeedPostType } from '@/types/post';
 import { loadZonePosts } from '@/actions/feed';
 import { POSTS_PER_PAGE } from '@/types/constants';
@@ -90,6 +91,7 @@ export default function ZoneFeed({ userId, zoneId, tags }: ZoneFeedProps) {
         <div className="space-y-4">
           {posts.map(post => post.type === 'quest-completion'
             ? <QuestCompletionPost key={post.id} post={post} />
+            : post.type === 'hide-and-seek' ? <HideAndSeekPost key={post.id} post={post} />
             : <GpsPost key={post.id} post={post} />
           )}
         </div>

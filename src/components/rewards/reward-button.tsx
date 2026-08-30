@@ -16,6 +16,7 @@ type RewardButtonProps = {
   userReward?: string | null;
   isLoggedIn: boolean;
   size?: 'md' | 'sm';
+  canGive?: boolean;
 };
 
 export default function RewardButton({
@@ -26,6 +27,7 @@ export default function RewardButton({
   userReward = null,
   isLoggedIn,
   size = 'md',
+  canGive = true,
 }: RewardButtonProps) {
   const [summary, setSummary] = useState<RewardSummaryType>({ rewards, userReward });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function RewardButton({
         </button>
       )}
 
-      {!summary.userReward && (
+      {canGive && !summary.userReward && (
         <button
           type="button"
           onClick={handleOpenDialog}

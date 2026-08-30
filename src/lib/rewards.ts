@@ -5,7 +5,12 @@ import { getCurrentUser } from '@/lib/session';
 import { canUserAccessPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
-import { DEFAULT_DAILY_REWARD_LIMIT } from '@/types/reward';
+import {
+  DEFAULT_DAILY_REWARD_LIMIT,
+  isHideAndSeekReward,
+  rewardTargetForCommentType,
+  rewardTargetKindForCommentType,
+} from '@/types/reward';
 import type { RewardCountType, RewardDefinition, RewardGivingStatusType, RewardSummaryType, RewardUserType } from '@/types/reward';
 import type { PostRewardCreatedEvent } from '@/types/events/post-reward-created';
 
@@ -136,8 +141,15 @@ export async function increaseUserDailyRewardLimit(userId: number, increase: num
 
 async function getRewardsGivenTodayCount(userId: number): Promise<number> {
   const res = await query(
-    `select count(*)::int as cnt from post_rewards
-     where user_id = $1 and deleted_at is null and created_at >= date_trunc('day', now())`,
+    // ცხელა/თბილა/ცივა are game flavour, not a compliment: a host would burn the whole
+    // daily quota within one game if these counted. Derived from the catalog rather than
+    // stored per row, so any future game-only reward is covered without a schema change.
+    `select count(*)::int as cnt from post_rewards r
+      where r.user_id = $1 and r.deleted_at is null and r.created_at >= date_trunc('day', now())
+        and not exists (
+          select 1 from rewards rw
+           where rw.key = r.reward_key and 'hide-and-seek-check' = any(rw.applies_to)
+        )`,
     [userId]
   );
   return Number(res.rows[0]?.cnt ?? 0);
@@ -238,15 +250,28 @@ export async function getRewardUsers(postId: number, commentId: number | null): 
   }
 }
 
-// Rewards on comments are limited to gps-guess-comment / gps-photo-guess-comment
-// (a compliment for a good guess) — plain comments only get votes.
-async function commentAllowsRewards(commentId: number): Promise<boolean> {
+// Rewards on comments are limited to guesses (a compliment for a good guess) and
+// hide-and-seek checks — plain comments only get votes. Returns the comment type, which
+// also decides which catalog applies and how the notification reads.
+const REWARDABLE_COMMENT_TYPES = ['gps-guess-comment', 'gps-photo-guess-comment', 'hide-and-seek-check-comment'];
+
+async function getRewardableCommentType(commentId: number): Promise<string | null> {
   const res = await query(
     `select type from post_comments where id = $1 and deleted_at is null limit 1`,
     [commentId]
   );
   const type = res.rows[0]?.type;
-  return type === 'gps-guess-comment' || type === 'gps-photo-guess-comment';
+  return REWARDABLE_COMMENT_TYPES.includes(type) ? type : null;
+}
+
+// ცხელა / თბილა / ცივა may only be given by the host of that game — everyone else
+// still gets the ordinary comment rewards on a check.
+async function isHideAndSeekHost(userId: number, postId: number): Promise<boolean> {
+  const res = await query(
+    `select 1 from hide_and_seek_games where post_id = $1 and user_id = $2 limit 1`,
+    [postId, userId]
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 // Gives the current user's reward on a post or comment. One-shot: once given, a reward
@@ -276,8 +301,17 @@ export async function giveRewardForUser(
     const def = await getRewardDefinitionByKey(rewardKey);
     if (!def) return null;
     if (def.status !== 'active') return null;
-    if (!def.appliesTo.includes(commentId === null ? 'post' : 'comment')) return null;
-    if (commentId !== null && !(await commentAllowsRewards(commentId))) return null;
+
+    let commentType: string | null = null;
+    if (commentId !== null) {
+      commentType = await getRewardableCommentType(commentId);
+      if (commentType === null) return null;
+    }
+
+    const rewardTarget = commentId === null ? 'post' : rewardTargetForCommentType(commentType!);
+    const targetKind = rewardTargetKindForCommentType(commentType);
+    if (!def.appliesTo.includes(rewardTarget)) return null;
+
     if (def.unlockable) {
       const unlocked = await getUnlockedRewardKeys(userId);
       if (!unlocked.includes(def.key)) return null;
@@ -285,14 +319,19 @@ export async function giveRewardForUser(
 
     if (!(await canUserAccessPost(userId, postId))) return null;
 
+    const isGameReward = isHideAndSeekReward(rewardKey);
+    if (isGameReward && !(await isHideAndSeekHost(userId, postId))) return null;
+
     const existing = await getUserReward(postId, commentId, userId);
     if (existing !== null) return null; // already gave a reward here — no undo, no switching
 
-    const [givenToday, dailyLimit] = await Promise.all([
-      getRewardsGivenTodayCount(userId),
-      getUserDailyRewardLimit(userId),
-    ]);
-    if (givenToday >= dailyLimit) return null;
+    if (!isGameReward) {
+      const [givenToday, dailyLimit] = await Promise.all([
+        getRewardsGivenTodayCount(userId),
+        getUserDailyRewardLimit(userId),
+      ]);
+      if (givenToday >= dailyLimit) return null;
+    }
 
     // resolve target + event payload data in one shot; also validates the comment belongs to the post
     const targetRes = await query(
@@ -329,6 +368,7 @@ export async function giveRewardForUser(
     await eventBus.publish('post', 'reward-created', {
       postId: +postId,
       commentId: commentId === null ? null : +commentId,
+      targetType: targetKind,
       rewardKey,
       rewardName: def.name,
       giverId: userId,

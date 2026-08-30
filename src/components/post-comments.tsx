@@ -35,6 +35,8 @@ type PostCommentsProps = {
   guessCount: number;
   commentCount: number;
   showGuessStat: boolean;
+  /** The viewer hosts this game, so they may give ცხელა/თბილა/ცივა on checks. */
+  isHideAndSeekHost?: boolean;
   postVoteScore: number;
   userPostVote: VoteValue | null;
   postRewards: RewardCountType[];
@@ -63,6 +65,7 @@ function insertComment(
 
 export default function PostComments({
   comments: initialComments,
+  isHideAndSeekHost = false,
   postId,
   postAuthorAlias,
   isAuthor,
@@ -500,6 +503,7 @@ export default function PostComments({
               currentUser={currentUser}
               postId={postId}
               postAuthorAlias={postAuthorAlias}
+              isHideAndSeekHost={isHideAndSeekHost}
               onCommentAdded={handleCommentAdded}
             />
           ))}

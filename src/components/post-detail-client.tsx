@@ -10,7 +10,7 @@ import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
 import ZoomableImage from './common/zoomable-image';
 import { QuestCompletionTitle } from './post-quest';
-import type { FeedPostType } from '@/types/post';
+import type { PostDetailType } from '@/types/post-detail';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import TimePassed from './common/time-passed';
 import type { PostGuessType } from '@/types/post-guess';
@@ -18,22 +18,25 @@ import type { PostCommentType } from '@/types/post-comment';
 import type { VoteSummaryType } from '@/types/vote';
 import type { RewardSummaryType } from '@/types/reward';
 import type { ZoneTag } from '@/types/tag';
+import HideAndSeekPanel from './hide-and-seek/hide-and-seek-panel';
 
 type PostDetailClientProps = {
-  post: FeedPostType;
+  post: PostDetailType;
   comments: PostCommentType[];
   currentUser: string;
-  alreadyGuessed: boolean;
+  currentUserId: number | null;
   zoneTags: ZoneTag[];
   postVotes: VoteSummaryType;
   postRewards: RewardSummaryType;
 };
 
-export default function PostDetailClient({ post, comments, currentUser, alreadyGuessed, zoneTags, postVotes, postRewards }: PostDetailClientProps) {
+export default function PostDetailClient({ post, comments, currentUser, currentUserId, zoneTags, postVotes, postRewards }: PostDetailClientProps) {
   const isAuthor = currentUser === post.author;
   const questPost = post.type === 'quest-completion' ? post : null;
   const gpsPost = post.type === 'gps-photo' ? post : null;
-  const userCanGuess = !questPost && !!currentUser && !isAuthor && !alreadyGuessed;
+  const gamePost = post.type === 'hide-and-seek' ? post : null;
+  const isHideAndSeekHost = !!gamePost && currentUserId === gamePost.game.hostId;
+  const userCanGuess = !!gpsPost && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
 
   const [isPortrait, setIsPortrait] = useState(false);
   const [canGuess, setCanGuess] = useState(userCanGuess);
@@ -139,6 +142,16 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
         )}
       </article>
 
+      {gamePost && (
+        <div className="px-2 pb-2">
+          <HideAndSeekPanel
+            game={gamePost.game}
+            players={gamePost.players}
+            currentUserId={currentUserId}
+          />
+        </div>
+      )}
+
       <div id="comments">
         <PostComments
           comments={comments}
@@ -152,6 +165,7 @@ export default function PostDetailClient({ post, comments, currentUser, alreadyG
           guessCount={guessCount}
           commentCount={commentCount}
           showGuessStat={!!gpsPost}
+          isHideAndSeekHost={isHideAndSeekHost}
           postVoteScore={postVotes.score}
           userPostVote={postVotes.userVote}
           postRewards={postRewards.rewards}

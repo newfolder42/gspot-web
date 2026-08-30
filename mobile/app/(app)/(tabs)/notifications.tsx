@@ -66,6 +66,12 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
       return 'star';
     case 'connection-completed-zone-quest':
       return 'star';
+    case 'hide-and-seek-created':
+    case 'hide-and-seek-joined':
+    case 'hide-and-seek-checked':
+    case 'hide-and-seek-found':
+    case 'hide-and-seek-ended':
+      return 'eye';
     default:
       return 'bell';
   }

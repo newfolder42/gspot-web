@@ -12,6 +12,7 @@ import {
 } from '@/lib/pushNotifications';
 import { openPushNotification } from '@/lib/notificationRouting';
 import { Colors, useTheme } from '@/constants/colors';
+import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
 
 /**
  * A cold start replays the tap that launched the app. Remembering which one we
@@ -82,6 +83,7 @@ export default function AppLayout() {
   if (!user) return <Redirect href="/(auth)/login" />;
 
   return (
+    <View className="flex-1">
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: theme.headerBg },
@@ -107,8 +109,12 @@ export default function AppLayout() {
       <Stack.Screen name="heatmap" options={{ title: 'პოსტების რუკა' }} />
       <Stack.Screen name="about" options={{ title: 'ჩვენ შესახებ', headerRight: () => null }} />
       <Stack.Screen name="quest-log" options={{ title: 'მისიების ჟურნალი', headerRight: () => null }} />
+      <Stack.Screen name="hide-and-seek/index" options={{ title: 'დამალობანა' }} />
+      <Stack.Screen name="hide-and-seek/new" options={{ title: 'ახალი დამალობანა', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />
       <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />
     </Stack>
+    <OngoingGameButton />
+    </View>
   );
 }

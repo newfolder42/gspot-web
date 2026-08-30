@@ -14,6 +14,9 @@ type Props = {
   rewards?: RewardCountType[];
   userReward?: string | null;
   size?: 'md' | 'sm';
+  /** False shows what was given but hides the give control — e.g. a hide-and-seek
+   *  check, where only the host may hand out ცხელა/თბილა/ცივა. */
+  canGive?: boolean;
   /** Lets the parent keep its own cache in sync after a reward is given. */
   onChange?: (summary: RewardSummaryType) => void;
 };
@@ -30,6 +33,7 @@ export function RewardButton({
   rewards = [],
   userReward = null,
   size = 'md',
+  canGive = true,
   onChange,
 }: Props) {
   const [summary, setSummary] = useState<RewardSummaryType>({ rewards, userReward });
@@ -66,7 +70,7 @@ export function RewardButton({
         </Pressable>
       ) : null}
 
-      {!summary.userReward ? (
+      {canGive && !summary.userReward ? (
         <Pressable
           onPress={() => setSheetOpen(true)}
           hitSlop={4}

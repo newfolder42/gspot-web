@@ -58,7 +58,20 @@ export type QuestCompletionPostType = PostType & {
   questTitle: string | null;
 }
 
-export type FeedPostType = GpsPostType | QuestCompletionPostType;
+export type HideAndSeekPostType = PostType & {
+  type: 'hide-and-seek';
+  gameId: number;
+  gameStatus: 'active' | 'ended';
+  visibility: 'public' | 'private';
+  endsAt: string;
+  maxChecks: number;
+  playerCount: number;
+  foundCount: number;
+  /** The viewer's own role in this game, when they have one. */
+  viewerRole: 'host' | 'seeker' | null;
+}
+
+export type FeedPostType = GpsPostType | QuestCompletionPostType | HideAndSeekPostType;
 
 export type PostSeoMetaType = {
   id: number;
@@ -73,4 +86,4 @@ export type PostSeoMetaType = {
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';
 export type FeedType = 'public' | 'global' | 'account' | 'connection' | 'zone' | 'to-guess';
 export type FeedView = 'timeline' | 'grid';
-export type PostTypeType = 'gps-photo' | 'text' | 'quest-completion';
+export type PostTypeType = 'gps-photo' | 'text' | 'quest-completion' | 'hide-and-seek';

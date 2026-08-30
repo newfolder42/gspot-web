@@ -1,25 +1,32 @@
-import Submit from "@/components/submit";
+import { Suspense } from 'react';
+import SubmitTabs from "@/components/submit-tabs";
+import type { SubmitTab } from "@/components/submit-tabs";
 import { getAvailableZonesForPost } from "@/actions/zones";
 import { getCurrentUser } from "@/lib/session";
+import { getActiveHideAndSeekForUser } from "@/lib/hideAndSeek";
 import { redirect } from "next/navigation";
 import type { ZoneSubmitType } from "@/actions/zones";
 
-export default async function Page() {
-  const currentUser = await getCurrentUser();
+type Props = { searchParams: Promise<{ tab?: string }> };
+
+export default async function Page({ searchParams }: Props) {
+  const [{ tab: rawTab }, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
   if (!currentUser) return redirect("/auth/signin");
 
-  const zones: ZoneSubmitType[] = await getAvailableZonesForPost(currentUser.userId);
+  const initialTab: SubmitTab = rawTab === 'hide-and-seek' ? 'hide-and-seek' : 'photo';
+
+  const [zones, activeGame]: [ZoneSubmitType[], Awaited<ReturnType<typeof getActiveHideAndSeekForUser>>] =
+    await Promise.all([
+      getAvailableZonesForPost(currentUser.userId),
+      getActiveHideAndSeekForUser(currentUser.userId),
+    ]);
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="mb-4 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-        <div className="flex items-center gap-3">
-          <Submit
-            zones={zones}
-            initialZoneId={null}
-            initialZoneSlug={null}
-          />
-        </div>
+      <div className="mb-4">
+        <Suspense fallback={null}>
+          <SubmitTabs zones={zones} initialTab={initialTab} activeGame={activeGame} />
+        </Suspense>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { NotificationType, NotificationPostVoteCreatedDetailsType, getNotificationContentMessage, getNotificationRoute } from "@/types/notification";
 import TimePassed from "@/components/common/time-passed";
 import { markAsRead, markAsUnread } from "@/actions/notifications";
-import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon, CheckmarkCircleIcon, XCircleIcon, FlagIcon, UpvoteIcon, DownvoteIcon, GiftIcon } from "@/components/icons";
+import { MapPinIcon, ImageIcon, AlertTriangleIcon, UsersIcon, InfoIcon, TrophyIcon, MessageIcon, CameraIcon, CompassIcon, CheckmarkCircleIcon, XCircleIcon, FlagIcon, UpvoteIcon, DownvoteIcon, GiftIcon, EyeIcon } from "@/components/icons";
 
 export function NotificationIcon({ type, details, className }: { type: NotificationType['type']; details?: NotificationType['details']; className?: string }) {
   const cls = className ?? "w-4 h-4 shrink-0";
@@ -33,6 +33,11 @@ export function NotificationIcon({ type, details, className }: { type: Notificat
     case 'zone-quest-objective-rejected': return <XCircleIcon className={cls} />;
     case 'zone-quest-completed': return <FlagIcon className={cls} />;
     case 'connection-completed-zone-quest': return <FlagIcon className={cls} />;
+    case 'hide-and-seek-created':
+    case 'hide-and-seek-joined':
+    case 'hide-and-seek-checked':
+    case 'hide-and-seek-found':
+    case 'hide-and-seek-ended': return <EyeIcon className={cls} />;
     default: return <InfoIcon className={cls} />;
   }
 }

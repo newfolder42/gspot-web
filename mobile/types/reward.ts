@@ -1,6 +1,9 @@
 /** Mirrors web src/types/reward.ts (the parts the app needs). */
 
-export type RewardTarget = 'post' | 'comment';
+export type RewardTarget = 'post' | 'comment' | 'hide-and-seek-check';
+
+/** ცხელა / თბილა / ცივა — host-only flavour on a hide-and-seek check. */
+export const HIDE_AND_SEEK_REWARD_KEYS = ['hot', 'warm', 'cold'] as const;
 
 export type RewardStatus = 'active' | 'disabled';
 

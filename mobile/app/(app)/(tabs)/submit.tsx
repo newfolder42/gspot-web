@@ -23,7 +23,8 @@ import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
-import { useTheme } from '@/constants/colors';
+import { Colors, useTheme } from '@/constants/colors';
+import { CreateHideAndSeek } from '@/components/hideandseek/CreateHideAndSeek';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
@@ -368,7 +369,7 @@ function MapCoordPicker({
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
-export default function SubmitScreen() {
+function PhotoSubmit() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -624,8 +625,6 @@ export default function SubmitScreen() {
       keyboardShouldPersistTaps="handled"
       scrollEnabled={scrollEnabled}
     >
-      <Text className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-5">ახალი პოსტი</Text>
-
       {/* ── Zone picker ─────────────────────────────────── */}
       <View className="mb-4">
         <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
@@ -887,5 +886,62 @@ export default function SubmitScreen() {
         )}
       </Pressable>
     </ScrollView>
+  );
+}
+
+type SubmitTab = 'photo' | 'hide-and-seek';
+
+const TABS: { key: SubmitTab; label: string; icon: 'camera' | 'eye' }[] = [
+  { key: 'photo', label: 'ფოტო', icon: 'camera' },
+  { key: 'hide-and-seek', label: 'დამალობანა', icon: 'eye' },
+];
+
+/**
+ * One entry point for everything a user can post, matching the web submit tabs.
+ * Each tab owns its own scroller, so the photo form keeps its gesture handling.
+ */
+export default function SubmitScreen() {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<SubmitTab>('photo');
+
+  return (
+    <View className="flex-1" style={{ backgroundColor: theme.bg }}>
+      <View className="flex-row gap-1 px-4" style={{ borderBottomWidth: 1, borderBottomColor: theme.border }}>
+        {TABS.map(({ key, label, icon }) => {
+          const selected = tab === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => setTab(key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              className="flex-row items-center gap-1.5 px-3 py-3"
+              style={{ borderBottomWidth: 2, borderBottomColor: selected ? Colors.brand : 'transparent', marginBottom: -1 }}
+            >
+              <Feather name={icon} size={15} color={selected ? Colors.brand : theme.icon} />
+              <Text
+                className="text-sm font-bold"
+                style={{ color: selected ? Colors.brand : theme.textMuted }}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {tab === 'photo' ? (
+        <PhotoSubmit />
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <CreateHideAndSeek />
+        </ScrollView>
+      )}
+    </View>
   );
 }

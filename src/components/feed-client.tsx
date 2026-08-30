@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GpsPost, GpsPostGridItem } from './post-gps';
 import { QuestCompletionPost, QuestCompletionGridItem } from './post-quest';
+import { HideAndSeekPost, HideAndSeekGridItem } from './hide-and-seek/hide-and-seek-post';
 import { FeedType, FeedView, FeedPostType } from '@/types/post';
 import { loadPosts } from '@/actions/feed';
 import { POSTS_PER_PAGE, POSTS_PER_PAGE_GRID } from '@/types/constants';
@@ -121,8 +122,9 @@ export default function FeedClient({
           <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '4px' }}>
-          {posts.map(post => post.type === 'quest-completion'
-            ? <QuestCompletionGridItem key={post.id} post={post} />
+          {posts.map(post =>
+            post.type === 'quest-completion' ? <QuestCompletionGridItem key={post.id} post={post} />
+            : post.type === 'hide-and-seek' ? <HideAndSeekGridItem key={post.id} post={post} />
             : <GpsPostGridItem key={post.id} post={post} />
           )}
         </div>
@@ -149,8 +151,9 @@ export default function FeedClient({
       {loading && posts.length === 0 && (
         <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
       )}
-      {posts.map(post => post.type === 'quest-completion'
-        ? <QuestCompletionPost key={post.id} post={post} showZone={type !== 'zone'} />
+      {posts.map(post =>
+        post.type === 'quest-completion' ? <QuestCompletionPost key={post.id} post={post} showZone={type !== 'zone'} />
+        : post.type === 'hide-and-seek' ? <HideAndSeekPost key={post.id} post={post} showZone={type !== 'zone'} />
         : <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
       )}
 
