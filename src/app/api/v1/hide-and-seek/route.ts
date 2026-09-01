@@ -22,6 +22,7 @@ const BodySchema = z.object({
   zoneId: z.number().int().positive(),
   zoneSlug: z.string(),
   visibility: z.enum(['public', 'private']),
+  endOnFirstFind: z.boolean().optional(),
   inviteeIds: z.array(z.number().int().positive()).optional(),
   // aliases are resolved server-side; unknown ones are dropped
   inviteeAliases: z.array(z.string().trim().min(1)).max(50).optional(),

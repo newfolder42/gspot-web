@@ -15,6 +15,9 @@ export const MAX_DURATION_MINUTES = 360;
 export const DURATION_STEP_MINUTES = 30;
 export const DEFAULT_DURATION_MINUTES = 60;
 
+/** Stop the game for everybody the moment the first seeker lands inside the catch radius. */
+export const DEFAULT_END_ON_FIRST_FIND = false;
+
 /** 30, 60, 90 … 360 — the durations the host can pick from. */
 export const DURATION_OPTIONS: number[] = Array.from(
   { length: (MAX_DURATION_MINUTES - MIN_DURATION_MINUTES) / DURATION_STEP_MINUTES + 1 },
@@ -92,9 +95,11 @@ export type HideAndSeekGameType = {
   catchRadiusM: number;
   maxChecks: number;
   durationMinutes: number;
+  /** Host chose to stop the game as soon as somebody finds them. */
+  endOnFirstFind: boolean;
   endsAt: string;
   endedAt: string | null;
-  endedReason: 'expired' | 'host_ended' | null;
+  endedReason: 'expired' | 'host_ended' | 'first_found' | null;
   createdAt: string;
   playerCount: number;
   foundCount: number;
@@ -146,6 +151,8 @@ export type HideAndSeekCheckResultType = {
   found: boolean;
   checksRemaining: number;
   status: HideAndSeekPlayerStatus;
+  /** True when this check ended the game for everyone — see endOnFirstFind. */
+  gameEnded: boolean;
 };
 
 export type HideAndSeekGameResponse = {
@@ -157,3 +164,35 @@ export type CheckPhotoMeta = {
   imageUrl: string | null;
   imageVariants: PostImageVariants | null;
 };
+
+/** One check as it lands on the host's post-game map. */
+export type HideAndSeekCheckMapPointType = {
+  checkId: number;
+  userId: number;
+  author: string;
+  distanceMeters: number;
+  /** The check that caught the host — drawn larger than the rest. */
+  found: boolean;
+  coordinates: { latitude: number; longitude: number };
+  createdAt: string;
+};
+
+/** One seeker's whole trail, so the map can colour and label per player. */
+export type HideAndSeekCheckMapSeekerType = {
+  userId: number;
+  alias: string;
+  color: string;
+  checkCount: number;
+  bestDistance: number | null;
+  found: boolean;
+};
+
+export type HideAndSeekCheckMapDataType = {
+  points: HideAndSeekCheckMapPointType[];
+  seekers: HideAndSeekCheckMapSeekerType[];
+  hidingSpot: { latitude: number; longitude: number } | null;
+  catchRadiusM: number;
+};
+
+/** The seeker colours come down with the map data; only the hiding pin is fixed here. */
+export const HIDING_SPOT_COLOR = '#ef4444';

@@ -8,6 +8,7 @@ import { mapDefaultCenter } from '@/lib/map';
 import {
   DEFAULT_CHECKS,
   DEFAULT_DURATION_MINUTES,
+  DEFAULT_END_ON_FIRST_FIND,
   DURATION_OPTIONS,
   MAX_CHECKS,
   MIN_CHECKS,
@@ -41,6 +42,7 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
   const [coords, setCoords] = useState({ latitude: mapDefaultCenter[1], longitude: mapDefaultCenter[0] });
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [maxChecks, setMaxChecks] = useState(DEFAULT_CHECKS);
+  const [endOnFirstFind, setEndOnFirstFind] = useState(DEFAULT_END_ON_FIRST_FIND);
   const [zoneId, setZoneId] = useState<number | null>(zones[0]?.id ?? null);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [inviteInput, setInviteInput] = useState('');
@@ -99,6 +101,7 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
       zoneId: zone.id,
       zoneSlug: zone.slug,
       visibility,
+      endOnFirstFind,
       inviteeAliases: visibility === 'private' ? invitees : [],
     });
 
@@ -169,6 +172,22 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
           <p className="text-xs text-zinc-500">{MIN_CHECKS}-დან {MAX_CHECKS}-მდე.</p>
         </div>
       </div>
+
+      <label
+        htmlFor="hs-first-find"
+        className="flex items-start gap-3 rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2.5 cursor-pointer"
+      >
+        <input
+          id="hs-first-find"
+          type="checkbox"
+          checked={endOnFirstFind}
+          onChange={(e) => setEndOnFirstFind(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-teal-600"
+        />
+        <span className="text-sm text-zinc-700 dark:text-zinc-300">
+          პირველივე პოვნაზე თამაში ყველასთვის დასრულდეს
+        </span>
+      </label>
 
       <div className="space-y-1.5">
         <label htmlFor="hs-zone" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">

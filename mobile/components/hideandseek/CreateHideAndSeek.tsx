@@ -19,6 +19,7 @@ import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import {
   DEFAULT_CHECKS,
   DEFAULT_DURATION_MINUTES,
+  DEFAULT_END_ON_FIRST_FIND,
   DURATION_OPTIONS,
   MAX_CHECKS,
   MIN_CHECKS,
@@ -47,6 +48,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
   const [coords, setCoords] = useState<[number, number]>(mapDefaultCenter); // [lng, lat]
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [maxChecks, setMaxChecks] = useState(String(DEFAULT_CHECKS));
+  const [endOnFirstFind, setEndOnFirstFind] = useState(DEFAULT_END_ON_FIRST_FIND);
   const [zoneIndex, setZoneIndex] = useState(0);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [inviteInput, setInviteInput] = useState('');
@@ -127,6 +129,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
         zoneId: zone.id,
         zoneSlug: zone.slug,
         visibility,
+        endOnFirstFind,
         inviteeAliases: visibility === 'private' ? invitees : [],
       });
 
@@ -256,6 +259,26 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
           {MIN_CHECKS}-დან {MAX_CHECKS}-მდე.
         </Text>
       </View>
+
+      <Pressable
+        onPress={() => setEndOnFirstFind((v) => !v)}
+        className="flex-row items-center gap-3 rounded-md px-3 py-3"
+        style={{ borderWidth: 1, borderColor: endOnFirstFind ? Colors.brand : theme.border }}
+      >
+        <View
+          className="w-5 h-5 rounded items-center justify-center"
+          style={{
+            borderWidth: 1,
+            borderColor: endOnFirstFind ? Colors.brand : theme.border,
+            backgroundColor: endOnFirstFind ? Colors.brand : 'transparent',
+          }}
+        >
+          {endOnFirstFind && <Feather name="check" size={13} color={Colors.onAccent} />}
+        </View>
+        <Text className="text-sm flex-1" style={{ color: theme.text }}>
+          პირველივე პოვნაზე თამაში ყველასთვის დასრულდეს
+        </Text>
+      </Pressable>
 
       <View className="gap-2">
         <Text className="text-sm font-semibold" style={{ color: theme.text }}>საბზონა</Text>

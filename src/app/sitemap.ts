@@ -33,11 +33,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.7,
     })),
-    // the actual content: every post is a unique photo with a unique location
     ...posts.map(post => ({
       url: `${baseUrl}${post.path}`,
       lastModified: post.lastModified,
-      changeFrequency: 'weekly' as const,
+      changeFrequency: 'daily' as const,
       priority: 0.6,
     })),
     ...profiles.map(profile => ({

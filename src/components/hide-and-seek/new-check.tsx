@@ -114,6 +114,9 @@ export default function NewCheck({ postId, checksRemaining, onSubmitted }: Props
           <>
             <CheckmarkCircleIcon className="w-8 h-8 mx-auto text-teal-500" />
             <p className="text-base font-bold text-teal-600 dark:text-teal-400">იპოვე!</p>
+            {result.gameEnded && (
+              <p className="text-sm text-zinc-500">თამაში ყველასთვის დასრულდა.</p>
+            )}
           </>
         ) : (
           <>

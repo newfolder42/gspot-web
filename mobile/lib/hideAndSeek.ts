@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api';
 import { uploadToSignedUrl } from '@/lib/upload';
 import type {
   ActiveHideAndSeekType,
+  HideAndSeekCheckMapDataType,
   HideAndSeekCheckResultType,
   HideAndSeekGameResponse,
   HideAndSeekListFilter,
@@ -68,6 +69,15 @@ export const hideAndSeekApi = {
       apiClient.get<HideAndSeekGameResponse>(`/hide-and-seek/${postId}`).then((r) => r.data)
     ),
 
+  /**
+   * Every check placed in a finished game plus the hiding spot, for the host's map.
+   * The server refuses this to anyone but the host and to games still running.
+   */
+  getCheckMap: (postId: number): Promise<HideAndSeekCheckMapDataType> =>
+    call(() =>
+      apiClient.get<HideAndSeekCheckMapDataType>(`/hide-and-seek/${postId}/checks`).then((r) => r.data)
+    ),
+
   create: (input: {
     title: string;
     coordinates: { latitude: number; longitude: number };
@@ -76,6 +86,7 @@ export const hideAndSeekApi = {
     zoneId: number;
     zoneSlug: string;
     visibility: 'public' | 'private';
+    endOnFirstFind?: boolean;
     inviteeAliases?: string[];
   }): Promise<{ postId: number; gameId: number }> =>
     call(() =>

@@ -51,7 +51,7 @@ export interface HideAndSeekEndedEvent {
   gameId: number;
   postId: number;
   hostId: number;
-  reason: 'expired' | 'host_ended';
+  reason: 'expired' | 'host_ended' | 'first_found';
   /** Everyone who took part, host included — they all get the wrap-up notification. */
   participantIds: number[];
 }

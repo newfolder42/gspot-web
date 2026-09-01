@@ -183,7 +183,7 @@ export type NotificationHideAndSeekDetailsType = {
   userId?: number,
   userAlias?: string,
   distanceMeters?: number,
-  reason?: 'expired' | 'host_ended',
+  reason?: 'expired' | 'host_ended' | 'first_found',
 }
 
 // Normalize `details` to a plain object regardless of input shape.

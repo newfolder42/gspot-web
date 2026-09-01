@@ -68,6 +68,9 @@ export function NewCheck({ postId, checksRemaining, onSubmitted }: Props) {
           <>
             <Feather name="check-circle" size={28} color={Colors.brand} />
             <Text className="text-base font-bold" style={{ color: Colors.brand }}>იპოვე!</Text>
+            {result.gameEnded && (
+              <Text className="text-sm" style={{ color: theme.textMuted }}>თამაში ყველასთვის დასრულდა.</Text>
+            )}
           </>
         ) : (
           <>

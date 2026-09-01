@@ -11,12 +11,19 @@ import { eventBus } from '@/lib/eventBus';
 import {
   CATCH_RADIUS_METERS,
   DEFAULT_CHECKS,
+  DEFAULT_END_ON_FIRST_FIND,
   isValidDuration,
   isValidMaxChecks,
+  seekerColor,
 } from '@/types/hide-and-seek';
 import type {
   ActiveHideAndSeekType,
+  HideAndSeekCheckMapDataType,
+  HideAndSeekCheckMapPointType,
+  HideAndSeekCheckMapSeekerType,
   HideAndSeekCheckResultType,
+  HideAndSeekConfigType,
+  HideAndSeekEndedReason,
   HideAndSeekGameType,
   HideAndSeekListFilter,
   HideAndSeekListItemType,
@@ -49,6 +56,20 @@ export type HideAndSeekResult<T> = { ok: true; data: T } | { ok: false; reason: 
 
 function fail<T>(reason: HideAndSeekErrorReason): HideAndSeekResult<T> {
   return { ok: false, reason };
+}
+
+/**
+ * `hide_and_seek_games.config` as the application wants it. Rows written before a key
+ * existed simply do not carry it, so every read goes through here rather than trusting
+ * the document to be complete.
+ */
+function readConfig(raw: unknown): HideAndSeekConfigType {
+  const config = (raw ?? {}) as Partial<HideAndSeekConfigType>;
+  return {
+    latitude: Number(config.latitude),
+    longitude: Number(config.longitude),
+    endOnFirstFind: config.endOnFirstFind === true,
+  };
 }
 
 /** Thrown inside the check transaction when the locked player row no longer qualifies. */
@@ -242,6 +263,8 @@ export async function getHideAndSeekGameForUser(
 
     const isHost = Number(r.user_id) === userId;
     const ended = r.status === 'ended';
+    const config = readConfig(r.config);
+    const hasCoordinates = Number.isFinite(config.latitude) && Number.isFinite(config.longitude);
 
     return {
       id: Number(r.id),
@@ -257,6 +280,7 @@ export async function getHideAndSeekGameForUser(
       catchRadiusM: Number(r.catch_radius_m),
       maxChecks: Number(r.max_checks),
       durationMinutes: Number(r.duration_minutes),
+      endOnFirstFind: config.endOnFirstFind,
       endsAt: r.ends_at,
       endedAt: r.ended_at ?? null,
       endedReason: r.ended_reason ?? null,
@@ -264,7 +288,10 @@ export async function getHideAndSeekGameForUser(
       playerCount: Number(r.player_count ?? 0),
       foundCount: Number(r.found_count ?? 0),
       // the hidden answer stays hidden until the game is over
-      coordinates: isHost || ended ? { latitude: Number(r.latitude), longitude: Number(r.longitude) } : null,
+      coordinates:
+        (isHost || ended) && hasCoordinates
+          ? { latitude: config.latitude, longitude: config.longitude }
+          : null,
       viewer: r.viewer_player_id
         ? {
             playerId: Number(r.viewer_player_id),
@@ -330,6 +357,109 @@ export async function getHideAndSeekPlayersForUser(
   }
 }
 
+export async function getHideAndSeekCheckMap(postId: number): Promise<HideAndSeekCheckMapDataType | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return getHideAndSeekCheckMapForUser(user.userId, postId);
+}
+
+/**
+ * Every check placed in a finished game, plus the spot the host was actually hiding at —
+ * the same "author sees the whole board afterwards" view a gps-photo post gives its OP.
+ *
+ * Host-only, and only once the game is over: while it runs, the set of places already
+ * searched is exactly the information the seekers are paying checks for, and the host is
+ * the one person who cannot gain from it. Returns null when either gate fails.
+ */
+export async function getHideAndSeekCheckMapForUser(
+  userId: number,
+  postId: number
+): Promise<HideAndSeekCheckMapDataType | null> {
+  try {
+    const gameRes = await query(
+      `select g.id, g.user_id as host_id, g.status, g.ends_at, g.config, g.catch_radius_m
+         from hide_and_seek_games g
+        where g.post_id = $1
+        limit 1`,
+      [postId]
+    );
+    if ((gameRes.rowCount ?? 0) === 0) return null;
+
+    const game = gameRes.rows[0];
+    if (Number(game.host_id) !== Number(userId)) return null;
+
+    // The expiry job runs on a timer, so a game past its clock is over for this purpose
+    // even while the row still says active.
+    const over = game.status === 'ended' || new Date(game.ends_at).getTime() <= Date.now();
+    if (!over) return null;
+
+    const config = readConfig(game.config);
+    const catchRadiusM = Number(game.catch_radius_m);
+
+    const checksRes = await query(
+      // joined_at leads the ordering so a seeker's colour is stable: it follows the order
+      // they entered the game, not the order their checks happen to come back in.
+      `select c.id, c.user_id, c.latitude, c.longitude, c.distance_meters, c.created_at,
+              u.alias, pl.status as player_status, pl.best_distance, pl.joined_at
+         from hide_and_seek_checks c
+         join users u on u.id = c.user_id
+         join hide_and_seek_players pl on pl.id = c.player_id
+        where c.game_id = $1
+        order by pl.joined_at asc, pl.id asc, c.created_at asc`,
+      [game.id]
+    );
+
+    const points: HideAndSeekCheckMapPointType[] = [];
+    const seekers: HideAndSeekCheckMapSeekerType[] = [];
+    const byUser = new Map<number, HideAndSeekCheckMapSeekerType>();
+
+    for (const r of checksRes.rows) {
+      const latitude = Number(r.latitude);
+      const longitude = Number(r.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+
+      const checkUserId = Number(r.user_id);
+      let seeker = byUser.get(checkUserId);
+      if (!seeker) {
+        seeker = {
+          userId: checkUserId,
+          alias: r.alias,
+          color: seekerColor(seekers.length),
+          checkCount: 0,
+          bestDistance: r.best_distance != null ? Number(r.best_distance) : null,
+          found: r.player_status === 'found',
+        };
+        byUser.set(checkUserId, seeker);
+        seekers.push(seeker);
+      }
+      seeker.checkCount += 1;
+
+      points.push({
+        checkId: Number(r.id),
+        userId: checkUserId,
+        author: r.alias,
+        distanceMeters: Number(r.distance_meters),
+        found: Number(r.distance_meters) <= catchRadiusM,
+        coordinates: { latitude, longitude },
+        createdAt: r.created_at,
+      });
+    }
+
+    return {
+      points,
+      seekers,
+      hidingSpot:
+        Number.isFinite(config.latitude) && Number.isFinite(config.longitude)
+          ? { latitude: config.latitude, longitude: config.longitude }
+          : null,
+      catchRadiusM,
+    };
+  } catch (err) {
+    await logerror('getHideAndSeekCheckMapForUser error', [err]);
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // create
 // ---------------------------------------------------------------------------
@@ -342,6 +472,8 @@ export type CreateHideAndSeekInput = {
   zoneId: number;
   zoneSlug: string;
   visibility: 'public' | 'private';
+  /** Stop the game for everybody as soon as the first seeker finds the host. */
+  endOnFirstFind?: boolean;
   /** User ids to grant access to, for a private game. */
   inviteeIds?: number[];
   /** Aliases to grant access to; resolved server-side and merged with inviteeIds. */
@@ -362,6 +494,7 @@ export async function createHideAndSeekGameForUser(
   input: CreateHideAndSeekInput
 ): Promise<HideAndSeekResult<{ postId: number; gameId: number }>> {
   const { title, coordinates, durationMinutes, maxChecks, zoneId, zoneSlug, visibility } = input;
+  const endOnFirstFind = input.endOnFirstFind ?? DEFAULT_END_ON_FIRST_FIND;
 
   const trimmed = (title ?? '').trim();
   if (!trimmed || trimmed.length > 200) return fail('invalid_input');
@@ -393,16 +526,19 @@ export async function createHideAndSeekGameForUser(
 
       const gameRes = await client.query(
         `insert into hide_and_seek_games
-           (post_id, user_id, visibility, latitude, longitude, catch_radius_m,
+           (post_id, user_id, visibility, config, catch_radius_m,
             max_checks, duration_minutes, ends_at)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, now() + make_interval(mins => $8))
+         values ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $7))
          returning id, ends_at`,
         [
           postId,
           userId,
           visibility,
-          coordinates.latitude,
-          coordinates.longitude,
+          JSON.stringify({
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            endOnFirstFind,
+          } satisfies HideAndSeekConfigType),
           CATCH_RADIUS_METERS,
           maxChecks,
           durationMinutes,
@@ -579,7 +715,7 @@ export async function submitHideAndSeekCheckForUser(
     if (!(await canUserAccessPost(userId, postId))) return fail('no_access');
 
     const gameRes = await query(
-      `select g.id, g.user_id as host_id, g.status, g.ends_at, g.latitude, g.longitude,
+      `select g.id, g.user_id as host_id, g.status, g.ends_at, g.config,
               g.catch_radius_m, g.max_checks, u.alias as host_alias
          from hide_and_seek_games g
          join users u on u.id = g.user_id
@@ -590,6 +726,10 @@ export async function submitHideAndSeekCheckForUser(
 
     if ((gameRes.rowCount ?? 0) === 0) return fail('game_not_found');
     const game = gameRes.rows[0];
+    const config = readConfig(game.config);
+    // Without a pin there is nothing to measure against, and a NaN distance would only
+    // surface later as a failed insert on an integer column.
+    if (!Number.isFinite(config.latitude) || !Number.isFinite(config.longitude)) return fail('failed');
 
     if (game.status !== 'active' || new Date(game.ends_at).getTime() <= Date.now()) return fail('game_ended');
     if (Number(game.host_id) === userId) return fail('host_cannot_seek');
@@ -609,7 +749,7 @@ export async function submitHideAndSeekCheckForUser(
     if (Number(player.check_count) >= Number(game.max_checks)) return fail('out_of_checks');
 
     const distance = haversineMeters(
-      { latitude: Number(game.latitude), longitude: Number(game.longitude) },
+      { latitude: config.latitude, longitude: config.longitude },
       coordinates
     );
     const found = distance <= Number(game.catch_radius_m);
@@ -740,6 +880,8 @@ export async function submitHideAndSeekCheckForUser(
       found: result.found,
     } as HideAndSeekCheckedEvent);
 
+    let gameEnded = false;
+
     if (result.found) {
       await eventBus.publish('hide_and_seek', 'found', {
         gameId: Number(game.id),
@@ -751,9 +893,35 @@ export async function submitHideAndSeekCheckForUser(
         distanceMeters: result.distanceMeters,
         checkCount: result.checkCount,
       } as HideAndSeekFoundEvent);
+
+      // The host asked for a race: the first catch is the whole game, so everybody
+      // still searching is released here rather than at ends_at.
+      if (config.endOnFirstFind) {
+        const participantIds = await closeGame(Number(game.id), 'first_found');
+        gameEnded = true;
+
+        await eventBus.publish('hide_and_seek', 'ended', {
+          gameId: Number(game.id),
+          postId: +postId,
+          hostId: Number(game.host_id),
+          reason: 'first_found',
+          participantIds,
+        } as HideAndSeekEndedEvent);
+      }
     }
 
-    return { ok: true, data: result };
+    return {
+      ok: true,
+      data: {
+        checkId: result.checkId,
+        commentId: result.commentId,
+        distanceMeters: result.distanceMeters,
+        found: result.found,
+        checksRemaining: result.checksRemaining,
+        status: result.status,
+        gameEnded,
+      },
+    };
   } catch (err) {
     if (err instanceof StaleCheckError) {
       return fail(err.playerStatus === 'found' ? 'already_found' : 'out_of_checks');
@@ -811,7 +979,7 @@ export async function endHideAndSeekGameForUser(
  */
 export async function closeGame(
   gameId: number,
-  reason: 'expired' | 'host_ended'
+  reason: HideAndSeekEndedReason
 ): Promise<number[]> {
   return withTransaction(async (client) => {
     await client.query(

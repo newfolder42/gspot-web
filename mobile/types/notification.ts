@@ -146,7 +146,7 @@ export type NotificationHideAndSeekDetailsType = {
   userId?: number;
   userAlias?: string;
   distanceMeters?: number;
-  reason?: 'expired' | 'host_ended';
+  reason?: 'expired' | 'host_ended' | 'first_found';
 };
 
 export type NotificationFeedEventReactionDetailsType = {

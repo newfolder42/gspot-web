@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LevelBadge } from '@/components/ui/LevelBadge';
+import { ChecksMap } from '@/components/hideandseek/ChecksMap';
 import { NewCheck } from '@/components/hideandseek/NewCheck';
 import { useCountdown } from '@/components/hideandseek/useCountdown';
 import { hideAndSeekApi } from '@/lib/hideAndSeek';
@@ -26,6 +27,7 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [locallyExpired, setLocallyExpired] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const { label, expired } = useCountdown(game.endsAt, () => setLocallyExpired(true));
 
@@ -35,6 +37,10 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
   // for the expiry job's next minute
   const live = game.status === 'active' && !expired && !locallyExpired;
   const foundCount = players.filter((p) => p.status === 'found').length;
+  const checkCount = players.reduce((total, p) => total + p.checkCount, 0);
+  // The board only opens once the game is over — while it runs, where everyone has
+  // already looked is precisely what the seekers are spending checks to learn.
+  const canSeeMap = isHost && !live && checkCount > 0;
 
   // Matches the feed card: teal while live, plain white/black once finished.
   const surfaceColor = live ? '#0F766E' : theme.scheme === 'dark' ? '#000000' : '#FFFFFF';
@@ -118,6 +124,9 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
           <Text className="text-xs" style={{ color: mutedColor }}>{foundCount} იპოვა</Text>
           <Text className="text-xs" style={{ color: mutedColor }}>{game.maxChecks} მცდელობა</Text>
           <Text className="text-xs" style={{ color: mutedColor }}>{formatMinutes(game.durationMinutes)}</Text>
+          {game.endOnFirstFind && (
+            <Text className="text-xs" style={{ color: mutedColor }}>პირველივე პოვნაზე სრულდება</Text>
+          )}
         </View>
       </View>
 
@@ -161,6 +170,17 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
           </Pressable>
         )}
 
+        {canSeeMap && (
+          <Pressable
+            onPress={() => setShowMap(true)}
+            className="rounded-md px-4 py-2.5 items-center flex-row justify-center gap-2"
+            style={{ backgroundColor: Colors.brand }}
+          >
+            <Feather name="map-pin" size={14} color={Colors.onAccent} />
+            <Text className="text-sm font-bold" style={{ color: Colors.onAccent }}>მცდელობები რუკაზე</Text>
+          </Pressable>
+        )}
+
         {players.length > 0 && (
           <View className="gap-1">
             <Text className="text-xs font-bold uppercase" style={{ color: theme.textMuted }}>მეძებრები</Text>
@@ -196,6 +216,8 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
           </Text>
         )}
       </View>
+
+      {showMap && <ChecksMap postId={game.postId} onClose={() => setShowMap(false)} />}
     </View>
   );
 }

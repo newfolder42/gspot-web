@@ -4,7 +4,7 @@ import type { VoteValue } from './vote';
 
 export type HideAndSeekVisibility = 'public' | 'private';
 export type HideAndSeekGameStatus = 'active' | 'ended';
-export type HideAndSeekEndedReason = 'expired' | 'host_ended';
+export type HideAndSeekEndedReason = 'expired' | 'host_ended' | 'first_found';
 export type HideAndSeekRole = 'host' | 'seeker';
 export type HideAndSeekPlayerStatus = 'active' | 'found' | 'out_of_checks' | 'ended';
 
@@ -20,6 +20,19 @@ export const MIN_DURATION_MINUTES = 30;
 export const MAX_DURATION_MINUTES = 360;
 export const DURATION_STEP_MINUTES = 30;
 export const DEFAULT_DURATION_MINUTES = 60;
+
+/**
+ * Everything the host chooses that is not filtered or ordered on in SQL lives in the
+ * game's `config` jsonb, so a new option is a new key rather than a new column.
+ */
+export type HideAndSeekConfigType = {
+  latitude: number;
+  longitude: number;
+  /** Stop the whole game the moment the first seeker lands inside the catch radius. */
+  endOnFirstFind: boolean;
+};
+
+export const DEFAULT_END_ON_FIRST_FIND = false;
 
 /** 30, 60, 90 … 360 — the durations the host can pick from. */
 export const DURATION_OPTIONS: number[] = Array.from(
@@ -99,6 +112,8 @@ export type HideAndSeekGameType = {
   catchRadiusM: number;
   maxChecks: number;
   durationMinutes: number;
+  /** Host chose to stop the game as soon as somebody finds them. */
+  endOnFirstFind: boolean;
   endsAt: string;
   endedAt: string | null;
   endedReason: HideAndSeekEndedReason | null;
@@ -166,6 +181,8 @@ export type HideAndSeekCheckResultType = {
   found: boolean;
   checksRemaining: number;
   status: HideAndSeekPlayerStatus;
+  /** True when this check ended the game for everyone — see endOnFirstFind. */
+  gameEnded: boolean;
 };
 
 /** A check as it renders in the comment thread — distance always, photo conditionally. */
@@ -197,4 +214,59 @@ export function canSeeCheckPhoto(
   if (gameStatus === 'ended') return true;
   if (!viewerId) return false;
   return viewerId === checkAuthorId || viewerId === hostId;
+}
+
+/** One check as it lands on the host's post-game map. */
+export type HideAndSeekCheckMapPointType = {
+  checkId: number;
+  userId: number;
+  author: string;
+  distanceMeters: number;
+  /** The check that caught the host — drawn larger than the rest. */
+  found: boolean;
+  coordinates: { latitude: number; longitude: number };
+  createdAt: string;
+};
+
+/** One seeker's whole trail, so the map can colour and label per player. */
+export type HideAndSeekCheckMapSeekerType = {
+  userId: number;
+  alias: string;
+  color: string;
+  checkCount: number;
+  bestDistance: number | null;
+  found: boolean;
+};
+
+export type HideAndSeekCheckMapDataType = {
+  points: HideAndSeekCheckMapPointType[];
+  seekers: HideAndSeekCheckMapSeekerType[];
+  /** Where the host was actually hiding. Always present for them. */
+  hidingSpot: { latitude: number; longitude: number } | null;
+  catchRadiusM: number;
+};
+
+/**
+ * One colour per seeker, in join order. Picked to stay apart from each other and from
+ * the red hiding-spot pin on satellite imagery; the list wraps on very large games.
+ */
+export const SEEKER_COLORS = [
+  '#38bdf8',
+  '#facc15',
+  '#a855f7',
+  '#22c55e',
+  '#fb923c',
+  '#ec4899',
+  '#2dd4bf',
+  '#c084fc',
+  '#84cc16',
+  '#f472b6',
+  '#60a5fa',
+  '#fbbf24',
+] as const;
+
+export const HIDING_SPOT_COLOR = '#ef4444';
+
+export function seekerColor(index: number): string {
+  return SEEKER_COLORS[index % SEEKER_COLORS.length];
 }

@@ -4,6 +4,7 @@ import {
   createHideAndSeekGame,
   endHideAndSeekGame,
   getActiveHideAndSeek,
+  getHideAndSeekCheckMap,
   getHideAndSeekGame,
   getHideAndSeekPlayers,
   joinHideAndSeekGame,
@@ -18,6 +19,7 @@ import { getCurrentUser } from '@/lib/session';
 import { getUserIdByAlias } from '@/lib/users';
 import type {
   ActiveHideAndSeekType,
+  HideAndSeekCheckMapDataType,
   HideAndSeekCheckResultType,
   HideAndSeekGameType,
   HideAndSeekPlayerType,
@@ -70,4 +72,11 @@ export async function loadHideAndSeekGameAction(postId: number): Promise<HideAnd
 
 export async function loadHideAndSeekPlayersAction(postId: number): Promise<HideAndSeekPlayerType[]> {
   return getHideAndSeekPlayers(postId);
+}
+
+/** Host-only, finished games only — null covers both refusals. */
+export async function loadHideAndSeekCheckMapAction(
+  postId: number
+): Promise<HideAndSeekCheckMapDataType | null> {
+  return getHideAndSeekCheckMap(postId);
 }

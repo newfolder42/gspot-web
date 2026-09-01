@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ChecksMap from './checks-map';
 import NewCheck from './new-check';
 import { useCountdown } from './countdown';
 import UserLink from '../common/user-link';
@@ -12,7 +13,7 @@ import type {
   HideAndSeekGameType,
   HideAndSeekPlayerType,
 } from '@/types/hide-and-seek';
-import { CheckmarkCircleIcon, LockIcon, EyeIcon, UsersIcon } from '../icons';
+import { CheckmarkCircleIcon, LockIcon, EyeIcon, MapPinIcon, UsersIcon } from '../icons';
 
 type Props = {
   game: HideAndSeekGameType;
@@ -52,6 +53,7 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localExpired, setLocalExpired] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const { label, expired } = useCountdown(game.endsAt, () => setLocalExpired(true));
 
@@ -104,6 +106,10 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
   };
 
   const foundCount = players.filter((p) => p.status === 'found').length;
+  const checkCount = players.reduce((total, p) => total + p.checkCount, 0);
+  // The board only opens once the game is over — while it runs, where everyone has
+  // already looked is precisely what the seekers are spending checks to learn.
+  const canSeeMap = isHost && !live && checkCount > 0;
 
   return (
     <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
@@ -155,6 +161,7 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
           <span>{foundCount} იპოვა</span>
           <span>{game.maxChecks} მცდელობა</span>
           <span>{formatMinutes(game.durationMinutes)}</span>
+          {game.endOnFirstFind && <span>პირველივე პოვნაზე სრულდება</span>}
         </div>
       </div>
 
@@ -201,6 +208,18 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
           </button>
         )}
 
+        {canSeeMap && (
+          <button
+            type="button"
+            onClick={() => setShowMap(true)}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+            title="ყველა მცდელობის ჩვენება რუკაზე"
+          >
+            <MapPinIcon className="w-4 h-4" />
+            მცდელობები რუკაზე
+          </button>
+        )}
+
         {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
 
         {players.length > 0 && (
@@ -220,6 +239,8 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
           </p>
         )}
       </div>
+
+      {showMap && <ChecksMap postId={game.postId} onClose={() => setShowMap(false)} />}
     </section>
   );
 }
