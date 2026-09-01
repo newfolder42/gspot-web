@@ -3,6 +3,7 @@
 import { query } from '@/lib/db';
 import { logerror } from './logger';
 import { getQuestLockReason } from './questProgress';
+import { getZoneQuestsEnabled } from './zones';
 import { slugify } from './slug';
 import type { ImageVariants } from './image-pipeline';
 import type {
@@ -15,6 +16,7 @@ import type {
   CompletedQuestPhotoType,
   ZoneQuestCharacterType,
   UserQuestLogEntryType,
+  AvailableQuestType,
   ObjectiveTypeId,
   ObjectiveConfig,
   CaptureData,
@@ -746,6 +748,83 @@ export async function getUserQuestLog(userId: number): Promise<UserQuestLogEntry
     await logerror('getUserQuestLog error', [err]);
     return [];
   }
+}
+
+// Active quests the caller can still take: zones they're an active member of,
+// quests they haven't accepted yet. Quests locked behind a level or a start date
+// are included with their lock reason, the way the zone quests tab shows them;
+// expired ones are dropped since they can never be accepted.
+export async function getUserAvailableQuests(userId: number): Promise<AvailableQuestType[]> {
+  try {
+    const res = await query(
+      `select zq.id as quest_id, zq.title as quest_title, zq.description as quest_description,
+              zq.required_level, zq.start_date, zq.end_date, zq.created_at, zq.character_id,
+              z.id as zone_id, z.slug as zone_slug, z.name as zone_name,
+              zc.name as character_name, zc.avatar_url as character_avatar_url,
+              (select count(*) from zone_quest_objectives zqo where zqo.quest_id = zq.id) as objective_count,
+              (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'active') as active_count,
+              (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'completed') as completed_count,
+              coalesce(ux.level, 0) as caller_level
+       from zone_quests zq
+       join zones z on z.id = zq.zone_id
+       join zone_members zm on zm.zone_id = zq.zone_id and zm.user_id = $1
+            and zm.status = 'active' and zm.role = 'member'
+       left join zone_quest_characters zc on zc.id = zq.character_id
+       left join user_xp ux on ux.user_id = $1
+       where zq.status = 'active'
+         and (zq.end_date is null or zq.end_date >= now())
+         and not exists (select 1 from user_quests uq where uq.quest_id = zq.id and uq.user_id = $1)`,
+      [userId]
+    );
+
+    const quests = res.rows.map((r: any) => {
+      const requiredLevel = r.required_level !== null ? Number(r.required_level) : null;
+      return {
+        questId: Number(r.quest_id),
+        questTitle: r.quest_title,
+        questDescription: r.quest_description,
+        requiredLevel,
+        zoneId: Number(r.zone_id),
+        zoneSlug: r.zone_slug,
+        zoneName: r.zone_name,
+        characterId: r.character_id !== null ? Number(r.character_id) : null,
+        characterName: r.character_name ?? null,
+        characterAvatarUrl: r.character_avatar_url ?? null,
+        objectiveCount: Number(r.objective_count),
+        activeCount: Number(r.active_count),
+        completedCount: Number(r.completed_count),
+        lockReason: getQuestLockReason({
+          startDate: r.start_date,
+          endDate: r.end_date,
+          requiredLevel,
+          callerLevel: Number(r.caller_level),
+        }),
+        createdAt: r.created_at,
+      };
+    });
+
+    // Zones can have the quests feature switched off; drop those rows.
+    const zoneIds = [...new Set(quests.map((q) => q.zoneId))];
+    const enabledZoneIds = new Set(
+      (await Promise.all(zoneIds.map(async (id) => ((await getZoneQuestsEnabled(id)) ? id : null)))).filter(
+        (id): id is number => id !== null
+      )
+    );
+
+    return quests.filter((q) => enabledZoneIds.has(q.zoneId)).sort(availableQuestComparator);
+  } catch (err) {
+    await logerror('getUserAvailableQuests error', [err]);
+    return [];
+  }
+}
+
+// Takeable quests first, then locked ones; characters clustered, newest first.
+function availableQuestComparator(a: AvailableQuestType, b: AvailableQuestType): number {
+  const lockDiff = (a.lockReason ? 1 : 0) - (b.lockReason ? 1 : 0);
+  if (lockDiff !== 0) return lockDiff;
+  if (a.zoneId !== b.zoneId) return a.zoneId - b.zoneId;
+  if (a.characterId !== b.characterId) return (a.characterId ?? Infinity) - (b.characterId ?? Infinity);
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 }
 
 export type CreateQuestCharacterInput = {

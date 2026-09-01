@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserQuestLog } from "@/lib/quests";
+import { getUserQuestLog, getUserAvailableQuests } from "@/lib/quests";
 import QuestLog from "@/components/account/quest-log";
 import type { Metadata } from "next";
 import { APP_NAME } from "@/types/constants";
@@ -17,12 +17,15 @@ export default async function QuestsPage() {
     redirect('/auth/signin');
   }
 
-  const entries = await getUserQuestLog(currentUser.userId);
+  const [entries, available] = await Promise.all([
+    getUserQuestLog(currentUser.userId),
+    getUserAvailableQuests(currentUser.userId),
+  ]);
 
   return (
     <div className="max-w-3xl mx-auto px-2 py-2 md:py-4">
       <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-6">მისიების ჟურნალი</h1>
-      <QuestLog entries={entries} />
+      <QuestLog entries={entries} available={available} />
     </div>
   );
 }

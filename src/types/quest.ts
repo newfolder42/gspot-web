@@ -163,3 +163,23 @@ export type UserQuestLogEntryType = {
   objectiveCount: number;
   completedObjectiveCount: number;
 };
+
+// Cross-zone available quest: an active quest in a zone the caller belongs to
+// that they haven't accepted yet, for the quest log's "available" section.
+export type AvailableQuestType = {
+  questId: number;
+  questTitle: string;
+  questDescription: string | null;
+  requiredLevel: number | null;
+  zoneId: number;
+  zoneSlug: string;
+  zoneName: string;
+  characterId: number | null;
+  characterName: string | null;
+  characterAvatarUrl: string | null;
+  objectiveCount: number;
+  activeCount: number;
+  completedCount: number;
+  lockReason: string | null; // null = the caller can accept it right now
+  createdAt: string;
+};

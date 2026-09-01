@@ -116,3 +116,26 @@ export type SubmitCaptureResult = {
   distanceMeters?: number;
   error?: string;
 };
+
+export type AvailableQuestType = {
+  questId: number;
+  questTitle: string;
+  questDescription: string | null;
+  requiredLevel: number | null;
+  zoneId: number;
+  zoneSlug: string;
+  zoneName: string;
+  characterId: number | null;
+  characterName: string | null;
+  characterAvatarUrl: string | null;
+  objectiveCount: number;
+  activeCount: number;
+  completedCount: number;
+  lockReason: string | null;
+  createdAt: string;
+};
+
+export type QuestLogResponse = {
+  entries: UserQuestLogEntryType[];
+  available: AvailableQuestType[];
+};

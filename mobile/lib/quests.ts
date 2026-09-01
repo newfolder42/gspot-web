@@ -3,7 +3,7 @@ import { uploadToSignedUrl } from '@/lib/upload';
 import type {
   ZoneQuestWithStatsType,
   ZoneQuestCharacterType,
-  UserQuestLogEntryType,
+  QuestLogResponse,
   QuestDetailResponse,
   CaptureMethod,
   SubmitCaptureResult,
@@ -27,8 +27,10 @@ export const questsApi = {
   getCharacter: (slug: string, characterSlug: string): Promise<ZoneQuestCharacterType> =>
     apiClient.get<{ character: ZoneQuestCharacterType }>(`/zones/${enc(slug)}/characters/${enc(characterSlug)}`).then((r) => r.data.character),
 
-  getLog: (): Promise<UserQuestLogEntryType[]> =>
-    apiClient.get<{ entries: UserQuestLogEntryType[] }>(`/quests/log`).then((r) => r.data.entries),
+  getLog: (): Promise<QuestLogResponse> =>
+    apiClient
+      .get<QuestLogResponse>(`/quests/log`)
+      .then((r) => ({ entries: r.data.entries ?? [], available: r.data.available ?? [] })),
 
   /**
    * Upload a captured objective photo and submit it for review.
