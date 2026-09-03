@@ -2,7 +2,7 @@
   "expo": {
     "name": "G'Spot",
     "slug": "gspot-mobile",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -17,7 +17,8 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "!android.permission.READ_MEDIA_VIDEO"
       ]
     },
     "ios": {

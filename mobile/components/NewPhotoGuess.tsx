@@ -29,6 +29,9 @@ export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const pick = async (source: 'camera' | 'library') => {
+    // exif:true below needs unredacted GPS metadata for extractGPSFromExif — that
+    // only comes through reliably while the app holds the media permission, so
+    // this path keeps the explicit request (see the same tradeoff in submit.tsx).
     const perm =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()

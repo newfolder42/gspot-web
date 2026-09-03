@@ -22,6 +22,7 @@ import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
 import { getLevelColor } from '@/components/ui/LevelBadge';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { FollowButton } from '@/components/profile/FollowButton';
+import { ReportSheet } from '@/components/ReportSheet';
 import { GuessesTab } from '@/components/profile/GuessesTab';
 import { AchievementsTab } from '@/components/profile/AchievementsTab';
 import { ConnectionsTab } from '@/components/profile/ConnectionsTab';
@@ -192,6 +193,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('posts');
   const [uploading, setUploading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['user-profile', alias],
@@ -324,8 +326,15 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
             <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{posts.length} პოსტი</Text>
           </View>
           {!isOwn ? (
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
               <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
+              <Pressable
+                onPress={() => setShowReport(true)}
+                hitSlop={8}
+                className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
+              >
+                <Feather name="flag" size={14} color="#71717a" />
+              </Pressable>
             </View>
           ) : null}
         </View>
@@ -360,23 +369,41 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     </>
   );
 
+  const reportSheet = showReport ? (
+    <ReportSheet targetType="user" targetId={user.id} onClose={() => setShowReport(false)} />
+  ) : null;
+
   // Heavy, unbounded, image-bearing tabs are virtualized via their own FlatList
   // (header rides along as ListHeaderComponent) so rows are windowed and recycled.
-  if (tab === 'posts') return <PostsTab posts={posts} header={header} refreshControl={refreshControl} />;
+  if (tab === 'posts')
+    return (
+      <>
+        <PostsTab posts={posts} header={header} refreshControl={refreshControl} />
+        {reportSheet}
+      </>
+    );
   if (tab === 'connections')
-    return <ConnectionsTab alias={alias} isOwn={isOwn} header={header} refreshControl={refreshControl} />;
+    return (
+      <>
+        <ConnectionsTab alias={alias} isOwn={isOwn} header={header} refreshControl={refreshControl} />
+        {reportSheet}
+      </>
+    );
 
   // Guesses (two five-row lists plus the index panel) and achievements
   // (compacted) are small; a plain ScrollView stays smooth here.
   return (
-    <ScrollView
-      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
-      refreshControl={refreshControl}
-    >
-      {header}
-      {tab === 'guesses' ? <GuessesTab alias={alias} /> : null}
-      {tab === 'achievements' ? <AchievementsTab alias={alias} /> : null}
-    </ScrollView>
+    <>
+      <ScrollView
+        className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+        refreshControl={refreshControl}
+      >
+        {header}
+        {tab === 'guesses' ? <GuessesTab alias={alias} /> : null}
+        {tab === 'achievements' ? <AchievementsTab alias={alias} /> : null}
+      </ScrollView>
+      {reportSheet}
+    </>
   );
 }

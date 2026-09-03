@@ -17,6 +17,7 @@ import { NewGuess } from '@/components/NewGuess';
 import { NewPhotoGuess } from '@/components/NewPhotoGuess';
 import { GuessesMap } from '@/components/GuessesMap';
 import { EditPostSheet } from '@/components/EditPostSheet';
+import { ReportSheet } from '@/components/ReportSheet';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import type { GuessResult } from '@/types/post-guess';
@@ -296,6 +297,7 @@ export default function PostPageScreen() {
   const [showPhotoGuess, setShowPhotoGuess] = useState(false);
   const [showGuessMap, setShowGuessMap] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const handleReply = (comment: PostCommentType) => {
@@ -407,6 +409,26 @@ export default function PostPageScreen() {
     }
   };
 
+  const handleReportOptions = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['გაუქმება', 'რეპორტი'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 1,
+        },
+        (index) => {
+          if (index === 1) setShowReport(true);
+        }
+      );
+    } else {
+      Alert.alert('პოსტი', undefined, [
+        { text: 'გაუქმება', style: 'cancel' },
+        { text: 'რეპორტი', style: 'destructive', onPress: () => setShowReport(true) },
+      ]);
+    }
+  };
+
   if (!Number.isFinite(postId) || postId <= 0) {
     return (
       <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-8">
@@ -487,7 +509,7 @@ export default function PostPageScreen() {
                 <View className="w-3 h-3 rounded-full bg-rose-600" />
               ) : null}
             </View>
-            {/* Three-dots options menu – shown to owner */}
+            {/* Three-dots options menu – edit/delete for the owner, report otherwise */}
             {isOwner ? (
               <Pressable
                 onPress={handlePostOptions}
@@ -495,6 +517,10 @@ export default function PostPageScreen() {
                 hitSlop={10}
                 className="ml-2 p-1"
               >
+                <Feather name="more-horizontal" size={18} color={theme.icon} />
+              </Pressable>
+            ) : user ? (
+              <Pressable onPress={handleReportOptions} hitSlop={10} className="ml-2 p-1">
                 <Feather name="more-horizontal" size={18} color={theme.icon} />
               </Pressable>
             ) : null}
@@ -726,6 +752,9 @@ export default function PostPageScreen() {
           onClose={() => setShowEdit(false)}
           onSaved={() => queryClient.invalidateQueries({ queryKey })}
         />
+      ) : null}
+      {showReport ? (
+        <ReportSheet targetType="post" targetId={post.id} onClose={() => setShowReport(false)} />
       ) : null}
     </View>
   );

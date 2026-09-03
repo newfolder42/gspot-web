@@ -114,3 +114,44 @@ ${TEXT_FOOTER}`;
     text,
   };
 }
+
+/**
+ * Internal notification sent to the safety contact when a user files an in-app report.
+ * Plain/functional on purpose — this is an ops alert, not user-facing copy.
+ */
+export function reportNotificationEmail(params: {
+  reportId: number;
+  reporterAlias: string;
+  targetType: 'post' | 'comment' | 'user';
+  targetId: number;
+  reason: string;
+  details?: string | null;
+}): EmailContent {
+  const { reportId, reporterAlias, targetType, targetId, reason, details } = params;
+  const targetLine = `${targetType} #${targetId}`;
+
+  const html = layout(
+    `New ${targetType} report from ${reporterAlias}.`,
+    `        <p style="margin:0 0 16px;font-size:18px;font-weight:bold;color:#111111;">New report #${reportId}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:4px 8px 4px 0;color:#777777;">Reported by</td><td>${escapeHtml(reporterAlias)}</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:#777777;">Target</td><td>${escapeHtml(targetLine)}</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;color:#777777;">Reason</td><td>${escapeHtml(reason)}</td></tr>
+          ${details ? `<tr><td style="padding:4px 8px 4px 0;color:#777777;vertical-align:top;">Details</td><td>${escapeHtml(details)}</td></tr>` : ''}
+        </table>`
+  );
+
+  const text = `New report #${reportId}
+
+Reported by: ${reporterAlias}
+Target: ${targetLine}
+Reason: ${reason}
+${details ? `Details: ${details}\n` : ''}
+${TEXT_FOOTER}`;
+
+  return {
+    subject: `[${FROM_NAME}] New ${targetType} report #${reportId}`,
+    html,
+    text,
+  };
+}

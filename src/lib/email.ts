@@ -2,7 +2,7 @@
 
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { logerror } from "./logger";
-import { FROM_NAME, otpEmail, welcomeEmail } from "./emailTemplates";
+import { FROM_NAME, otpEmail, welcomeEmail, reportNotificationEmail } from "./emailTemplates";
 
 type EmailProvider = 'ses' | 'resend' | 'console';
 
@@ -124,4 +124,17 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
  */
 export async function sendWelcomeEmail(email: string, name: string): Promise<boolean> {
     return sendEmail({ to: email, ...welcomeEmail(name) });
+}
+
+const SAFETY_CONTACT_EMAIL = 'privacy@gspot.ge';
+
+export async function sendReportNotificationEmail(params: {
+    reportId: number;
+    reporterAlias: string;
+    targetType: 'post' | 'comment' | 'user';
+    targetId: number;
+    reason: string;
+    details?: string | null;
+}): Promise<boolean> {
+    return sendEmail({ to: SAFETY_CONTACT_EMAIL, ...reportNotificationEmail(params) });
 }
