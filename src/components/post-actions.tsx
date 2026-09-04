@@ -14,6 +14,7 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [editTitle, setEditTitle] = useState(currentTitle ?? '');
   const [editTagId, setEditTagId] = useState<number | null>(currentTagId);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,37 +80,40 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
   if (!isOwnPost) {
     if (!isLoggedIn) return null;
     return (
-      <div ref={ref} className="relative inline-block">
-        <button
-          aria-label="Post options"
-          onClick={() => setOpen((s) => !s)}
-          className="rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-        </button>
+      <>
+        <div ref={ref} className="relative inline-block">
+          <button
+            aria-label="Post options"
+            onClick={() => setOpen((s) => !s)}
+            className="rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </button>
 
-        {open && (
-          <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
-            <ReportModal
-              targetType="post"
-              targetId={postId}
-              trigger={(openReport) => (
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    openReport();
-                  }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                >
-                  რეპორტი
-                </button>
-              )}
-            />
-          </div>
-        )}
-      </div>
+          {open && (
+            <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setShowReportModal(true);
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              >
+                რეპორტი
+              </button>
+            </div>
+          )}
+        </div>
+
+        <ReportModal
+          open={showReportModal}
+          targetType="post"
+          targetId={postId}
+          onClose={() => setShowReportModal(false)}
+        />
+      </>
     );
   }
 
