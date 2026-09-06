@@ -11,6 +11,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v0.12.5",
+    date: "2026-09-01",
+    items: [
+      "გამოსაცნობების არეულად და შერჩევად ნახვა."
+    ],
+  },
+  {
     version: "v0.12.2",
     date: "2026-09-01",
     items: [

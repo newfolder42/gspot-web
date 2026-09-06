@@ -17,8 +17,17 @@ declare global {
   }
 }
 
-export default function NewGuess({ postId, postImage, postTitle, onClose, onSubmitted }:
-  { postId: number; postImage?: string; postTitle?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
+/**
+ * `layout`: "toggle" flips between the photo and the map (the post page, and any
+ * narrow screen). "split" shows them side by side from md up, so the photo stays
+ * readable while the pin is placed; below md it falls back to toggling.
+ *
+ * `closeLabel`: what the button that ends a finished guess says. The shuffle deck
+ * moves on to the next card when this modal closes, so there it reads "შემდეგი".
+ */
+export default function NewGuess({ postId, postImage, postTitle, layout = 'toggle', closeLabel = 'დახურვა', onClose, onSubmitted }:
+  { postId: number; postImage?: string; postTitle?: string; layout?: 'toggle' | 'split'; closeLabel?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
+  const split = layout === 'split';
   const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number }>({
     latitude: mapDefaultCenter[1],
     longitude: mapDefaultCenter[0]
@@ -224,13 +233,13 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
         <div className="fixed inset-0 z-layer-modal bg-black flex flex-col overflow-hidden bg-zinc-900/50 backdrop-blur-sm">
           {/* Control buttons header */}
           <div className="flex items-center justify-between gap-2 px-4 py-3">
-            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="min-w-0 truncate text-lg font-semibold text-zinc-900 dark:text-zinc-100">
               {postTitle}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-shrink-0 items-center gap-2">
               <button
                 onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
-                className="p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition"
+                className={`p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition ${split ? 'md:hidden' : ''}`}
                 title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
                 aria-label="Toggle between image and map"
               >
@@ -255,7 +264,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
           {/* Panels container */}
           <div className="flex-1 flex flex-row">
             {/* Image Panel */}
-            <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} relative flex items-center justify-center overflow-hidden`}>
+            <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} ${split ? 'md:flex md:w-1/2 md:h-full' : ''} relative flex items-center justify-center overflow-hidden`}>
               <ZoomableImage className="w-full h-full">
                 <Image
                   src={postImage}
@@ -268,7 +277,7 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
             </div>
 
             {/* Map Panel */}
-            <div className={`${showMapOrImage === "map" ? 'w-full h-full' : 'hidden'} relative flex flex-col overflow-hidden`}>
+            <div className={`${showMapOrImage === "map" ? 'w-full h-full' : 'hidden'} ${split ? 'md:flex md:w-1/2 md:h-full' : ''} relative flex flex-col overflow-hidden`}>
               <form onSubmit={submit} className="h-full flex flex-col p-4 gap-3">
                 <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 relative flex-1">
                   <div ref={mapRef} className={`w-full h-full bg-zinc-100 dark:bg-zinc-800 ${submitting !== null ? 'pointer-events-none' : ''}`} />
@@ -298,6 +307,11 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                       ლოკაცია უნდა იყოს საქართველოში
                     </span>
                   )}
+                  {submitting === 'error' && (
+                    <span className="mr-auto text-xs text-red-600 dark:text-red-400">
+                      გამოცნობა ვერ შეინახა
+                    </span>
+                  )}
                   <button
                     type="submit"
                     disabled={submitting !== null || !guessInGeorgia}
@@ -306,6 +320,15 @@ export default function NewGuess({ postId, postImage, postTitle, onClose, onSubm
                   >
                     {submitting ? 'მიმდინარეობს...' : 'ცდა'}
                   </button>
+                  {(submitting === 'success' || submitting === 'error') && (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-5 py-2 rounded-md bg-teal-600 text-white"
+                    >
+                      {submitting === 'success' ? closeLabel : 'დახურვა'}
+                    </button>
+                  )}
                 </div>
               </form>
             </div>

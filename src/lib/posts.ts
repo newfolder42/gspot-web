@@ -13,6 +13,7 @@ import { PostGuessedEvent } from '@/types/events/post-guessed';
 import { createGuessComment } from '@/lib/comments';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
+import { onSkipCooldownSql } from './guessSkips';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
 
@@ -324,6 +325,81 @@ limit $1`,
     return (await enrichPosts(res.rows)) as GpsPostType[];
   } catch (err) {
     await logerror('getToGuessPosts error', [err]);
+    return [];
+  }
+}
+
+/**
+ * A shuffled deck of posts to guess, for the /to-guess/shuffle screen.
+ *
+ * Same eligibility as `getToGuessPosts` with two differences: public zones
+ * count even when the user hasn't joined them (a brand new member of nothing
+ * still gets a deck), and posts they recently skipped are held back.
+ *
+ * The deck is drawn in popularity tiers rather than uniformly, so widely
+ * guessed posts and forgotten ones both keep showing up. The tiers are
+ * disjoint, `filler` tops the deck back up when one of them runs short, and the
+ * result is shuffled so the mix isn't visible as a pattern.
+ */
+export async function getShufflePosts(
+  userId: number,
+  limit = 10,
+  excludeIds: number[] = []
+): Promise<GpsPostType[]> {
+  try {
+    // 40% widely guessed, 20% middling, 40% barely guessed.
+    const popularQuota = Math.round(limit * 0.4);
+    const quietQuota = Math.round(limit * 0.2);
+    const neglectedQuota = limit - popularQuota - quietQuota;
+
+    const res = await query(
+      `with pool as (
+          select p.id, coalesce(g.cnt, 0) as guesses
+          from posts p
+          join zones z on z.id = p.zone_id
+          left join (
+            select post_id, count(*) as cnt from post_guesses group by post_id
+          ) g on g.post_id = p.id
+          where p.status = 'published' and p.type = 'gps-photo' and p.user_id <> $1
+            and ${zoneVisibleSql('$1')}
+            and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $1)
+            and not ${onSkipCooldownSql('$1')}
+            and p.id <> all($2::bigint[])
+       ),
+       popular as (select id from pool where guesses >= 5 order by random() limit $3),
+       quiet as (select id from pool where guesses between 2 and 4 order by random() limit $4),
+       neglected as (select id from pool where guesses <= 1 order by random() limit $5),
+       filler as (select id from pool order by random() limit $6),
+       deck as (
+          select id, 0 as fallback from popular
+          union all select id, 0 from quiet
+          union all select id, 0 from neglected
+          union all select id, 1 from filler
+       ),
+       picked as (
+          select id from (select id, min(fallback) as fallback from deck group by id) d
+          order by fallback, random()
+          limit $6
+       )
+       select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
+         (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+         (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+         (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score,
+         false as user_has_guessed,
+         ux.level as author_level
+       from picked
+       join posts p on p.id = picked.id
+       join zones z on z.id = p.zone_id
+       join users u on u.id = p.user_id
+       left join user_xp ux on ux.user_id = u.id
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       order by random()`,
+      [userId, excludeIds, popularQuota, quietQuota, neglectedQuota, limit]
+    );
+
+    return (await enrichPosts(res.rows)) as GpsPostType[];
+  } catch (err) {
+    await logerror('getShufflePosts error', [err]);
     return [];
   }
 }

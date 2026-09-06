@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
@@ -35,6 +35,17 @@ export default function TabsLayout() {
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
         <Feather name="flag" size={20} color={theme.icon} />
+      </Pressable>
+      <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
+        <Feather name="search" size={20} color={theme.icon} />
+      </Pressable>
+    </View>
+  );
+
+  const ToGuessHeaderRight = () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => router.push('/(app)/guess-shuffle')} style={{ marginRight: 18 }}>
+        <MaterialCommunityIcons name="dice-5-outline" size={22} color={theme.icon} />
       </Pressable>
       <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
         <Feather name="search" size={20} color={theme.icon} />
@@ -87,7 +98,7 @@ export default function TabsLayout() {
           title: 'გამოსაცნობები',
           tabBarLabel: 'გამოსაცნობი',
           tabBarIcon: ({ color, size }) => <Feather name="map-pin" size={size} color={color} />,
-          headerRight: () => <SearchButton />,
+          headerRight: () => <ToGuessHeaderRight />,
         }}
       />
       <Tabs.Screen

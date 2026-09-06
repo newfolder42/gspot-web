@@ -1,7 +1,9 @@
 'use server';
 
-import { getAccountPosts, getConnectionsPosts, getGlobalPosts, getPublicPosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
-import { POSTS_PER_PAGE } from '@/types/constants';
+import { getAccountPosts, getConnectionsPosts, getGlobalPosts, getPublicPosts, getShufflePosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
+import { recordGuessSkips } from '@/lib/guessSkips';
+import { getCurrentUser } from '@/lib/session';
+import { POSTS_PER_PAGE, SHUFFLE_DECK_SIZE } from '@/types/constants';
 import { FeedFilter, FeedType, FeedPostType, GpsPostType } from '@/types/post';
 
 type LoadPostsParams = {
@@ -70,4 +72,17 @@ export async function loadZonePosts(params: LoadZonePostsParams): Promise<FeedPo
 export async function loadPublicPosts(params: LoadPublicPostsParams = {}): Promise<GpsPostType[]> {
   const limit = params.limit ? params.limit : POSTS_PER_PAGE;
   return await getPublicPosts(limit, params.cursor);
+}
+
+export async function loadShufflePosts(params: { limit?: number; excludeIds?: number[] } = {}): Promise<GpsPostType[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return await getShufflePosts(user.userId, params.limit ?? SHUFFLE_DECK_SIZE, params.excludeIds ?? []);
+}
+
+/** Fire-and-forget from the shuffle screen — a failed skip just means it comes back. */
+export async function skipShufflePosts(postIds: number[]): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  await recordGuessSkips(user.userId, postIds);
 }
