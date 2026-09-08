@@ -67,9 +67,10 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
               attributionEnabled={false}
               logoEnabled={false}
             >
+              {/* Uncontrolled camera: the guesses are already loaded by the time this
+                  renders, so `defaultSettings` opens right on them, with no fly-in. */}
               <MapboxGL.Camera
-                centerCoordinate={center}
-                zoomLevel={10}
+                defaultSettings={{ centerCoordinate: center, zoomLevel: 10 }}
                 maxBounds={mapMaxBounds}
                 maxZoomLevel={mapMaxZoom}
               />

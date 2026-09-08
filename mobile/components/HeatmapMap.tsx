@@ -62,9 +62,10 @@ export function HeatmapMap({ points, maxZoom, pointZoom, emptyMessage }: Props) 
       attributionEnabled={false}
       logoEnabled={false}
     >
+      {/* Uncontrolled camera: `defaultSettings` opens on Georgia straight away,
+          instead of animating in from the world view. */}
       <MapboxGL.Camera
-        centerCoordinate={mapDefaultCenter}
-        zoomLevel={6}
+        defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: 6 }}
         maxBounds={mapMaxBounds}
         maxZoomLevel={Math.min(maxZoom, mapMaxZoom)}
       />

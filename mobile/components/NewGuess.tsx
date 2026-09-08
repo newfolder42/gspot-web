@@ -96,7 +96,9 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   const insets = useSafeAreaInsets();
 
   const [phase, setPhase] = useState<Phase>('placing');
-  const [guessCoords, setGuessCoords] = useState<[number, number]>(mapDefaultCenter); // [lng, lat]
+  // No pin until the player taps the map: nothing to submit by accident, and the
+  // camera sits on Tbilisi instead of on a ready-made answer.
+  const [guessCoords, setGuessCoords] = useState<[number, number] | null>(null); // [lng, lat]
   const [result, setResult] = useState<GuessResult | null>(null);
   const [imageMode, setImageMode] = useState<ImageMode>('hidden');
 
@@ -106,13 +108,15 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   };
 
   const handleSubmit = async () => {
+    if (!guessCoords) return;
+    const coords = guessCoords;
     // The result lands on the map, so get the photo out of the way first.
     setImageMode((m) => (m === 'full' ? 'band' : m));
     setPhase('submitting');
     try {
       const res = await postsApi.addGuess(post.id, {
-        latitude: guessCoords[1],
-        longitude: guessCoords[0],
+        latitude: coords[1],
+        longitude: coords[0],
       });
 
       setResult(res);
@@ -122,8 +126,8 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
       const photoLng = res.photoCoordinates.longitude;
       const photoLat = res.photoCoordinates.latitude;
       cameraRef.current?.fitBounds(
-        [Math.max(guessCoords[0], photoLng), Math.max(guessCoords[1], photoLat)],
-        [Math.min(guessCoords[0], photoLng), Math.min(guessCoords[1], photoLat)],
+        [Math.max(coords[0], photoLng), Math.max(coords[1], photoLat)],
+        [Math.min(coords[0], photoLng), Math.min(coords[1], photoLat)],
         [80, 60, 100, 60],
         800
       );
@@ -194,22 +198,25 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
             attributionEnabled={false}
             logoEnabled={false}
           >
+            {/* Uncontrolled camera: `defaultSettings` places the initial view without
+                the fly-in a controlled centerCoordinate/zoomLevel would animate. */}
             <MapboxGL.Camera
               ref={cameraRef}
-              centerCoordinate={mapDefaultCenter}
-              zoomLevel={10}
+              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: 10 }}
               maxBounds={mapMaxBounds}
               maxZoomLevel={mapMaxZoom}
             />
 
-            {/* Guess marker — teal */}
-            <MapboxGL.PointAnnotation
-              id="guess-marker"
-              coordinate={guessCoords}
-              anchor={{ x: 0.5, y: 1 }}
-            >
-              <MapPin color="#14B8A6" />
-            </MapboxGL.PointAnnotation>
+            {/* Guess marker — teal, only once the player has placed it */}
+            {guessCoords ? (
+              <MapboxGL.PointAnnotation
+                id="guess-marker"
+                coordinate={guessCoords}
+                anchor={{ x: 0.5, y: 1 }}
+              >
+                <MapPin color="#14B8A6" />
+              </MapboxGL.PointAnnotation>
+            ) : null}
 
             {/* Photo marker — red, shown after result */}
             {photoCoords ? (
@@ -223,7 +230,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
             ) : null}
 
             {/* Distance line — yellow dashed */}
-            {photoCoords ? (
+            {photoCoords && guessCoords ? (
               <MapboxGL.ShapeSource
                 id="distance-line-source"
                 shape={{
@@ -251,7 +258,9 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           <View className="absolute top-3 right-3 pointer-events-none">
             <View className="px-3 py-1.5 rounded-lg bg-zinc-900/90">
               <Text className="text-xs text-zinc-300" style={{ fontVariant: ['tabular-nums'] }}>
-                {guessCoords[1].toFixed(4)}, {guessCoords[0].toFixed(4)}
+                {guessCoords
+                  ? `${guessCoords[1].toFixed(4)}, ${guessCoords[0].toFixed(4)}`
+                  : 'მონიშნე ადგილი რუკაზე'}
               </Text>
             </View>
           </View>
@@ -309,9 +318,14 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           {phase === 'placing' ? (
             <Pressable
               onPress={handleSubmit}
-              className="h-12 rounded-xl bg-teal-600 items-center justify-center active:opacity-80"
+              disabled={!guessCoords}
+              className={`h-12 rounded-xl items-center justify-center active:opacity-80 ${
+                guessCoords ? 'bg-teal-600' : 'bg-teal-900'
+              }`}
             >
-              <Text className="text-base font-semibold text-white">ცდა</Text>
+              <Text className={`text-base font-semibold ${guessCoords ? 'text-white' : 'text-teal-200/50'}`}>
+                ცდა
+              </Text>
             </Pressable>
           ) : phase === 'submitting' ? (
             <View className="h-12 rounded-xl bg-teal-800 items-center justify-center">

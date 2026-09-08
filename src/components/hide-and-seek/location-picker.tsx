@@ -13,13 +13,16 @@ declare global {
 }
 
 type Props = {
-  value: { latitude: number; longitude: number };
+  value: { latitude: number; longitude: number } | null;
   onChange: (coords: { latitude: number; longitude: number }) => void;
 };
 
 /**
  * Map with a draggable pin and a "where I am now" shortcut. The host does not have to be
  * standing on the spot they pick — the pin is the answer, not a check-in.
+ *
+ * There is no pin until the host places one, so a form can never be submitted with a
+ * spot nobody chose. The map opens on Tbilisi in that case.
  */
 export default function LocationPicker({ value, onChange }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -30,6 +33,25 @@ export default function LocationPicker({ value, onChange }: Props) {
   const [locationError, setLocationError] = useState<string | null>(null);
 
   onChangeRef.current = onChange;
+
+  /** Creates the pin on first use, moves it afterwards. */
+  const placeMarker = (lng: number, lat: number) => {
+    if (!mapInstanceRef.current) return;
+
+    if (!markerRef.current) {
+      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
+        .setLngLat([lng, lat])
+        .addTo(mapInstanceRef.current);
+
+      markerRef.current.on('dragend', () => {
+        const lngLat = markerRef.current.getLngLat();
+        onChangeRef.current({ latitude: lngLat.lat, longitude: lngLat.lng });
+      });
+      return;
+    }
+
+    markerRef.current.setLngLat([lng, lat]);
+  };
 
   useEffect(() => {
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
@@ -56,28 +78,21 @@ export default function LocationPicker({ value, onChange }: Props) {
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: [value.longitude, value.latitude],
+        center: value ? [value.longitude, value.latitude] : mapDefaultCenter,
         zoom: 13,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
       });
 
-      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
-        .setLngLat([value.longitude, value.latitude])
-        .addTo(map);
+      mapInstanceRef.current = map;
 
-      markerRef.current.on('dragend', () => {
-        const lngLat = markerRef.current.getLngLat();
-        onChangeRef.current({ latitude: lngLat.lat, longitude: lngLat.lng });
-      });
+      if (value) placeMarker(value.longitude, value.latitude);
 
       map.on('click', (e: any) => {
-        markerRef.current.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        placeMarker(e.lngLat.lng, e.lngLat.lat);
         onChangeRef.current({ latitude: e.lngLat.lat, longitude: e.lngLat.lng });
       });
-
-      mapInstanceRef.current = map;
     }
 
     return () => {
@@ -108,7 +123,7 @@ export default function LocationPicker({ value, onChange }: Props) {
           return;
         }
 
-        markerRef.current?.setLngLat([coords.longitude, coords.latitude]);
+        placeMarker(coords.longitude, coords.latitude);
         mapInstanceRef.current?.flyTo({ center: [coords.longitude, coords.latitude], zoom: 15 });
         onChangeRef.current(coords);
       },
@@ -120,7 +135,7 @@ export default function LocationPicker({ value, onChange }: Props) {
     );
   };
 
-  const inGeorgia = isInGeorgia(value.latitude, value.longitude);
+  const inGeorgia = value !== null && isInGeorgia(value.latitude, value.longitude);
 
   return (
     <div className="space-y-2">
@@ -137,11 +152,11 @@ export default function LocationPicker({ value, onChange }: Props) {
           {locating ? 'იძებნება...' : 'ჩემი მდებარეობა'}
         </button>
         <span className="font-mono text-xs text-zinc-500">
-          {formatCoordinates(value.latitude, value.longitude)}
+          {value ? formatCoordinates(value.latitude, value.longitude) : 'მონიშნე ადგილი რუკაზე'}
         </span>
       </div>
 
-      {!inGeorgia && (
+      {value !== null && !inGeorgia && (
         <p className="text-sm text-rose-600 dark:text-rose-400">აირჩიე წერტილი საქართველოს ტერიტორიაზე.</p>
       )}
       {locationError && <p className="text-sm text-amber-600 dark:text-amber-400">{locationError}</p>}

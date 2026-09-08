@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LocationPicker from './location-picker';
 import { createHideAndSeekAction, resolveInviteeAliasAction } from '@/actions/hideAndSeek';
-import { mapDefaultCenter } from '@/lib/map';
 import {
   DEFAULT_CHECKS,
   DEFAULT_DURATION_MINUTES,
@@ -39,7 +38,7 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
   const router = useRouter();
 
   const [title, setTitle] = useState('');
-  const [coords, setCoords] = useState({ latitude: mapDefaultCenter[1], longitude: mapDefaultCenter[0] });
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [maxChecks, setMaxChecks] = useState(DEFAULT_CHECKS);
   const [endOnFirstFind, setEndOnFirstFind] = useState(DEFAULT_END_ON_FIRST_FIND);
@@ -87,6 +86,10 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
     }
     if (!zone) {
       setError('აირჩიე საბზონა.');
+      return;
+    }
+    if (!coords) {
+      setError('მონიშნე სამალავი ადგილი რუკაზე.');
       return;
     }
 

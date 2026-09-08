@@ -28,10 +28,9 @@ declare global {
 export default function NewGuess({ postId, postImage, postTitle, layout = 'toggle', closeLabel = 'დახურვა', onClose, onSubmitted }:
   { postId: number; postImage?: string; postTitle?: string; layout?: 'toggle' | 'split'; closeLabel?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
   const split = layout === 'split';
-  const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number }>({
-    latitude: mapDefaultCenter[1],
-    longitude: mapDefaultCenter[0]
-  });
+  // No pin until the player places one: an unplaced guess can't be submitted by
+  // accident, and the map opens on Tbilisi rather than on a pre-made answer.
+  const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [submitting, setSubmitting] = useState<null | "submitting" | "success" | "error">(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [showMapOrImage, setShowMapOrImage] = useState<"image" | "map">("map");
@@ -67,27 +66,31 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: [selectedCoords.longitude, selectedCoords.latitude],
+        center: mapDefaultCenter,
         zoom: 12,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
       });
 
-      guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
-        .setLngLat([selectedCoords.longitude, selectedCoords.latitude])
-        .addTo(map);
-
-      guessMarkerRef.current.on('dragend', () => {
-        const lngLat = guessMarkerRef.current!.getLngLat();
-        setSelectedCoords({
-          latitude: lngLat.lat,
-          longitude: lngLat.lng,
-        });
-      });
-
+      // The marker is created on the first click, not up front — see selectedCoords.
       map.on('click', (e: any) => {
-        guessMarkerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        if (!guessMarkerRef.current) {
+          guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
+            .setLngLat([e.lngLat.lng, e.lngLat.lat])
+            .addTo(map);
+
+          guessMarkerRef.current.on('dragend', () => {
+            const lngLat = guessMarkerRef.current!.getLngLat();
+            setSelectedCoords({
+              latitude: lngLat.lat,
+              longitude: lngLat.lng,
+            });
+          });
+        } else {
+          guessMarkerRef.current.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        }
+
         setSelectedCoords({
           latitude: e.lngLat.lat,
           longitude: e.lngLat.lng,
@@ -123,11 +126,12 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
 
   // The map's maxBounds is a rectangle around the country, so panning still
   // reaches Turkey, Armenia, Azerbaijan and Russia.
-  const guessInGeorgia = isInGeorgia(selectedCoords.latitude, selectedCoords.longitude);
+  const guessInGeorgia = selectedCoords !== null && isInGeorgia(selectedCoords.latitude, selectedCoords.longitude);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guessInGeorgia) return;
+    if (!selectedCoords || !guessInGeorgia) return;
+    const guessCoords = selectedCoords;
     setSubmitting('submitting');
     try {
       const res = await getPhotoCoordinates({ postId });
@@ -170,7 +174,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
         // Keep guess marker (blue) at user-selected point
         if (guessMarkerRef.current) {
           guessMarkerRef.current.setDraggable(false);
-          guessMarkerRef.current.setLngLat([selectedCoords.longitude, selectedCoords.latitude]);
+          guessMarkerRef.current.setLngLat([guessCoords.longitude, guessCoords.latitude]);
         }
 
         // Add distance line between markers
@@ -180,7 +184,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
             type: 'LineString' as const,
             coordinates: [
               [lng, lat],
-              [selectedCoords.longitude, selectedCoords.latitude]
+              [guessCoords.longitude, guessCoords.latitude]
             ]
           }
         };
@@ -207,15 +211,15 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
         // Fit both markers in view — build explicit SW/NE arrays to avoid
         // LngLatLike coercion issues across mapbox versions.
         const coordsA: [number, number] = [Number(lng), Number(lat)];
-        const coordsB: [number, number] = [Number(selectedCoords.longitude), Number(selectedCoords.latitude)];
+        const coordsB: [number, number] = [Number(guessCoords.longitude), Number(guessCoords.latitude)];
         const sw: [number, number] = [Math.min(coordsA[0], coordsB[0]), Math.min(coordsA[1], coordsB[1])];
         const ne: [number, number] = [Math.max(coordsA[0], coordsB[0]), Math.max(coordsA[1], coordsB[1])];
         mapInstanceRef.current.fitBounds([sw, ne], { padding: 40, maxZoom: 16 });
       }
 
-      const calculatedDistance = haversineMeters(photoCoordinates, selectedCoords);
+      const calculatedDistance = haversineMeters(photoCoordinates, guessCoords);
 
-      const createdGuess = await createPostGuess({ postId, coordinates: selectedCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
+      const createdGuess = await createPostGuess({ postId, coordinates: guessCoords, distance: calculatedDistance, score: calculateGuessScore(calculatedDistance) });
 
       setDistance(calculatedDistance);
       setSubmitting('success');
@@ -292,17 +296,24 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
                       </div>
                     )}
 
-                    {/* Coordinates */}
-                    <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-xs ${guessInGeorgia
-                      ? 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100'
-                      : 'bg-red-600/90 text-white'}`}>
-                      {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
-                    </div>
+                    {/* Coordinates — only once a pin exists */}
+                    {selectedCoords && (
+                      <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-xs ${guessInGeorgia
+                        ? 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100'
+                        : 'bg-red-600/90 text-white'}`}>
+                        {formatCoordinates(selectedCoords.latitude, selectedCoords.longitude)}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex gap-2 items-center justify-end">
-                  {!guessInGeorgia && submitting === null && (
+                  {selectedCoords === null && submitting === null && (
+                    <span className="mr-auto text-xs text-zinc-500 dark:text-zinc-400">
+                      მონიშნე ადგილი რუკაზე
+                    </span>
+                  )}
+                  {selectedCoords !== null && !guessInGeorgia && submitting === null && (
                     <span className="mr-auto text-xs text-red-600 dark:text-red-400">
                       ლოკაცია უნდა იყოს საქართველოში
                     </span>
