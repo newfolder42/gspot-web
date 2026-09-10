@@ -12,6 +12,8 @@ import type { ZoneSubmitType } from '@/actions/zones';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { isInGeorgia } from '@/lib/geo';
 import TagPicker from '@/components/common/tag-picker';
+import ItemFoundPanel from '@/components/inventory/item-found-panel';
+import type { FoundItemType } from '@/types/item';
 
 declare global {
   interface Window {
@@ -290,6 +292,9 @@ export default function Submit({
   const [processing, setProcessing] = useState(false);
   const [submitLocked, setSubmitLocked] = useState(false);
   const submitRequestIdRef = useRef<string | null>(null);
+  // Set when the new post landed on an item location; the poster sees the find before
+  // being sent on to the post itself.
+  const [found, setFound] = useState<{ postId: number; items: FoundItemType[] } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -394,7 +399,7 @@ export default function Submit({
                 throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
               }
 
-              const postId = await createPost({
+              const created = await createPost({
                 title: title.trim() || '',
                 contentId: content.id,
                 zoneId: selectedZone!.id,
@@ -402,8 +407,12 @@ export default function Submit({
                 idempotencyKey,
                 tagId: selectedTagId,
               });
-              if (postId) {
-                window.location.assign(`/post/${postId}`);
+              if (created) {
+                if (created.foundItems.length > 0) {
+                  setFound({ postId: created.postId, items: created.foundItems });
+                } else {
+                  window.location.assign(`/post/${created.postId}`);
+                }
               } else {
                 throw new Error('ვერ მოხერხდა პოსტის შექმნა');
               }
@@ -679,6 +688,13 @@ export default function Submit({
             </div>
           </div>
         </div>
+      )}
+
+      {found && (
+        <ItemFoundPanel
+          items={found.items}
+          onContinue={() => window.location.assign(`/post/${found.postId}`)}
+        />
       )}
     </>
   );

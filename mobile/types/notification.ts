@@ -25,7 +25,8 @@ export type NotificationType = {
     | 'hide-and-seek-joined'
     | 'hide-and-seek-checked'
     | 'hide-and-seek-found'
-    | 'hide-and-seek-ended';
+    | 'hide-and-seek-ended'
+    | 'item-found';
   user: {
     userId: number;
     alias: string;
@@ -48,7 +49,8 @@ export type NotificationType = {
     | NotificationZoneQuestObjectiveAcceptedDetailsType
     | NotificationZoneQuestObjectiveRejectedDetailsType
     | NotificationZoneQuestCompletedDetailsType
-    | NotificationConnectionCompletedZoneQuestDetailsType;
+    | NotificationConnectionCompletedZoneQuestDetailsType
+    | NotificationItemFoundDetailsType;
   timestamp: string | null;
   seen: boolean;
 };
@@ -217,6 +219,18 @@ export type NotificationConnectionCompletedZoneQuestDetailsType = {
   questTitle: string;
 };
 
+export type NotificationItemFoundDetailsType = {
+  postId: number;
+  itemAlias: string;
+  // denormalized at grant time, so the line still reads right if the item is renamed
+  itemName: string;
+  itemQuality: string;
+  itemIconUrl: string | null;
+  // how many the user holds after the grant — above 1 only for a stackable item
+  itemCount?: number;
+  locationName?: string;
+};
+
 export function getNotificationContentMessage(type: NotificationType['type'], details: NotificationType['details']): string {
   switch (type) {
     case 'gps-guess': {
@@ -331,6 +345,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationHideAndSeekDetailsType;
       return `დამალობანა დასრულდა: ${d.title}`;
     }
+    case 'item-found': {
+      const d = details as NotificationItemFoundDetailsType;
+      return `შენს ინვენტარში მატებაა - ${d.itemName}`;
+    }
     default:
       return 'ახალი შეტყობინება';
   }
@@ -424,6 +442,9 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'hide-and-seek-ended': {
       const d = notification.details as NotificationHideAndSeekDetailsType;
       return `/post/${d.postId}`;
+    }
+    case 'item-found': {
+      return '/inventory';
     }
     default:
       return null;

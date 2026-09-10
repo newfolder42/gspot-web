@@ -24,6 +24,12 @@ export async function openNotificationRoute(route: string | null, router: Router
     return;
   }
 
+  // /inventory — the bag, same screen the header button opens
+  if (segments[0] === 'inventory') {
+    router.push('/(app)/inventory');
+    return;
+  }
+
   // /post/:id[?commentId=]
   if (segments[0] === 'post' && segments[1]) {
     router.push({

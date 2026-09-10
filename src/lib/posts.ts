@@ -14,6 +14,8 @@ import { createGuessComment } from '@/lib/comments';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
 import { onSkipCooldownSql } from './guessSkips';
+import { getPostPhotoCoordinates, grantItemsForPost } from '@/lib/itemLocations';
+import type { FoundItemType } from '@/types/item';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
 
@@ -730,6 +732,15 @@ export async function canUserGuessPost(postId: number): Promise<{ canGuess: bool
   }
 }
 
+/**
+ * A created post plus whatever ინვენტარი items the photo's location handed out, so the
+ * submit screen can show the find without waiting for the notification to come back.
+ */
+export type CreatePostResult = {
+  postId: number;
+  foundItems: FoundItemType[];
+};
+
 export async function createPost({
   title,
   contentId,
@@ -746,7 +757,7 @@ export async function createPost({
   status?: 'processing' | 'published' | 'failed';
   idempotencyKey?: string | null;
   tagId?: number | null;
-}): Promise<number | null> {
+}): Promise<CreatePostResult | null> {
   try {
     const user = await getCurrentUser();
     if (!user) return null;
@@ -759,7 +770,8 @@ export async function createPost({
       );
 
       if ((existingReq.rowCount ?? 0) > 0 && existingReq.rows[0].post_id != null) {
-        return existingReq.rows[0].post_id;
+        // A retry of a submit that already went through — the items were granted then.
+        return { postId: Number(existingReq.rows[0].post_id), foundItems: [] };
       }
 
       const claimReq = await query(
@@ -776,7 +788,7 @@ export async function createPost({
           [currentUserId, idempotencyKey]
         );
         if ((claimedReq.rowCount ?? 0) > 0 && claimedReq.rows[0].post_id != null) {
-          return claimedReq.rows[0].post_id;
+          return { postId: Number(claimedReq.rows[0].post_id), foundItems: [] };
         }
         return null;
       }
@@ -826,7 +838,19 @@ export async function createPost({
       zoneSlug: zoneSlug,
     } as PostPublishedEvent);
 
-    return postId;
+    // Items are granted inline (never for a post still processing) so the submit screen
+    // can announce the find; the follow-up notification comes from gspot-services.
+    const foundItems =
+      status === 'published'
+        ? await grantItemsForPost({
+            userId: currentUserId,
+            userAlias: user.alias,
+            postId: +postId,
+            coordinates: await getPostPhotoCoordinates(+postId),
+          })
+        : [];
+
+    return { postId: Number(postId), foundItems };
   } catch (err) {
     await logerror('createPost error', [err]);
     return null;

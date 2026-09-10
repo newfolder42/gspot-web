@@ -4,6 +4,7 @@ import type { MobilePostType } from '@/types/post';
 import type { UserGuess } from '@/types/guess';
 import type { AccountAchievement } from '@/types/achievement';
 import type { RewardDefinition } from '@/types/reward';
+import type { ItemDefinition } from '@/types/item';
 import type { ClientConnection } from '@/types/connection';
 import type { UserStreakInfo } from '@/components/ui/StreakBadge';
 import type { NewUser } from '@/types/user';
@@ -33,6 +34,7 @@ export type PublicUserProfile = {
 export type AchievementsResponse = {
   achievements: AccountAchievement[];
   rewardDefinitions: RewardDefinition[];
+  itemDefinitions: ItemDefinition[];
 };
 
 const enc = encodeURIComponent;
@@ -56,6 +58,7 @@ export const usersApi = {
       .then((r) => ({
         achievements: r.data.achievements ?? [],
         rewardDefinitions: r.data.rewardDefinitions ?? [],
+        itemDefinitions: r.data.itemDefinitions ?? [],
       })),
 
   getConnections: (alias: string): Promise<ClientConnection[]> =>

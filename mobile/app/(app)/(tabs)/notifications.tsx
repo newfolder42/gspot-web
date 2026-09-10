@@ -11,6 +11,7 @@ import {
   type NotificationPostVoteCreatedDetailsType,
   type NotificationType,
 } from '@/types/notification';
+import { BackpackIcon } from '@/components/inventory/BackpackIcon';
 import { Colors, useTheme } from '@/constants/colors';
 
 const PAGE_SIZE = 20;
@@ -84,6 +85,10 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
 function NotificationIcon({ notification }: { notification: NotificationType }) {
   const { type, details } = notification;
   const theme = useTheme();
+
+  if (type === 'item-found') {
+    return <BackpackIcon size={16} color={theme.icon} />;
+  }
 
   if (type === 'feed-event-reaction') {
     return <MaterialCommunityIcons name="arrow-up-bold" size={16} color={theme.icon} />;

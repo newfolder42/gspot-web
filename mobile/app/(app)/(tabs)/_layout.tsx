@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { BackpackIcon } from '@/components/inventory/BackpackIcon';
 import { Colors, useTheme } from '@/constants/colors';
 
 /**
@@ -33,6 +34,9 @@ export default function TabsLayout() {
 
   const HomeHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => router.push('/(app)/inventory')} style={{ marginRight: 18 }}>
+        <BackpackIcon size={20} color={theme.icon} />
+      </Pressable>
       <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
         <Feather name="flag" size={20} color={theme.icon} />
       </Pressable>
@@ -55,6 +59,9 @@ export default function TabsLayout() {
 
   const AccountHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable onPress={() => router.push('/(app)/inventory')} style={{ marginRight: 18 }}>
+        <BackpackIcon size={20} color={theme.icon} />
+      </Pressable>
       <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 18 }}>
         <Feather name="search" size={20} color={theme.icon} />
       </Pressable>

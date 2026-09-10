@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ZONE_NOT_ALLOWED' }, { status: 403 });
     }
 
-    const postId = await createMobilePost({
+    const created = await createMobilePost({
       userId: auth.user.userId,
       userAlias: auth.user.alias,
       title: parsed.data.title ?? '',
@@ -44,11 +44,12 @@ export async function POST(req: NextRequest) {
       status: 'published',
     });
 
-    if (!postId) {
+    if (!created) {
       return NextResponse.json({ error: 'CREATE_POST_FAILED' }, { status: 500 });
     }
 
-    return NextResponse.json({ postId });
+    // `foundItems` is empty for almost every post — the app only shows a sheet when it is not.
+    return NextResponse.json({ postId: created.postId, foundItems: created.foundItems });
   } catch (err) {
     await logerror('POST /api/v1/submit/post error', { error: String(err) });
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });

@@ -24,7 +24,13 @@ export type RewardLimitRewardSpec = {
   value: number;
 };
 
-export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec;
+/** An ინვენტარი item, referenced by `items.alias`. */
+export type ItemRewardSpec = {
+  type: 'item';
+  alias: string;
+};
+
+export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec | ItemRewardSpec;
 
 export type RewardDefinition = {
   key: string;

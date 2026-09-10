@@ -643,3 +643,23 @@ export function DiceIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) 
     </svg>
   );
 }
+
+export function BackpackIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 21a1 1 0 0 1-1-1v-9a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v9a1 1 0 0 1-1 1z" />
+      <path d="M9 5V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" />
+      <path d="M8 21v-6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6" />
+      <path d="M10.5 17h3" />
+    </svg>
+  );
+}

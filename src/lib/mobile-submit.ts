@@ -3,8 +3,16 @@ import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
 import { deleteObject } from '@/lib/s3';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
+import { getPostPhotoCoordinates, grantItemsForPost } from '@/lib/itemLocations';
 import { type PostPublishedEvent } from '@/types/events/post-published';
 import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
+import type { FoundItemType } from '@/types/item';
+
+/** Mirrors CreatePostResult in lib/posts.ts — the app shows the find right after submit. */
+export type CreateMobilePostResult = {
+  postId: number;
+  foundItems: FoundItemType[];
+};
 
 type CreateMobilePostParams = {
   userId: number;
@@ -161,7 +169,7 @@ export async function createMobilePost({
   status = 'published',
   idempotencyKey,
   tagId,
-}: CreateMobilePostParams): Promise<number | null> {
+}: CreateMobilePostParams): Promise<CreateMobilePostResult | null> {
   try {
     if (idempotencyKey) {
       const existingReq = await query(
@@ -170,7 +178,7 @@ export async function createMobilePost({
       );
 
       if ((existingReq.rowCount ?? 0) > 0 && existingReq.rows[0].post_id != null) {
-        return Number(existingReq.rows[0].post_id);
+        return { postId: Number(existingReq.rows[0].post_id), foundItems: [] };
       }
 
       const claimReq = await query(
@@ -188,7 +196,7 @@ export async function createMobilePost({
         );
 
         if ((claimedReq.rowCount ?? 0) > 0 && claimedReq.rows[0].post_id != null) {
-          return Number(claimedReq.rows[0].post_id);
+          return { postId: Number(claimedReq.rows[0].post_id), foundItems: [] };
         }
 
         return null;
@@ -240,7 +248,17 @@ export async function createMobilePost({
       zoneSlug,
     } as PostPublishedEvent);
 
-    return postId;
+    const foundItems =
+      status === 'published'
+        ? await grantItemsForPost({
+            userId,
+            userAlias,
+            postId,
+            coordinates: await getPostPhotoCoordinates(postId),
+          })
+        : [];
+
+    return { postId, foundItems };
   } catch (err) {
     await logerror('createMobilePost error', [err]);
     return null;

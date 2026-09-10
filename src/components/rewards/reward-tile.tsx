@@ -1,5 +1,8 @@
 import type { RewardSpec, RewardDefinition } from '@/types/reward';
+import type { ItemDefinition } from '@/types/item';
+import { itemQualityColor } from '@/types/item';
 import { GiftIcon, ProgressIcon } from '@/components/icons';
+import ItemIcon from '@/components/inventory/item-icon';
 import RewardIcon from './reward-icons';
 
 export type RewardTileSize = 'sm' | 'md';
@@ -19,9 +22,27 @@ const LABEL_SIZE: Record<RewardTileSize, string> = {
   md: 'text-xs',
 };
 
-function TileFrame({ size, children }: { size: RewardTileSize; children: React.ReactNode }) {
+/** Border treatment per reward kind, so the tiles read apart at a glance. */
+const FRAME_BORDER = {
+  /** XP and reward-limit: nothing you keep in hand, so an open dashed frame. */
+  dashed: 'border-2 border-zinc-400 dark:border-zinc-600',
+  /** Catalog reward: a gift-like double frame in the ჯილდო amber. */
+  gift: 'border-[3px] border-double border-amber-500 dark:border-amber-400',
+} as const;
+
+type TileFrameVariant = keyof typeof FRAME_BORDER;
+
+function TileFrame({
+  size,
+  variant,
+  children,
+}: {
+  size: RewardTileSize;
+  variant: TileFrameVariant;
+  children: React.ReactNode;
+}) {
   return (
-    <div className={`${FRAME_SIZE[size]} shrink-0 rounded border-2 border-zinc-400 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden`}>
+    <div className={`${FRAME_SIZE[size]} shrink-0 rounded ${FRAME_BORDER[variant]} bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden`}>
       {children}
     </div>
   );
@@ -38,7 +59,7 @@ function TileLabel({ size, children }: { size: RewardTileSize; children: React.R
 export function XpRewardTile({ xp, size = 'md' }: { xp: number; size?: RewardTileSize }) {
   return (
     <div className="flex flex-col items-center gap-1 w-16">
-      <TileFrame size={size}>
+      <TileFrame size={size} variant="dashed">
         <ProgressIcon className={ICON_SIZE[size]} />
       </TileFrame>
       <TileLabel size={size}>{xp}</TileLabel>
@@ -49,7 +70,7 @@ export function XpRewardTile({ xp, size = 'md' }: { xp: number; size?: RewardTil
 export function RewardLimitTile({ value, size = 'md' }: { value: number; size?: RewardTileSize }) {
   return (
     <div className="flex flex-col items-center gap-1 w-16">
-      <TileFrame size={size}>
+      <TileFrame size={size} variant="dashed">
         <GiftIcon className={ICON_SIZE[size]} />
       </TileFrame>
       <TileLabel size={size}>+{value}</TileLabel>
@@ -60,7 +81,7 @@ export function RewardLimitTile({ value, size = 'md' }: { value: number; size?: 
 export function CatalogRewardTile({ definition, size = 'md' }: { definition: RewardDefinition; size?: RewardTileSize }) {
   return (
     <div className="flex flex-col items-center gap-1 w-16">
-      <TileFrame size={size}>
+      <TileFrame size={size} variant="gift">
         <RewardIcon iconUrl={definition.iconUrl} name={definition.name} className={ICON_SIZE[size]} />
       </TileFrame>
       <TileLabel size={size}>{definition.name}</TileLabel>
@@ -68,13 +89,30 @@ export function CatalogRewardTile({ definition, size = 'md' }: { definition: Rew
   );
 }
 
+/** An ინვენტარი item promised by a quest or achievement, framed in its quality colour. */
+export function ItemRewardTile({ item, size = 'md' }: { item: ItemDefinition; size?: RewardTileSize }) {
+  return (
+    <div className="flex flex-col items-center gap-1 w-16">
+      <div
+        className={`${FRAME_SIZE[size]} shrink-0 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden`}
+        style={{ border: `2px solid ${itemQualityColor(item.quality)}` }}
+      >
+        <ItemIcon iconUrl={item.iconUrl} name={item.name} className={ICON_SIZE[size]} />
+      </div>
+      <TileLabel size={size}>{item.name}</TileLabel>
+    </div>
+  );
+}
+
 export function RewardSpecTiles({
   rewards,
   definitions,
+  itemDefinitions = [],
   size = 'md',
 }: {
   rewards: RewardSpec[];
   definitions: RewardDefinition[];
+  itemDefinitions?: ItemDefinition[];
   size?: RewardTileSize;
 }) {
   if (rewards.length === 0) return null;
@@ -87,6 +125,11 @@ export function RewardSpecTiles({
         }
         if (reward.type === 'reward-limit') {
           return <RewardLimitTile key="reward-limit" value={reward.value} size={size} />;
+        }
+        if (reward.type === 'item') {
+          const item = itemDefinitions.find((i) => i.alias === reward.alias);
+          if (!item) return null;
+          return <ItemRewardTile key={`item-${item.alias}`} item={item} size={size} />;
         }
         const definition = definitions.find((d) => d.key === reward.key);
         if (!definition) return null;

@@ -1,8 +1,9 @@
+import type { ItemQuality } from './item';
 import type { RewardTargetKind } from './reward';
 
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest' | 'hide-and-seek-created' | 'hide-and-seek-joined' | 'hide-and-seek-checked' | 'hide-and-seek-found' | 'hide-and-seek-ended';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest' | 'hide-and-seek-created' | 'hide-and-seek-joined' | 'hide-and-seek-checked' | 'hide-and-seek-found' | 'hide-and-seek-ended' | 'item-found';
   user: {
     userId: number;
     alias: string;
@@ -17,7 +18,8 @@ export type NotificationType = {
   | NotificationZoneQuestCreatedDetailsType | NotificationZoneQuestCompletedDetailsType | NotificationZoneQuestObjectiveRejectedDetailsType
   | NotificationZoneQuestObjectiveAcceptedDetailsType | NotificationZoneQuestObjectiveSubmittedDetailsType
   | NotificationConnectionCompletedZoneQuestDetailsType
-  | NotificationHideAndSeekDetailsType;
+  | NotificationHideAndSeekDetailsType
+  | NotificationItemFoundDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -186,6 +188,18 @@ export type NotificationHideAndSeekDetailsType = {
   reason?: 'expired' | 'host_ended' | 'first_found',
 }
 
+export type NotificationItemFoundDetailsType = {
+  postId: number,
+  itemAlias: string,
+  // denormalized at grant time, so the line still reads right if the item is renamed
+  itemName: string,
+  itemQuality: ItemQuality,
+  itemIconUrl: string | null,
+  // how many the user holds after the grant — above 1 only for a stackable item
+  itemCount?: number,
+  locationName?: string,
+}
+
 // Normalize `details` to a plain object regardless of input shape.
 // - If a JSON string, attempts to parse.
 // - If already an object, returns as-is.
@@ -331,6 +345,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationHideAndSeekDetailsType;
       return `დამალობანა დასრულდა: ${d.title}`;
     }
+    case 'item-found': {
+      const d = details as NotificationItemFoundDetailsType;
+      return `შენს ინვენტარში მატებაა - ${d.itemName}`;
+    }
     default:
       return "ახალი შეტყობინება";
   }
@@ -424,6 +442,9 @@ export function getNotificationRoute(notification: NotificationType): string | n
     case 'hide-and-seek-ended': {
       const d = notification.details as NotificationHideAndSeekDetailsType;
       return `/post/${d.postId}`;
+    }
+    case 'item-found': {
+      return '/inventory';
     }
     default:
       return null;

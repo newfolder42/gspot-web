@@ -12,7 +12,8 @@ import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
 import { isMobileUserAgent } from '@/lib/device';
 import { getRewardDefinitionsByKeys } from '@/lib/rewards';
-import { getCatalogRewardKeys } from '@/types/reward';
+import { getItemDefinitionsByAliases } from '@/lib/inventory';
+import { getCatalogRewardKeys, getItemRewardAliases } from '@/types/reward';
 import QuestDetail from '@/components/zone/quest-detail';
 import QuestModal from '@/components/common/quest-modal';
 
@@ -35,9 +36,10 @@ export default async function QuestDetailModal({ params }: Props) {
   const userQuest = currentUser ? await getUserQuest(questId, currentUser.userId) : null;
   const objectives = await getQuestObjectivesWithProgress(questId, userQuest?.id ?? null);
 
-  const [character, rewardDefinitions] = await Promise.all([
+  const [character, rewardDefinitions, itemDefinitions] = await Promise.all([
     quest.character_id ? getQuestCharacter(quest.character_id) : Promise.resolve(null),
     getRewardDefinitionsByKeys(getCatalogRewardKeys(quest.rewards)),
+    getItemDefinitionsByAliases(getItemRewardAliases(quest.rewards)),
   ]);
 
   const callerLevel = currentUser ? await getUserLevel(currentUser.userId) : 0;
@@ -74,6 +76,7 @@ export default async function QuestDetailModal({ params }: Props) {
         gallery={gallery}
         isMobile={isMobile}
         rewardDefinitions={rewardDefinitions}
+        itemDefinitions={itemDefinitions}
       />
     </QuestModal>
   );

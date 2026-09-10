@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getUserPostZones } from "@/lib/zones";
 import { getOwnAccount } from "@/lib/account";
 import OngoingGameButton from "@/components/hide-and-seek/ongoing-game-button";
+import InventoryOverlay from "@/components/inventory/inventory-overlay";
 
 const notoGeorgian = Noto_Serif_Georgian({
   variable: "--font-default",
@@ -89,6 +90,7 @@ export default async function RootLayout({
         </main>
         <Footer />
         {user && <OngoingGameButton />}
+        {user && <InventoryOverlay />}
       </body>
     </html>
   );

@@ -14,7 +14,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +25,8 @@ import { processPostPhoto } from '@/lib/image';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
 import { Colors, useTheme } from '@/constants/colors';
 import { CreateHideAndSeek } from '@/components/hideandseek/CreateHideAndSeek';
+import { ItemFoundModal } from '@/components/inventory/ItemFoundModal';
+import type { FoundItemType } from '@/types/item';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
@@ -372,6 +374,7 @@ function MapCoordPicker({
 function PhotoSubmit() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const [zonePickerOpen, setZonePickerOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<ZoneSubmitType | null>(null);
@@ -398,6 +401,10 @@ function PhotoSubmit() {
     queryFn: () => submitApi.loadZones(),
   });
   const sortedZones = zonesQuery.data ?? [];
+
+  // Set when the new post landed on an item location; shown instead of the plain
+  // success alert so the find is the thing the poster sees.
+  const [foundItems, setFoundItems] = useState<FoundItemType[]>([]);
 
   const resetForm = () => {
     setTitle('');
@@ -451,7 +458,7 @@ function PhotoSubmit() {
           dateTaken: dateTaken!.toISOString(),
         });
 
-        const postId = await submitApi.createPost({
+        const created = await submitApi.createPost({
           title: title.trim(),
           contentId,
           zoneId: selectedZone.id,
@@ -460,17 +467,26 @@ function PhotoSubmit() {
           tagId: selectedTagId,
         });
 
-        return postId;
+        return created;
       } finally {
         submitIdRef.current = null;
         setUploadProgress(null);
       }
     },
-    onSuccess: (postId) => {
+    onSuccess: ({ postId, foundItems }) => {
+      if (__DEV__) console.log('[Submit] created post', postId);
+
+      // A find takes over the success step — the plain alert would bury it.
+      if (foundItems.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+        setFoundItems(foundItems);
+        resetForm();
+        return;
+      }
+
       Alert.alert('წარმატება', 'პოსტი წარმატებით აიტვირთა', [
         { text: 'კარგი', onPress: resetForm },
       ]);
-      if (__DEV__) console.log('[Submit] created post', postId);
     },
     onError: (err) => {
       setError((err as Error).message);
@@ -619,6 +635,7 @@ function PhotoSubmit() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
+    <>
     <ScrollView
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
       contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: insets.bottom + 32 }}
@@ -886,6 +903,11 @@ function PhotoSubmit() {
         )}
       </Pressable>
     </ScrollView>
+
+    {foundItems.length > 0 && (
+      <ItemFoundModal items={foundItems} onClose={() => setFoundItems([])} />
+    )}
+    </>
   );
 }
 

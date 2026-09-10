@@ -7,10 +7,12 @@ import type { RewardDefinition } from '@/types/reward';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import { TrophyIcon, MaskIcon } from '@/components/icons';
 import { RewardSpecTiles } from '@/components/rewards/reward-tile';
+import type { ItemDefinition } from '@/types/item';
 
 type Props = {
   achievements: AccountAchievement[];
   rewardDefinitions: RewardDefinition[];
+  itemDefinitions: ItemDefinition[];
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -21,9 +23,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   hide_and_seek: 'დამალობანა',
   streaks: 'უწყვეტობა',
   level: 'დონეები',
+  items: 'ნივთები',
 };
 
-const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'quests', 'hide_and_seek', 'streaks', 'level'];
+const CATEGORY_ORDER = ['base', 'posts', 'guesses', 'quests', 'hide_and_seek', 'streaks', 'items', 'level'];
 
 const OVERVIEW = '__overview__';
 
@@ -114,9 +117,11 @@ function isSecret(item: AccountAchievement) {
 function AchievementCard({
   item,
   rewardDefinitions,
+  itemDefinitions,
 }: {
   item: AccountAchievement;
   rewardDefinitions: RewardDefinition[];
+  itemDefinitions: ItemDefinition[];
 }) {
   const secret = isSecret(item);
   const achieved = item.isAchieved;
@@ -178,7 +183,7 @@ function AchievementCard({
 
       {!secret && item.rewards.length > 0 && (
         <div className="mt-3">
-          <RewardSpecTiles rewards={item.rewards} definitions={rewardDefinitions} size="sm" />
+          <RewardSpecTiles rewards={item.rewards} definitions={rewardDefinitions} itemDefinitions={itemDefinitions} size="sm" />
         </div>
       )}
     </article>
@@ -215,7 +220,7 @@ function CategoryProgressRow({
   );
 }
 
-export default function AchievementsClient({ achievements, rewardDefinitions }: Props) {
+export default function AchievementsClient({ achievements, rewardDefinitions, itemDefinitions }: Props) {
   const [showAllMilestones, setShowAllMilestones] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>(OVERVIEW);
 
@@ -330,7 +335,7 @@ export default function AchievementsClient({ achievements, rewardDefinitions }: 
             {recentAchievements.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {recentAchievements.map((item) => (
-                  <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} />
+                  <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
                 ))}
               </div>
             ) : (
@@ -358,7 +363,7 @@ export default function AchievementsClient({ achievements, rewardDefinitions }: 
       ) : (
         <div className="flex flex-col gap-3">
           {(grouped[activeCategory] ?? []).map((item) => (
-            <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} />
+            <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
           ))}
         </div>
       )}

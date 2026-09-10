@@ -11,8 +11,15 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v0.13.0",
+    date: "2026-09-10",
+    items: [
+      "ინვენტარი - ნივთები და მათი შეგროვება.",
+    ],
+  },
+  {
     version: "v0.12.5",
-    date: "2026-09-01",
+    date: "2026-09-5",
     items: [
       "გამოსაცნობების არეულად და შერჩევად ნახვა.",
     ],

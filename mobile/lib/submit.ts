@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api';
+import type { FoundItemType } from '@/types/item';
 
 export type ZoneTag = {
   id: number;
@@ -34,6 +35,13 @@ type SaveContentResponse = {
 
 type CreatePostResponse = {
   postId: number;
+  /** ინვენტარი items the photo's location handed out — almost always empty. */
+  foundItems?: FoundItemType[];
+};
+
+export type CreatePostResult = {
+  postId: number;
+  foundItems: FoundItemType[];
 };
 
 type ApiErrorBody = { error?: string };
@@ -90,6 +98,11 @@ export const submitApi = {
     zoneSlug: string;
     idempotencyKey: string;
     tagId: number | null;
-  }): Promise<number> =>
-    call(() => apiClient.post<CreatePostResponse>('/submit/post', params).then((r) => r.data.postId)),
+  }): Promise<CreatePostResult> =>
+    call(() =>
+      apiClient.post<CreatePostResponse>('/submit/post', params).then((r) => ({
+        postId: r.data.postId,
+        foundItems: r.data.foundItems ?? [],
+      }))
+    ),
 };

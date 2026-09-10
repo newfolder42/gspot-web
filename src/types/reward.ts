@@ -31,7 +31,12 @@ export type RewardLimitRewardSpec = {
   value: number;
 };
 
-export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec;
+export type ItemRewardSpec = {
+  type: 'item';
+  alias: string;
+};
+
+export type RewardSpec = UserXpRewardSpec | CatalogRewardSpec | RewardLimitRewardSpec | ItemRewardSpec;
 
 export const QUEST_XP_MIN = 100;
 export const QUEST_XP_MAX = 1000;
@@ -50,6 +55,10 @@ export function getRewardSpecLimitIncrease(rewards: RewardSpec[]): number {
 
 export function getCatalogRewardKeys(rewards: RewardSpec[]): string[] {
   return rewards.filter((r): r is CatalogRewardSpec => r.type === 'reward').map((r) => r.key);
+}
+
+export function getItemRewardAliases(rewards: RewardSpec[]): string[] {
+  return rewards.filter((r): r is ItemRewardSpec => r.type === 'item').map((r) => r.alias);
 }
 
 export type RewardStatus = 'active' | 'disabled';

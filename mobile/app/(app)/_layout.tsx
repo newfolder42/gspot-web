@@ -110,6 +110,7 @@ export default function AppLayout() {
       <Stack.Screen name="heatmap" options={{ title: 'პოსტების რუკა' }} />
       <Stack.Screen name="about" options={{ title: 'ჩვენ შესახებ', headerRight: () => null }} />
       <Stack.Screen name="quest-log" options={{ title: 'მისიების ჟურნალი', headerRight: () => null }} />
+      <Stack.Screen name="inventory" options={{ title: 'ინვენტარი', headerRight: () => null }} />
       <Stack.Screen name="hide-and-seek/index" options={{ title: 'დამალობანა' }} />
       <Stack.Screen name="hide-and-seek/new" options={{ title: 'ახალი დამალობანა', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />

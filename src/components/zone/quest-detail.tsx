@@ -20,6 +20,7 @@ import type {
 } from '@/types/quest';
 import type { RewardDefinition } from '@/types/reward';
 import { RewardSpecTiles } from '@/components/rewards/reward-tile';
+import type { ItemDefinition } from '@/types/item';
 
 const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
   pending_review: 'განხილვაში',
@@ -126,6 +127,7 @@ export default function QuestDetail({
   isMobile,
   highlightAuthorAlias,
   rewardDefinitions = [],
+  itemDefinitions = [],
 }: {
   zoneSlug: string;
   quest: ZoneQuestBaseType;
@@ -140,6 +142,7 @@ export default function QuestDetail({
   isMobile: boolean;
   highlightAuthorAlias?: string | null;
   rewardDefinitions?: RewardDefinition[];
+  itemDefinitions?: ItemDefinition[];
 }) {
   const router = useRouter();
   const [isAccepting, startAccepting] = useTransition();
@@ -291,7 +294,7 @@ export default function QuestDetail({
         <p className="text-xs font-semibold tracking-wide uppercase text-zinc-500 dark:text-zinc-400 mb-2">
           ჯილდო
         </p>
-        <RewardSpecTiles rewards={quest.rewards} definitions={rewardDefinitions} />
+        <RewardSpecTiles rewards={quest.rewards} definitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
       </div>
 
       {(userQuest?.status === 'completed' || Boolean(highlightAuthorAlias)) && (

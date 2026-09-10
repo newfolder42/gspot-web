@@ -3,13 +3,14 @@ import boundary from '@/data/georgia-boundary.json';
 // Boundary polygon for Georgia, derived from geoBoundaries gbOpen GEO ADM0
 // (CC BY-SA 2.0) and simplified to ~55m tolerance. Abkhazia and South Ossetia
 // are inside the polygon. Rebuilt only by hand — see src/data/README.md.
-type Ring = [number, number][];
+export type Ring = [number, number][];
 
 const [west, south, east, north] = boundary.bbox as [number, number, number, number];
 const polygons = boundary.polygons as unknown as Ring[][];
 
 // Ray casting: count crossings of a horizontal ray from the point going west.
-function pointInRing(lng: number, lat: number, ring: Ring): boolean {
+// Also used for item-location polygons, which are stored in the same [lng, lat] order.
+export function pointInRing(lng: number, lat: number, ring: Ring): boolean {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i];

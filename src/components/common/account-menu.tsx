@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { UserIcon, SettingsIcon, LogoutIcon, FlagIcon } from "@/components/icons";
+import { UserIcon, SettingsIcon, LogoutIcon, FlagIcon, BackpackIcon } from "@/components/icons";
 import { OwnAccountData } from "@/types/own-account";
 import ProfileAvatar from "@/components/common/profileAvatar";
+import { openInventory } from "@/components/inventory/inventory-overlay";
 
 type Props = {
   account: OwnAccountData;
@@ -63,6 +64,16 @@ export default function AccountMenu({ account }: Props) {
               <FlagIcon className="w-4 h-4" />
               <span>მისიების ჟურნალი</span>
             </Link>
+            <button
+              onClick={() => {
+                setOpen(false);
+                openInventory();
+              }}
+              className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <BackpackIcon className="w-4 h-4" />
+              <span>ინვენტარი</span>
+            </button>
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
