@@ -15,6 +15,11 @@ import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { PostDeletedEvent } from '@/types/events/post-deleted';
 import { onSkipCooldownSql } from './guessSkips';
 import { getPostPhotoCoordinates, grantItemsForPost } from '@/lib/itemLocations';
+import {
+  checkSameLocationPostLimit,
+  getContentCoordinates,
+  recordPostLocation,
+} from '@/lib/postLocations';
 import type { FoundItemType } from '@/types/item';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
@@ -741,6 +746,17 @@ export type CreatePostResult = {
   foundItems: FoundItemType[];
 };
 
+/**
+ * A submit turned down by a rule rather than by a failure, carrying the sentence to show.
+ * `null` still means "something broke"; this means "we understood you, and no".
+ */
+export type CreatePostRefusal = {
+  refused: 'same_location';
+  message: string;
+};
+
+export type CreatePostOutcome = CreatePostResult | CreatePostRefusal;
+
 export async function createPost({
   title,
   contentId,
@@ -757,11 +773,13 @@ export async function createPost({
   status?: 'processing' | 'published' | 'failed';
   idempotencyKey?: string | null;
   tagId?: number | null;
-}): Promise<CreatePostResult | null> {
+}): Promise<CreatePostOutcome | null> {
   try {
     const user = await getCurrentUser();
     if (!user) return null;
     const currentUserId = user.userId;
+
+    const coordinates = await getContentCoordinates(contentId);
 
     if (idempotencyKey) {
       const existingReq = await query(
@@ -791,6 +809,24 @@ export async function createPost({
           return { postId: Number(claimedReq.rows[0].post_id), foundItems: [] };
         }
         return null;
+      }
+    }
+
+    // Checked after the idempotency block, so that a retry of a submit that already went
+    // through returns that post instead of being refused by the row it wrote itself. A
+    // refusal here releases the claim it just took: the key was never spent on a post,
+    // and the client is free to retry with it once the window passes.
+    if (status === 'published') {
+      const limit = await checkSameLocationPostLimit({ userId: currentUserId, coordinates });
+      if (!limit.allowed) {
+        if (idempotencyKey) {
+          await query(
+            `DELETE FROM post_submit_requests
+             WHERE user_id = $1 AND request_id = $2 AND post_id IS NULL`,
+            [currentUserId, idempotencyKey]
+          );
+        }
+        return { refused: 'same_location', message: limit.message };
       }
     }
 
@@ -838,6 +874,13 @@ export async function createPost({
       zoneSlug: zoneSlug,
     } as PostPublishedEvent);
 
+    // The location is recorded inline rather than from a gspot-services handler: this row
+    // is what the next submit is checked against, and a user posting twice inside the
+    // event lag would slip past a check that read a table filled asynchronously.
+    if (status === 'published') {
+      await recordPostLocation({ userId: currentUserId, postId: +postId, coordinates });
+    }
+
     // Items are granted inline (never for a post still processing) so the submit screen
     // can announce the find; the follow-up notification comes from gspot-services.
     const foundItems =
@@ -846,7 +889,7 @@ export async function createPost({
             userId: currentUserId,
             userAlias: user.alias,
             postId: +postId,
-            coordinates: await getPostPhotoCoordinates(+postId),
+            coordinates: coordinates ?? (await getPostPhotoCoordinates(+postId)),
           })
         : [];
 

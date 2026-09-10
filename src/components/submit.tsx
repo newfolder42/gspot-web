@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { createPost } from '@/lib/posts';
+import { checkPostLocationAllowed } from '@/actions/submit';
 import { storeContent } from '@/lib/content';
 import { generateFileUrl } from '@/lib/s3';
 import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/image';
@@ -33,6 +34,50 @@ interface UploadedPhoto {
     longitude: number | null;
   } | null;
   dateTaken?: Date | null;
+}
+
+// ─── Submit progress ─────────────────────────────────────────────────────────
+
+type SubmitPhase = 'uploading' | 'saving' | 'creating' | 'done';
+
+type SubmitProgress = {
+  phase: SubmitPhase;
+  /** 0-100 across the whole submit, not just the S3 PUT. */
+  pct: number;
+  /** Bytes sent so far, only meaningful while `phase` is `uploading`. */
+  loaded: number;
+  total: number;
+};
+
+/**
+ * The S3 PUT is one of three steps, so each step owns a slice of the bar. Reporting the PUT
+ * alone parked the bar at 100% through `storeContent` and `createPost`, which reads as frozen.
+ * The mobile submit screen models the same steps, minus the on-device re-encode it has to do
+ * at submit time and this form already did when the file was picked.
+ */
+const SUBMIT_PHASES: SubmitPhase[] = ['uploading', 'saving', 'creating'];
+
+const PHASE_START: Record<SubmitPhase, number> = {
+  uploading: 4,
+  saving: 88,
+  creating: 95,
+  done: 100,
+};
+
+const PHASE_LABEL: Record<SubmitPhase, string> = {
+  uploading: 'ფოტო იტვირთება',
+  saving: 'ფოტო ინახება',
+  creating: 'პოსტი იქმნება',
+  done: 'პოსტი აიტვირთა',
+};
+
+/** Map the PUT's own 0-100 onto the slice of the bar the upload owns. */
+function uploadPct(pct: number) {
+  return PHASE_START.uploading + Math.round(((PHASE_START.saving - PHASE_START.uploading) * pct) / 100);
+}
+
+function formatMb(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coordinates'] | undefined | null; onChange: (c: { latitude: number; longitude: number }) => void }) => {
@@ -281,7 +326,7 @@ export default function Submit({
   const [photo, setPhoto] = useState<UploadedPhoto | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [progress, setProgress] = useState<SubmitProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
@@ -367,24 +412,45 @@ export default function Submit({
     setError(null);
     if (!selectedFile) return setError('ფაილი არ არის არჩეული');
     if (!selectedZone) return setError('საბზონა არ არის არჩეული');
+
+    // Asked before the upload so the user is not made to wait through it only to be told
+    // no. `createPost` checks again — this one is only here to save the upload.
+    const locationCheck = await checkPostLocationAllowed(finalCoords);
+    if (!locationCheck.allowed) {
+      return setError(locationCheck.message ?? 'ამ ლოკაციიდან პოსტის დადება ჯერ არ შეიძლება');
+    }
+
     setUploading(true);
-    setUploadProgress(0);
+    const enterPhase = (phase: SubmitPhase) =>
+      setProgress({ phase, pct: PHASE_START[phase], loaded: 0, total: 0 });
+    enterPhase('uploading');
     try {
       const signUrl = await generateFileUrl('gps-photo');
+      const totalBytes = selectedFile.size;
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', signUrl, true);
         xhr.setRequestHeader('Content-Type', selectedFile.type);
+        let lastPct = 0;
         xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            setUploadProgress(Math.round((event.loaded / event.total) * 100));
-          }
+          if (totalBytes <= 0) return;
+          // Measured against the file being sent rather than `event.total`, then clamped and
+          // kept monotonic, so a re-sent or mis-reported body cannot push the bar past 100%.
+          const loaded = Math.min(Math.max(event.loaded, 0), totalBytes);
+          const pct = Math.min(100, Math.round((loaded / totalBytes) * 100));
+          if (pct < lastPct) return;
+          lastPct = pct;
+          setProgress({ phase: 'uploading', pct: uploadPct(pct), loaded, total: totalBytes });
         };
         xhr.onload = async () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             const uploadUrl = signUrl.split('?')[0];
             try {
+              // The last progress event can land short of the full body.
+              setProgress({ phase: 'uploading', pct: uploadPct(100), loaded: totalBytes, total: totalBytes });
+
+              enterPhase('saving');
               const content = await storeContent(
                 uploadUrl,
                 'gps-photo',
@@ -399,6 +465,7 @@ export default function Submit({
                 throw new Error('ვერ მოხერხდა ფოტო-სურათის ატვირთვა');
               }
 
+              enterPhase('creating');
               const created = await createPost({
                 title: title.trim() || '',
                 contentId: content.id,
@@ -407,7 +474,14 @@ export default function Submit({
                 idempotencyKey,
                 tagId: selectedTagId,
               });
+              // The rule turned the post down — surfaced as the inline error, same as any
+              // other validation failure. `null` below still means something broke.
+              if (created && 'refused' in created) {
+                throw new Error(created.message);
+              }
+
               if (created) {
+                enterPhase('done');
                 if (created.foundItems.length > 0) {
                   setFound({ postId: created.postId, items: created.foundItems });
                 } else {
@@ -430,10 +504,12 @@ export default function Submit({
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'ვერ მოხდა ფოტო-სურათის ატვირთვა';
+      // Not cleared in `finally`, so the last step can show as done while the redirect or the
+      // found-item panel takes over; a failed submit clears it here instead.
+      setProgress(null);
       setError(message);
     } finally {
       setUploading(false);
-      setUploadProgress(null);
     }
   };
 
@@ -637,14 +713,44 @@ export default function Submit({
               </aside>
             </div>
 
-            {uploading && uploadProgress !== null && (
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+            {progress && (
+              <div
+                className="pt-3 border-t border-zinc-100 dark:border-zinc-800"
+                role="progressbar"
+                aria-label={PHASE_LABEL[progress.phase]}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress.pct}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    {progress.phase === 'done' ? (
+                      <svg className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    ) : (
+                      <span className="h-3 w-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300">{PHASE_LABEL[progress.phase]}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">{progress.pct}%</span>
+                </div>
+
+                <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-teal-500 h-3 rounded-full transition-all duration-200"
-                    style={{ width: `${uploadProgress}%` }}
+                    className="bg-teal-500 h-2 rounded-full transition-all duration-200 ease-out"
+                    style={{ width: `${progress.pct}%` }}
                   />
                 </div>
+
+                {progress.phase !== 'done' && (
+                  <div className="flex items-center justify-between mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <span>ნაბიჯი {SUBMIT_PHASES.indexOf(progress.phase) + 1} / {SUBMIT_PHASES.length}</span>
+                    {progress.phase === 'uploading' && progress.total > 0 && (
+                      <span>{formatMb(progress.loaded)} / {formatMb(progress.total)}</span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -44,7 +44,13 @@ export type CreatePostResult = {
   foundItems: FoundItemType[];
 };
 
-type ApiErrorBody = { error?: string };
+type ApiErrorBody = { error?: string; message?: string };
+
+type LocationCheckResponse = {
+  allowed: boolean;
+  /** Present when `allowed` is false — already a Georgian sentence, shown as-is. */
+  message?: string;
+};
 
 const ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'ავტორიზაცია ამოიწურა. თავიდან შედი ანგარიშზე.',
@@ -57,6 +63,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 function toUserFacingError(err: unknown): Error {
   const body = (err as any)?.response?.data as ApiErrorBody | undefined;
+  // A server-sent `message` wins over the table: the same-location refusal spells out the
+  // radius and the minutes it is currently configured with, which the app cannot know.
+  if (body?.message) return new Error(body.message);
   if (body?.error) {
     return new Error(ERROR_MESSAGES[body.error] ?? body.error);
   }
@@ -74,6 +83,17 @@ async function call<T>(fn: () => Promise<T>): Promise<T> {
 export const submitApi = {
   loadZones: (): Promise<ZoneSubmitType[]> =>
     call(() => apiClient.get<ZonesResponse>('/submit/zones').then((r) => r.data.zones)),
+
+  /**
+   * Asked before the photo is uploaded, so a refusal costs the user nothing. The binding
+   * check runs again inside `createPost` — this one only saves the upload.
+   */
+  checkLocation: (coordinates: { latitude: number; longitude: number }): Promise<LocationCheckResponse> =>
+    call(() =>
+      apiClient
+        .post<LocationCheckResponse>('/submit/location-check', { coordinates })
+        .then((r) => r.data)
+    ),
 
   createUploadUrl: (): Promise<string> =>
     call(() =>

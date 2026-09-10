@@ -3,6 +3,7 @@ import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   PermissionsAndroid,
   Platform,
@@ -163,6 +164,51 @@ function validateDate(d: Date | null): string | null {
   if (dOnly > tOnly) return 'თარიღი არ უნდა იყოს მომავალში';
   if (d.getFullYear() < 2012) return 'თარიღი არ შეიძლება იყოს 2012 წელზე ადრე';
   return null;
+}
+
+// ─── Submit progress ─────────────────────────────────────────────────────────
+
+type SubmitPhase = 'processing' | 'uploading' | 'saving' | 'creating' | 'done';
+
+type SubmitProgress = {
+  phase: SubmitPhase;
+  /** 0-100 across the whole submit, not just the S3 PUT. */
+  pct: number;
+  /** Bytes sent so far, only meaningful while `phase` is `uploading`. */
+  loaded: number;
+  total: number;
+};
+
+const SUBMIT_PHASES: SubmitPhase[] = ['processing', 'uploading', 'saving', 'creating'];
+
+/**
+ * The S3 PUT is one of four steps, so each step owns a slice of the bar. Reporting the PUT
+ * alone left the bar at 0% through the on-device re-encode and then at 100% through both API
+ * calls, and a bar parked at either end reads as frozen.
+ */
+const PHASE_START: Record<SubmitPhase, number> = {
+  processing: 4,
+  uploading: 12,
+  saving: 88,
+  creating: 95,
+  done: 100,
+};
+
+const PHASE_LABEL: Record<SubmitPhase, string> = {
+  processing: 'ფოტო მუშავდება',
+  uploading: 'ფოტო იტვირთება',
+  saving: 'ფოტო ინახება',
+  creating: 'პოსტი იქმნება',
+  done: 'პოსტი აიტვირთა',
+};
+
+/** Map the PUT's own 0-100 onto the slice of the bar the upload owns. */
+function uploadPct(pct: number) {
+  return PHASE_START.uploading + Math.round(((PHASE_START.saving - PHASE_START.uploading) * pct) / 100);
+}
+
+function formatMb(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 
@@ -389,12 +435,24 @@ function PhotoSubmit() {
   const [gpsAutoDetected, setGpsAutoDetected] = useState(false);
 
   const [processing, setProcessing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [progress, setProgress] = useState<SubmitProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [coordsAnimKey, setCoordsAnimKey] = useState(0);
 
   const submitIdRef = useRef<string | null>(null);
+
+  // Glide the fill between steps instead of snapping. The fixed-percentage steps hold their
+  // number for as long as their API call takes, so the motion is what says the submit is alive.
+  const barAnim = useRef(new Animated.Value(0)).current;
+  const barPct = progress?.pct ?? null;
+  useEffect(() => {
+    if (barPct === null) {
+      barAnim.setValue(0);
+      return;
+    }
+    Animated.timing(barAnim, { toValue: barPct, duration: 180, useNativeDriver: false }).start();
+  }, [barAnim, barPct]);
 
   const zonesQuery = useQuery({
     queryKey: ['submit-zones'],
@@ -416,7 +474,7 @@ function PhotoSubmit() {
     setSelectedTagId(null);
     setZonePickerOpen(false);
     setError(null);
-    setUploadProgress(null);
+    setProgress(null);
     submitIdRef.current = null;
   };
 
@@ -436,20 +494,38 @@ function PhotoSubmit() {
         throw new Error('ლოკაცია უნდა იყოს საქართველოში');
       }
 
+      // Asked before anything is uploaded, so a refusal does not cost the user a photo
+      // upload over cellular. The server checks again when the post is created.
+      const locationCheck = await submitApi.checkLocation(coords);
+      if (!locationCheck.allowed) {
+        throw new Error(locationCheck.message ?? 'ამ ლოკაციიდან პოსტის დადება ჯერ არ შეიძლება');
+      }
+
       const idempotencyKey = generateIdempotencyKey();
       submitIdRef.current = idempotencyKey;
       setError(null);
-      setUploadProgress(0);
+
+      const enterPhase = (phase: SubmitPhase) =>
+        setProgress({ phase, pct: PHASE_START[phase], loaded: 0, total: 0 });
 
       try {
+        enterPhase('processing');
         // Downscale + JPEG re-encode on-device (longest edge ≤ 4096px) so the upload is small
         // on cellular and the stored master matches the web pipeline. The server still derives
         // the WebP feed/thumb variants.
         const processed = await processPostPhoto(image.uri, image.width, image.height, image.name);
 
+        enterPhase('uploading');
         const signedUrl = await submitApi.createUploadUrl();
-        const publicUrl = await uploadToSignedUrl(signedUrl, processed.uri, processed.type, setUploadProgress);
+        const publicUrl = await uploadToSignedUrl(
+          signedUrl,
+          processed.uri,
+          processed.type,
+          ({ pct, loaded, total }) =>
+            setProgress({ phase: 'uploading', pct: uploadPct(pct), loaded, total })
+        );
 
+        enterPhase('saving');
         const contentId = await submitApi.saveContent({
           publicUrl,
           originalFileName: processed.name,
@@ -458,6 +534,7 @@ function PhotoSubmit() {
           dateTaken: dateTaken!.toISOString(),
         });
 
+        enterPhase('creating');
         const created = await submitApi.createPost({
           title: title.trim(),
           contentId,
@@ -467,10 +544,10 @@ function PhotoSubmit() {
           tagId: selectedTagId,
         });
 
+        enterPhase('done');
         return created;
       } finally {
         submitIdRef.current = null;
-        setUploadProgress(null);
       }
     },
     onSuccess: ({ postId, foundItems }) => {
@@ -489,6 +566,9 @@ function PhotoSubmit() {
       ]);
     },
     onError: (err) => {
+      // The bar is no longer cleared in `finally`, so that the final step can show as done
+      // while the success alert is up; a failed submit clears it here instead.
+      setProgress(null);
       setError((err as Error).message);
     },
   });
@@ -866,19 +946,57 @@ function PhotoSubmit() {
         </View>
       ) : null}
 
-      {/* ── Upload progress ──────────────────────────────── */}
-      {uploadProgress !== null ? (
-        <View className="mb-4">
+      {/* ── Submit progress ──────────────────────────────── */}
+      {progress ? (
+        <View
+          className="mb-4"
+          accessibilityRole="progressbar"
+          accessibilityLabel={PHASE_LABEL[progress.phase]}
+          accessibilityValue={{ min: 0, max: 100, now: progress.pct }}
+        >
           <View className="flex-row items-center justify-between mb-1.5">
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">ატვირთვა...</Text>
-            <Text className="text-xs font-semibold text-teal-600 dark:text-teal-400">{uploadProgress}%</Text>
+            <View className="flex-row items-center gap-2">
+              {progress.phase === 'done' ? (
+                <Feather name="check-circle" size={13} color={Colors.brand} />
+              ) : (
+                <ActivityIndicator size="small" color={Colors.brand} />
+              )}
+              <Text className="text-xs text-zinc-600 dark:text-zinc-300">
+                {PHASE_LABEL[progress.phase]}
+              </Text>
+            </View>
+            <Text className="text-xs font-semibold text-teal-600 dark:text-teal-400">
+              {progress.pct}%
+            </Text>
           </View>
+
           <View className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
-            <View
-              className="h-2 rounded-full bg-teal-500"
-              style={{ width: `${uploadProgress}%` }}
+            <Animated.View
+              style={{
+                height: 8,
+                borderRadius: 9999,
+                backgroundColor: Colors.brand,
+                width: barAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                  extrapolate: 'clamp',
+                }),
+              }}
             />
           </View>
+
+          {progress.phase !== 'done' ? (
+            <View className="flex-row items-center justify-between mt-1.5">
+              <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                ნაბიჯი {SUBMIT_PHASES.indexOf(progress.phase) + 1} / {SUBMIT_PHASES.length}
+              </Text>
+              {progress.phase === 'uploading' && progress.total > 0 ? (
+                <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                  {formatMb(progress.loaded)} / {formatMb(progress.total)}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       ) : null}
 

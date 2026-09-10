@@ -11,6 +11,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v0.13.1",
+    date: "2026-09-10",
+    items: [
+      "პოსტის ატვირთვის შეზღუდვა ერთი ადგილიდან გარკვეული პერიოდის მანძილზე.",
+    ],
+  },
+  {
     version: "v0.13.0",
     date: "2026-09-10",
     items: [

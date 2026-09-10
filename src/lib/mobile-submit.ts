@@ -4,6 +4,11 @@ import { eventBus } from '@/lib/eventBus';
 import { deleteObject } from '@/lib/s3';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
 import { getPostPhotoCoordinates, grantItemsForPost } from '@/lib/itemLocations';
+import {
+  checkSameLocationPostLimit,
+  getContentCoordinates,
+  recordPostLocation,
+} from '@/lib/postLocations';
 import { type PostPublishedEvent } from '@/types/events/post-published';
 import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 import type { FoundItemType } from '@/types/item';
@@ -13,6 +18,20 @@ export type CreateMobilePostResult = {
   postId: number;
   foundItems: FoundItemType[];
 };
+
+/** Mirrors CreatePostRefusal in lib/posts.ts — a rule said no, nothing broke. */
+export type CreateMobilePostRefusal = {
+  refused: 'same_location';
+  message: string;
+};
+
+export type CreateMobilePostOutcome = CreateMobilePostResult | CreateMobilePostRefusal;
+
+export function isCreateMobilePostRefusal(
+  outcome: CreateMobilePostOutcome | null
+): outcome is CreateMobilePostRefusal {
+  return !!outcome && 'refused' in outcome;
+}
 
 type CreateMobilePostParams = {
   userId: number;
@@ -169,8 +188,10 @@ export async function createMobilePost({
   status = 'published',
   idempotencyKey,
   tagId,
-}: CreateMobilePostParams): Promise<CreateMobilePostResult | null> {
+}: CreateMobilePostParams): Promise<CreateMobilePostOutcome | null> {
   try {
+    const coordinates = await getContentCoordinates(contentId);
+
     if (idempotencyKey) {
       const existingReq = await query(
         `SELECT post_id FROM post_submit_requests WHERE user_id = $1 AND request_id = $2 LIMIT 1`,
@@ -200,6 +221,22 @@ export async function createMobilePost({
         }
 
         return null;
+      }
+    }
+
+    // Same placement and same reasoning as lib/posts.ts#createPost: after the idempotency
+    // block so a retry is not refused by its own row, and releasing the claim on refusal.
+    if (status === 'published') {
+      const limit = await checkSameLocationPostLimit({ userId, coordinates });
+      if (!limit.allowed) {
+        if (idempotencyKey) {
+          await query(
+            `DELETE FROM post_submit_requests
+             WHERE user_id = $1 AND request_id = $2 AND post_id IS NULL`,
+            [userId, idempotencyKey]
+          );
+        }
+        return { refused: 'same_location', message: limit.message };
       }
     }
 
@@ -248,13 +285,17 @@ export async function createMobilePost({
       zoneSlug,
     } as PostPublishedEvent);
 
+    if (status === 'published') {
+      await recordPostLocation({ userId, postId, coordinates });
+    }
+
     const foundItems =
       status === 'published'
         ? await grantItemsForPost({
             userId,
             userAlias,
             postId,
-            coordinates: await getPostPhotoCoordinates(postId),
+            coordinates: coordinates ?? (await getPostPhotoCoordinates(postId)),
           })
         : [];
 

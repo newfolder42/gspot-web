@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getUserPostZones } from '@/lib/zones';
-import { createMobilePost } from '@/lib/mobile-submit';
+import { createMobilePost, isCreateMobilePostRefusal } from '@/lib/mobile-submit';
 import { logerror } from '@/lib/logger';
 
 const BodySchema = z.object({
@@ -46,6 +46,15 @@ export async function POST(req: NextRequest) {
 
     if (!created) {
       return NextResponse.json({ error: 'CREATE_POST_FAILED' }, { status: 500 });
+    }
+
+    // A rule turned the post down, nothing broke — 409, and the sentence to show comes
+    // from the server because it carries the numbers the rule is currently tuned to.
+    if (isCreateMobilePostRefusal(created)) {
+      return NextResponse.json(
+        { error: 'SAME_LOCATION_LIMIT', message: created.message },
+        { status: 409 }
+      );
     }
 
     // `foundItems` is empty for almost every post — the app only shows a sheet when it is not.
