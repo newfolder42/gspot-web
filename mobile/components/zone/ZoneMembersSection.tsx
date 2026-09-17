@@ -73,7 +73,8 @@ function InviteBox({ slug }: { slug: string }) {
   );
 }
 
-export function MembersTab({ slug }: { slug: string }) {
+/** Member roster plus the invite box, shown inside the zone settings tab. */
+export function ZoneMembersSection({ slug }: { slug: string }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['zone-members', slug],
     queryFn: () => zonesApi.getMembers(slug),
@@ -95,7 +96,7 @@ export function MembersTab({ slug }: { slug: string }) {
   }
 
   return (
-    <View>
+    <View className="-mx-4 border-t border-zinc-200 dark:border-zinc-800">
       {data.canInvite ? <InviteBox slug={slug} /> : null}
       {data.members.map((m) => (
         <MemberRow key={m.id} member={m} />

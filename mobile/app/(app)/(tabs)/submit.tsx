@@ -18,6 +18,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
@@ -421,6 +422,7 @@ function PhotoSubmit() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [zonePickerOpen, setZonePickerOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<ZoneSubmitType | null>(null);
@@ -463,6 +465,12 @@ function PhotoSubmit() {
   // Set when the new post landed on an item location; shown instead of the plain
   // success alert so the find is the thing the poster sees.
   const [foundItems, setFoundItems] = useState<FoundItemType[]>([]);
+  // Kept while the find modal is up, so closing it still lands on the new post.
+  const [createdPostId, setCreatedPostId] = useState<number | null>(null);
+
+  const goToPost = (postId: number) => {
+    router.push({ pathname: '/(app)/post/[id]', params: { id: String(postId) } });
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -553,17 +561,19 @@ function PhotoSubmit() {
     onSuccess: ({ postId, foundItems }) => {
       if (__DEV__) console.log('[Submit] created post', postId);
 
+      // Clear right away: the form is done with, and the user is about to leave it for
+      // the new post — coming back to the tab later must not show the old photo.
+      resetForm();
+
       // A find takes over the success step — the plain alert would bury it.
       if (foundItems.length > 0) {
         queryClient.invalidateQueries({ queryKey: ['inventory'] });
+        setCreatedPostId(postId);
         setFoundItems(foundItems);
-        resetForm();
         return;
       }
 
-      Alert.alert('წარმატება', 'პოსტი წარმატებით აიტვირთა', [
-        { text: 'კარგი', onPress: resetForm },
-      ]);
+      goToPost(postId);
     },
     onError: (err) => {
       // The bar is no longer cleared in `finally`, so that the final step can show as done
@@ -1023,7 +1033,15 @@ function PhotoSubmit() {
     </ScrollView>
 
     {foundItems.length > 0 && (
-      <ItemFoundModal items={foundItems} onClose={() => setFoundItems([])} />
+      <ItemFoundModal
+        items={foundItems}
+        onClose={() => {
+          setFoundItems([]);
+          const postId = createdPostId;
+          setCreatedPostId(null);
+          if (postId !== null) goToPost(postId);
+        }}
+      />
     )}
     </>
   );

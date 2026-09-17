@@ -4,13 +4,12 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ZoneHeader } from '@/components/zone/ZoneHeader';
 import { ZoneFeedTab } from '@/components/zone/ZoneFeedTab';
-import { MembersTab } from '@/components/zone/MembersTab';
 import { LeaderboardTab } from '@/components/zone/LeaderboardTab';
 import { ManageTab } from '@/components/zone/ManageTab';
 import { QuestsTab } from '@/components/zone/QuestsTab';
 import { zonesApi } from '@/lib/zones';
 
-type Tab = 'feed' | 'members' | 'leaderboard' | 'quests' | 'manage';
+type Tab = 'feed' | 'leaderboard' | 'quests' | 'manage';
 
 export default function ZoneScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -29,8 +28,7 @@ export default function ZoneScreen() {
 
   const tabs = useMemo(() => {
     const list: { id: Tab; label: string }[] = [
-      { id: 'feed', label: 'ფიდი' },
-      { id: 'members', label: 'წევრები' },
+      { id: 'feed', label: 'ძირითადი' },
       { id: 'leaderboard', label: 'ლიდერბორდი' },
     ];
     if (meta?.questsEnabled) list.push({ id: 'quests', label: 'მისიები' });
@@ -100,7 +98,6 @@ export default function ZoneScreen() {
 
           <View className="flex-1">
             {tab === 'feed' ? <ZoneFeedTab slug={slug} /> : null}
-            {tab === 'members' ? <MembersTab slug={slug} /> : null}
             {tab === 'leaderboard' ? <LeaderboardTab slug={slug} /> : null}
             {tab === 'quests' ? <QuestsTab slug={slug} /> : null}
             {tab === 'manage' ? <ManageTab slug={slug} /> : null}

@@ -87,7 +87,6 @@ export default async function UserLayout({ children, params }: Props) {
   if (hasAccess) {
     tabs.push(
       { id: 'overview', label: 'ძირითადი', href: `/zone/${zoneSlug}` },
-      { id: 'members', label: 'წევრები', href: `/zone/${zoneSlug}/members` },
       { id: 'leaderboard', label: 'ლიდერბორდი', href: `/zone/${zoneSlug}/leaderboard` },
     );
 

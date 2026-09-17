@@ -21,12 +21,17 @@ export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
         ) : null}
       </View>
 
-      <View className="px-4 pb-3">
-        <View className="flex-row items-end justify-between -mt-8">
-          <View className="rounded-md border-2 border-white dark:border-zinc-900">
-            <ProfileAvatar name={zone.slug} photoUrl={zone.profilePhotoUrl} size={64} shape="md" />
-          </View>
-          <View className="mb-1">
+      {/* Avatar overlaps the banner; title and description sit to its right, as on web. */}
+      <View className="px-4 pb-4 flex-row gap-3">
+        <View className="-mt-8 self-start rounded-md border-2 border-white dark:border-zinc-900">
+          <ProfileAvatar name={zone.slug} photoUrl={zone.profilePhotoUrl} size={64} shape="md" />
+        </View>
+
+        <View className="flex-1 pt-2">
+          <View className="flex-row items-center justify-between gap-2">
+            <Text className="flex-1 text-xl font-bold text-zinc-900 dark:text-zinc-50" numberOfLines={1}>
+              {zone.slug}
+            </Text>
             <JoinButton
               slug={slug}
               status={membership?.status ?? null}
@@ -34,21 +39,20 @@ export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
               joinPolicy={zone.joinPolicy}
             />
           </View>
-        </View>
 
-        <Text className="mt-2 text-xl font-bold text-zinc-900 dark:text-zinc-50">{zone.slug}</Text>
-        {hasDescription ? (
-          <View className="mt-1">
-            <Text className="text-sm text-zinc-600 dark:text-zinc-300">{visibleDescription}</Text>
-            {shouldTruncate ? (
-              <Pressable onPress={() => setExpanded((p) => !p)}>
-                <Text className="mt-1 text-xs font-semibold text-teal-600 dark:text-teal-400">
-                  {expanded ? 'ნაკლები' : 'მეტი'}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
+          {hasDescription ? (
+            <View className="mt-2">
+              <Text className="text-sm text-zinc-600 dark:text-zinc-300">{visibleDescription}</Text>
+              {shouldTruncate ? (
+                <Pressable onPress={() => setExpanded((p) => !p)}>
+                  <Text className="mt-1 text-xs font-semibold text-teal-600 dark:text-teal-400">
+                    {expanded ? 'ნაკლები' : 'მეტი'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
       </View>
     </View>
   );

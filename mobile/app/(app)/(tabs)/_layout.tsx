@@ -26,12 +26,6 @@ export default function TabsLayout() {
 
   const unreadCount = unreadData?.count ?? 0;
 
-  const SearchButton = () => (
-    <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
-      <Feather name="search" size={20} color={theme.icon} />
-    </Pressable>
-  );
-
   const HomeHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Pressable onPress={() => router.push('/(app)/inventory')} style={{ marginRight: 18 }}>
@@ -48,11 +42,8 @@ export default function TabsLayout() {
 
   const ToGuessHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Pressable onPress={() => router.push('/(app)/guess-shuffle')} style={{ marginRight: 18 }}>
+      <Pressable onPress={() => router.push('/(app)/guess-shuffle')} style={{ marginRight: 14 }}>
         <MaterialCommunityIcons name="dice-5-outline" size={22} color={theme.icon} />
-      </Pressable>
-      <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 14 }}>
-        <Feather name="search" size={20} color={theme.icon} />
       </Pressable>
     </View>
   );
@@ -62,8 +53,8 @@ export default function TabsLayout() {
       <Pressable onPress={() => router.push('/(app)/inventory')} style={{ marginRight: 18 }}>
         <BackpackIcon size={20} color={theme.icon} />
       </Pressable>
-      <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 18 }}>
-        <Feather name="search" size={20} color={theme.icon} />
+      <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
+        <Feather name="flag" size={20} color={theme.icon} />
       </Pressable>
       <Pressable onPress={() => router.push('/(app)/settings')} style={{ marginRight: 14 }}>
         <Feather name="settings" size={20} color={theme.icon} />
@@ -114,7 +105,6 @@ export default function TabsLayout() {
           title: 'დამატება',
           tabBarLabel: 'დამატება',
           tabBarIcon: ({ color, size }) => <Feather name="plus-circle" size={size} color={color} />,
-          headerRight: () => <SearchButton />,
         }}
       />
       <Tabs.Screen
@@ -125,7 +115,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Feather name="bell" size={size} color={color} />,
           tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
           tabBarBadgeStyle: { fontSize: 10, minWidth: 16, height: 16, lineHeight: 16 },
-          headerRight: () => <SearchButton />,
         }}
       />
       <Tabs.Screen

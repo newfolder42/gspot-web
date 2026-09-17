@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { zonesApi, type ZoneSettings } from '@/lib/zones';
+import { ZoneMembersSection } from '@/components/zone/ZoneMembersSection';
 import { useTheme } from '@/constants/colors';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
@@ -163,6 +164,10 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
           {tagBusy ? <ActivityIndicator size="small" color="#fff" /> : <Feather name="plus" size={20} color="#fff" />}
         </Pressable>
       </View>
+
+      {/* Members — the roster lives here now, so only those who can manage the zone can invite. */}
+      <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 mt-8">წევრები</Text>
+      <ZoneMembersSection slug={slug} />
     </ScrollView>
   );
 }

@@ -1,75 +1,57 @@
 import { useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { Colors } from '@/constants/colors';
+import { Colors, useTheme } from '@/constants/colors';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { zonesApi, type MobileZoneFeedFilter, type ZoneTag } from '@/lib/zones';
+import { FEED_STATUS_FILTERS, FeedOptionsSheet } from '@/components/zone/FeedOptionsSheet';
 import { formatTimePassed } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
 const PAGE_SIZE = 4;
 
-const STATUS_FILTERS: { value: MobileZoneFeedFilter; label: string }[] = [
-  { value: 'all', label: 'ყველა' },
-  { value: 'guessed', label: 'გამოცნობილი' },
-  { value: 'not-guessed', label: 'გამოსაცნობი' },
-];
-
-function FilterBar({
+function FeedOptionsBar({
   filter,
-  onFilterChange,
-  tags,
   activeTagId,
-  onTagChange,
+  tags,
+  onOpen,
 }: {
   filter: MobileZoneFeedFilter;
-  onFilterChange: (v: MobileZoneFeedFilter) => void;
-  tags: ZoneTag[];
   activeTagId: number | null;
-  onTagChange: (id: number | null) => void;
+  tags: ZoneTag[];
+  onOpen: () => void;
 }) {
+  const theme = useTheme();
+  const statusLabel = FEED_STATUS_FILTERS.find((o) => o.value === filter)?.label ?? '';
+  const activeTag = tags.find((t) => t.id === activeTagId) ?? null;
+  const activeCount = (filter === 'all' ? 0 : 1) + (activeTag ? 1 : 0);
+
   return (
-    <View className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
-        {STATUS_FILTERS.map((opt) => {
-          const active = opt.value === filter;
-          return (
-            <Pressable
-              key={opt.value}
-              onPress={() => onFilterChange(opt.value)}
-              className={`px-3 py-1.5 rounded-full border ${active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'}`}
-            >
-              <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{opt.label}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-      {tags.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 8 }}>
-          <Pressable
-            onPress={() => onTagChange(null)}
-            className={`px-3 py-1 rounded-full border ${activeTagId === null ? 'bg-zinc-700 border-zinc-700' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'}`}
-          >
-            <Text className={`text-xs font-medium ${activeTagId === null ? 'text-white' : 'text-zinc-600 dark:text-zinc-300'}`}>ყველა</Text>
-          </Pressable>
-          {tags.map((tag) => {
-            const active = activeTagId === tag.id;
-            return (
-              <Pressable key={tag.id} onPress={() => onTagChange(active ? null : tag.id)}>
-                <View
-                  className="px-3 py-1 rounded-full"
-                  style={{ backgroundColor: active ? tag.color : 'transparent', borderWidth: 1.5, borderColor: tag.color }}
-                >
-                  <Text className="text-xs font-semibold" style={{ color: active ? '#fff' : tag.color }}>{tag.name}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+    <View className="flex-row items-center gap-2 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+      <Pressable
+        onPress={onOpen}
+        className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+      >
+        <Feather name="sliders" size={14} color={theme.icon} />
+        <Text className="text-xs font-medium text-zinc-700 dark:text-zinc-300">მართვა</Text>
+        {activeCount > 0 ? (
+          <View className="ml-0.5 h-4 min-w-4 px-1 rounded-full bg-teal-600 items-center justify-center">
+            <Text className="text-[10px] font-bold text-white">{activeCount}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+
+      {filter !== 'all' ? (
+        <Text className="text-xs text-zinc-500 dark:text-zinc-400" numberOfLines={1}>{statusLabel}</Text>
+      ) : null}
+      {activeTag ? (
+        <View className="px-2 py-0.5 rounded-full" style={{ borderWidth: 1.5, borderColor: activeTag.color }}>
+          <Text className="text-[11px] font-semibold" style={{ color: activeTag.color }}>{activeTag.name}</Text>
+        </View>
       ) : null}
     </View>
   );
@@ -180,6 +162,7 @@ export function ZoneFeedTab({ slug }: { slug: string }) {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<MobileZoneFeedFilter>('all');
   const [activeTagId, setActiveTagId] = useState<number | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['zone-feed', slug, filter, activeTagId] as const,
@@ -204,7 +187,16 @@ export function ZoneFeedTab({ slug }: { slug: string }) {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      <FilterBar
+      <FeedOptionsBar
+        filter={filter}
+        activeTagId={activeTagId}
+        tags={zoneTags}
+        onOpen={() => setOptionsOpen(true)}
+      />
+
+      <FeedOptionsSheet
+        visible={optionsOpen}
+        onClose={() => setOptionsOpen(false)}
         filter={filter}
         onFilterChange={(v) => {
           setFilter(v);

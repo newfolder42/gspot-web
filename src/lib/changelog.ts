@@ -11,6 +11,13 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "v0.13.2",
+    date: "2026-09-18",
+    items: [
+      "მაქსიმალური დონე 60.",
+    ],
+  },
+  {
     version: "v0.13.1",
     date: "2026-09-10",
     items: [

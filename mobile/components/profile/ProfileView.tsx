@@ -31,7 +31,7 @@ import { processProfilePhoto } from '@/lib/image';
 import { formatAge } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
-const MAX_LEVEL = 42;
+const MAX_LEVEL = 60;
 /** Only used if the API response predates `xpInfo`. */
 const FALLBACK_XP_PER_LEVEL = 100;
 const COLUMNS = 3;

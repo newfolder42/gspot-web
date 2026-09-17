@@ -6,7 +6,7 @@ type Props = {
 };
 
 export default function XPBar({ xp }: Props) {
-  const maxLevel = 42;
+  const maxLevel = 60;
   const progressPercentage = (xp.currentXP / xp.xpForNextLevel) * 100;
   const isMaxLevel = xp.level >= maxLevel;
   const levelColor = getLevelColor(xp.level);
