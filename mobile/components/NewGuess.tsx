@@ -175,7 +175,15 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
         {/* Image panel — toggleable, pinch and double-tap to zoom */}
         {imageMode === 'band' && post.image ? (
           <View className="w-full bg-black" style={{ height: IMAGE_BAND_HEIGHT }}>
-            <PinchZoomImage uri={post.image} style={{ flex: 1 }} resizeMode="contain" />
+            {/* Guessing wants every pixel of the master, but the feed rendition is
+                already cached from the list — show that rather than black while the
+                several MB come down. */}
+            <PinchZoomImage
+              uri={post.image}
+              placeholderUri={post.imageVariants?.feed}
+              style={{ flex: 1 }}
+              resizeMode="contain"
+            />
             <Pressable
               onPress={() => setImageMode('full')}
               className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
@@ -298,7 +306,12 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           {/* Expanded photo - covers the map, which stays mounted underneath */}
           {imageMode === 'full' && post.image ? (
             <View style={StyleSheet.absoluteFill} className="bg-black">
-              <PinchZoomImage uri={post.image} style={{ flex: 1 }} resizeMode="contain" />
+              <PinchZoomImage
+                uri={post.image}
+                placeholderUri={post.imageVariants?.feed}
+                style={{ flex: 1 }}
+                resizeMode="contain"
+              />
               <Pressable
                 onPress={() => setImageMode('band')}
                 className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"

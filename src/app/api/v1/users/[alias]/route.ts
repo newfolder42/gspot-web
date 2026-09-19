@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getAccountByAlias } from '@/lib/account';
-import { getAccountPosts } from '@/lib/posts';
+import { getAccountPosts, getAccountPostsCount } from '@/lib/posts';
 import { getUserStreakInfo } from '@/lib/streaks';
 import { getLevelFromXp } from '@/lib/xp';
 import { logerror } from '@/lib/logger';
@@ -15,11 +15,16 @@ export async function GET(req: NextRequest, context: Context) {
 
     const { alias } = await context.params;
 
+    // Clients that page the grid through /users/[alias]/posts opt out of the
+    // inline first page; older builds omit the flag and still get it.
+    const includePosts = req.nextUrl.searchParams.get('includePosts') !== '0';
+
     const account = await getAccountByAlias(alias, auth.user.userId);
     if (!account) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
 
-    const [posts, streak, xpInfo] = await Promise.all([
-      getAccountPosts(account.user.id, auth.user.userId, 20),
+    const [posts, postsCount, streak, xpInfo] = await Promise.all([
+      includePosts ? getAccountPosts(account.user.id, auth.user.userId, 20) : Promise.resolve([]),
+      getAccountPostsCount(account.user.id),
       getUserStreakInfo(account.user.id),
       getLevelFromXp(account.level?.xp ?? 0),
     ]);
@@ -37,6 +42,7 @@ export async function GET(req: NextRequest, context: Context) {
       isFollowing: !!account.connection,
       streak,
       posts,
+      postsCount,
     });
   } catch (err) {
     await logerror('GET /api/v1/users/[alias] error', { error: String(err) });

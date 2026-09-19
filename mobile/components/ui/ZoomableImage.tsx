@@ -1,7 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
-  Image,
   Modal,
   PanResponder,
   Pressable,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { ProgressiveImage } from './ProgressiveImage';
 
 /**
  * Mobile counterpart of the web's `ZoomableImage`. On the web a click zooms the
@@ -236,11 +236,14 @@ function createZoomController(resizeMode: ResizeMode) {
 
 export function PinchZoomImage({
   uri,
+  placeholderUri,
   style,
   /** Fixed for the lifetime of the image — the controller captures it. */
   resizeMode = 'contain',
 }: {
   uri: string;
+  /** Smaller rendition to show while `uri` downloads — see ProgressiveImage. */
+  placeholderUri?: string | null;
   style?: StyleProp<ViewStyle>;
   resizeMode?: ResizeMode;
 }) {
@@ -271,16 +274,14 @@ export function PinchZoomImage({
           ],
         }}
       >
-        <Image
-          source={{ uri }}
+        <ProgressiveImage
+          uri={uri}
+          placeholderUri={placeholderUri}
           style={{ width: '100%', height: '100%' }}
           resizeMode={resizeMode}
-          onLoad={(e) => {
-            const source = e.nativeEvent.source;
-            if (source?.width && source?.height) {
-              zoom.setNatural({ width: source.width, height: source.height });
-            }
-          }}
+          // The renditions share an aspect ratio, so the placeholder's size is
+          // already the right answer — pan bounds work before the master lands.
+          onSize={zoom.setNatural}
         />
       </Animated.View>
     </View>
@@ -289,10 +290,13 @@ export function PinchZoomImage({
 
 export function ImageZoomViewer({
   uri,
+  placeholderUri,
   title,
   onClose,
 }: {
   uri: string;
+  /** Smaller rendition to show while `uri` downloads — see ProgressiveImage. */
+  placeholderUri?: string | null;
   title?: string | null;
   onClose: () => void;
 }) {
@@ -301,7 +305,12 @@ export function ImageZoomViewer({
   return (
     <Modal visible animationType="fade" presentationStyle="fullScreen" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: '#000' }}>
-        <PinchZoomImage uri={uri} style={{ flex: 1 }} resizeMode="contain" />
+        <PinchZoomImage
+          uri={uri}
+          placeholderUri={placeholderUri}
+          style={{ flex: 1 }}
+          resizeMode="contain"
+        />
 
         <View
           pointerEvents="box-none"
@@ -338,6 +347,7 @@ export function ImageZoomViewer({
 export function ZoomableImage({
   uri,
   fullUri,
+  placeholderUri,
   title,
   className,
   style,
@@ -347,6 +357,8 @@ export function ZoomableImage({
   uri: string;
   /** Full-size source for the viewer, when the inline one is a thumbnail. */
   fullUri?: string;
+  /** Smaller rendition to show while `uri` downloads — see ProgressiveImage. */
+  placeholderUri?: string | null;
   title?: string | null;
   className?: string;
   style?: StyleProp<ViewStyle>;
@@ -359,11 +371,23 @@ export function ZoomableImage({
   return (
     <>
       <Pressable className={className} style={style} onPress={() => setOpen(true)}>
-        <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode={resizeMode} />
+        <ProgressiveImage
+          uri={uri}
+          placeholderUri={placeholderUri}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode={resizeMode}
+        />
         {children}
       </Pressable>
       {open ? (
-        <ImageZoomViewer uri={fullUri ?? uri} title={title} onClose={() => setOpen(false)} />
+        <ImageZoomViewer
+          uri={fullUri ?? uri}
+          // Whatever was showing inline is already cached, so the viewer opens on
+          // the photo instead of on black while the master downloads.
+          placeholderUri={uri}
+          title={title}
+          onClose={() => setOpen(false)}
+        />
       ) : null}
     </>
   );

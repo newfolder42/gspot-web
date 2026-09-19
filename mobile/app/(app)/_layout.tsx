@@ -11,6 +11,7 @@ import {
   savePushToken,
 } from '@/lib/pushNotifications';
 import { openPushNotification } from '@/lib/notificationRouting';
+import { prefetchPushImages } from '@/lib/imagePrefetch';
 import { Colors, useTheme } from '@/constants/colors';
 import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
 
@@ -43,6 +44,9 @@ export default function AppLayout() {
 
     const handleTap = (response: Notifications.NotificationResponse) => {
       const { data } = response.notification.request.content;
+      // Start the photo before the screen that wants it mounts. A no-op when the
+      // delivery listener already warmed it, and the only chance on a cold start.
+      prefetchPushImages(data);
       // Opening the push is the user reading it — clear it server-side, then
       // refresh so the tab badge and the list agree.
       markPushNotificationRead(data).finally(refreshBadge);
@@ -52,8 +56,12 @@ export default function AppLayout() {
     // Tapped while the app was running (foreground or background)
     const tapSub = Notifications.addNotificationResponseReceivedListener(handleTap);
 
-    // Arrived while the app was open — the tab badge is otherwise up to 20s stale
-    const receiveSub = Notifications.addNotificationReceivedListener(refreshBadge);
+    // Arrived while the app was open — the tab badge is otherwise up to 20s stale,
+    // and it is the one moment we can pull the photo down before it is asked for.
+    const receiveSub = Notifications.addNotificationReceivedListener((notification) => {
+      refreshBadge();
+      prefetchPushImages(notification.request.content.data);
+    });
 
     // Tapped while the app was closed
     Notifications.getLastNotificationResponseAsync()

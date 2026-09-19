@@ -294,6 +294,23 @@ limit $1`,
   }
 }
 
+/** Total published posts on a user's public profile grid (matches `getAccountPosts`). */
+export async function getAccountPostsCount(accountUserId: number): Promise<number> {
+  try {
+    const res = await query(
+      `select count(*) as total
+from posts p
+join zones z on z.id = p.zone_id
+where p.user_id = $1 and p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek') and z.visibility = 'public'`,
+      [accountUserId]
+    );
+    return Number(res.rows[0]?.total ?? 0);
+  } catch (err) {
+    await logerror('getAccountPostsCount error', [err]);
+    return 0;
+  }
+}
+
 export async function getToGuessPosts(
   userId: number,
   limit = 20,

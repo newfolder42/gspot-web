@@ -371,6 +371,8 @@ export default function PostPageScreen() {
     mutationFn: () => postsApi.deletePost(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['global-feed'] });
+      // Drop the deleted post from any profile grid still mounted behind this screen.
+      queryClient.invalidateQueries({ queryKey: ['account-posts'] });
       router.back();
     },
     onError: () => Alert.alert('შეცდომა', 'პოსტის წაშლა ვერ მოხერხდა'),
@@ -565,6 +567,7 @@ export default function PostPageScreen() {
                     <ZoomableImage
                       uri={photo.variants?.feed ?? photo.url}
                       fullUri={photo.url}
+                      placeholderUri={photo.variants?.thumb}
                       title={photo.objectiveTitle}
                       className="flex-1 relative bg-zinc-100 dark:bg-zinc-900"
                       resizeMode="cover"
@@ -582,8 +585,13 @@ export default function PostPageScreen() {
           ) : null
         ) : post.image ? (
           <View className="bg-black">
+            {/* The feed rendition is what the list already painted and cached, and at
+                h-80/contain it out-resolves the slot anyway; the master is only worth
+                its several MB once the photo is pinch-zoomed. */}
             <ZoomableImage
-              uri={post.image}
+              uri={post.imageVariants?.feed ?? post.image}
+              fullUri={post.image}
+              placeholderUri={post.imageVariants?.thumb}
               title={post.title}
               className="w-full h-80"
               resizeMode="contain"

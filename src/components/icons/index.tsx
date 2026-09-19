@@ -663,3 +663,21 @@ export function BackpackIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconPro
     </svg>
   );
 }
+
+export function QuestionMarkIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 1-1 1.7v.5" />
+      <circle cx="12" cy="17.5" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

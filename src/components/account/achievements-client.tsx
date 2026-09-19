@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { AccountAchievement } from '@/types/achievement';
 import type { RewardDefinition } from '@/types/reward';
 import { formatPhotoTakenDate } from '@/lib/dates';
-import { TrophyIcon, MaskIcon } from '@/components/icons';
+import { TrophyIcon, QuestionMarkIcon } from '@/components/icons';
 import { RewardSpecTiles } from '@/components/rewards/reward-tile';
 import type { ItemDefinition } from '@/types/item';
 
@@ -48,30 +48,9 @@ function sortByMilestone(a: AccountAchievement, b: AccountAchievement) {
   return a.achievementId - b.achievementId;
 }
 
-function compactMilestones(items: AccountAchievement[]) {
-  const groupedByTrack = items.reduce<Record<string, AccountAchievement[]>>((acc, item) => {
-    const key = `${item.trackId}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
-
-  const compact: AccountAchievement[] = [];
-
-  for (const milestones of Object.values(groupedByTrack)) {
-    const sorted = [...milestones].sort(sortByMilestone);
-    const achieved = sorted.filter((item) => item.isAchieved);
-    const highestAchieved = achieved.length > 0 ? achieved[achieved.length - 1] : null;
-    const nextPending = sorted.find((item) => !item.isAchieved) ?? null;
-
-    if (nextPending) {
-      compact.push(nextPending);
-    } else if (highestAchieved) {
-      compact.push(highestAchieved);
-    }
-  }
-
-  return compact;
+/** Hidden and not yet earned: the name, the progress and the rewards stay withheld. */
+function isMystery(item: AccountAchievement) {
+  return item.state === 'hidden' && !item.isAchieved;
 }
 
 function groupAchievements(items: AccountAchievement[]) {
@@ -86,6 +65,10 @@ function groupAchievements(items: AccountAchievement[]) {
 
   for (const category of Object.keys(grouped)) {
     grouped[category].sort((a, b) => {
+      // The blank mystery slots sink under everything the player can read.
+      const mystery = Number(isMystery(a)) - Number(isMystery(b));
+      if (mystery !== 0) return mystery;
+
       if (a.trackId !== b.trackId) return a.trackId - b.trackId;
       return sortByMilestone(a, b);
     });
@@ -110,10 +93,6 @@ function progressPercent(item: AccountAchievement) {
   return Math.round((Math.min(item.progress, item.maxProgress) / item.maxProgress) * 100);
 }
 
-function isSecret(item: AccountAchievement) {
-  return item.state === 'hidden' && !item.isAchieved && !item.inProgress;
-}
-
 function AchievementCard({
   item,
   rewardDefinitions,
@@ -123,65 +102,79 @@ function AchievementCard({
   rewardDefinitions: RewardDefinition[];
   itemDefinitions: ItemDefinition[];
 }) {
-  const secret = isSecret(item);
+  const mystery = isMystery(item);
   const achieved = item.isAchieved;
-  const showBar = !secret && item.maxProgress != null && item.maxProgress > 1;
+  /** Earned, and it was one of the secret ones: the card keeps a mystery mark. */
+  const secretEarned = item.state === 'hidden' && achieved;
 
   return (
     <article
-      className="relative rounded-lg border p-3 border-zinc-200 dark:border-zinc-800"
+      className={`relative rounded-lg border p-3 ${
+        achieved
+          ? 'border-teal-500/70 bg-teal-50/50 dark:border-teal-800 dark:bg-teal-950/20'
+          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+      }`}
     >
       <div className="flex items-start gap-3">
-        <div
-          className={`relative shrink-0 h-14 w-14 rounded-md border-2 overflow-hidden flex items-center justify-center ${
-            achieved
-              ? 'border-teal-500 dark:border-teal-600'
-              : 'border-zinc-300 dark:border-zinc-700'
-          }`}
-        >
-          {secret ? (
-            <MaskIcon className="w-6 h-6 text-zinc-400 dark:text-zinc-600" />
-          ) : item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              width={56}
-              height={56}
-              className={`h-full w-full object-cover ${achieved ? '' : 'grayscale opacity-60'}`}
-            />
-          ) : (
-            <TrophyIcon className={`w-6 h-6 ${achieved ? 'text-teal-600' : 'text-zinc-400 dark:text-zinc-600'}`} />
+        <div className="relative shrink-0">
+          <div
+            className={`h-14 w-14 rounded-md border-2 overflow-hidden flex items-center justify-center ${
+              achieved ? 'border-teal-500 dark:border-teal-600' : 'border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            {mystery ? (
+              <QuestionMarkIcon className="w-7 h-7 text-zinc-400 dark:text-zinc-600" />
+            ) : item.imageUrl ? (
+              <Image
+                src={item.imageUrl}
+                alt={item.name}
+                width={56}
+                height={56}
+                className={`h-full w-full object-cover ${achieved ? '' : 'grayscale opacity-60'}`}
+              />
+            ) : (
+              <TrophyIcon className={`w-6 h-6 ${achieved ? 'text-teal-600' : 'text-zinc-400 dark:text-zinc-600'}`} />
+            )}
+          </div>
+
+          {secretEarned && (
+            <span
+              title="დამალული მიღწევა"
+              className="absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full bg-amber-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900"
+            >
+              <QuestionMarkIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
+            </span>
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3
-            className={`text-sm font-semibold truncate ${
-              secret ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-900 dark:text-zinc-100'
-            }`}
-          >
-            {secret ? 'დამალული მიღწევა' : item.name}
-          </h3>
+          {mystery ? (
+            <h3 className="text-sm font-semibold tracking-widest text-zinc-400 dark:text-zinc-600">???</h3>
+          ) : (
+            <h3 className="text-sm font-semibold truncate text-zinc-900 dark:text-zinc-100">{item.name}</h3>
+          )}
 
-          <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            <div className="flex items-center justify-between gap-2">
-              {achieved && item.achievedAt && <p>{formatPhotoTakenDate(item.achievedAt)}</p>}
-              {!secret && item.maxProgress !== 1 && <p>პროგრესი: {progressText(item)}</p>}
-            </div>
-
-            {showBar && (
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-teal-600 transition-all duration-300"
-                  style={{ width: `${progressPercent(item)}%` }}
-                />
+          {!mystery && (
+            <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-start justify-between gap-2">
+                <p className="tabular-nums">პროგრესი: {progressText(item)}</p>
+                {achieved && item.achievedAt && <p className="shrink-0">{formatPhotoTakenDate(item.achievedAt)}</p>}
               </div>
-            )}
-          </div>
+
+              {!achieved && (
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                  <div
+                    className="h-full rounded-full bg-teal-600 transition-all duration-300"
+                    style={{ width: `${progressPercent(item)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {!secret && item.rewards.length > 0 && (
+      {!mystery && item.rewards.length > 0 && (
         <div className="mt-3">
           <RewardSpecTiles rewards={item.rewards} definitions={rewardDefinitions} itemDefinitions={itemDefinitions} size="sm" />
         </div>
@@ -190,46 +183,61 @@ function AchievementCard({
   );
 }
 
-function CategoryProgressRow({
-  category,
+function CategoryRailButton({
+  label,
   achieved,
   total,
+  active,
   onSelect,
 }: {
-  category: string;
-  achieved: number;
-  total: number;
+  label: string;
+  achieved?: number;
+  total?: number;
+  active: boolean;
   onSelect: () => void;
 }) {
-  const percent = total > 0 ? Math.round((achieved / total) * 100) : 0;
+  const hasProgress = achieved != null && total != null;
+  const percent = hasProgress && total > 0 ? Math.round((achieved / total) * 100) : 0;
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="w-full text-left rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition"
+      aria-current={active ? 'true' : undefined}
+      className={`w-full text-left px-2.5 py-2 border-l-2 transition ${
+        active
+          ? 'border-teal-600 bg-teal-50 dark:bg-teal-950/40'
+          : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+      }`}
     >
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">{CATEGORY_LABELS[category] ?? category}</span>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">{achieved} / {total}</span>
+      <div className="flex items-baseline justify-between gap-1.5">
+        <span
+          className={`text-xs sm:text-sm font-medium truncate ${
+            active ? 'text-teal-700 dark:text-teal-300' : 'text-zinc-700 dark:text-zinc-300'
+          }`}
+        >
+          {label}
+        </span>
+        {hasProgress && (
+          <span className="shrink-0 text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500">
+            {achieved}/{total}
+          </span>
+        )}
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-        <div className="h-full rounded-full bg-teal-600" style={{ width: `${percent}%` }} />
-      </div>
+
+      {hasProgress && (
+        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div className="h-full rounded-full bg-teal-600" style={{ width: `${percent}%` }} />
+        </div>
+      )}
     </button>
   );
 }
 
 export default function AchievementsClient({ achievements, rewardDefinitions, itemDefinitions }: Props) {
-  const [showAllMilestones, setShowAllMilestones] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>(OVERVIEW);
 
-  const visibleAchievements = useMemo(() => {
-    if (showAllMilestones) return achievements;
-    return compactMilestones(achievements);
-  }, [achievements, showAllMilestones]);
-
-  const grouped = useMemo(() => groupAchievements(visibleAchievements), [visibleAchievements]);
+  const grouped = useMemo(() => groupAchievements(achievements), [achievements]);
   const orderedCategories = useMemo(() => sortCategories(Object.keys(grouped)), [grouped]);
 
   const categoryStats = useMemo(() => {
@@ -242,12 +250,18 @@ export default function AchievementsClient({ achievements, rewardDefinitions, it
     return stats;
   }, [achievements]);
 
-  const overviewCategories = useMemo(() => sortCategories(Object.keys(categoryStats)), [categoryStats]);
-
   const recentAchievements = useMemo(() => {
     return achievements
       .filter((item) => item.isAchieved && item.achievedAt)
       .sort((a, b) => new Date(b.achievedAt as string).getTime() - new Date(a.achievedAt as string).getTime())
+      .slice(0, 5);
+  }, [achievements]);
+
+  // Mystery slots are skipped here: with the progress withheld they would be a blank card.
+  const inProgressAchievements = useMemo(() => {
+    return achievements
+      .filter((item) => !item.isAchieved && item.progress > 0 && !isMystery(item))
+      .sort((a, b) => progressPercent(b) - progressPercent(a))
       .slice(0, 5);
   }, [achievements]);
 
@@ -278,95 +292,82 @@ export default function AchievementsClient({ achievements, rewardDefinitions, it
             </div>
           </div>
         </div>
+      </div>
 
-        <label className="mt-3 inline-flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400 select-none cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showAllMilestones}
-            onChange={(event) => setShowAllMilestones(event.target.checked)}
-            className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 accent-teal-600"
+      <div className="flex items-start gap-3">
+        <nav className="w-32 sm:w-56 shrink-0 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
+          <CategoryRailButton
+            label="მიმოხილვა"
+            active={activeCategory === OVERVIEW}
+            onSelect={() => setActiveCategory(OVERVIEW)}
           />
-          დეტალური ჩვენება
-        </label>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
-        <button
-          type="button"
-          onClick={() => setActiveCategory(OVERVIEW)}
-          className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
-            activeCategory === OVERVIEW
-              ? 'border-teal-600 bg-teal-600 text-white'
-              : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-          }`}
-        >
-          მიმოხილვა
-        </button>
-        {orderedCategories.map((category) => {
-          const stats = categoryStats[category];
-          return (
-            <button
+          {orderedCategories.map((category) => (
+            <CategoryRailButton
               key={category}
-              type="button"
-              onClick={() => setActiveCategory(category)}
-              className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
-                activeCategory === category
-                  ? 'border-teal-600 bg-teal-600 text-white'
-                  : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-              }`}
-            >
-              {CATEGORY_LABELS[category] ?? category}
-              {stats && (
-                <span className={`ml-1.5 ${activeCategory === category ? 'text-white/80' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                  {stats.achieved}/{stats.total}
-                </span>
+              label={CATEGORY_LABELS[category] ?? category}
+              achieved={categoryStats[category]?.achieved ?? 0}
+              total={categoryStats[category]?.total ?? 0}
+              active={activeCategory === category}
+              onSelect={() => setActiveCategory(category)}
+            />
+          ))}
+        </nav>
+
+        <div className="min-w-0 flex-1">
+          {activeCategory === OVERVIEW ? (
+            <div className="space-y-6">
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  ბოლო მიღწევები
+                </h2>
+                {recentAchievements.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {recentAchievements.map((item) => (
+                      <AchievementCard
+                        key={item.key}
+                        item={item}
+                        rewardDefinitions={rewardDefinitions}
+                        itemDefinitions={itemDefinitions}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ არცერთი მიღწევა არ გაქვს.</p>
+                )}
+              </section>
+
+              {inProgressAchievements.length > 0 && (
+                <section className="space-y-3">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    მიმდინარე
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {inProgressAchievements.map((item) => (
+                      <AchievementCard
+                        key={item.key}
+                        item={item}
+                        rewardDefinitions={rewardDefinitions}
+                        itemDefinitions={itemDefinitions}
+                      />
+                    ))}
+                  </div>
+                </section>
               )}
-            </button>
-          );
-        })}
-      </div>
-
-      {activeCategory === OVERVIEW ? (
-        <div className="space-y-6">
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              ბოლო მიღწევები
-            </h2>
-            {recentAchievements.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {recentAchievements.map((item) => (
-                  <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ არცერთი მიღწევა არ გაქვს.</p>
-            )}
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              კატეგორიები
-            </h2>
+            </div>
+          ) : (
             <div className="flex flex-col gap-3">
-              {overviewCategories.map((category) => (
-                <CategoryProgressRow
-                  key={category}
-                  category={category}
-                  achieved={categoryStats[category].achieved}
-                  total={categoryStats[category].total}
-                  onSelect={() => setActiveCategory(category)}
+              {(grouped[activeCategory] ?? []).map((item) => (
+                <AchievementCard
+                  key={item.key}
+                  item={item}
+                  rewardDefinitions={rewardDefinitions}
+                  itemDefinitions={itemDefinitions}
                 />
               ))}
             </div>
-          </section>
+          )}
         </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {(grouped[activeCategory] ?? []).map((item) => (
-            <AchievementCard key={item.key} item={item} rewardDefinitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

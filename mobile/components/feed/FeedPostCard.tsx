@@ -1,5 +1,6 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
 import { LevelBadge } from '@/components/ui/LevelBadge';
@@ -101,8 +102,9 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
                   style={{ width: photos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }}
                 >
                   <View className="flex-1 relative bg-zinc-100 dark:bg-zinc-900">
-                    <Image
-                      source={{ uri: photo.variants?.feed ?? photo.url }}
+                    <ProgressiveImage
+                      uri={photo.variants?.feed ?? photo.url}
+                      placeholderUri={photo.variants?.thumb}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
@@ -134,8 +136,9 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
           onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
           className="relative"
         >
-          <Image
-            source={{ uri: item.imageVariants?.feed ?? item.image }}
+          <ProgressiveImage
+            uri={item.imageVariants?.feed ?? item.image}
+            placeholderUri={item.imageVariants?.thumb}
             className="w-full h-80 bg-black"
             resizeMode="contain"
           />

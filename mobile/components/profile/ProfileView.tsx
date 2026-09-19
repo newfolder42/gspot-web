@@ -13,7 +13,7 @@ import {
   type RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -35,6 +35,8 @@ const MAX_LEVEL = 60;
 /** Only used if the API response predates `xpInfo`. */
 const FALLBACK_XP_PER_LEVEL = 100;
 const COLUMNS = 3;
+/** Grid page size, matching web's POSTS_PER_PAGE_GRID (a whole number of rows). */
+const POSTS_PAGE_SIZE = 18;
 const GAP = 2;
 const CELL_SIZE = (Dimensions.get('window').width - GAP * (COLUMNS + 1)) / COLUMNS;
 const PROFILE_PHOTO_MAX = 5 * 1024 * 1024;
@@ -99,10 +101,18 @@ function PostsTab({
   posts,
   header,
   refreshControl,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  onEndReached,
 }: {
   posts: MobilePostType[];
   header: ReactElement;
   refreshControl: ReactElement<RefreshControlProps>;
+  isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onEndReached: () => void;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -123,6 +133,8 @@ function PostsTab({
       initialNumToRender={6}
       windowSize={7}
       removeClippedSubviews
+      onEndReachedThreshold={0.5}
+      onEndReached={onEndReached}
       renderItem={({ item: row }) => (
         <View style={{ flexDirection: 'row', paddingHorizontal: GAP / 2 }}>
           {row.map((post) => {
@@ -180,9 +192,22 @@ function PostsTab({
         </View>
       )}
       ListEmptyComponent={
-        <View className="py-10 items-center">
-          <Text className="text-sm text-zinc-500 dark:text-zinc-400">პოსტები არ არის</Text>
-        </View>
+        isLoading ? (
+          <View className="py-10 items-center"><ActivityIndicator color="#14B8A6" /></View>
+        ) : (
+          <View className="py-10 items-center">
+            <Text className="text-sm text-zinc-500 dark:text-zinc-400">პოსტები არ არის</Text>
+          </View>
+        )
+      }
+      ListFooterComponent={
+        isFetchingNextPage ? (
+          <View className="py-4"><ActivityIndicator color="#14B8A6" /></View>
+        ) : posts.length > 0 && !hasNextPage ? (
+          <View className="py-4 items-center">
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">მეტი პოსტი არ არის</Text>
+          </View>
+        ) : null
       }
     />
   );
@@ -201,15 +226,41 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     enabled: !!alias,
   });
 
-  // Pull-to-refresh. The profile query only backs the header and the posts
-  // grid, so the mounted tab's own query is refetched alongside it. The
-  // spinner is driven manually so it covers the whole round trip.
+  // The grid is paged separately from the profile header so it can keep loading
+  // past the first page as the user scrolls. Kept outside the loading branches
+  // below so it runs in parallel with the profile request.
+  const postsQuery = useInfiniteQuery({
+    queryKey: ['account-posts', alias],
+    queryFn: ({ pageParam }) =>
+      usersApi.getPosts(alias, {
+        limit: POSTS_PAGE_SIZE,
+        cursorDate: pageParam?.cursorDate,
+        cursorId: pageParam?.cursorId,
+      }),
+    initialPageParam: undefined as undefined | { cursorDate: string; cursorId: number },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < POSTS_PAGE_SIZE) return undefined;
+      const last = lastPage[lastPage.length - 1];
+      return { cursorDate: last.date, cursorId: Number(last.id) };
+    },
+    enabled: !!alias,
+  });
+
+  const loadedPosts = useMemo(() => postsQuery.data?.pages.flat() ?? [], [postsQuery.data]);
+  const loadMorePosts = useCallback(() => {
+    if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
+  }, [postsQuery]);
+
+  // Pull-to-refresh. The profile query only backs the header, so the grid pages
+  // and the mounted tab's own query are refetched alongside it. The spinner is
+  // driven manually so it covers the whole round trip.
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([
         refetch(),
+        queryClient.refetchQueries({ queryKey: ['account-posts', alias], type: 'active' }),
         queryClient.refetchQueries({ queryKey: ['guesses', alias], type: 'active' }),
         queryClient.refetchQueries({ queryKey: ['achievements', alias], type: 'active' }),
         queryClient.refetchQueries({ queryKey: ['connections', alias], type: 'active' }),
@@ -283,7 +334,10 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     );
   }
 
-  const { user, profilePhoto, level, posts, streak } = data;
+  const { user, profilePhoto, level, streak } = data;
+  // Server-side total, so the header does not grow as more pages load. Older
+  // responses carry the first page inline instead.
+  const postsCount = data.postsCount ?? Math.max(loadedPosts.length, data.posts?.length ?? 0);
   // The API computes level/progress from the xp table (as web does); fall back to
   // the raw user_xp row if the response predates `xpInfo`.
   const xpInfo: XPInfo = data.xpInfo ?? {
@@ -323,7 +377,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
             {user.age != null ? (
               <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
             ) : null}
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{posts.length} პოსტი</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{postsCount} პოსტი</Text>
           </View>
           {!isOwn ? (
             <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
@@ -378,7 +432,15 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   if (tab === 'posts')
     return (
       <>
-        <PostsTab posts={posts} header={header} refreshControl={refreshControl} />
+        <PostsTab
+          posts={loadedPosts}
+          header={header}
+          refreshControl={refreshControl}
+          isLoading={postsQuery.isLoading}
+          hasNextPage={postsQuery.hasNextPage}
+          isFetchingNextPage={postsQuery.isFetchingNextPage}
+          onEndReached={loadMorePosts}
+        />
         {reportSheet}
       </>
     );

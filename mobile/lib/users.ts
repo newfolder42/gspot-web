@@ -28,7 +28,10 @@ export type PublicUserProfile = {
   isOwnProfile: boolean;
   isFollowing: boolean;
   streak: UserStreakInfo;
+  /** Empty for this client: the grid is paged through {@link usersApi.getPosts}. */
   posts: MobilePostType[];
+  /** Total posts on the profile grid, independent of how many pages are loaded. */
+  postsCount?: number;
 };
 
 export type AchievementsResponse = {
@@ -41,7 +44,19 @@ const enc = encodeURIComponent;
 
 export const usersApi = {
   getProfile: (alias: string): Promise<PublicUserProfile> =>
-    apiClient.get<PublicUserProfile>(`/users/${enc(alias)}`).then((r) => r.data),
+    apiClient
+      // The grid is loaded page by page, so the profile payload skips its inline copy.
+      .get<PublicUserProfile>(`/users/${enc(alias)}`, { params: { includePosts: 0 } })
+      .then((r) => r.data),
+
+  /** One page of the profile grid, newest first. Omit the cursor for the first page. */
+  getPosts: (
+    alias: string,
+    params: { limit?: number; cursorDate?: string; cursorId?: number }
+  ): Promise<MobilePostType[]> =>
+    apiClient
+      .get<{ posts: MobilePostType[] }>(`/users/${enc(alias)}/posts`, { params })
+      .then((r) => r.data.posts),
 
   /** Most recently registered users. `total` is only sent for the first page. */
   getNewUsers: (limit = 20, offset = 0): Promise<{ users: NewUser[]; total: number | null }> =>
