@@ -21,8 +21,30 @@ allprojects {
   }
 }
 
+// The CMake 4.1.2 pin below exists purely to work around the Windows 260-char
+// path limit (added by plugins/withWindowsCmakePin.js).
+ext.isWindowsHost = System.getProperty('os.name').toLowerCase().contains('windows')
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+
+// Windows only: force CMake 4.1.2 (bundled ninja 1.12.1) for every native module
+// (added by plugins/withWindowsCmakePin.js).
+if (rootProject.ext.isWindowsHost) {
+  gradle.projectsEvaluated {
+    rootProject.subprojects.each { project ->
+      try {
+        def androidExt = project.extensions.findByName('android')
+        if (androidExt != null) {
+          androidExt.externalNativeBuild.cmake.version = '4.1.2'
+          // Allow CMake 4 to configure modules that still declare an old
+          // cmake_minimum_required (<3.5), which CMake 4 otherwise rejects.
+          androidExt.externalNativeBuild.cmake.arguments '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+        }
+      } catch (Throwable ignored) {}
+    }
+  }
+}
 // @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY) sync-d4ccbfdff48fdba3138b02a8ba41b9722af001d8
 
 allprojects {

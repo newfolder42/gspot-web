@@ -9,10 +9,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#09090B"
+        "backgroundColor": "#FFFFFF"
       },
       "googleServicesFile": "./google-services.json",
       "package": "ge.gspot.mobile",
+      "versionCode": 13,
       "permissions": [
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.ACCESS_MEDIA_LOCATION",
@@ -64,7 +65,8 @@
           }
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "./plugins/withWindowsCmakePin"
     ],
     "scheme": "gspot",
     "experiments": {

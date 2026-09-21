@@ -96,6 +96,15 @@ packagingOptions {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'ge.gspot.mobile'
+    // Windows only: use CMake 4.1.2 (ninja 1.12.1) for the app's codegen native
+    // build (added by plugins/withWindowsCmakePin.js).
+    if (rootProject.ext.isWindowsHost) {
+        externalNativeBuild {
+            cmake {
+                version '4.1.2'
+            }
+        }
+    }
     defaultConfig {
         applicationId 'ge.gspot.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
