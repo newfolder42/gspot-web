@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { mapMaxBounds, mapMaxZoom, mapDefaultCenter } from '@/lib/map';
+import { mapMaxBounds, mapMaxZoom, mapDefaultCenter, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { isInGeorgia } from '@/lib/geo';
 import { formatCoordinates } from '@/lib/utils';
 import { MapPinIcon } from '@/components/icons';
@@ -39,7 +39,7 @@ export default function LocationPicker({ value, onChange }: Props) {
     if (!mapInstanceRef.current) return;
 
     if (!markerRef.current) {
-      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
+      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: mapPinColors.pick })
         .setLngLat([lng, lat])
         .addTo(mapInstanceRef.current);
 
@@ -79,7 +79,7 @@ export default function LocationPicker({ value, onChange }: Props) {
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center: value ? [value.longitude, value.latitude] : mapDefaultCenter,
-        zoom: 13,
+        zoom: value ? mapPickedZoom : mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
@@ -124,7 +124,7 @@ export default function LocationPicker({ value, onChange }: Props) {
         }
 
         placeMarker(coords.longitude, coords.latitude);
-        mapInstanceRef.current?.flyTo({ center: [coords.longitude, coords.latitude], zoom: 15 });
+        mapInstanceRef.current?.flyTo({ center: [coords.longitude, coords.latitude], zoom: mapPickedZoom });
         onChangeRef.current(coords);
       },
       () => {

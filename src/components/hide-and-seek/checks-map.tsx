@@ -4,26 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { loadHideAndSeekCheckMapAction } from '@/actions/hideAndSeek';
 import { formatDistance, HIDING_SPOT_COLOR } from '@/types/hide-and-seek';
 import type { HideAndSeekCheckMapDataType } from '@/types/hide-and-seek';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { mapDefaultCenter, mapFitMaxZoom, mapFitPadding, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPinOffset, mapPinPopupOffset, mapPinScale } from '@/lib/map';
 import { XIcon } from '@/components/icons';
 
 declare global {
   interface Window {
     mapboxgl: any;
   }
-}
-
-/** A dot with a white ring, the same marker language the guess map uses. */
-function dotElement(color: string, size: number, ring: number): HTMLDivElement {
-  const el = document.createElement('div');
-  el.style.width = `${size}px`;
-  el.style.height = `${size}px`;
-  el.style.borderRadius = '9999px';
-  el.style.background = color;
-  el.style.border = `${ring}px solid #ffffff`;
-  el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.35)';
-  el.style.cursor = 'pointer';
-  return el;
 }
 
 function popupElement(lines: string[], accent: string): HTMLDivElement {
@@ -107,7 +94,7 @@ export default function ChecksMap({ postId, onClose }: { postId: number; onClose
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center,
-        zoom: 12,
+        zoom: mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
@@ -116,7 +103,14 @@ export default function ChecksMap({ postId, onClose }: { postId: number; onClose
       const bounds = new window.mapboxgl.LngLatBounds();
       const markerList: any[] = [];
 
-      const attach = (el: HTMLElement, popup: any, lngLat: [number, number]) => {
+      /** Same teardrop as every other map, tinted per seeker; the popup opens on hover or tap. */
+      const addPin = (color: string, scale: number, popup: any, lngLat: [number, number]) => {
+        const marker = new window.mapboxgl.Marker({ color, scale, offset: mapPinOffset(scale) }).setLngLat(lngLat).addTo(map);
+        const el: HTMLElement = marker.getElement();
+        el.style.cursor = 'pointer';
+        // the hiding spot and the catching check stay on top of the trail around them
+        if (scale === mapPinScale.primary) el.style.zIndex = '1';
+        markerList.push(marker);
         el.addEventListener('mouseenter', () => {
           if (activePopupRef.current !== popup) popup.setLngLat(lngLat).addTo(map);
         });
@@ -138,12 +132,10 @@ export default function ChecksMap({ postId, onClose }: { postId: number; onClose
 
       if (data.hidingSpot) {
         const lngLat: [number, number] = [data.hidingSpot.longitude, data.hidingSpot.latitude];
-        const el = dotElement(HIDING_SPOT_COLOR, 16, 3);
-        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: mapPinPopupOffset(mapPinScale.primary) })
           .setDOMContent(popupElement(['სამალავი'], HIDING_SPOT_COLOR));
 
-        markerList.push(new window.mapboxgl.Marker({ element: el }).setLngLat(lngLat).addTo(map));
-        attach(el, popup, lngLat);
+        addPin(HIDING_SPOT_COLOR, mapPinScale.primary, popup, lngLat);
         bounds.extend(lngLat);
       }
 
@@ -154,8 +146,8 @@ export default function ChecksMap({ postId, onClose }: { postId: number; onClose
 
         const color = colorOf.get(point.userId) ?? '#38bdf8';
         // the catching check is drawn larger so the winning move stands out of the trail
-        const el = dotElement(color, point.found ? 16 : 11, 2);
-        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+        const scale = point.found ? mapPinScale.primary : mapPinScale.point;
+        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: mapPinPopupOffset(scale) })
           .setDOMContent(
             popupElement(
               [
@@ -168,13 +160,12 @@ export default function ChecksMap({ postId, onClose }: { postId: number; onClose
           );
 
         const lngLat: [number, number] = [lng, lat];
-        markerList.push(new window.mapboxgl.Marker({ element: el }).setLngLat(lngLat).addTo(map));
-        attach(el, popup, lngLat);
+        addPin(color, scale, popup, lngLat);
         bounds.extend(lngLat);
       });
 
       if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { padding: 40, maxZoom: 15 });
+        map.fitBounds(bounds, { padding: mapFitPadding, maxZoom: mapFitMaxZoom });
       }
 
       map.on('click', () => {

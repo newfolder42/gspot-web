@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -5,7 +6,16 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { postsApi } from '@/lib/posts';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
+import {
+  fitCamera,
+  mapFitMaxZoom,
+  mapFitPadding,
+  mapMaxBounds,
+  mapMaxZoom,
+  mapPinColors,
+  mapPinScale,
+} from '@/lib/map';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
@@ -21,14 +31,26 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
   });
 
   const photo = data?.photoCoordinates ?? null;
-  const points = data?.guessPoints ?? [];
+  const points = useMemo(() => data?.guessPoints ?? [], [data?.guessPoints]);
   const hasAnything = points.length > 0 || photo != null;
 
-  const center: [number, number] = photo
-    ? [photo.longitude, photo.latitude]
-    : points[0]
-      ? [points[0].coordinates.longitude, points[0].coordinates.latitude]
-      : mapDefaultCenter;
+  // The camera fits every point, so it needs the map's size and the legend's height first.
+  const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
+  const [legendHeight, setLegendHeight] = useState<number | null>(null);
+  const legendBottom = insets.bottom + 16;
+
+  const camera = useMemo(() => {
+    if (!mapSize || legendHeight == null) return null;
+    const coords: [number, number][] = points.map((p) => [p.coordinates.longitude, p.coordinates.latitude]);
+    if (photo) coords.push([photo.longitude, photo.latitude]);
+    if (coords.length === 0) return null;
+    return fitCamera(
+      coords,
+      mapSize,
+      { top: mapFitPadding, right: mapFitPadding, left: mapFitPadding, bottom: mapFitPadding + legendHeight + legendBottom },
+      mapFitMaxZoom
+    );
+  }, [mapSize, legendHeight, legendBottom, points, photo]);
 
   return (
     <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
@@ -58,72 +80,65 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
             </Text>
           </View>
         ) : (
-          <View className="flex-1">
-            <MapboxGL.MapView
-              style={{ flex: 1 }}
-              styleURL="mapbox://styles/mapbox/standard-satellite"
-              pitchEnabled={false}
-              rotateEnabled={false}
-              attributionEnabled={false}
-              logoEnabled={false}
-            >
-              {/* Uncontrolled camera: the guesses are already loaded by the time this
-                  renders, so `defaultSettings` opens right on them, with no fly-in. */}
-              <MapboxGL.Camera
-                defaultSettings={{ centerCoordinate: center, zoomLevel: 10 }}
-                maxBounds={mapMaxBounds}
-                maxZoomLevel={mapMaxZoom}
-              />
+          <View
+            className="flex-1"
+            onLayout={(e) => setMapSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+          >
+            {camera ? (
+              <MapboxGL.MapView
+                style={{ flex: 1 }}
+                styleURL="mapbox://styles/mapbox/standard-satellite"
+                pitchEnabled={false}
+                rotateEnabled={false}
+                attributionEnabled={false}
+                logoEnabled={false}
+              >
+                {/* Uncontrolled camera: the guesses are already loaded by the time this
+                    renders, so `defaultSettings` opens fitted to them, with no fly-in. */}
+                <MapboxGL.Camera
+                  defaultSettings={camera}
+                  maxBounds={mapMaxBounds}
+                  maxZoomLevel={mapMaxZoom}
+                />
 
-              {/* Real photo location – red */}
-              {photo ? (
-                <MapboxGL.PointAnnotation id="photo-marker" coordinate={[photo.longitude, photo.latitude]}>
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      backgroundColor: '#ef4444',
-                      borderWidth: 3,
-                      borderColor: '#fff',
-                    }}
-                  />
-                </MapboxGL.PointAnnotation>
-              ) : null}
+                {/* Each guess – teal, labelled with author + distance on tap */}
+                {points.map((p, i) => (
+                  <MapboxGL.PointAnnotation
+                    key={`guess-${i}`}
+                    id={`guess-${i}`}
+                    coordinate={[p.coordinates.longitude, p.coordinates.latitude]}
+                    anchor={MAP_PIN_ANCHOR}
+                    title={`'${p.author} · ${p.distance ?? '-'} მ`}
+                  >
+                    <MapPin color={mapPinColors.pick} scale={mapPinScale.point} />
+                  </MapboxGL.PointAnnotation>
+                ))}
 
-              {/* Each guess – teal, labelled with author + distance on tap */}
-              {points.map((p, i) => (
-                <MapboxGL.PointAnnotation
-                  key={`guess-${i}`}
-                  id={`guess-${i}`}
-                  coordinate={[p.coordinates.longitude, p.coordinates.latitude]}
-                  title={`'${p.author} · ${p.distance ?? '-'} მ`}
-                >
-                  <View
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 8,
-                      backgroundColor: '#14B8A6',
-                      borderWidth: 2,
-                      borderColor: '#fff',
-                    }}
-                  />
-                </MapboxGL.PointAnnotation>
-              ))}
-            </MapboxGL.MapView>
+                {/* Real photo location – red, added last so it stays on top of the guesses */}
+                {photo ? (
+                  <MapboxGL.PointAnnotation
+                    id="photo-marker"
+                    coordinate={[photo.longitude, photo.latitude]}
+                    anchor={MAP_PIN_ANCHOR}
+                  >
+                    <MapPin color={mapPinColors.truth} />
+                  </MapboxGL.PointAnnotation>
+                ) : null}
+              </MapboxGL.MapView>
+            ) : null}
 
             {/* Legend */}
             <View
               className="absolute left-4 right-4 rounded-xl bg-zinc-900/90 px-4 py-3 flex-row items-center justify-center gap-6"
-              style={{ bottom: insets.bottom + 16 }}
+              style={{ bottom: legendBottom }}
+              onLayout={(e) => setLegendHeight(e.nativeEvent.layout.height)}
             >
               <View className="flex-row items-center gap-2">
-                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#ef4444' }} />
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: mapPinColors.truth }} />
                 <Text className="text-xs text-zinc-300">ფოტოს ლოკაცია</Text>
               </View>
               <View className="flex-row items-center gap-2">
-                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#14B8A6' }} />
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: mapPinColors.pick }} />
                 <Text className="text-xs text-zinc-300">გამოცნობები ({points.length})</Text>
               </View>
             </View>

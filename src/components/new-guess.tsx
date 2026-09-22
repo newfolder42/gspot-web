@@ -7,7 +7,7 @@ import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
 import type { PostGuessType } from '@/types/post-guess';
 import { MapPinIcon, ImageIcon, XIcon } from '@/components/icons';
-import { mapMaxBounds, mapMaxZoom, mapDefaultCenter } from '@/lib/map';
+import { mapMaxBounds, mapMaxZoom, mapDefaultCenter, mapOverviewZoom, mapPinColors, mapResultMaxZoom, mapResultPadding } from '@/lib/map';
 import { isInGeorgia } from '@/lib/geo';
 import ZoomableImage from '@/components/common/zoomable-image';
 
@@ -67,7 +67,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center: mapDefaultCenter,
-        zoom: 12,
+        zoom: mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
@@ -76,7 +76,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
       // The marker is created on the first click, not up front — see selectedCoords.
       map.on('click', (e: any) => {
         if (!guessMarkerRef.current) {
-          guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
+          guessMarkerRef.current = new window.mapboxgl.Marker({ draggable: true, color: mapPinColors.pick })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .addTo(map);
 
@@ -166,12 +166,12 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
         if (photoMarkerRef.current) {
           photoMarkerRef.current.setLngLat([lng, lat]);
         } else {
-          photoMarkerRef.current = new window.mapboxgl.Marker({ draggable: false, color: '#ef4444' })
+          photoMarkerRef.current = new window.mapboxgl.Marker({ draggable: false, color: mapPinColors.truth })
             .setLngLat([lng, lat])
             .addTo(mapInstanceRef.current);
         }
 
-        // Keep guess marker (blue) at user-selected point
+        // Keep guess marker at user-selected point
         if (guessMarkerRef.current) {
           guessMarkerRef.current.setDraggable(false);
           guessMarkerRef.current.setLngLat([guessCoords.longitude, guessCoords.latitude]);
@@ -199,7 +199,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
             type: 'line',
             source: 'distance-line',
             paint: {
-              'line-color': '#fbbf24',
+              'line-color': mapPinColors.line,
               'line-width': 2,
               'line-dasharray': [4, 4]
             }
@@ -214,7 +214,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
         const coordsB: [number, number] = [Number(guessCoords.longitude), Number(guessCoords.latitude)];
         const sw: [number, number] = [Math.min(coordsA[0], coordsB[0]), Math.min(coordsA[1], coordsB[1])];
         const ne: [number, number] = [Math.max(coordsA[0], coordsB[0]), Math.max(coordsA[1], coordsB[1])];
-        mapInstanceRef.current.fitBounds([sw, ne], { padding: 40, maxZoom: 16 });
+        mapInstanceRef.current.fitBounds([sw, ne], { padding: mapResultPadding, maxZoom: mapResultMaxZoom, duration: 800 });
       }
 
       const calculatedDistance = haversineMeters(photoCoordinates, guessCoords);

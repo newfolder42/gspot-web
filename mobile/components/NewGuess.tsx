@@ -12,7 +12,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { PinchZoomImage } from '@/components/ui/ZoomableImage';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
+import {
+  fitCamera,
+  mapDefaultCenter,
+  mapMaxBounds,
+  mapMaxZoom,
+  mapOverviewZoom,
+  mapPinColors,
+  mapResultMaxZoom,
+  mapResultPadding,
+} from '@/lib/map';
 import { postsApi } from '@/lib/posts';
 import type { MobilePostType } from '@/types/post';
 import type { GuessResult } from '@/types/post-guess';
@@ -29,59 +39,6 @@ type Phase = 'placing' | 'submitting' | 'result' | 'error';
 type ImageMode = 'hidden' | 'band' | 'full';
 
 const IMAGE_BAND_HEIGHT = 260;
-
-/**
- * Teardrop pin matching the web's default mapbox marker: the tip — not the
- * centre of a blob — marks the coordinate, since guesses are scored in metres.
- * Pair with anchor={{ x: 0.5, y: 1 }} so the tip lands on the point.
- */
-function MapPin({ color }: { color: string }) {
-  return (
-    <View style={{ width: 22, height: 30, alignItems: 'center' }}>
-      {/* White outline of the tail */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          width: 0,
-          height: 0,
-          borderLeftWidth: 6,
-          borderRightWidth: 6,
-          borderTopWidth: 14,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderTopColor: '#fff',
-        }}
-      />
-      {/* Coloured tail, inset so the white outline stays visible */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 3,
-          width: 0,
-          height: 0,
-          borderLeftWidth: 4,
-          borderRightWidth: 4,
-          borderTopWidth: 9,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderTopColor: color,
-        }}
-      />
-      {/* Head */}
-      <View
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: 9,
-          backgroundColor: color,
-          borderWidth: 2,
-          borderColor: '#fff',
-        }}
-      />
-    </View>
-  );
-}
 
 type Props = {
   post: MobilePostType;
@@ -101,9 +58,15 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   const [guessCoords, setGuessCoords] = useState<[number, number] | null>(null); // [lng, lat]
   const [result, setResult] = useState<GuessResult | null>(null);
   const [imageMode, setImageMode] = useState<ImageMode>('hidden');
+  // Map size, for fitting guess + photo with a zoom cap rnmapbox's fitBounds lacks.
+  const mapSizeRef = useRef({ width: 0, height: 0 });
 
   const handleMapPress = (e: GeoJSON.Feature<GeoJSON.Point>) => {
     if (phase !== 'placing') return;
+    setGuessCoords(e.geometry.coordinates as [number, number]);
+  };
+
+  const handleDragEnd = (e: GeoJSON.Feature<GeoJSON.Point>) => {
     setGuessCoords(e.geometry.coordinates as [number, number]);
   };
 
@@ -123,14 +86,11 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
       setPhase('result');
       onSubmitted(res);
 
-      const photoLng = res.photoCoordinates.longitude;
-      const photoLat = res.photoCoordinates.latitude;
-      cameraRef.current?.fitBounds(
-        [Math.max(coords[0], photoLng), Math.max(coords[1], photoLat)],
-        [Math.min(coords[0], photoLng), Math.min(coords[1], photoLat)],
-        [80, 60, 100, 60],
-        800
-      );
+      const photo: [number, number] = [res.photoCoordinates.longitude, res.photoCoordinates.latitude];
+      cameraRef.current?.setCamera({
+        ...fitCamera([coords, photo], mapSizeRef.current, mapResultPadding, mapResultMaxZoom),
+        animationDuration: 800,
+      });
     } catch {
       setPhase('error');
     }
@@ -195,7 +155,13 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
         ) : null}
 
         {/* Map */}
-        <View className="flex-1 relative">
+        <View
+          className="flex-1 relative"
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            mapSizeRef.current = { width, height };
+          }}
+        >
           <MapboxGL.MapView
             style={{ flex: 1 }}
             styleURL="mapbox://styles/mapbox/standard-satellite"
@@ -210,19 +176,21 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                 the fly-in a controlled centerCoordinate/zoomLevel would animate. */}
             <MapboxGL.Camera
               ref={cameraRef}
-              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: 10 }}
+              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: mapOverviewZoom }}
               maxBounds={mapMaxBounds}
               maxZoomLevel={mapMaxZoom}
             />
 
-            {/* Guess marker — teal, only once the player has placed it */}
+            {/* Guess marker — teal, only once the player has placed it; draggable until submitted */}
             {guessCoords ? (
               <MapboxGL.PointAnnotation
                 id="guess-marker"
                 coordinate={guessCoords}
-                anchor={{ x: 0.5, y: 1 }}
+                anchor={MAP_PIN_ANCHOR}
+                draggable={phase === 'placing'}
+                onDragEnd={handleDragEnd}
               >
-                <MapPin color="#14B8A6" />
+                <MapPin color={mapPinColors.pick} />
               </MapboxGL.PointAnnotation>
             ) : null}
 
@@ -231,9 +199,9 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
               <MapboxGL.PointAnnotation
                 id="photo-marker"
                 coordinate={photoCoords}
-                anchor={{ x: 0.5, y: 1 }}
+                anchor={MAP_PIN_ANCHOR}
               >
-                <MapPin color="#ef4444" />
+                <MapPin color={mapPinColors.truth} />
               </MapboxGL.PointAnnotation>
             ) : null}
 
@@ -253,7 +221,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                 <MapboxGL.LineLayer
                   id="distance-line-layer"
                   style={{
-                    lineColor: '#fbbf24',
+                    lineColor: mapPinColors.line,
                     lineWidth: 2,
                     lineDasharray: [4, 4],
                   }}

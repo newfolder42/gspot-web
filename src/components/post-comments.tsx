@@ -13,7 +13,7 @@ import type { RewardCountType } from '@/types/reward';
 import type { VoteValue } from '@/types/vote';
 import { getPostGuessMapPoints } from '@/lib/posts';
 import { MapPinIcon, XIcon, CameraIcon, MessageIcon } from './icons';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { mapDefaultCenter, mapFitMaxZoom, mapFitPadding, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPinColors, mapPinOffset, mapPinPopupOffset, mapPinScale } from '@/lib/map';
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -162,7 +162,7 @@ export default function PostComments({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
         center: initialCenter,
-        zoom: 8,
+        zoom: mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
@@ -185,23 +185,18 @@ export default function PostComments({
 
           const photoLabel = document.createElement('strong');
           photoLabel.textContent = 'ფოტოს ლოკაცია';
-          photoLabel.style.color = '#ef4444';
+          photoLabel.style.color = mapPinColors.truth;
           photoPopupBody.appendChild(photoLabel);
 
-          const photoPopup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false }).setDOMContent(photoPopupBody);
+          const photoPopup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: mapPinPopupOffset(mapPinScale.primary) }).setDOMContent(photoPopupBody);
 
-          const photoEl = document.createElement('div');
-          photoEl.style.width = '16px';
-          photoEl.style.height = '16px';
-          photoEl.style.borderRadius = '9999px';
-          photoEl.style.background = '#ef4444';
-          photoEl.style.border = '3px solid #ffffff';
-          photoEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.4)';
-          photoEl.style.cursor = 'pointer';
-
-          const photoMarker = new window.mapboxgl.Marker({ element: photoEl })
+          const photoMarker = new window.mapboxgl.Marker({ color: mapPinColors.truth, scale: mapPinScale.primary })
             .setLngLat([pLng, pLat])
             .addTo(map);
+          const photoEl: HTMLElement = photoMarker.getElement();
+          photoEl.style.cursor = 'pointer';
+          // the answer stays on top of the guesses piled around it
+          photoEl.style.zIndex = '1';
 
           photoEl.addEventListener('mouseenter', () => {
             if (activePopupRef.current !== photoPopup) {
@@ -267,20 +262,13 @@ export default function PostComments({
         scoreLine.textContent = `ქულა: ${point.score ?? '-'}`;
         popupBody.appendChild(scoreLine);
 
-        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false }).setDOMContent(popupBody);
+        const popup = new window.mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: mapPinPopupOffset(mapPinScale.point) }).setDOMContent(popupBody);
 
-        const el = document.createElement('div');
-        el.style.width = '12px';
-        el.style.height = '12px';
-        el.style.borderRadius = '9999px';
-        el.style.background = '#2563eb';
-        el.style.border = '2px solid #ffffff';
-        el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.35)';
-        el.style.cursor = 'pointer';
-
-        const marker = new window.mapboxgl.Marker({ element: el })
+        const marker = new window.mapboxgl.Marker({ color: mapPinColors.pick, scale: mapPinScale.point, offset: mapPinOffset(mapPinScale.point) })
           .setLngLat([lng, lat])
           .addTo(map);
+        const el: HTMLElement = marker.getElement();
+        el.style.cursor = 'pointer';
 
         el.addEventListener('mouseenter', () => {
           if (activePopupRef.current !== popup) {
@@ -311,7 +299,7 @@ export default function PostComments({
       });
 
       if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { padding: 40, maxZoom: 14 });
+        map.fitBounds(bounds, { padding: mapFitPadding, maxZoom: mapFitMaxZoom });
       }
 
       map.on('click', () => {

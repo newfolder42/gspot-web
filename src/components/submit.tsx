@@ -10,7 +10,7 @@ import { convertToWebP, extractDateTaken, extractGPSCorrdinates } from '@/lib/im
 import { ACCEPTED_IMAGE_TYPES, UPLOAD_SIZE_LIMIT } from '@/lib/upload-config';
 import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { isInGeorgia } from '@/lib/geo';
 import TagPicker from '@/components/common/tag-picker';
 import ItemFoundPanel from '@/components/inventory/item-found-panel';
@@ -89,6 +89,23 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
+  /** No pin until there is a real spot; created on first use, moved afterwards. */
+  const placeMarker = (lng: number, lat: number) => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (markerRef.current) {
+      markerRef.current.setLngLat([lng, lat]);
+      return;
+    }
+    markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: mapPinColors.pick })
+      .setLngLat([lng, lat])
+      .addTo(map);
+    markerRef.current.on('dragend', () => {
+      const lngLat = markerRef.current!.getLngLat();
+      onChangeRef.current({ latitude: lngLat.lat, longitude: lngLat.lng });
+    });
+  };
+
   useEffect(() => {
     if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
       const link = document.createElement('link');
@@ -119,37 +136,28 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
         isFinite(coordinates.latitude) &&
         isFinite(coordinates.longitude);
 
-      const mapCenter: [number, number] = hasValidCoords
-        ? [coordinates!.longitude!, coordinates!.latitude!]
-        : mapDefaultCenter;
-
+      // Opens on the overview and flies in to the photo's GPS spot, the same move mobile makes.
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: mapCenter,
-        zoom: hasValidCoords ? mapMaxZoom : 12,
+        center: mapDefaultCenter,
+        zoom: mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
       });
+      mapInstanceRef.current = map;
 
-      const startCoords = hasValidCoords ? [coordinates!.longitude, coordinates!.latitude] : mapDefaultCenter;
+      if (hasValidCoords) {
+        placeMarker(coordinates!.longitude!, coordinates!.latitude!);
+        map.flyTo({ center: [coordinates!.longitude!, coordinates!.latitude!], zoom: mapPickedZoom, duration: 1400 });
+      }
 
-      markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
-        .setLngLat(startCoords)
-        .addTo(map);
-
-      markerRef.current.on('dragend', () => {
-        const lngLat = markerRef.current!.getLngLat();
-        onChangeRef.current({ latitude: lngLat.lat, longitude: lngLat.lng });
-      });
-
+      // Tapping or dragging only moves the pin; the camera stays where the user put it.
       map.on('click', (e: any) => {
-        markerRef.current!.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+        placeMarker(e.lngLat.lng, e.lngLat.lat);
         onChangeRef.current({ latitude: e.lngLat.lat, longitude: e.lngLat.lng });
       });
-
-      mapInstanceRef.current = map;
     }
 
     return () => {
@@ -159,14 +167,14 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
   }, []);
 
   useEffect(() => {
-    if (!markerRef.current) return;
     if (coordinates &&
       typeof coordinates.latitude === 'number' &&
       typeof coordinates.longitude === 'number' &&
       isFinite(coordinates.latitude) &&
       isFinite(coordinates.longitude)) {
-      markerRef.current.setLngLat([coordinates.longitude!, coordinates.latitude!]);
+      placeMarker(coordinates.longitude!, coordinates.latitude!);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coordinates]);
 
   return (
@@ -188,12 +196,8 @@ const MapPreview = ({ coordinates, onChange }: { coordinates: UploadedPhoto['coo
                 }
 
                 onChangeRef.current({ latitude: lat, longitude: lng });
-                if (mapInstanceRef.current) {
-                  try { mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 12 }); } catch (e) { mapInstanceRef.current.setCenter([lng, lat]); }
-                }
-                if (markerRef.current) {
-                  try { markerRef.current.setLngLat([lng, lat]); if (typeof markerRef.current.setDraggable === 'function') markerRef.current.setDraggable(true); } catch (e) { }
-                }
+                placeMarker(lng, lat);
+                mapInstanceRef.current?.flyTo({ center: [lng, lat], zoom: mapPickedZoom, duration: 1000 });
                 setGettingLocation(false);
               },
               (err) => { console.error('Geolocation error', err); setGettingLocation(false); },

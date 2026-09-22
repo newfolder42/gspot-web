@@ -24,7 +24,8 @@ import { Input } from '@/components/ui/Input';
 import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
+import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { Colors, useTheme } from '@/constants/colors';
 import { CreateHideAndSeek } from '@/components/hideandseek/CreateHideAndSeek';
 import { ItemFoundModal } from '@/components/inventory/ItemFoundModal';
@@ -215,9 +216,6 @@ function formatMb(bytes: number) {
 
 // ─── MapCoordPicker ──────────────────────────────────────────────────────────
 
-const MAP_ZOOM_DEFAULT = 12;   // City-level — shown before coords are set (no auto-zoom on tap)
-const MAP_ZOOM_LOCATION = 14;  // Street-level — used only for auto-zoom (EXIF / my-location)
-
 function MapCoordPicker({
   coords,
   onChange,
@@ -244,7 +242,7 @@ function MapCoordPicker({
     if (!animateToCoordsKey || !coords) return;
     cameraRef.current?.setCamera({
       centerCoordinate: [coords.longitude, coords.latitude],
-      zoomLevel: MAP_ZOOM_LOCATION,
+      zoomLevel: mapPickedZoom,
       animationDuration: 1400,
       animationMode: 'flyTo',
     });
@@ -269,7 +267,7 @@ function MapCoordPicker({
       onChange({ latitude: location.coords.latitude, longitude: location.coords.longitude });
       cameraRef.current?.setCamera({
         centerCoordinate: lngLat,
-        zoomLevel: MAP_ZOOM_LOCATION,
+        zoomLevel: mapPickedZoom,
         animationDuration: 1000,
         animationMode: 'flyTo',
       });
@@ -288,7 +286,7 @@ function MapCoordPicker({
       onChange({ latitude: lat, longitude: lng });
       cameraRef.current?.setCamera({
         centerCoordinate: userCoords,
-        zoomLevel: MAP_ZOOM_LOCATION,
+        zoomLevel: mapPickedZoom,
         animationDuration: 1000,
         animationMode: 'flyTo',
       });
@@ -335,7 +333,7 @@ function MapCoordPicker({
           ref={cameraRef}
           defaultSettings={{
             centerCoordinate: hasCoords ? markerCoord : mapDefaultCenter,
-            zoomLevel: hasCoords ? MAP_ZOOM_LOCATION : MAP_ZOOM_DEFAULT,
+            zoomLevel: hasCoords ? mapPickedZoom : mapOverviewZoom,
           }}
           maxBounds={mapMaxBounds}
           maxZoomLevel={mapMaxZoom}
@@ -349,38 +347,11 @@ function MapCoordPicker({
           <MapboxGL.PointAnnotation
             id="coord-pin"
             coordinate={markerCoord}
-            anchor={{ x: 0.5, y: 1 }}
+            anchor={MAP_PIN_ANCHOR}
             draggable
             onDragEnd={handleDragEnd}
           >
-            {/* Teardrop pin matching the web Mapbox marker (tip points at the spot) */}
-            <View style={{ width: 28, height: 30, alignItems: 'center' }}>
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  backgroundColor: outOfBoundsWarning ? '#ef4444' : '#14B8A6',
-                  borderWidth: 2,
-                  borderColor: '#fff',
-                  borderTopLeftRadius: 12,
-                  borderTopRightRadius: 12,
-                  borderBottomLeftRadius: 12,
-                  borderBottomRightRadius: 2,
-                  transform: [{ rotate: '45deg' }],
-                }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 8,
-                  alignSelf: 'center',
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#fff',
-                }}
-              />
-            </View>
+            <MapPin color={outOfBoundsWarning ? mapPinColors.truth : mapPinColors.pick} />
           </MapboxGL.PointAnnotation>
         )}
       </MapboxGL.MapView>

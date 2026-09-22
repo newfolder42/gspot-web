@@ -15,7 +15,8 @@ import { Feather } from '@expo/vector-icons';
 import { hideAndSeekApi } from '@/lib/hideAndSeek';
 import { submitApi } from '@/lib/submit';
 import { getLiveLocation } from '@/lib/location';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
+import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import {
   DEFAULT_CHECKS,
   DEFAULT_DURATION_MINUTES,
@@ -29,12 +30,6 @@ import { Colors, useTheme } from '@/constants/colors';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
-function Pin() {
-  return (
-    <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.brand, borderWidth: 3, borderColor: '#fff' }} />
-  );
-}
-
 /**
  * The create-a-game form, embedded in the submit tabs and reachable on its own route.
  * Renders a plain View so the host screen owns the scrolling.
@@ -45,7 +40,8 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
   const cameraRef = useRef<MapboxGL.Camera>(null);
 
   const [title, setTitle] = useState('');
-  const [coords, setCoords] = useState<[number, number]>(mapDefaultCenter); // [lng, lat]
+  // No pin until the host places one, so a game can't start on a spot nobody chose.
+  const [coords, setCoords] = useState<[number, number] | null>(null); // [lng, lat]
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [maxChecks, setMaxChecks] = useState(String(DEFAULT_CHECKS));
   const [endOnFirstFind, setEndOnFirstFind] = useState(DEFAULT_END_ON_FIRST_FIND);
@@ -75,7 +71,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
       }
       const next: [number, number] = [position.longitude, position.latitude];
       setCoords(next);
-      cameraRef.current?.setCamera({ centerCoordinate: next, zoomLevel: 15, animationDuration: 600 });
+      cameraRef.current?.setCamera({ centerCoordinate: next, zoomLevel: mapPickedZoom, animationDuration: 1000, animationMode: 'flyTo' });
     } finally {
       setLocating(false);
     }
@@ -112,6 +108,10 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
     }
     if (!zone) {
       Alert.alert('საბზონა', 'აირჩიე საბზონა.');
+      return;
+    }
+    if (!coords) {
+      Alert.alert('სამალავი', 'მონიშნე სამალავი ადგილი რუკაზე.');
       return;
     }
     if (!Number.isInteger(checks) || checks < MIN_CHECKS || checks > MAX_CHECKS) {
@@ -183,17 +183,29 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
           <MapboxGL.MapView
             style={{ flex: 1 }}
             styleURL="mapbox://styles/mapbox/standard-satellite"
-            onPress={(e) => setCoords((e as any).geometry.coordinates as [number, number])}
+            onPress={(e) => setCoords((e as GeoJSON.Feature<GeoJSON.Point>).geometry.coordinates as [number, number])}
+            pitchEnabled={false}
+            rotateEnabled={false}
+            attributionEnabled={false}
+            logoEnabled={false}
           >
             <MapboxGL.Camera
               ref={cameraRef}
-              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: 12 }}
+              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: mapOverviewZoom }}
               maxBounds={mapMaxBounds}
               maxZoomLevel={mapMaxZoom}
             />
-            <MapboxGL.MarkerView coordinate={coords} anchor={{ x: 0.5, y: 0.5 }}>
-              <Pin />
-            </MapboxGL.MarkerView>
+            {coords ? (
+              <MapboxGL.PointAnnotation
+                id="hiding-spot-pin"
+                coordinate={coords}
+                anchor={MAP_PIN_ANCHOR}
+                draggable
+                onDragEnd={(e) => setCoords(e.geometry.coordinates as [number, number])}
+              >
+                <MapPin color={mapPinColors.pick} />
+              </MapboxGL.PointAnnotation>
+            ) : null}
           </MapboxGL.MapView>
         </View>
 
@@ -212,7 +224,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
             <Text className="text-sm font-medium" style={{ color: theme.text }}>ჩემი მდებარეობა</Text>
           </Pressable>
           <Text className="text-xs" style={{ color: theme.textMuted }}>
-            {coords[1].toFixed(5)}, {coords[0].toFixed(5)}
+            {coords ? `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : 'მონიშნე ადგილი რუკაზე'}
           </Text>
         </View>
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +6,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { hideAndSeekApi } from '@/lib/hideAndSeek';
-import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
+import {
+  fitCamera,
+  mapFitMaxZoom,
+  mapFitPadding,
+  mapMaxBounds,
+  mapMaxZoom,
+  mapPinScale,
+} from '@/lib/map';
 import { HIDING_SPOT_COLOR, formatDistance } from '@/types/hide-and-seek';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
@@ -24,18 +32,30 @@ export function ChecksMap({ postId, onClose }: { postId: number; onClose: () => 
   });
 
   const hidingSpot = data?.hidingSpot ?? null;
-  const points = data?.points ?? [];
+  const points = useMemo(() => data?.points ?? [], [data?.points]);
   const seekers = useMemo(() => data?.seekers ?? [], [data?.seekers]);
   const colorOf = useMemo(
     () => new Map(seekers.map((s) => [s.userId, s.color])),
     [seekers]
   );
 
-  const center: [number, number] = hidingSpot
-    ? [hidingSpot.longitude, hidingSpot.latitude]
-    : points[0]
-      ? [points[0].coordinates.longitude, points[0].coordinates.latitude]
-      : mapDefaultCenter;
+  // The camera fits every point, so it needs the map's size and the legend's height first.
+  const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
+  const [legendHeight, setLegendHeight] = useState<number | null>(null);
+  const legendBottom = insets.bottom + 16;
+
+  const camera = useMemo(() => {
+    if (!mapSize || legendHeight == null) return null;
+    const coords: [number, number][] = points.map((p) => [p.coordinates.longitude, p.coordinates.latitude]);
+    if (hidingSpot) coords.push([hidingSpot.longitude, hidingSpot.latitude]);
+    if (coords.length === 0) return null;
+    return fitCamera(
+      coords,
+      mapSize,
+      { top: mapFitPadding, right: mapFitPadding, left: mapFitPadding, bottom: mapFitPadding + legendHeight + legendBottom },
+      mapFitMaxZoom
+    );
+  }, [mapSize, legendHeight, legendBottom, points, hidingSpot]);
 
   return (
     <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
@@ -65,72 +85,62 @@ export function ChecksMap({ postId, onClose }: { postId: number; onClose: () => 
             </Text>
           </View>
         ) : (
-          <View className="flex-1">
-            <MapboxGL.MapView
-              style={{ flex: 1 }}
-              styleURL="mapbox://styles/mapbox/standard-satellite"
-              pitchEnabled={false}
-              rotateEnabled={false}
-              attributionEnabled={false}
-              logoEnabled={false}
-            >
-              {/* Uncontrolled camera: the checks are already loaded by the time this
-                  renders, so `defaultSettings` opens right on them, with no fly-in. */}
-              <MapboxGL.Camera
-                defaultSettings={{ centerCoordinate: center, zoomLevel: 13 }}
-                maxBounds={mapMaxBounds}
-                maxZoomLevel={mapMaxZoom}
-              />
+          <View
+            className="flex-1"
+            onLayout={(e) => setMapSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+          >
+            {camera ? (
+              <MapboxGL.MapView
+                style={{ flex: 1 }}
+                styleURL="mapbox://styles/mapbox/standard-satellite"
+                pitchEnabled={false}
+                rotateEnabled={false}
+                attributionEnabled={false}
+                logoEnabled={false}
+              >
+                {/* Uncontrolled camera: the checks are already loaded by the time this
+                    renders, so `defaultSettings` opens fitted to them, with no fly-in. */}
+                <MapboxGL.Camera
+                  defaultSettings={camera}
+                  maxBounds={mapMaxBounds}
+                  maxZoomLevel={mapMaxZoom}
+                />
 
-              {/* Where the host was actually hiding – red */}
-              {hidingSpot ? (
-                <MapboxGL.PointAnnotation
-                  id="hiding-spot"
-                  coordinate={[hidingSpot.longitude, hidingSpot.latitude]}
-                  title="სამალავი"
-                >
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      backgroundColor: HIDING_SPOT_COLOR,
-                      borderWidth: 3,
-                      borderColor: '#fff',
-                    }}
-                  />
-                </MapboxGL.PointAnnotation>
-              ) : null}
-
-              {/* Each check, in its seeker's colour; the catching one is drawn larger */}
-              {points.map((p) => {
-                const size = p.found ? 22 : 16;
-                return (
+                {/* Each check, in its seeker's colour; the catching one is drawn larger */}
+                {points.map((p) => (
                   <MapboxGL.PointAnnotation
                     key={`check-${p.checkId}`}
                     id={`check-${p.checkId}`}
                     coordinate={[p.coordinates.longitude, p.coordinates.latitude]}
+                    anchor={MAP_PIN_ANCHOR}
                     title={`'${p.author} · ${formatDistance(p.distanceMeters)}`}
                   >
-                    <View
-                      style={{
-                        width: size,
-                        height: size,
-                        borderRadius: size / 2,
-                        backgroundColor: colorOf.get(p.userId) ?? Colors.brand,
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                      }}
+                    <MapPin
+                      color={colorOf.get(p.userId) ?? Colors.brand}
+                      scale={p.found ? mapPinScale.primary : mapPinScale.point}
                     />
                   </MapboxGL.PointAnnotation>
-                );
-              })}
-            </MapboxGL.MapView>
+                ))}
+
+                {/* Where the host was actually hiding – red, added last so it stays on top */}
+                {hidingSpot ? (
+                  <MapboxGL.PointAnnotation
+                    id="hiding-spot"
+                    coordinate={[hidingSpot.longitude, hidingSpot.latitude]}
+                    anchor={MAP_PIN_ANCHOR}
+                    title="სამალავი"
+                  >
+                    <MapPin color={HIDING_SPOT_COLOR} />
+                  </MapboxGL.PointAnnotation>
+                ) : null}
+              </MapboxGL.MapView>
+            ) : null}
 
             {/* Legend – one row per seeker, so a colour can be read back to a name */}
             <View
               className="absolute left-4 right-4 rounded-xl bg-zinc-900/90 px-4 py-3"
-              style={{ bottom: insets.bottom + 16, maxHeight: 160 }}
+              style={{ bottom: legendBottom, maxHeight: 160 }}
+              onLayout={(e) => setLegendHeight(e.nativeEvent.layout.height)}
             >
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center gap-2 py-1">

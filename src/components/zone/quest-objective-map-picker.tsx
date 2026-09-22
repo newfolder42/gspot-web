@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { formatCoordinates } from '@/lib/utils';
-import { mapMaxBounds, mapMaxZoom } from '@/lib/map';
+import { mapMaxBounds, mapMaxZoom, mapPinColors } from '@/lib/map';
 
 declare global {
   interface Window {
@@ -76,7 +76,7 @@ export default function QuestObjectiveMapPicker({
       maxZoom: mapMaxZoom,
     });
 
-    markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: 'rgb(20, 184, 166)' })
+    markerRef.current = new window.mapboxgl.Marker({ draggable: true, color: mapPinColors.pick })
       .setLngLat([longitude, latitude])
       .addTo(map);
 
