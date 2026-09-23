@@ -2,10 +2,10 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
-import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
+import { PostPhoto } from '@/components/ui/PostPhoto';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
-import { formatPhotoTakenDate } from '@/lib/dates';
+import { PostActionBar } from '@/components/PostActionBar';
 import type { MobilePostType } from '@/types/post';
 
 function formatTimeAgo(timestamp: string): string {
@@ -26,11 +26,15 @@ function questCompletionTitle(questTitle: string | null | undefined): string {
   return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
 }
 
-/** Shared feed card – used by the global feed and the to-guess feed. */
-export function FeedPostCard({ item }: { item: MobilePostType }) {
+/**
+ * Shared feed card – used by the global, to-guess and zone feeds. The zone feed
+ * passes `showZone={false}`, as web GpsPost does.
+ */
+export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; showZone?: boolean }) {
   const router = useRouter();
   const isQuest = item.type === 'quest-completion';
   const photos = item.photos ?? [];
+  const openPost = () => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } });
 
   return (
     <View className="mb-4">
@@ -38,14 +42,18 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
       <View className="p-2">
         <View className="flex-row items-center gap-1.5 flex-wrap">
           {/* Zone avatar + slug – tappable → zone feed */}
-          <Pressable
-            className="flex-row items-center gap-1.5"
-            onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })}
-          >
-            <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
-            <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.zoneSlug}</Text>
-          </Pressable>
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+          {showZone ? (
+            <>
+              <Pressable
+                className="flex-row items-center gap-1.5"
+                onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })}
+              >
+                <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
+                <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.zoneSlug}</Text>
+              </Pressable>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+            </>
+          ) : null}
           {/* Author + level badge – tappable → user profile */}
           <Pressable
             className="flex-row items-center gap-1"
@@ -91,10 +99,7 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
       {/* ── Media block ── */}
       {isQuest ? (
         photos.length > 0 ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
-            className="relative"
-          >
+          <Pressable onPress={openPost}>
             <View className="flex-row flex-wrap">
               {photos.map((photo, idx) => (
                 <View
@@ -104,7 +109,6 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
                   <View className="flex-1 relative bg-zinc-100 dark:bg-zinc-900">
                     <ProgressiveImage
                       uri={photo.variants?.feed ?? photo.url}
-                      placeholderUri={photo.variants?.thumb}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
@@ -117,49 +121,28 @@ export function FeedPostCard({ item }: { item: MobilePostType }) {
                 </View>
               ))}
             </View>
-            <PostStatsBadge voteScore={item.voteScore ?? 0} commentCount={item.commentCount ?? 0} />
           </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
-            className="mx-2 mb-2 self-start"
-          >
-            <PostStatsBadge
-              voteScore={item.voteScore ?? 0}
-              commentCount={item.commentCount ?? 0}
-              className=""
-            />
-          </Pressable>
-        )
+        ) : null
       ) : (
-        <Pressable
-          onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })}
-          className="relative"
-        >
-          <ProgressiveImage
-            uri={item.imageVariants?.feed ?? item.image}
-            placeholderUri={item.imageVariants?.thumb}
-            className="w-full h-80 bg-black"
-            resizeMode="contain"
-          />
-          {/* Photo-taken stamp – amber, bottom right, matches web */}
-          {item.dateTaken ? (
-            <View className="absolute bottom-3 right-3">
-              <Text
-                className="text-sm text-amber-400"
-                style={{ fontVariant: ['tabular-nums'], letterSpacing: 2 }}
-              >
-                {formatPhotoTakenDate(item.dateTaken)}
-              </Text>
-            </View>
-          ) : null}
-          <PostStatsBadge
-            voteScore={item.voteScore ?? 0}
-            guessCount={item.guessCount ?? 0}
-            commentCount={item.commentCount ?? 0}
-          />
-        </Pressable>
+        <PostPhoto
+          uri={item.imageVariants?.feed ?? item.image}
+          dateTaken={item.dateTaken}
+          onPress={openPost}
+        />
       )}
+
+      {/* ── Votes, rewards, guesses, comments – same row as the post page ── */}
+      <PostActionBar
+        postId={item.id}
+        voteScore={item.voteScore ?? 0}
+        userVote={item.userVote ?? null}
+        rewards={item.rewards ?? []}
+        userReward={item.userReward ?? null}
+        guessCount={isQuest ? null : (item.guessCount ?? 0)}
+        commentCount={item.commentCount ?? 0}
+        onOpenPost={openPost}
+        className="px-4 pt-3"
+      />
     </View>
   );
 }

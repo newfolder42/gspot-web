@@ -90,9 +90,9 @@ export default function ZoneFeed({ userId, zoneId, tags }: ZoneFeedProps) {
       ) : (
         <div className="space-y-4">
           {posts.map(post => post.type === 'quest-completion'
-            ? <QuestCompletionPost key={post.id} post={post} />
+            ? <QuestCompletionPost key={post.id} post={post} isLoggedIn={!!userId} />
             : post.type === 'hide-and-seek' ? <HideAndSeekPost key={post.id} post={post} />
-            : <GpsPost key={post.id} post={post} />
+            : <GpsPost key={post.id} post={post} isLoggedIn={!!userId} />
           )}
         </div>
       )}

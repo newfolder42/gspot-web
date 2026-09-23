@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { LevelBadge } from '@/components/ui/LevelBadge';
@@ -43,7 +42,6 @@ function Podium({ top3 }: { top3: (LeaderboardEntry | undefined)[] }) {
 }
 
 export function LeaderboardTab({ slug }: { slug: string }) {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [period, setPeriod] = useState<string | undefined>(undefined);
 
@@ -71,7 +69,7 @@ export function LeaderboardTab({ slug }: { slug: string }) {
   const rest = data.entries.slice(3);
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}>
+    <View className="pb-10">
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
         {data.periods.map((p) => {
           const active = (period ?? 'total') === p.key;
@@ -108,6 +106,6 @@ export function LeaderboardTab({ slug }: { slug: string }) {
           ))}
         </>
       )}
-    </ScrollView>
+    </View>
   );
 }

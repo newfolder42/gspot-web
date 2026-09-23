@@ -1,16 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { GpsPostType } from "@/types/post";
-import { formatPhotoTakenDate } from "@/lib/dates";
 import TimePassed from "./common/time-passed";
-import { useState } from "react";
 import { MapPinIcon, MessageIcon, UpvoteIcon } from "./icons";
 import ProfileAvatar from "./common/profileAvatar";
 import TagBadge from "./common/tag-badge";
 import UserLink from "./common/user-link";
-import PostStatsBadge from "./common/post-stats-badge";
+import PostPhoto from "./common/post-photo";
+import PostActionBar from "./post-action-bar";
+import RewardIcon from "./rewards/reward-icons";
 
 export function GpsPostGridItem({ post }: { post: GpsPostType }) {
+  const given = (post.rewards ?? []).filter((r) => r.count > 0);
+  const topReward = given.length > 0 ? given.reduce((a, b) => (b.count > a.count ? b : a)) : null;
+  const rewardTotal = given.reduce((sum, r) => sum + r.count, 0);
+
   return (
     <Link href={`/post/${post.id}`} className="block group">
       <div
@@ -35,15 +39,18 @@ export function GpsPostGridItem({ post }: { post: GpsPostType }) {
             <MessageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
             {post.commentCount ?? 0}
           </span>
+          {topReward && (
+            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-semibold text-zinc-50 flex items-center gap-1">
+              <RewardIcon iconUrl={topReward.iconUrl} name={topReward.name} className="w-3 h-3 sm:w-4 sm:h-4" />
+              {rewardTotal}
+            </span>
+          )}
         </div>
       </div>
     </Link>
   );
 }
-export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: boolean }) {
-
-  const [isPortrait, setIsPortrait] = useState(false);
-
+export function GpsPost({ post, showZone, isLoggedIn }: { post: GpsPostType, showZone?: boolean, isLoggedIn: boolean }) {
   return (
     <article className="overflow-hidden">
       <div className="p-2">
@@ -81,32 +88,23 @@ export function GpsPost({ post, showZone }: { post: GpsPostType, showZone?: bool
         {post.tag && <TagBadge name={post.tag.name} color={post.tag.color} />}
         <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
       </div>
-      <div className="relative">
-        <Link href={`/post/${post.id}`} className="block w-full">
-          <Image
-            src={post.imageVariants?.feed ?? post.image}
-            alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
-            width={1200}
-            height={800}
-            className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
-            onLoad={(e) => {
-              const target = e.target as HTMLImageElement;
-              setIsPortrait(target.naturalHeight > target.naturalWidth);
-            }}
-            priority={false}
-          />
-        </Link>
-        {post.dateTaken && (
-          <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
-            {formatPhotoTakenDate(post.dateTaken)}
-          </div>
-        )}
-        <PostStatsBadge
-          href={`/post/${post.id}#guesses`}
+      <PostPhoto
+        src={post.imageVariants?.feed ?? post.image}
+        alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+        dateTaken={post.dateTaken}
+        href={`/post/${post.id}`}
+      />
+      <div className="px-2 py-2">
+        <PostActionBar
+          postId={post.id}
+          voteScore={post.voteScore ?? 0}
+          userVote={post.userVote ?? null}
+          rewards={post.rewards ?? []}
+          userReward={post.userReward ?? null}
+          isLoggedIn={isLoggedIn}
           guessCount={post.guessCount ?? 0}
           commentCount={post.commentCount ?? 0}
-          voteScore={post.voteScore ?? 0}
-          title="გამოცნობების ნახვა"
+          href={`/post/${post.id}#comments`}
         />
       </div>
     </article>

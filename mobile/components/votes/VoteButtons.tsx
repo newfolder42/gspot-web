@@ -31,6 +31,14 @@ export function VoteButtons({
   const [pending, setPending] = useState(false);
   const theme = useTheme();
 
+  // A post can be voted from its feed card and from its page; when the cache moves
+  // on elsewhere (or a refetch lands), follow it instead of the first render's values.
+  const [synced, setSynced] = useState({ score, userVote });
+  if (synced.score !== score || synced.userVote !== userVote) {
+    setSynced({ score, userVote });
+    setSummary({ score, userVote });
+  }
+
   const handleVote = async (value: VoteValue) => {
     if (pending) return;
     setPending(true);

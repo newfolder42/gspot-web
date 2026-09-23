@@ -41,6 +41,15 @@ export function RewardButton({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const theme = useTheme();
 
+  // Same as VoteButtons: follow the cache when the reward is given from another
+  // screen. Compared by content, since callers pass a fresh `?? []` every render.
+  const signature = `${userReward ?? ''}|${rewards.map((r) => `${r.key}:${r.count}`).join(',')}`;
+  const [synced, setSynced] = useState(signature);
+  if (synced !== signature) {
+    setSynced(signature);
+    setSummary({ rewards, userReward });
+  }
+
   const given = summary.rewards.filter((r) => r.count > 0);
   const topReward = given.length > 0 ? given.reduce((a, b) => (b.count > a.count ? b : a)) : null;
   const totalCount = given.reduce((sum, r) => sum + r.count, 0);

@@ -173,13 +173,14 @@ function PostsTab({
                     ) : null}
                   </>
                 ) : null}
-                {/* Vote / guess / comment counts, as on the web profile grid. */}
+                {/* Vote / guess / comment / reward counts, as on the web profile grid. */}
                 <PostStatsBadge
                   className="absolute top-1.5 right-1.5"
                   size="sm"
                   voteScore={post.voteScore ?? 0}
                   guessCount={isQuest ? null : (post.guessCount ?? 0)}
                   commentCount={post.commentCount ?? 0}
+                  rewards={post.rewards}
                 />
               </Pressable>
             );

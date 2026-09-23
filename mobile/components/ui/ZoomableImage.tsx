@@ -352,6 +352,7 @@ export function ZoomableImage({
   className,
   style,
   resizeMode = 'cover',
+  onSize,
   children,
 }: {
   uri: string;
@@ -363,6 +364,8 @@ export function ZoomableImage({
   className?: string;
   style?: StyleProp<ViewStyle>;
   resizeMode?: ResizeMode;
+  /** Pixel size of the inline photo once it decodes — see ProgressiveImage. */
+  onSize?: (size: Size) => void;
   /** Overlays drawn on top of the thumbnail; give them pointerEvents="none". */
   children?: ReactNode;
 }) {
@@ -376,6 +379,7 @@ export function ZoomableImage({
           placeholderUri={placeholderUri}
           style={{ width: '100%', height: '100%' }}
           resizeMode={resizeMode}
+          onSize={onSize}
         />
         {children}
       </Pressable>

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { zonesApi, type ZoneSettings } from '@/lib/zones';
@@ -35,7 +34,6 @@ export function ManageTab({ slug }: { slug: string }) {
 
 function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
   const [description, setDescription] = useState(initial.description);
@@ -87,7 +85,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
   }
 
   return (
-    <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 48 + insets.bottom }}>
+    <View className="p-4 pb-12">
       {/* Description */}
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">აღწერა</Text>
       <TextInput
@@ -168,6 +166,6 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
       {/* Members — the roster lives here now, so only those who can manage the zone can invite. */}
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 mt-8">წევრები</Text>
       <ZoneMembersSection slug={slug} />
-    </ScrollView>
+    </View>
   );
 }

@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ZoneHeader } from '@/components/zone/ZoneHeader';
+import { ZoneTabBar, type ZoneTabId } from '@/components/zone/ZoneTabBar';
 import { ZoneFeedTab } from '@/components/zone/ZoneFeedTab';
 import { LeaderboardTab } from '@/components/zone/LeaderboardTab';
 import { ManageTab } from '@/components/zone/ManageTab';
 import { QuestsTab } from '@/components/zone/QuestsTab';
 import { zonesApi } from '@/lib/zones';
 
-type Tab = 'feed' | 'leaderboard' | 'quests' | 'manage';
+type Tab = ZoneTabId;
 
 export default function ZoneScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('feed');
 
   const { data: meta, isLoading, isError, refetch } = useQuery({
@@ -58,52 +61,44 @@ export default function ZoneScreen() {
   const isPrivateLocked =
     meta.zone.visibility === 'private' && meta.membership?.status !== 'active';
 
-  return (
-    <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+  // Header (banner/avatar/description) and the tab bar scroll away with the
+  // content, Reddit-style, instead of pinning a large fixed block on screen.
+  const header = (
+    <>
       <ZoneHeader meta={meta} slug={slug} />
+      <ZoneTabBar tabs={tabs} tab={tab} onChange={setTab} />
+    </>
+  );
 
-      {isPrivateLocked ? (
+  if (isPrivateLocked) {
+    return (
+      <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+        {header}
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
             ეს საბზონა დახურულია. შინაარსის სანახავად გაწევრიანდი.
           </Text>
         </View>
-      ) : (
-        <>
-          {/* Segmented tab bar */}
-          <View className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10 }}
-            >
-              {tabs.map((t) => {
-                const active = t.id === tab;
-                return (
-                  <Pressable
-                    key={t.id}
-                    onPress={() => setTab(t.id)}
-                    className={`px-4 py-1.5 rounded-full border ${
-                      active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-                    }`}
-                  >
-                    <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                      {t.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+      </View>
+    );
+  }
 
-          <View className="flex-1">
-            {tab === 'feed' ? <ZoneFeedTab slug={slug} /> : null}
-            {tab === 'leaderboard' ? <LeaderboardTab slug={slug} /> : null}
-            {tab === 'quests' ? <QuestsTab slug={slug} /> : null}
-            {tab === 'manage' ? <ManageTab slug={slug} /> : null}
-          </View>
-        </>
-      )}
+  if (tab === 'feed') {
+    return (
+      <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+        <ZoneFeedTab slug={slug} header={header} />
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
+        {header}
+        {tab === 'leaderboard' ? <LeaderboardTab slug={slug} /> : null}
+        {tab === 'quests' ? <QuestsTab slug={slug} /> : null}
+        {tab === 'manage' ? <ManageTab slug={slug} /> : null}
+      </ScrollView>
     </View>
   );
 }

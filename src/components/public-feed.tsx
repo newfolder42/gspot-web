@@ -89,7 +89,7 @@ export default function PublicFeed() {
       {loading && posts.length === 0 && (
         <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
       )}
-      {posts.map(post => <GpsPost key={post.id} post={post} showZone />)}
+      {posts.map(post => <GpsPost key={post.id} post={post} showZone isLoggedIn={false} />)}
 
       {hasMore && (
         <div ref={observerTarget} className="flex justify-center py-4">

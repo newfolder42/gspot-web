@@ -152,9 +152,9 @@ export default function FeedClient({
         <div className="flex justify-center py-8 text-gray-500">იტვირთება...</div>
       )}
       {posts.map(post =>
-        post.type === 'quest-completion' ? <QuestCompletionPost key={post.id} post={post} showZone={type !== 'zone'} />
+        post.type === 'quest-completion' ? <QuestCompletionPost key={post.id} post={post} showZone={type !== 'zone'} isLoggedIn={!!userId} />
         : post.type === 'hide-and-seek' ? <HideAndSeekPost key={post.id} post={post} showZone={type !== 'zone'} />
-        : <GpsPost key={post.id} post={post} showZone={type !== 'zone'} />
+        : <GpsPost key={post.id} post={post} showZone={type !== 'zone'} isLoggedIn={!!userId} />
       )}
 
       {hasMore && (

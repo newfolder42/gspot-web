@@ -7,12 +7,11 @@ import { addCommentAction, loadPostCommentsAction } from '@/actions/comments';
 import PostComment from './post-comment';
 import NewGuess from './new-guess';
 import NewPhotoGuess from './new-photo-guess';
-import VoteButtons from './votes/vote-buttons';
-import RewardButton from './rewards/reward-button';
+import PostActionBar from './post-action-bar';
 import type { RewardCountType } from '@/types/reward';
 import type { VoteValue } from '@/types/vote';
 import { getPostGuessMapPoints } from '@/lib/posts';
-import { MapPinIcon, XIcon, CameraIcon, MessageIcon } from './icons';
+import { MapPinIcon, XIcon, CameraIcon } from './icons';
 import { mapDefaultCenter, mapFitMaxZoom, mapFitPadding, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPinColors, mapPinOffset, mapPinPopupOffset, mapPinScale } from '@/lib/map';
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -361,37 +360,16 @@ export default function PostComments({
     <div className="mt-4">
       {/* Header bar */}
       <div className="px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
-          <VoteButtons
-            postId={postId}
-            commentId={null}
-            score={postVoteScore}
-            userVote={userPostVote}
-            isLoggedIn={!!currentUser}
-            size="md"
-          />
-          <RewardButton
-            postId={postId}
-            commentId={null}
-            target="post"
-            rewards={postRewards}
-            userReward={userPostReward}
-            isLoggedIn={!!currentUser}
-            size="md"
-          />
-          <span className="inline-flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-            {showGuessStat && (
-              <span className="inline-flex items-center gap-1" title="გამოცნობები">
-                <MapPinIcon className="w-4 h-4" />
-                <span className="font-semibold">{guessCount2}</span>
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1" title="კომენტარები">
-              <MessageIcon className="w-4 h-4" />
-              <span className="font-semibold">{commentCount}</span>
-            </span>
-          </span>
-        </div>
+        <PostActionBar
+          postId={postId}
+          voteScore={postVoteScore}
+          userVote={userPostVote}
+          rewards={postRewards}
+          userReward={userPostReward}
+          isLoggedIn={!!currentUser}
+          guessCount={showGuessStat ? guessCount2 : null}
+          commentCount={commentCount}
+        />
 
         <div className="flex items-center gap-2">
           {isAuthor && guessCount2 > 0 && (

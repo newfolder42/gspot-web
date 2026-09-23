@@ -1,3 +1,6 @@
+import type { VoteValue } from './vote';
+import type { RewardCountType } from './reward';
+
 export type PostType = {
   id: number;
   title: string;
@@ -11,6 +14,11 @@ export type PostType = {
   authorLevel?: number | null;
   commentCount?: number | null;
   voteScore?: number | null;
+  /** The viewer's own vote on the post, so feed cards can vote in place. */
+  userVote?: VoteValue | null;
+  rewards?: RewardCountType[];
+  /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
+  userReward?: string | null;
 };
 
 export enum DifficultyLevel {

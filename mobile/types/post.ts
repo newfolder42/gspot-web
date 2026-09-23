@@ -1,6 +1,6 @@
 import type { PostCommentType } from '@/types/post-comment';
-import type { RewardSummaryType } from '@/types/reward';
-import type { VoteSummaryType } from '@/types/vote';
+import type { RewardCountType, RewardSummaryType } from '@/types/reward';
+import type { VoteSummaryType, VoteValue } from '@/types/vote';
 import type { HideAndSeekGameType, HideAndSeekPlayerType } from '@/types/hide-and-seek';
 
 export type PostImageVariants = {
@@ -32,6 +32,11 @@ export type MobilePostType = {
   guessCount?: number | null;
   commentCount?: number | null;
   voteScore?: number | null;
+  /** The viewer's own vote on the post, so feed cards can vote in place. */
+  userVote?: VoteValue | null;
+  rewards?: RewardCountType[];
+  /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
+  userReward?: string | null;
   userHasGuessed?: boolean;
   tag?: { id: number; name: string; color: string } | null;
   authorLevel?: number | null;

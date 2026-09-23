@@ -20,6 +20,9 @@ import { EditPostSheet } from '@/components/EditPostSheet';
 import { ReportSheet } from '@/components/ReportSheet';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
+import { PostActionBar } from '@/components/PostActionBar';
+import { PostPhoto } from '@/components/ui/PostPhoto';
+import { syncPostInCaches } from '@/lib/postCache';
 import type { GuessResult } from '@/types/post-guess';
 import { Colors, useTheme } from '@/constants/colors';
 import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
@@ -93,7 +96,6 @@ function CommentItem({
   const router = useRouter();
   const theme = useTheme();
   const [collapsed, setCollapsed] = useState(false);
-  const marginLeft = Math.min(depth * 14, 42);
   const borderColor = DEPTH_BORDER_COLORS[depth % DEPTH_BORDER_COLORS.length];
   const initials = getInitials(item.author) || (item.author || '?').slice(0, 2).toUpperCase();
 
@@ -115,15 +117,18 @@ function CommentItem({
       ].filter(Boolean).join(' • ') || (isPhotoGuess ? 'ფოტო-გამოცნობა' : 'გამოცნობა')
     : (item.body ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'კომენტარი';
 
+  // Mirrors web `pl-3 border-l-2`: nesting alone supplies the indent, so each
+  // level adds just 12px + the 2px line instead of a growing marginLeft.
   const wrapper = depth > 0
-    ? { marginLeft, borderLeftWidth: 2, borderLeftColor: borderColor, paddingLeft: 10 }
+    ? { borderLeftWidth: 2, borderLeftColor: borderColor, paddingLeft: 12 }
     : {};
 
   const openAuthor = () =>
     router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } });
 
   return (
-    <View style={wrapper} className="py-2">
+    <View style={wrapper}>
+    <View className="py-1.5">
       {/* Tapping the comment itself collapses it (Reddit-style); the author is a
           nested Pressable, so it wins the touch and opens the profile instead. */}
       <Pressable
@@ -274,11 +279,14 @@ function CommentItem({
       ) : null}
 
       {/* Children */}
-      {!collapsed
-        ? item.children.map((child) => (
+      {!collapsed && item.children.length > 0 ? (
+        <View className="mt-1.5">
+          {item.children.map((child) => (
             <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={onReply} />
-          ))
-        : null}
+          ))}
+        </View>
+      ) : null}
+    </View>
     </View>
   );
 }
@@ -306,19 +314,17 @@ export default function PostPageScreen() {
   };
 
   const handleGuessSubmitted = (_result: GuessResult) => {
-    // Optimistic bump so the counter reacts instantly, then refetch so the
-    // freshly created guess comment shows up in the thread too.
-    queryClient.setQueryData(queryKey, (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        alreadyGuessed: true,
-        post: {
-          ...old.post,
-          guessCount: (old.post.guessCount ?? 0) + 1,
-        },
-      };
-    });
+    // Optimistic bump, here and on the feed card behind this screen, so the counter
+    // reacts instantly, then refetch so the freshly created guess comment shows up
+    // in the thread too.
+    syncPostInCaches(queryClient, postId, (p) => ({ guessCount: (p.guessCount ?? 0) + 1, userHasGuessed: true }));
+    queryClient.setQueryData(queryKey, (old: any) => (old ? { ...old, alreadyGuessed: true } : old));
+    queryClient.invalidateQueries({ queryKey });
+  };
+
+  const handlePhotoGuessSubmitted = () => {
+    // A photo guess is a guess row too, so it counts the same way.
+    syncPostInCaches(queryClient, postId, (p) => ({ guessCount: (p.guessCount ?? 0) + 1, userHasGuessed: true }));
     queryClient.invalidateQueries({ queryKey });
   };
 
@@ -356,6 +362,7 @@ export default function PostPageScreen() {
     onSuccess: (newComment) => {
       setCommentBody('');
       setReplyTo(null);
+      syncPostInCaches(queryClient, postId, (p) => ({ commentCount: (p.commentCount ?? 0) + 1 }));
       queryClient.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
         const prev = old.comments as PostCommentType[];
@@ -554,7 +561,7 @@ export default function PostPageScreen() {
           )}
         </View>
 
-        {/* ── Media block with counter overlay ── */}
+        {/* ── Media block ── */}
         {isQuest ? (
           questPhotos.length > 0 ? (
             <View>
@@ -567,7 +574,6 @@ export default function PostPageScreen() {
                     <ZoomableImage
                       uri={photo.variants?.feed ?? photo.url}
                       fullUri={photo.url}
-                      placeholderUri={photo.variants?.thumb}
                       title={photo.objectiveTitle}
                       className="flex-1 relative bg-zinc-100 dark:bg-zinc-900"
                       resizeMode="cover"
@@ -584,45 +590,29 @@ export default function PostPageScreen() {
             </View>
           ) : null
         ) : post.image ? (
-          <View className="bg-black">
-            {/* The feed rendition is what the list already painted and cached, and at
-                h-80/contain it out-resolves the slot anyway; the master is only worth
-                its several MB once the photo is pinch-zoomed. */}
-            <ZoomableImage
-              uri={post.imageVariants?.feed ?? post.image}
-              fullUri={post.image}
-              placeholderUri={post.imageVariants?.thumb}
-              title={post.title}
-              className="w-full h-80"
-              resizeMode="contain"
-            />
-          </View>
+          // The feed rendition is what the list already painted and cached (no thumb
+          // placeholder, it would only stage a cold thumb under a cached image), and at
+          // h-80 it out-resolves the slot anyway; the master is only worth its several
+          // MB once the photo is pinch-zoomed.
+          <PostPhoto
+            uri={post.imageVariants?.feed ?? post.image}
+            fullUri={post.image}
+            title={post.title}
+            dateTaken={post.dateTaken}
+          />
         ) : null}
 
         {/* ── Post action bar – votes, reward, stats. Mirrors web PostComments header. ── */}
-        <View className="flex-row items-center gap-4 px-4 pt-3">
-          <VoteButtons postId={post.id} score={votes.score} userVote={votes.userVote} />
-          <RewardButton
-            postId={post.id}
-            target="post"
-            rewards={rewards.rewards}
-            userReward={rewards.userReward}
-          />
-          <View className="flex-row items-center gap-3 ml-auto">
-            {!isQuest ? (
-              <View className="flex-row items-center gap-1">
-                <Feather name="map-pin" size={15} color={theme.icon} />
-                <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-                  {post.guessCount ?? 0}
-                </Text>
-              </View>
-            ) : null}
-            <View className="flex-row items-center gap-1">
-              <Feather name="message-circle" size={15} color={theme.icon} />
-              <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{commentsCount}</Text>
-            </View>
-          </View>
-        </View>
+        <PostActionBar
+          postId={post.id}
+          voteScore={votes.score}
+          userVote={votes.userVote}
+          rewards={rewards.rewards}
+          userReward={rewards.userReward}
+          guessCount={post.type === 'gps-photo' ? (post.guessCount ?? 0) : null}
+          commentCount={commentsCount}
+          className="px-4 pt-3"
+        />
 
         {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers,
              "რუკაზე ნახვა" for the author once guesses exist. ── */}
@@ -744,7 +734,7 @@ export default function PostPageScreen() {
         <NewPhotoGuess
           postId={post.id}
           onClose={() => setShowPhotoGuess(false)}
-          onSubmitted={() => queryClient.invalidateQueries({ queryKey })}
+          onSubmitted={handlePhotoGuessSubmitted}
         />
       ) : null}
       {showGuessMap ? (

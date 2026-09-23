@@ -166,20 +166,59 @@ async function fetchQuestExtras(ids: number[]): Promise<Map<number, any>> {
   return map;
 }
 
+// Post-level rewards and the viewer's own vote/reward, so a feed card can vote and
+// reward in place like the post page does. Same shape as getPostComments builds per comment.
+async function fetchVoteRewardExtras(ids: number[], viewerId?: number | null): Promise<Map<number, any>> {
+  const map = new Map<number, any>();
+  if (ids.length === 0) return map;
+
+  const res = await query(
+    `select p.id,
+            uv.value as user_vote,
+            coalesce(rx.rewards, '[]'::json) as rewards,
+            ur.reward_key as user_reward
+       from posts p
+       left join post_votes uv on uv.post_id = p.id and uv.comment_id is null and uv.user_id = $2 and uv.deleted_at is null
+       left join lateral (
+         select json_agg(json_build_object('key', t.reward_key, 'count', t.cnt, 'name', t.name, 'iconUrl', t.icon_url) order by t.cnt desc, t.reward_key) as rewards
+         from (
+           select r.reward_key, count(*)::int as cnt, rw.name, rw.icon_url
+           from post_rewards r
+           join rewards rw on rw.key = r.reward_key
+           where r.post_id = p.id and r.comment_id is null and r.deleted_at is null
+           group by r.reward_key, rw.name, rw.icon_url
+         ) t
+       ) rx on true
+       left join post_rewards ur on ur.post_id = p.id and ur.comment_id is null and ur.user_id = $2 and ur.deleted_at is null
+      where p.id = any($1::bigint[])`,
+    [ids, viewerId ?? 0]
+  );
+
+  for (const r of res.rows) map.set(Number(r.id), r);
+  return map;
+}
+
 async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedPostType[]> {
   const gpsIds = rows.filter(r => r.type === 'gps-photo').map(r => Number(r.id));
   const questIds = rows.filter(r => r.type === 'quest-completion').map(r => Number(r.id));
   const hideAndSeekIds = rows.filter(r => r.type === 'hide-and-seek').map(r => Number(r.id));
 
-  const [gpsExtras, questExtras, hideAndSeekExtras] = await Promise.all([
+  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras] = await Promise.all([
     fetchGpsExtras(gpsIds),
     fetchQuestExtras(questIds),
     fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
+    fetchVoteRewardExtras(rows.map(r => Number(r.id)), viewerId),
   ]);
 
   return rows.map(r => {
-    const base = buildBasePost(r);
     const id = Number(r.id);
+    const voteReward = voteRewardExtras.get(id);
+    const base: PostType = {
+      ...buildBasePost(r),
+      userVote: voteReward?.user_vote ?? null,
+      rewards: voteReward?.rewards ?? [],
+      userReward: voteReward?.user_reward ?? null,
+    };
 
     if (r.type === 'quest-completion') {
       const extra = questExtras.get(id) ?? {};
@@ -346,7 +385,7 @@ limit $1`,
       params
     );
 
-    return (await enrichPosts(res.rows)) as GpsPostType[];
+    return (await enrichPosts(res.rows, userId)) as GpsPostType[];
   } catch (err) {
     await logerror('getToGuessPosts error', [err]);
     return [];
@@ -421,7 +460,7 @@ export async function getShufflePosts(
       [userId, excludeIds, popularQuota, quietQuota, neglectedQuota, limit]
     );
 
-    return (await enrichPosts(res.rows)) as GpsPostType[];
+    return (await enrichPosts(res.rows, userId)) as GpsPostType[];
   } catch (err) {
     await logerror('getShufflePosts error', [err]);
     return [];

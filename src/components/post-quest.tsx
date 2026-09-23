@@ -4,7 +4,7 @@ import type { QuestCompletionPostType } from "@/types/post";
 import TimePassed from "./common/time-passed";
 import ProfileAvatar from "./common/profileAvatar";
 import UserLink from "./common/user-link";
-import PostStatsBadge from "./common/post-stats-badge";
+import PostActionBar from "./post-action-bar";
 import { FlagIcon, TrophyIcon } from "./icons";
 
 export function QuestCompletionTitle({ questTitle }: { questTitle: string | null }) {
@@ -46,7 +46,7 @@ export function QuestCompletionGridItem({ post }: { post: QuestCompletionPostTyp
   );
 }
 
-export function QuestCompletionPost({ post, showZone }: { post: QuestCompletionPostType, showZone?: boolean }) {
+export function QuestCompletionPost({ post, showZone, isLoggedIn }: { post: QuestCompletionPostType, showZone?: boolean, isLoggedIn: boolean }) {
   return (
     <article className="overflow-hidden">
       <div className="p-2">
@@ -83,31 +83,32 @@ export function QuestCompletionPost({ post, showZone }: { post: QuestCompletionP
           <QuestCompletionTitle questTitle={post.questTitle} />
         </Link>
       </div>
-      {post.photos.length > 0 ? (
-        <div className="relative">
-          <div className={`grid gap-0.5 ${post.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            {post.photos.map((photo, idx) => (
-              <Link key={idx} href={`/post/${post.id}`} className="block relative aspect-square overflow-hidden">
-                <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
-                {photo.objectiveTitle && (
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5">
-                    <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
-          <PostStatsBadge href={`/post/${post.id}#comments`} commentCount={post.commentCount ?? 0} voteScore={post.voteScore ?? 0} title="კომენტარების ნახვა" />
+      {post.photos.length > 0 && (
+        <div className={`grid gap-0.5 ${post.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {post.photos.map((photo, idx) => (
+            <Link key={idx} href={`/post/${post.id}`} className="block relative aspect-square overflow-hidden">
+              <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
+              {photo.objectiveTitle && (
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5">
+                  <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
+                </div>
+              )}
+            </Link>
+          ))}
         </div>
-      ) : (
-        <PostStatsBadge
-          href={`/post/${post.id}#comments`}
-          commentCount={post.commentCount ?? 0}
-          voteScore={post.voteScore ?? 0}
-          title="კომენტარების ნახვა"
-          className="mx-2 mb-2"
-        />
       )}
+      <div className="px-2 py-2">
+        <PostActionBar
+          postId={post.id}
+          voteScore={post.voteScore ?? 0}
+          userVote={post.userVote ?? null}
+          rewards={post.rewards ?? []}
+          userReward={post.userReward ?? null}
+          isLoggedIn={isLoggedIn}
+          commentCount={post.commentCount ?? 0}
+          href={`/post/${post.id}#comments`}
+        />
+      </div>
     </article>
   );
 }

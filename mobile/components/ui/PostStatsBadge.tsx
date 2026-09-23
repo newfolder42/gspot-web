@@ -1,29 +1,37 @@
 import { Text, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { RewardIcon } from '@/components/rewards/RewardIcon';
+import type { RewardCountType } from '@/types/reward';
 
 type Props = {
   voteScore?: number | null;
   /** gps posts only; omitted for quest completions, matching web. */
   guessCount?: number | null;
   commentCount: number;
+  /** Shown as the most-given reward's icon + total, only once something was given. */
+  rewards?: RewardCountType[];
   /** 'sm' is the compact grid-tile variant of the web badge. */
   size?: 'default' | 'sm';
   className?: string;
 };
 
 /**
- * Mirrors web `common/post-stats-badge`: pill with vote score, guesses (gps
- * posts only) and comment count over the post image. Shared by the feed cards
- * and the profile post grid.
+ * Pill with vote score, guesses (gps posts only), comment count and rewards over a
+ * post image. Mirrors the web profile grid badge; the feed cards use PostActionBar.
  */
 export function PostStatsBadge({
   voteScore,
   guessCount,
   commentCount,
+  rewards = [],
   size = 'default',
   className = 'absolute top-3 right-3',
 }: Props) {
+  const given = rewards.filter((r) => r.count > 0);
+  const topReward = given.length > 0 ? given.reduce((a, b) => (b.count > a.count ? b : a)) : null;
+  const rewardTotal = given.reduce((sum, r) => sum + r.count, 0);
+
   const compact = size === 'sm';
   const iconSize = compact ? 12 : 16;
   const textClass = compact ? 'text-xs font-semibold text-zinc-50' : 'text-sm font-semibold text-zinc-50';
@@ -51,6 +59,12 @@ export function PostStatsBadge({
         <Feather name="message-circle" size={iconSize} color={Colors.onImage} />
         <Text className={textClass}>{commentCount}</Text>
       </View>
+      {topReward ? (
+        <View className={`flex-row items-center gap-1 ${gapClass}`}>
+          <RewardIcon iconUrl={topReward.iconUrl} size={iconSize} />
+          <Text className={textClass}>{rewardTotal}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

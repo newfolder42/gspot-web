@@ -9,9 +9,9 @@ import ProfileAvatar from './common/profileAvatar';
 import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
 import ZoomableImage from './common/zoomable-image';
+import PostPhoto from './common/post-photo';
 import { QuestCompletionTitle } from './post-quest';
 import type { PostDetailType } from '@/types/post-detail';
-import { formatPhotoTakenDate } from '@/lib/dates';
 import TimePassed from './common/time-passed';
 import type { PostGuessType } from '@/types/post-guess';
 import type { PostCommentType } from '@/types/post-comment';
@@ -38,7 +38,6 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
   const isHideAndSeekHost = !!gamePost && currentUserId === gamePost.game.hostId;
   const userCanGuess = !!gpsPost && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
 
-  const [isPortrait, setIsPortrait] = useState(false);
   const [canGuess, setCanGuess] = useState(userCanGuess);
   const [guessCount, setGuessCount] = useState(Number(gpsPost?.guessCount) || 0);
 
@@ -119,26 +118,12 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
           </div>
         )}
         {gpsPost && gpsPost?.image && (
-          <div className="relative">
-            <ZoomableImage className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'}`}>
-              <Image
-                src={gpsPost.image}
-                alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
-                width={1200}
-                height={800}
-                className={`w-full ${isPortrait ? 'h-[60vh]' : 'h-auto max-h-[60vh]'} object-contain transition-all`}
-                onLoad={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  setIsPortrait(target.naturalHeight > target.naturalWidth);
-                }}
-              />
-            </ZoomableImage>
-            {gpsPost.dateTaken && (
-              <div className="absolute bottom-3 right-3 font-mono text-sm text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)] select-none pointer-events-none tracking-widest">
-                {formatPhotoTakenDate(gpsPost.dateTaken)}
-              </div>
-            )}
-          </div>
+          <PostPhoto
+            src={gpsPost.image}
+            alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+            dateTaken={gpsPost.dateTaken}
+            zoomable
+          />
         )}
       </article>
 
