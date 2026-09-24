@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { RewardSheet } from '@/components/rewards/RewardSheet';
@@ -40,6 +41,7 @@ export function RewardButton({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const theme = useTheme();
+  const queryClient = useQueryClient();
 
   // Same as VoteButtons: follow the cache when the reward is given from another
   // screen. Compared by content, since callers pass a fresh `?? []` every render.
@@ -61,6 +63,9 @@ export function RewardButton({
   const handleGiven = (next: RewardSummaryType) => {
     setSummary(next);
     onChange?.(next);
+    // The giver list now has one more row and the daily quota one less.
+    queryClient.invalidateQueries({ queryKey: ['reward-users', postId, commentId] });
+    queryClient.invalidateQueries({ queryKey: ['reward-status'] });
   };
 
   return (

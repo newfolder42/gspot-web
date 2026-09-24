@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
+import { ShareButton } from '@/components/ui/ShareButton';
 import { syncPostInCaches } from '@/lib/postCache';
 import type { RewardCountType } from '@/types/reward';
 import type { VoteValue } from '@/types/vote';
@@ -77,6 +78,7 @@ export function PostActionBar({
       ) : (
         <View className="flex-row items-center gap-2 ml-auto">{stats}</View>
       )}
+      <ShareButton path={`/post/${postId}`} size={15} className="ml-1" />
     </View>
   );
 }

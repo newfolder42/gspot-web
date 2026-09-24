@@ -1,10 +1,9 @@
 import { Linking } from 'react-native';
 import type { useRouter } from 'expo-router';
 import { getNotificationRoute, type NotificationType } from '@/types/notification';
+import { webUrl } from '@/lib/share';
 
 type Router = ReturnType<typeof useRouter>;
-
-const WEB_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://gspot.ge';
 
 /**
  * Opens a web-style route (as produced by getNotificationRoute) on the closest
@@ -60,7 +59,7 @@ export async function openNotificationRoute(route: string | null, router: Router
     return;
   }
 
-  await Linking.openURL(`${WEB_BASE_URL.replace(/\/$/, '')}${route}`);
+  await Linking.openURL(webUrl(route));
 }
 
 /**

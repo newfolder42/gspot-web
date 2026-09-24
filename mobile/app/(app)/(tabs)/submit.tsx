@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Animated,
@@ -29,6 +28,7 @@ import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZ
 import { Colors, useTheme } from '@/constants/colors';
 import { CreateHideAndSeek } from '@/components/hideandseek/CreateHideAndSeek';
 import { ItemFoundModal } from '@/components/inventory/ItemFoundModal';
+import { PhotoDialog, PhotoSourceButtons, type PhotoSource } from '@/components/ui/PhotoDialog';
 import type { FoundItemType } from '@/types/item';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
@@ -379,7 +379,7 @@ function MapCoordPicker({
             }`}
         >
           <Text className={`text-xs ${outOfBoundsWarning ? 'text-rose-200' : 'text-zinc-200'}`}>
-            {outOfBoundsWarning ? `${gpsLabel} — საქართველოს გარეთ` : gpsLabel}
+            {outOfBoundsWarning ? `${gpsLabel} · საქართველოს გარეთ` : gpsLabel}
           </Text>
         </View>
       </View>
@@ -407,6 +407,7 @@ function PhotoSubmit() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gpsAutoDetected, setGpsAutoDetected] = useState(false);
 
+  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState<SubmitProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -554,19 +555,21 @@ function PhotoSubmit() {
     },
   });
 
-  const pickImage = async (source: 'library' | 'camera') => {
+  const pickImage = async (source: PhotoSource) => {
     setError(null);
     setGpsAutoDetected(false);
 
     if (source === 'camera') {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
+        setSourceDialogOpen(false);
         Alert.alert('წვდომა საჭიროა', 'კამერაზე წვდომა საჭიროა ფოტოს გადასაღებად.');
         return;
       }
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
+        setSourceDialogOpen(false);
         Alert.alert('წვდომა საჭიროა', 'გალერეაზე წვდომა საჭიროა ფოტოს ასარჩევად.');
         return;
       }
@@ -587,9 +590,11 @@ function PhotoSubmit() {
             exif: true,
           });
 
+      // A cancelled picker leaves the source dialog open so the user can pick again.
       if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset.uri) return;
+      setSourceDialogOpen(false);
 
       const size = asset.fileSize ?? 0;
       if (size > MAX_IMAGE_SIZE) {
@@ -641,23 +646,7 @@ function PhotoSubmit() {
     }
   };
 
-  const handlePickOptions = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['გაუქმება', 'გალერეიდან', 'კამერით გადაღება'], cancelButtonIndex: 0 },
-        (idx) => {
-          if (idx === 1) pickImage('library');
-          if (idx === 2) pickImage('camera');
-        }
-      );
-    } else {
-      Alert.alert('ფოტოს არჩევა', undefined, [
-        { text: 'გალერეიდან', onPress: () => pickImage('library') },
-        { text: 'კამერით გადაღება', onPress: () => pickImage('camera') },
-        { text: 'გაუქმება', style: 'cancel' },
-      ]);
-    }
-  };
+  const handlePickOptions = () => setSourceDialogOpen(true);
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
@@ -1002,6 +991,15 @@ function PhotoSubmit() {
         )}
       </Pressable>
     </ScrollView>
+
+    {sourceDialogOpen && (
+      <PhotoDialog title="ფოტოს არჩევა" onClose={() => setSourceDialogOpen(false)}>
+        <PhotoSourceButtons
+          description="გადაიღე ან აირჩიე ფოტო. თუ ფოტოს აქვს GPS, ლოკაცია და თარიღი ავტომატურად შეივსება."
+          onPick={pickImage}
+        />
+      </PhotoDialog>
+    )}
 
     {foundItems.length > 0 && (
       <ItemFoundModal

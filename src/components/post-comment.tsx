@@ -349,7 +349,7 @@ export default function PostComment({
         <ImageLightbox
           src={comment.metadata.imageUrl}
           alt="guess photo"
-          title={`'${comment.author} — გამოცნობა ადგილზე`}
+          title={`'${comment.author} - გამოცნობა ადგილზე`}
           onClose={() => setLightboxOpen(false)}
         />
       )}

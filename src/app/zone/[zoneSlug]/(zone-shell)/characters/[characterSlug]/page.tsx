@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const zoneName = zone.name?.trim() || zoneSlug;
   const seoTitle = `${character.name} | ${zoneName} | ${APP_NAME}`;
   const seoDescription = character.description?.trim()
-    || `${character.name} — ${zoneName} საბზონაში, ${APP_NAME}-ზე.`;
+    || `${character.name}, ${zoneName} საბზონაში, ${APP_NAME}-ზე.`;
   const canonical = `https://${PUBLIC_SITE_URL}/zone/${zoneSlug}/characters/${character.slug}`;
   const seoImage = character.avatar_url || `https://${PUBLIC_SITE_URL}/og-image.png`;
 

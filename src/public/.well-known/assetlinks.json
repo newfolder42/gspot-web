@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ge.gspot.mobile",
+      "sha256_cert_fingerprints": [
+        "97:36:AE:0C:29:C3:74:B0:FA:BD:03:02:3B:AD:85:88:D1:8D:49:E1:24:8B:48:BE:B7:93:34:A7:70:29:23:51"
+      ]
+    }
+  }
+]

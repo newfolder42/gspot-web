@@ -41,6 +41,14 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="gspot"/>
       </intent-filter>
+      <intent-filter android:autoVerify="true" data-generated="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="https" android:host="gspot.ge" android:pathPrefix="/post/"/>
+        <data android:scheme="https" android:host="gspot.ge" android:pathPrefix="/account/"/>
+        <data android:scheme="https" android:host="gspot.ge" android:pathPrefix="/zone/"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
     </activity>
   </application>
 </manifest>

@@ -1,6 +1,7 @@
 import '../global.css';
 import { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -13,6 +14,15 @@ import { useTheme } from '@/constants/colors';
 // Keep the native splash up until the stored session has been read, so the app
 // never flashes the login screen at an already-signed-in user.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// React Query's refetch-on-focus listens to the browser's visibilitychange, which
+// never fires in React Native; feed it AppState so coming back to the app refetches
+// whatever is on screen and stale (the post page's comments and rewards included).
+focusManager.setEventListener((handleFocus) => {
+  if (Platform.OS === 'web') return;
+  const sub = AppState.addEventListener('change', (state) => handleFocus(state === 'active'));
+  return () => sub.remove();
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {

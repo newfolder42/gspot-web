@@ -22,6 +22,7 @@ import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
 import { getLevelColor } from '@/components/ui/LevelBadge';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { FollowButton } from '@/components/profile/FollowButton';
+import { ShareButton } from '@/components/ui/ShareButton';
 import { ReportSheet } from '@/components/ReportSheet';
 import { GuessesTab } from '@/components/profile/GuessesTab';
 import { AchievementsTab } from '@/components/profile/AchievementsTab';
@@ -380,18 +381,27 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
             ) : null}
             <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{postsCount} პოსტი</Text>
           </View>
-          {!isOwn ? (
-            <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
-              <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
-              <Pressable
-                onPress={() => setShowReport(true)}
-                hitSlop={8}
-                className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
-              >
-                <Feather name="flag" size={14} color="#71717a" />
-              </Pressable>
-            </View>
-          ) : null}
+          <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
+            {!isOwn ? (
+              <>
+                <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
+                <Pressable
+                  onPress={() => setShowReport(true)}
+                  hitSlop={8}
+                  className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
+                >
+                  <Feather name="flag" size={14} color="#71717a" />
+                </Pressable>
+              </>
+            ) : null}
+            <ShareButton
+              path={`/account/${encodeURIComponent(user.alias)}`}
+              title={`'${user.alias}`}
+              size={14}
+              color="#71717a"
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
+            />
+          </View>
         </View>
 
         {/* XP bar + streak flame, mirroring the web account header row. */}

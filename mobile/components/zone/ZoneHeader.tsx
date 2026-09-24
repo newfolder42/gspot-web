@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { JoinButton } from '@/components/zone/JoinButton';
+import { ShareButton } from '@/components/ui/ShareButton';
 import type { ZoneMeta } from '@/lib/zones';
 
 export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
@@ -33,6 +34,7 @@ export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
             role={membership?.role ?? null}
             joinPolicy={zone.joinPolicy}
           />
+          <ShareButton path={`/zone/${slug}`} title={zone.name} size={18} />
         </View>
 
         {hasDescription ? (

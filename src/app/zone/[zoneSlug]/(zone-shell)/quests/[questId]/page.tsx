@@ -45,8 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const seoDescription = quest.description?.trim()
     || character?.description?.trim()
     || (character
-      ? `${character.name}-ის მისია „${quest.title}“ — ${zoneName} საბზონაში, ${APP_NAME}-ზე.`
-      : `მისია „${quest.title}“ — ${zoneName} საბზონაში, ${APP_NAME}-ზე.`);
+      ? `${character.name}-ის მისია „${quest.title}“, ${zoneName} საბზონაში, ${APP_NAME}-ზე.`
+      : `მისია „${quest.title}“, ${zoneName} საბზონაში, ${APP_NAME}-ზე.`);
   const canonical = `https://${PUBLIC_SITE_URL}/zone/${zoneSlug}/quests/${quest.id}`;
   const seoImage = character?.avatar_url || `https://${PUBLIC_SITE_URL}/og-image.png`;
 

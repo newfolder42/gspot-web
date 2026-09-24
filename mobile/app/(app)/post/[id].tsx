@@ -79,6 +79,18 @@ function addCommentToTree(
   });
 }
 
+function patchCommentInTree(
+  items: PostCommentType[],
+  commentId: number,
+  patch: Partial<PostCommentType>
+): PostCommentType[] {
+  return items.map((item) => {
+    if (item.id === commentId) return { ...item, ...patch };
+    if (!item.children.length) return item;
+    return { ...item, children: patchCommentInTree(item.children, commentId, patch) };
+  });
+}
+
 function CommentItem({
   item,
   depth = 0,
@@ -95,7 +107,16 @@ function CommentItem({
 }) {
   const router = useRouter();
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Votes and rewards on a comment answer with the new summary; write it back into
+  // the post-detail cache so reopening the post (inside staleTime, no refetch)
+  // shows it instead of the state from before the tap.
+  const patchComment = (patch: Partial<PostCommentType>) =>
+    queryClient.setQueryData(['post-detail', postId], (old: any) =>
+      old ? { ...old, comments: patchCommentInTree(old.comments, item.id, patch) } : old
+    );
   const borderColor = DEPTH_BORDER_COLORS[depth % DEPTH_BORDER_COLORS.length];
   const initials = getInitials(item.author) || (item.author || '?').slice(0, 2).toUpperCase();
 
@@ -176,7 +197,7 @@ function CommentItem({
                   <ZoomableImage
                     uri={item.metadata.imageVariants?.thumb ?? item.metadata.imageUrl}
                     fullUri={item.metadata.imageUrl}
-                    title={`'${item.author} — შემოწმება`}
+                    title={`'${item.author} - შემოწმება`}
                     resizeMode="contain"
                     className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5"
                   />
@@ -206,7 +227,7 @@ function CommentItem({
                   <ZoomableImage
                     uri={item.metadata.imageVariants?.thumb ?? item.metadata.imageUrl}
                     fullUri={item.metadata.imageUrl}
-                    title={`'${item.author} — გამოცნობა ადგილზე`}
+                    title={`'${item.author} - გამოცნობა ადგილზე`}
                     resizeMode="contain"
                     className="w-44 h-32 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 mb-1.5"
                   />
@@ -250,6 +271,7 @@ function CommentItem({
             score={item.voteScore ?? 0}
             userVote={item.userVote ?? null}
             size="sm"
+            onChange={(next) => patchComment({ voteScore: next.score, userVote: next.userVote })}
           />
           {isGuess ? (
             <RewardButton
@@ -259,6 +281,7 @@ function CommentItem({
               rewards={item.rewards ?? []}
               userReward={item.userReward ?? null}
               size="sm"
+              onChange={(next) => patchComment({ rewards: next.rewards, userReward: next.userReward })}
             />
           ) : null}
           {isCheck ? (
@@ -270,6 +293,7 @@ function CommentItem({
               userReward={item.userReward ?? null}
               canGive={isHideAndSeekHost}
               size="sm"
+              onChange={(next) => patchComment({ rewards: next.rewards, userReward: next.userReward })}
             />
           ) : null}
           <Pressable onPress={() => onReply(item)} hitSlop={6}>
@@ -351,11 +375,18 @@ export default function PostPageScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      // The detail carries post + comments + their vote/reward counts; the "who
+      // gave what" lists and the reward quota are their own queries, so mark them
+      // stale too or a chip tapped right after the refresh opens the old list.
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ['reward-users', postId] }),
+        queryClient.invalidateQueries({ queryKey: ['reward-status'] }),
+      ]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, queryClient, postId]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => postsApi.addComment(postId, commentBody.trim(), replyTo?.id ?? null),

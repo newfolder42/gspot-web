@@ -100,7 +100,7 @@ exists but is not enforced).
 Out-of-season entries are filtered out before any of that — see *Seasons* below.
 
 Each newly granted item then publishes `gspot:item:found`, which gspot-services turns into
-the "შენს ინვენტარში მატებაა — …" notification and a resync of the `items_collected`
+the "შენს ინვენტარში მატებაა - …" notification and a resync of the `items_collected`
 achievement (3 / 10 / 20 / 50 / 100 ნივთი).
 
 ## Seasons

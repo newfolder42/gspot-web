@@ -5,6 +5,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { ShareButton } from '@/components/ui/ShareButton';
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { QuestObjectiveCapture } from '@/components/zone/QuestObjectiveCapture';
 import { questsApi } from '@/lib/quests';
@@ -135,6 +136,7 @@ export default function QuestDetailScreen() {
             ) : null}
           </View>
         </View>
+        <ShareButton path={`/zone/${slug}/quests/${questId}`} title={quest.title} size={18} className="p-1" />
       </View>
 
       {!userQuest && lockReason ? (
