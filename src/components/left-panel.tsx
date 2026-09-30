@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CompassIcon, HeatmapIcon, HomeIcon, InfoIcon, MapPinIcon, EyeIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HeatmapIcon, HomeIcon, InfoIcon, MapPinIcon, EyeIcon, NewUsersIcon, FlagIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 import ProfileAvatar from "@/components/common/profileAvatar";
 
@@ -30,6 +30,16 @@ export default function LeftPanel({ zones }: MobileNavProps) {
             >
               <MapPinIcon className="w-5 h-5" />
               <span>გამოსაცნობები</span>
+            </Link>
+          </li>
+
+          <li>
+            <Link
+              href="/quests"
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <FlagIcon className="w-5 h-5" />
+              <span>მისიები</span>
             </Link>
           </li>
 

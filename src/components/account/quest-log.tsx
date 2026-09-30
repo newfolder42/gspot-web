@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ProfileAvatar from '@/components/common/profileAvatar';
 import { FlagIcon, LockIcon, UsersIcon } from '@/components/icons';
+import QuestRepeatabilityBadge from '@/components/zone/quest-repeatability-badge';
 import type { AvailableQuestType, UserQuestLogEntryType } from '@/types/quest';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -37,13 +38,17 @@ function QuestLogRow({ entry }: { entry: UserQuestLogEntryType }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{entry.questTitle}</span>
+          <QuestRepeatabilityBadge repeatability={entry.repeatability} />
           {!isCompleted && STATUS_LABELS[entry.status] && (
             <span className={`rounded-full border px-1.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[entry.status]}`}>
               {STATUS_LABELS[entry.status]}
             </span>
           )}
         </div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">{entry.zoneName}</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">
+          {entry.zoneName}
+          {entry.completionCount > 1 && ` · ${entry.completionCount}-ჯერ შესრულებული`}
+        </p>
         {!isCompleted && (
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {entry.completedObjectiveCount}/{entry.objectiveCount} ამოცანა დასრულებულია
@@ -69,6 +74,7 @@ function AvailableQuestRow({ quest }: { quest: AvailableQuestType }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{quest.questTitle}</span>
+          <QuestRepeatabilityBadge repeatability={quest.repeatability} />
           {isLocked && (
             <span className="shrink-0" title={quest.lockReason ?? undefined}>
               <LockIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />

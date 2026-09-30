@@ -29,7 +29,8 @@ import {
 } from '@/lib/quests';
 import { isObjectiveAttemptable } from '@/lib/questProgress';
 import { createQuestCompletionPost as createQuestCompletionPostLib } from '@/lib/posts';
-import type { ObjectiveTypeId, InRangeLocationConfig, CaptureData, ZoneQuestCharacterType } from '@/types/quest';
+import { QUEST_REPEAT_AVAILABLE_AGAIN } from '@/types/quest';
+import type { ObjectiveTypeId, InRangeLocationConfig, CaptureData, ZoneQuestCharacterType, QuestRepeatability } from '@/types/quest';
 import type { ZoneQuestCompletedEvent } from '@/types/events/zone-quest-completed';
 import type { ZoneQuestCreatedEvent } from '@/types/events/zone-quest-created';
 import type { ZoneQuestObjectiveSubmittedEvent } from '@/types/events/zone-quest-objective-submitted';
@@ -55,6 +56,7 @@ export type CreateQuestActionInput = {
   title: string;
   description: string | null;
   objectiveOrder: QuestObjectiveOrder;
+  repeatability: QuestRepeatability;
   objectives: CreateQuestObjectiveActionInput[];
   rewards: RewardSpec[];
   characterId?: number | null;
@@ -94,6 +96,10 @@ export async function createQuestAction(
 
     const title = input.title.trim();
     if (!title) return { success: false, error: 'სათაური სავალდებულოა' };
+
+    if (!['onetime', 'daily', 'weekly'].includes(input.repeatability)) {
+      return { success: false, error: 'გამეორების ტიპი არასწორია' };
+    }
 
     if (!input.objectives || input.objectives.length === 0) {
       return { success: false, error: 'მინიმუმ ერთი ამოცანა საჭიროა' };
@@ -136,6 +142,7 @@ export async function createQuestAction(
       title,
       description: input.description?.trim() || null,
       objectiveOrder: input.objectiveOrder,
+      repeatability: input.repeatability,
       createdBy: currentUser.userId,
       rewards: validatedRewards.rewards,
       characterId: input.characterId ?? null,
@@ -239,6 +246,9 @@ export async function acceptQuestAction(questId: number): Promise<{ success: boo
     if (member.role !== 'member') return { success: false, error: 'პერსონალს მისიების შესრულება არ შეუძლია' };
 
     const existing = await getUserQuestLib(questId, currentUser.userId);
+    if (existing?.status === 'completed') {
+      return { success: false, error: QUEST_REPEAT_AVAILABLE_AGAIN[quest.repeatability] ?? 'მისია უკვე შესრულებულია' };
+    }
     if (existing) return { success: false, error: 'მისია უკვე აღებულია' };
 
     const callerLevel = await getUserLevel(currentUser.userId);
@@ -418,9 +428,9 @@ export async function reviewObjectiveAction(
     });
 
     const allDone = await allObjectivesCompletedLib(context.userQuestId);
-    if (allDone) {
-      await completeQuestLib(context.userQuestId);
-
+    // Only the review that actually flips the run to completed posts and announces it, so
+    // each run of a repeatable quest is announced exactly once.
+    if (allDone && (await completeQuestLib(context.userQuestId))) {
       const [quest, objectives] = await Promise.all([
         getQuestByIdLib(context.questId),
         getUserQuestCompletionSummaryLib(context.userQuestId),
@@ -435,6 +445,7 @@ export async function reviewObjectiveAction(
         zoneId: context.zoneId,
         zoneSlug,
         questId: context.questId,
+        userQuestId: context.userQuestId,
         objectives,
       });
 

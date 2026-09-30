@@ -10,7 +10,9 @@ import { formatPhotoTakenDate } from '@/lib/dates';
 import { getLevelColor } from '@/lib/level-color';
 import QuestObjectiveCapture from './quest-objective-capture';
 import QuestCompletedGallery from './quest-completed-gallery';
+import QuestRepeatabilityBadge from './quest-repeatability-badge';
 import { CameraIcon, CheckmarkCircleIcon, LockIcon, CalendarIcon, FlagIcon } from '@/components/icons';
+import { QUEST_REPEAT_AVAILABLE_AGAIN } from '@/types/quest';
 import type {
   ZoneQuestBaseType,
   ZoneQuestObjectiveWithProgressType,
@@ -197,8 +199,9 @@ export default function QuestDetail({
               {quest.description}
             </p>
           )}
-          {(quest.start_date || quest.end_date || quest.required_level) && (
+          {(quest.start_date || quest.end_date || quest.required_level || quest.repeatability !== 'onetime') && (
             <div className="flex items-center gap-2 flex-wrap mt-1">
+              <QuestRepeatabilityBadge repeatability={quest.repeatability} />
               {(quest.start_date || quest.end_date) && (
                 <span className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                   <CalendarIcon className="w-3.5 h-3.5" />
@@ -235,9 +238,16 @@ export default function QuestDetail({
       )}
 
       {userQuest?.status === 'completed' && (
-        <div className="flex items-center gap-2 text-sm text-teal-600 dark:text-teal-400">
-          <CheckmarkCircleIcon className="w-4 h-4" />
-          მისია შესრულებულია!
+        <div>
+          <div className="flex items-center gap-2 text-sm text-teal-600 dark:text-teal-400">
+            <CheckmarkCircleIcon className="w-4 h-4" />
+            მისია შესრულებულია!
+          </div>
+          {QUEST_REPEAT_AVAILABLE_AGAIN[quest.repeatability] && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-6">
+              {QUEST_REPEAT_AVAILABLE_AGAIN[quest.repeatability]}
+            </p>
+          )}
         </div>
       )}
 

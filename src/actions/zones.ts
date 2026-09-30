@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/session';
 import { getUserLevel, getUserIdByAlias } from '@/lib/users';
 import { MIN_LEVEL_CREATE_ZONE } from '@/lib/permissions';
 import { getZoneUploadRules } from '@/lib/zone-upload-rules';
+import { getZoneGuessPostingRules, type ZoneDateTakenMode } from '@/lib/zone-guess-posting';
 import type { ZoneMemberAddedEvent } from '@/types/events/zone-member-added';
 
 export type ZoneStatus = 'active' | 'archived' | 'disabled';
@@ -44,6 +45,7 @@ export type ZoneMemberType = Omit<ZoneMemberInfo, 'role' | 'status'> & {
 };
 export type ZoneSettinsType = {
   upload_rules: string[] | null;
+  date_taken: ZoneDateTakenMode;
 };
 
 export type ZoneTypeRecord = ZoneBaseType;
@@ -56,6 +58,7 @@ export async function getAvailableZonesForPost(userId: number): Promise<ZoneSubm
       ...z,
       settings: {
         upload_rules: getZoneUploadRules(z.upload_rules),
+        date_taken: getZoneGuessPostingRules(z.guess_posting_rules).date_taken,
       },
       tags: await getZoneTags(z.id),
     }))

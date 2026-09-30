@@ -8,8 +8,10 @@ import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { ShareButton } from '@/components/ui/ShareButton';
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { QuestObjectiveCapture } from '@/components/zone/QuestObjectiveCapture';
+import { QuestRepeatabilityBadge } from '@/components/zone/QuestRepeatabilityBadge';
 import { questsApi } from '@/lib/quests';
 import { formatPhotoTakenDate } from '@/lib/dates';
+import { QUEST_REPEAT_AVAILABLE_AGAIN } from '@/types/quest';
 import type { ZoneQuestObjectiveWithProgressType } from '@/types/quest';
 import { useTheme } from '@/constants/colors';
 
@@ -61,6 +63,7 @@ export default function QuestDetailScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quest', slug, questId] });
       queryClient.invalidateQueries({ queryKey: ['zone-quests', slug] });
+      queryClient.invalidateQueries({ queryKey: ['quest-log'] });
     },
     onError: () => Alert.alert('შეცდომა', 'მისიის აღება ვერ მოხერხდა.'),
   });
@@ -116,6 +119,7 @@ export default function QuestDetailScreen() {
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">ჯილდო · 200 გამოცდილება</Text>
           </View>
           <View className="flex-row items-center gap-2 flex-wrap mt-1">
+            <QuestRepeatabilityBadge repeatability={quest.repeatability} />
             {quest.start_date || quest.end_date ? (
               <View className="flex-row items-center gap-1.5">
                 <Feather name="calendar" size={13} color={theme.icon} />
@@ -147,9 +151,16 @@ export default function QuestDetailScreen() {
       ) : null}
 
       {userQuest?.status === 'completed' ? (
-        <View className="flex-row items-center gap-2 mt-4">
-          <Feather name="check-circle" size={16} color="#14B8A6" />
-          <Text className="text-sm text-teal-600 dark:text-teal-400">მისია შესრულებულია!</Text>
+        <View className="mt-4">
+          <View className="flex-row items-center gap-2">
+            <Feather name="check-circle" size={16} color="#14B8A6" />
+            <Text className="text-sm text-teal-600 dark:text-teal-400">მისია შესრულებულია!</Text>
+          </View>
+          {quest.repeatability && QUEST_REPEAT_AVAILABLE_AGAIN[quest.repeatability] ? (
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-6">
+              {QUEST_REPEAT_AVAILABLE_AGAIN[quest.repeatability]}
+            </Text>
+          ) : null}
         </View>
       ) : null}
 

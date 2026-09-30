@@ -3,6 +3,7 @@ import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getUserPostZones } from '@/lib/zones';
 import { getZoneTags } from '@/lib/tags';
 import { getZoneUploadRules } from '@/lib/zone-upload-rules';
+import { getZoneGuessPostingRules } from '@/lib/zone-guess-posting';
 import { logerror } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
         description: zone.description,
         settings: {
           upload_rules: getZoneUploadRules(zone.upload_rules),
+          date_taken: getZoneGuessPostingRules(zone.guess_posting_rules).date_taken,
         },
         tags: await getZoneTags(zone.id),
       }))

@@ -221,7 +221,6 @@ async function main() {
       const uqRes = await pool.query(
         `INSERT INTO user_quests (quest_id, user_id, status, completed_at)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (quest_id, user_id) DO NOTHING
          RETURNING id`,
         [questId, demoUserId, q.demoUserQuestStatus, q.demoUserQuestStatus === 'completed' ? new Date().toISOString() : null]
       );

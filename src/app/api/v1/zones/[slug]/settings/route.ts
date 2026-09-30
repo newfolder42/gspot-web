@@ -4,6 +4,7 @@ import { resolveZoneContext, canManage } from '@/app/api/v1/_utils/zone';
 import { getZoneSettings, updateZoneSettings } from '@/lib/zones';
 import { getZoneTags } from '@/lib/tags';
 import { getZoneUploadRules, DEFAULT_ZONE_UPLOAD_RULES } from '@/lib/zone-upload-rules';
+import { DEFAULT_ZONE_GUESS_SCORING_RULES } from '@/lib/zone-guess-posting';
 import { logerror } from '@/lib/logger';
 
 type Context = { params: Promise<{ slug: string }> };
@@ -59,7 +60,7 @@ export async function PATCH(req: NextRequest, context: Context) {
     const currentSettings = await getZoneSettings(ctx.zone.id);
     const guessScoringRules = typeof currentSettings?.guess_scoring_rules === 'string'
       ? currentSettings.guess_scoring_rules
-      : JSON.stringify(currentSettings?.guess_scoring_rules ?? {});
+      : JSON.stringify(currentSettings?.guess_scoring_rules ?? DEFAULT_ZONE_GUESS_SCORING_RULES);
 
     const saved = await updateZoneSettings(ctx.zone.id, {
       description: parsed.data.description.trim(),

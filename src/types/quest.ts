@@ -23,6 +23,34 @@ export const OBJECTIVE_TYPE_OPTIONS: ObjectiveTypeOption[] = [
   },
 ];
 
+// How often a member may take a quest: once ever, once per Tbilisi calendar day, or once
+// per Tbilisi calendar week (Monday to Sunday).
+export type QuestRepeatability = 'onetime' | 'daily' | 'weekly';
+
+export const QUEST_REPEATABILITY_OPTIONS: { id: QuestRepeatability; name: string }[] = [
+  { id: 'onetime', name: 'ერთჯერადი' },
+  { id: 'daily', name: 'ყოველდღიური' },
+  { id: 'weekly', name: 'ყოველკვირეული' },
+];
+
+// Badge shown to players; one-time quests carry none.
+export const QUEST_REPEATABILITY_LABELS: Record<QuestRepeatability, string | null> = {
+  onetime: null,
+  daily: 'ყოველდღიური',
+  weekly: 'ყოველკვირეული',
+};
+
+// Shown once a repeatable quest is done for the current period.
+export const QUEST_REPEAT_AVAILABLE_AGAIN: Record<QuestRepeatability, string | null> = {
+  onetime: null,
+  daily: 'ხელახლა ხელმისაწვდომი იქნება ხვალ',
+  weekly: 'ხელახლა ხელმისაწვდომი იქნება მომავალ კვირას',
+};
+
+export function parseQuestRepeatability(raw: unknown): QuestRepeatability {
+  return raw === 'daily' || raw === 'weekly' ? raw : 'onetime';
+}
+
 export type InRangeLocationConfig = {
   latitude: number;
   longitude: number;
@@ -51,6 +79,7 @@ export type ZoneQuestBaseType = {
   description: string | null;
   objective_order: string;
   status: string;
+  repeatability: QuestRepeatability;
   character_id: number | null;
   required_level: number | null;
   start_date: string | null;
@@ -97,7 +126,7 @@ export type ZoneQuestWithStatsType = ZoneQuestBaseType & {
   objectiveCount: number;
   activeCount: number; // members currently in progress (accepted, not yet completed)
   completedCount: number; // members who finished
-  myStatus: string | null; // null = caller hasn't accepted this quest yet
+  myStatus: string | null; // caller's current run; null = not taken (or, for a repeatable quest, not yet this period)
   characterName: string | null;
   characterAvatarUrl: string | null;
   lockReason: string | null; // null = unlocked for the caller
@@ -146,13 +175,17 @@ export type CompletedQuestPhotoType = {
   reviewedAt: string | null;
 };
 
-// Cross-zone quest log entry: one row per quest the caller has accepted, anywhere.
+// Cross-zone quest log entry: the caller's active run of a quest and/or their latest
+// completed one, anywhere. Earlier completions of a repeatable quest fold into
+// completionCount rather than getting rows of their own.
 export type UserQuestLogEntryType = {
   userQuestId: number;
   questId: number;
   questTitle: string;
   questDescription: string | null;
+  repeatability: QuestRepeatability;
   status: string; // active | completed
+  completionCount: number; // completed runs of this quest; 0 on an active row
   acceptedAt: string;
   completedAt: string | null;
   zoneId: number;
@@ -164,12 +197,14 @@ export type UserQuestLogEntryType = {
   completedObjectiveCount: number;
 };
 
-// Cross-zone available quest: an active quest in a zone the caller belongs to
-// that they haven't accepted yet, for the quest log's "available" section.
+// Cross-zone available quest: an active quest in a zone the caller belongs to that
+// they can take now (never taken, or a repeatable one not yet taken this period),
+// for the quest log's "available" section.
 export type AvailableQuestType = {
   questId: number;
   questTitle: string;
   questDescription: string | null;
+  repeatability: QuestRepeatability;
   requiredLevel: number | null;
   zoneId: number;
   zoneSlug: string;

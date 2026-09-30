@@ -84,6 +84,9 @@ export function GuessesTab({ alias }: { alias: string }) {
 
   const guesses = useMemo(() => data ?? [], [data]);
 
+  // zones can opt out of the index, so it needs that much history of its own
+  const indexGuesses = useMemo(() => guesses.filter((g) => g.inGuessIndex !== false), [guesses]);
+
   const latest = useMemo(
     () =>
       [...guesses]
@@ -129,13 +132,14 @@ export function GuessesTab({ alias }: { alias: string }) {
 
   // with only a handful of guesses the index says nothing and the top list just
   // mirrors the latest one, so both stay hidden until there is some history
-  const showIndex = guesses.length > GUESS_INDEX_MIN_GUESSES;
+  const showTop = guesses.length > GUESS_INDEX_MIN_GUESSES;
+  const showIndex = indexGuesses.length > GUESS_INDEX_MIN_GUESSES;
 
   return (
     <View className="px-4 py-3 gap-3">
-      {showIndex ? <GuessIndexPanel guesses={guesses} /> : null}
+      {showIndex ? <GuessIndexPanel guesses={indexGuesses} /> : null}
 
-      {showIndex ? (
+      {showTop ? (
         <GuessList
           title="საუკეთესო გამოცნობები"
           icon={<Feather name="award" size={16} color="#F59E0B" />}

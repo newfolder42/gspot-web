@@ -20,6 +20,7 @@ import {
   getContentCoordinates,
   recordPostLocation,
 } from '@/lib/postLocations';
+import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
 import type { FoundItemType } from '@/types/item';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
@@ -886,6 +887,8 @@ export async function createPost({
       }
     }
 
+    await clearHiddenDateTaken({ userId: currentUserId, contentId, zoneId });
+
     const postRes = await query(
       `INSERT INTO posts (user_id, type, title, status, zone_id)
        values ($1, $2, $3, $4, $5)
@@ -962,6 +965,7 @@ export async function createQuestCompletionPost({
   zoneId,
   zoneSlug,
   questId,
+  userQuestId,
   objectives,
 }: {
   userId: number;
@@ -969,15 +973,19 @@ export async function createQuestCompletionPost({
   zoneId: number;
   zoneSlug: string;
   questId: number;
+  userQuestId: number;
   objectives: { objectiveTitle: string | null; photoUrl: string | null; photoVariants: PostImageVariants | null }[];
 }): Promise<number | null> {
   try {
+    // One post per run: a repeatable quest's runs never overlap, so anything posted
+    // since this run was accepted belongs to it.
     const existing = await query(
       `select p.id from posts p
        join post_quest_completions pqc on pqc.post_id = p.id
-       where pqc.quest_id = $1 and p.user_id = $2
+       join user_quests uq on uq.id = $3
+       where pqc.quest_id = $1 and p.user_id = $2 and p.created_at >= uq.accepted_at
        limit 1`,
-      [questId, userId]
+      [questId, userId, userQuestId]
     );
     if ((existing.rowCount ?? 0) > 0) {
       return existing.rows[0].id;
@@ -1059,14 +1067,18 @@ order by pg.created_at desc, pg.id desc`,
   }
 }
 
-export async function getUserGuesses(userId: number): Promise<(PostGuessType & { postTitle: string; postAuthor: string; postUserId: number })[]> {
+export async function getUserGuesses(userId: number): Promise<(PostGuessType & { postTitle: string; postAuthor: string; postUserId: number; inGuessIndex: boolean })[]> {
   try {
+    // A zone leaves the guess index with `guess_scoring_rules = {"in_guess_index": false}`;
+    // anything else, a missing row included, keeps it in.
     const data = await query(
       `select pg.id, pg.post_id, pg.user_id, pg.type, pg.details, pg.created_at, 
-              p.title as post_title, u.alias as post_author, p.user_id as post_user_id
+              p.title as post_title, u.alias as post_author, p.user_id as post_user_id,
+              (zs.guess_scoring_rules->'in_guess_index') is distinct from 'false'::jsonb as in_guess_index
 from post_guesses pg
 join posts p on pg.post_id = p.id
 join users u on p.user_id = u.id
+left join zone_settings zs on zs.zone_id = p.zone_id
 where pg.user_id = $1 and p.status = 'published'
 order by pg.created_at desc`,
       [userId]
@@ -1084,6 +1096,7 @@ order by pg.created_at desc`,
       postTitle: r.post_title,
       postAuthor: r.post_author,
       postUserId: r.post_user_id,
+      inGuessIndex: Boolean(r.in_guess_index),
     }));
   } catch (err) {
     await logerror('getUserGuesses error', [err]);

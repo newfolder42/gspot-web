@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { QuestRepeatabilityBadge } from '@/components/zone/QuestRepeatabilityBadge';
 import { questsApi } from '@/lib/quests';
 import type { AvailableQuestType, UserQuestLogEntryType } from '@/types/quest';
 import { useTheme } from '@/constants/colors';
@@ -38,6 +39,7 @@ function LogRow({ entry }: { entry: UserQuestLogEntryType }) {
       <View className="flex-1 min-w-0">
         <View className="flex-row items-center gap-1.5 flex-wrap">
           <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{entry.questTitle}</Text>
+          <QuestRepeatabilityBadge repeatability={entry.repeatability} />
           {isCompleted ? (
             <Text className="text-xs font-medium rounded-full px-1.5 py-0.5 bg-teal-100 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400">შესრულდა</Text>
           ) : (
@@ -46,6 +48,7 @@ function LogRow({ entry }: { entry: UserQuestLogEntryType }) {
         </View>
         <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
           {entry.zoneName} · {entry.completedObjectiveCount}/{entry.objectiveCount} ამოცანა
+          {(entry.completionCount ?? 0) > 1 ? ` · ${entry.completionCount}-ჯერ შესრულებული` : ''}
         </Text>
       </View>
       <Feather name="chevron-right" size={18} color={theme.icon} />
@@ -64,7 +67,10 @@ function AvailableRow({ quest }: { quest: AvailableQuestType }) {
     >
       <QuestAvatar name={quest.characterName} avatarUrl={quest.characterAvatarUrl} />
       <View className="flex-1 min-w-0">
-        <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{quest.questTitle}</Text>
+        <View className="flex-row items-center gap-1.5 flex-wrap">
+          <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{quest.questTitle}</Text>
+          <QuestRepeatabilityBadge repeatability={quest.repeatability} />
+        </View>
         {locked ? (
           <View className="flex-row items-center gap-1 mt-0.5">
             <Feather name="lock" size={11} color={theme.icon} />

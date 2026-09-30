@@ -1,12 +1,14 @@
 "use server";
 
-import { query } from '@/lib/db';
+import { query, withTransaction } from '@/lib/db';
 import { logerror } from './logger';
 import { getQuestLockReason } from './questProgress';
 import { getZoneQuestsEnabled } from './zones';
 import { slugify } from './slug';
 import type { ImageVariants } from './image-pipeline';
+import { parseQuestRepeatability } from '@/types/quest';
 import type {
+  QuestRepeatability,
   ZoneQuestBaseType,
   ZoneQuestObjectiveBaseType,
   ZoneQuestWithStatsType,
@@ -28,20 +30,42 @@ function mapQuestRewards(raw: unknown): RewardSpec[] {
   return Array.isArray(raw) ? (raw as RewardSpec[]) : [];
 }
 
+// Start of the quest's current repeat period on the Tbilisi calendar: today's midnight
+// for daily quests, this Monday's for weekly ones. NULL for one-time quests.
+function questPeriodStartSql(zq: string): string {
+  return `(case ${zq}.repeatability
+    when 'daily' then date_trunc('day', now() at time zone 'Asia/Tbilisi') at time zone 'Asia/Tbilisi'
+    when 'weekly' then date_trunc('week', now() at time zone 'Asia/Tbilisi') at time zone 'Asia/Tbilisi'
+  end)`;
+}
+
+// Whether a user_quests run is still the member's current one: in progress, or completed
+// within the quest's current period (always, for one-time quests). A run belongs to the
+// period it was accepted in, so a completion that waited on review past midnight doesn't
+// use up the next day's run.
+function isCurrentUserQuestSql(uq: string, zq: string): string {
+  return `(${uq}.status = 'active' or ${zq}.repeatability = 'onetime' or ${uq}.accepted_at >= ${questPeriodStartSql(zq)})`;
+}
+
 export async function getZoneQuests(zoneId: number, userId: number | null): Promise<ZoneQuestWithStatsType[]> {
   try {
     const res = await query(
-      `select zq.id, zq.zone_id, zq.title, zq.description, zq.objective_order, zq.status,
+      `select zq.id, zq.zone_id, zq.title, zq.description, zq.objective_order, zq.status, zq.repeatability,
               zq.character_id, zq.required_level, zq.start_date, zq.end_date, zq.rewards,
               zq.created_by, zq.created_at, zq.updated_at,
               (select count(*) from zone_quest_objectives zqo where zqo.quest_id = zq.id) as objective_count,
               (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'active') as active_count,
-              (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'completed') as completed_count,
+              (select count(distinct uq2.user_id) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'completed') as completed_count,
               uq.status as my_status,
               zc.name as character_name, zc.avatar_url as character_avatar_url,
               coalesce(ux.level, 0) as caller_level
        from zone_quests zq
-       left join user_quests uq on uq.quest_id = zq.id and uq.user_id = $2
+       left join lateral (
+         select uq.status from user_quests uq
+         where uq.quest_id = zq.id and uq.user_id = $2 and ${isCurrentUserQuestSql('uq', 'zq')}
+         order by uq.accepted_at desc, uq.id desc
+         limit 1
+       ) uq on true
        left join zone_quest_characters zc on zc.id = zq.character_id
        left join user_xp ux on ux.user_id = $2
        where zq.zone_id = $1 and zq.status = 'active'`,
@@ -61,6 +85,7 @@ export async function getZoneQuests(zoneId: number, userId: number | null): Prom
         title: r.title,
         description: r.description,
         objective_order: r.objective_order,
+        repeatability: parseQuestRepeatability(r.repeatability),
         status: r.status,
         character_id: r.character_id !== null ? Number(r.character_id) : null,
         required_level: requiredLevel,
@@ -114,6 +139,7 @@ export async function getQuestById(questId: number): Promise<ZoneQuestBaseType |
       title: r.title,
       description: r.description,
       objective_order: r.objective_order,
+      repeatability: parseQuestRepeatability(r.repeatability),
       status: r.status,
       character_id: r.character_id !== null ? Number(r.character_id) : null,
       required_level: r.required_level !== null ? Number(r.required_level) : null,
@@ -212,6 +238,7 @@ export type CreateQuestInput = {
   title: string;
   description: string | null;
   objectiveOrder: string;
+  repeatability: QuestRepeatability;
   createdBy: number;
   rewards: RewardSpec[];
   characterId?: number | null;
@@ -224,14 +251,15 @@ export async function createQuest(input: CreateQuestInput): Promise<ZoneQuestBas
   try {
     const res = await query(
       `INSERT INTO zone_quests
-         (zone_id, title, description, objective_order, status, character_id, required_level, start_date, end_date, rewards, created_by)
-       VALUES ($1, $2, $3, $4, 'active', $5, $6, $7, $8, $9, $10)
+         (zone_id, title, description, objective_order, repeatability, status, character_id, required_level, start_date, end_date, rewards, created_by)
+       VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         input.zoneId,
         input.title,
         input.description,
         input.objectiveOrder,
+        input.repeatability,
         input.characterId ?? null,
         input.requiredLevel ?? null,
         input.startDate ?? null,
@@ -248,6 +276,7 @@ export async function createQuest(input: CreateQuestInput): Promise<ZoneQuestBas
       title: r.title,
       description: r.description,
       objective_order: r.objective_order,
+      repeatability: parseQuestRepeatability(r.repeatability),
       status: r.status,
       character_id: r.character_id !== null ? Number(r.character_id) : null,
       required_level: r.required_level !== null ? Number(r.required_level) : null,
@@ -289,10 +318,16 @@ export async function createQuestObjectives(questId: number, objectives: CreateQ
   }
 }
 
+// The member's current run of a quest (see isCurrentUserQuestSql). Null when they can take
+// it: never taken, or a repeatable quest whose last run belongs to an earlier period.
 export async function getUserQuest(questId: number, userId: number): Promise<UserQuestBaseType | null> {
   try {
     const res = await query(
-      `select * from user_quests where quest_id = $1 and user_id = $2 limit 1`,
+      `select uq.* from user_quests uq
+       join zone_quests zq on zq.id = uq.quest_id
+       where uq.quest_id = $1 and uq.user_id = $2 and ${isCurrentUserQuestSql('uq', 'zq')}
+       order by uq.accepted_at desc, uq.id desc
+       limit 1`,
       [questId, userId]
     );
     if (res.rows.length === 0) return null;
@@ -336,16 +371,27 @@ export async function getUserQuestById(userQuestId: number): Promise<UserQuestBa
   }
 }
 
+// Starts a new run unless the member already has a current one. user_quests has no unique
+// index to lean on (repeatable quests take several rows), so concurrent accepts for the
+// same member and quest are serialized on an advisory lock instead.
 export async function acceptQuest(questId: number, userId: number): Promise<boolean> {
   try {
-    const res = await query(
-      `INSERT INTO user_quests (quest_id, user_id, status)
-       VALUES ($1, $2, 'active')
-       ON CONFLICT (quest_id, user_id) DO NOTHING
-       RETURNING id`,
-      [questId, userId]
-    );
-    return res.rows.length > 0;
+    return await withTransaction(async (client) => {
+      await client.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`user_quest:${questId}:${userId}`]);
+      const res = await client.query(
+        `INSERT INTO user_quests (quest_id, user_id, status)
+         SELECT zq.id, $2, 'active'
+         FROM zone_quests zq
+         WHERE zq.id = $1
+           AND NOT EXISTS (
+             select 1 from user_quests uq
+             where uq.quest_id = zq.id and uq.user_id = $2 and ${isCurrentUserQuestSql('uq', 'zq')}
+           )
+         RETURNING id`,
+        [questId, userId]
+      );
+      return res.rows.length > 0;
+    });
   } catch (err) {
     await logerror('acceptQuest error', [err]);
     return false;
@@ -571,17 +617,23 @@ export async function getZoneQuestsPendingModeration(zoneId: number): Promise<Qu
   }
 }
 
+// Galleries show one photo per member per objective; a member who repeated the quest
+// shows with their latest one.
 export async function getCompletedQuestPhotos(questId: number, excludingUserId: number): Promise<CompletedQuestPhotoType[]> {
   try {
     const res = await query(
-      `select zqo.id as objective_id, zqo.title as objective_title, uqo.photo_url, uqo.capture_data,
-              uq.user_id, u.alias as user_alias, uqo.reviewed_at
-       from user_quest_objectives uqo
-       join user_quests uq on uq.id = uqo.user_quest_id
-       join zone_quest_objectives zqo on zqo.id = uqo.objective_id
-       join users u on u.id = uq.user_id
-       where uq.quest_id = $1 and uq.status = 'completed' and uq.user_id != $2 and uqo.photo_url is not null
-       order by zqo.sort_order asc, uqo.reviewed_at asc`,
+      `select * from (
+         select distinct on (uq.user_id, zqo.id)
+                zqo.id as objective_id, zqo.title as objective_title, zqo.sort_order, uqo.photo_url, uqo.capture_data,
+                uq.user_id, u.alias as user_alias, uqo.reviewed_at
+         from user_quest_objectives uqo
+         join user_quests uq on uq.id = uqo.user_quest_id
+         join zone_quest_objectives zqo on zqo.id = uqo.objective_id
+         join users u on u.id = uq.user_id
+         where uq.quest_id = $1 and uq.status = 'completed' and uq.user_id != $2 and uqo.photo_url is not null
+         order by uq.user_id, zqo.id, uqo.reviewed_at desc nulls last
+       ) p
+       order by p.sort_order asc, p.reviewed_at asc`,
       [questId, excludingUserId]
     );
     return res.rows.map((r: any) => ({
@@ -602,14 +654,18 @@ export async function getCompletedQuestPhotos(questId: number, excludingUserId: 
 export async function getQuestPhotosByAuthorAlias(questId: number, userAlias: string): Promise<CompletedQuestPhotoType[]> {
   try {
     const res = await query(
-      `select zqo.id as objective_id, zqo.title as objective_title, uqo.photo_url, uqo.capture_data,
-              uq.user_id, u.alias as user_alias, uqo.reviewed_at
-       from user_quest_objectives uqo
-       join user_quests uq on uq.id = uqo.user_quest_id
-       join zone_quest_objectives zqo on zqo.id = uqo.objective_id
-       join users u on u.id = uq.user_id
-       where uq.quest_id = $1 and uq.status = 'completed' and u.alias = $2 and uqo.photo_url is not null
-       order by zqo.sort_order asc, uqo.reviewed_at asc`,
+      `select * from (
+         select distinct on (zqo.id)
+                zqo.id as objective_id, zqo.title as objective_title, zqo.sort_order, uqo.photo_url, uqo.capture_data,
+                uq.user_id, u.alias as user_alias, uqo.reviewed_at
+         from user_quest_objectives uqo
+         join user_quests uq on uq.id = uqo.user_quest_id
+         join zone_quest_objectives zqo on zqo.id = uqo.objective_id
+         join users u on u.id = uq.user_id
+         where uq.quest_id = $1 and uq.status = 'completed' and u.alias = $2 and uqo.photo_url is not null
+         order by zqo.id, uqo.reviewed_at desc nulls last
+       ) p
+       order by p.sort_order asc, p.reviewed_at asc`,
       [questId, userAlias]
     );
     return res.rows.map((r: any) => ({
@@ -709,23 +765,31 @@ async function generateUniqueCharacterSlug(zoneId: number, name: string): Promis
   }
 }
 
+// One row per quest and status: the active run, and the latest completed one standing in
+// for every completion of a repeatable quest.
 export async function getUserQuestLog(userId: number): Promise<UserQuestLogEntryType[]> {
   try {
     const res = await query(
-      `select uq.id as user_quest_id, uq.quest_id, uq.status, uq.accepted_at, uq.completed_at,
-              zq.title as quest_title, zq.description as quest_description,
-              z.id as zone_id, z.slug as zone_slug, z.name as zone_name,
-              zc.name as character_name, zc.avatar_url as character_avatar_url,
-              (select count(*) from zone_quest_objectives where quest_id = zq.id) as objective_count,
-              (select count(*) from user_quest_objectives where user_quest_id = uq.id and status = 'completed') as completed_objective_count
-       from user_quests uq
-       join zone_quests zq on zq.id = uq.quest_id
-       join zones z on z.id = zq.zone_id
-       left join zone_quest_characters zc on zc.id = zq.character_id
-       where uq.user_id = $1
+      `select log.*,
+              (select count(*) from zone_quest_objectives where quest_id = log.quest_id) as objective_count,
+              (select count(*) from user_quest_objectives where user_quest_id = log.user_quest_id and status = 'completed') as completed_objective_count
+       from (
+         select distinct on (uq.quest_id, uq.status)
+                uq.id as user_quest_id, uq.quest_id, uq.status, uq.accepted_at, uq.completed_at,
+                count(*) over (partition by uq.quest_id, uq.status) as run_count,
+                zq.title as quest_title, zq.description as quest_description, zq.repeatability,
+                z.id as zone_id, z.slug as zone_slug, z.name as zone_name,
+                zc.name as character_name, zc.avatar_url as character_avatar_url
+         from user_quests uq
+         join zone_quests zq on zq.id = uq.quest_id
+         join zones z on z.id = zq.zone_id
+         left join zone_quest_characters zc on zc.id = zq.character_id
+         where uq.user_id = $1
+         order by uq.quest_id, uq.status, uq.accepted_at desc, uq.id desc
+       ) log
        order by
-         case uq.status when 'active' then 0 when 'completed' then 1 else 2 end,
-         uq.accepted_at desc`,
+         case log.status when 'active' then 0 when 'completed' then 1 else 2 end,
+         log.accepted_at desc`,
       [userId]
     );
     return res.rows.map((r: any) => ({
@@ -733,7 +797,9 @@ export async function getUserQuestLog(userId: number): Promise<UserQuestLogEntry
       questId: Number(r.quest_id),
       questTitle: r.quest_title,
       questDescription: r.quest_description,
+      repeatability: parseQuestRepeatability(r.repeatability),
       status: r.status,
+      completionCount: r.status === 'completed' ? Number(r.run_count) : 0,
       acceptedAt: r.accepted_at,
       completedAt: r.completed_at,
       zoneId: Number(r.zone_id),
@@ -750,20 +816,21 @@ export async function getUserQuestLog(userId: number): Promise<UserQuestLogEntry
   }
 }
 
-// Active quests the caller can still take: zones they're an active member of,
-// quests they haven't accepted yet. Quests locked behind a level or a start date
-// are included with their lock reason, the way the zone quests tab shows them;
-// expired ones are dropped since they can never be accepted.
+// Active quests the caller can still take: zones they're an active member of, quests
+// they have no current run of — never accepted, or repeatable ones not yet taken this
+// period. Quests locked behind a level or a start date are included with their lock
+// reason, the way the zone quests tab shows them; expired ones are dropped since they
+// can never be accepted.
 export async function getUserAvailableQuests(userId: number): Promise<AvailableQuestType[]> {
   try {
     const res = await query(
-      `select zq.id as quest_id, zq.title as quest_title, zq.description as quest_description,
+      `select zq.id as quest_id, zq.title as quest_title, zq.description as quest_description, zq.repeatability,
               zq.required_level, zq.start_date, zq.end_date, zq.created_at, zq.character_id,
               z.id as zone_id, z.slug as zone_slug, z.name as zone_name,
               zc.name as character_name, zc.avatar_url as character_avatar_url,
               (select count(*) from zone_quest_objectives zqo where zqo.quest_id = zq.id) as objective_count,
               (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'active') as active_count,
-              (select count(*) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'completed') as completed_count,
+              (select count(distinct uq2.user_id) from user_quests uq2 where uq2.quest_id = zq.id and uq2.status = 'completed') as completed_count,
               coalesce(ux.level, 0) as caller_level
        from zone_quests zq
        join zones z on z.id = zq.zone_id
@@ -773,7 +840,10 @@ export async function getUserAvailableQuests(userId: number): Promise<AvailableQ
        left join user_xp ux on ux.user_id = $1
        where zq.status = 'active'
          and (zq.end_date is null or zq.end_date >= now())
-         and not exists (select 1 from user_quests uq where uq.quest_id = zq.id and uq.user_id = $1)`,
+         and not exists (
+           select 1 from user_quests uq
+           where uq.quest_id = zq.id and uq.user_id = $1 and ${isCurrentUserQuestSql('uq', 'zq')}
+         )`,
       [userId]
     );
 
@@ -783,6 +853,7 @@ export async function getUserAvailableQuests(userId: number): Promise<AvailableQ
         questId: Number(r.quest_id),
         questTitle: r.quest_title,
         questDescription: r.quest_description,
+        repeatability: parseQuestRepeatability(r.repeatability),
         requiredLevel,
         zoneId: Number(r.zone_id),
         zoneSlug: r.zone_slug,

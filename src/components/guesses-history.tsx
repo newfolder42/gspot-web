@@ -10,6 +10,7 @@ type GuessItem = PostGuessType & {
   postTitle: string;
   postAuthor: string;
   postUserId: number;
+  inGuessIndex: boolean;
 };
 
 const LIST_SIZE = 5;
@@ -78,7 +79,11 @@ export default function GuessesHistory({ guesses, emptyMessage }: { guesses: Gue
 
   // with only a handful of guesses the index says nothing and the top list just
   // mirrors the latest one, so both stay hidden until there is some history
-  const showIndex = guesses.length > GUESS_INDEX_MIN_GUESSES;
+  const showTop = guesses.length > GUESS_INDEX_MIN_GUESSES;
+
+  // zones can opt out of the index, so it needs that much history of its own
+  const indexGuesses = guesses.filter((g) => g.inGuessIndex);
+  const showIndex = indexGuesses.length > GUESS_INDEX_MIN_GUESSES;
 
   const top = [...guesses]
     .sort((a, b) => {
@@ -90,10 +95,10 @@ export default function GuessesHistory({ guesses, emptyMessage }: { guesses: Gue
 
   return (
     <div className="space-y-3">
-      {showIndex && <GuessIndexPanel guesses={guesses} />}
+      {showIndex && <GuessIndexPanel guesses={indexGuesses} />}
 
-      <div className={`grid gap-3 ${showIndex ? "md:grid-cols-2" : ""}`}>
-        {showIndex && (
+      <div className={`grid gap-3 ${showTop ? "md:grid-cols-2" : ""}`}>
+        {showTop && (
           <GuessList
             title="საუკეთესო გამოცნობები"
             icon={<TrophyIcon className="h-4 w-4 text-amber-500" />}

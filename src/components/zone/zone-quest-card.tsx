@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ProfileAvatar from '@/components/common/profileAvatar';
 import { FlagIcon, CheckmarkCircleIcon, LockIcon, UsersIcon } from '@/components/icons';
+import QuestRepeatabilityBadge from './quest-repeatability-badge';
 import type { ZoneQuestWithStatsType } from '@/types/quest';
 
 export default function ZoneQuestCard({
@@ -36,6 +37,7 @@ export default function ZoneQuestCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{quest.title}</span>
+          <QuestRepeatabilityBadge repeatability={quest.repeatability} />
           {isCompletedByMe && <CheckmarkCircleIcon className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />}
           {quest.myStatus === 'active' && (
             <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-1.5 py-0.5 rounded">

@@ -9,8 +9,8 @@ import QuestCharacterPicker from './quest-character-picker';
 import { PlusIcon, XIcon, MapPinIcon } from '@/components/icons';
 import { mapDefaultCenter } from '@/lib/map';
 import { formatCoordinates } from '@/lib/utils';
-import { OBJECTIVE_TYPE_OPTIONS } from '@/types/quest';
-import type { ObjectiveTypeId, ZoneQuestCharacterType } from '@/types/quest';
+import { OBJECTIVE_TYPE_OPTIONS, QUEST_REPEATABILITY_OPTIONS } from '@/types/quest';
+import type { ObjectiveTypeId, QuestRepeatability, ZoneQuestCharacterType } from '@/types/quest';
 import { QUEST_XP_MIN, QUEST_XP_MAX, QUEST_XP_DEFAULT } from '@/types/reward';
 import type { RewardSpec } from '@/types/reward';
 
@@ -51,6 +51,7 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [objectiveOrder, setObjectiveOrder] = useState<QuestObjectiveOrder>('ordered');
+  const [repeatability, setRepeatability] = useState<QuestRepeatability>('onetime');
   const [objectives, setObjectives] = useState<ObjectiveForm[]>([newObjective()]);
   const [characters, setCharacters] = useState(initialCharacters);
   const [characterId, setCharacterId] = useState<number | null>(null);
@@ -112,6 +113,7 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
       title: title.trim(),
       description: description.trim() || null,
       objectiveOrder,
+      repeatability,
       objectives: objectives.map((o) => ({
         title: o.title.trim() || null,
         displayText: o.displayText.trim(),
@@ -181,18 +183,34 @@ export default function NewQuestForm({ zoneId, zoneSlug, characters: initialChar
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-          ამოცანების მიმდევრობა
-        </label>
-        <select
-          value={objectiveOrder}
-          onChange={(e) => setObjectiveOrder(e.target.value as QuestObjectiveOrder)}
-          className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
-        >
-          <option value="ordered">თანმიმდევრობით</option>
-          <option value="unordered">თანმიმდევრობის გარეშე</option>
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            ამოცანების მიმდევრობა
+          </label>
+          <select
+            value={objectiveOrder}
+            onChange={(e) => setObjectiveOrder(e.target.value as QuestObjectiveOrder)}
+            className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
+          >
+            <option value="ordered">თანმიმდევრობით</option>
+            <option value="unordered">თანმიმდევრობის გარეშე</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            გამეორება
+          </label>
+          <select
+            value={repeatability}
+            onChange={(e) => setRepeatability(e.target.value as QuestRepeatability)}
+            className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-600"
+          >
+            {QUEST_REPEATABILITY_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>{opt.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

@@ -10,6 +10,7 @@ export type ZoneBaseType = {
   join_policy: string;
   state: string;
   upload_rules?: string;
+  guess_posting_rules?: unknown;
   created_at: string;
   updated_at: string;
 };

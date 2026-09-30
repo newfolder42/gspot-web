@@ -234,7 +234,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
   try {
     const res = await query(
       `select z.id, z.slug, z.name, z.description, z.visibility, z.join_policy, z.state, z.created_at, z.updated_at,
-              zs.upload_rules, zcp.public_url as profile_photo_url
+              zs.upload_rules, zs.guess_posting_rules, zcp.public_url as profile_photo_url
        from zones z
        left join zone_settings zs on zs.zone_id = z.id
        left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
@@ -258,6 +258,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
       join_policy: r.join_policy,
       state: r.state,
       upload_rules: r.upload_rules,
+      guess_posting_rules: r.guess_posting_rules,
       created_at: r.created_at,
       updated_at: r.updated_at,
     }));

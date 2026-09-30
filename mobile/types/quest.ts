@@ -2,6 +2,24 @@
 
 export type ObjectiveTypeId = 'in_range_location' | 'capture_photo';
 
+// How often a member may take a quest: once ever, once per Tbilisi calendar day, or once
+// per Tbilisi calendar week (Monday to Sunday).
+export type QuestRepeatability = 'onetime' | 'daily' | 'weekly';
+
+// Badge shown to players; one-time quests carry none.
+export const QUEST_REPEATABILITY_LABELS: Record<QuestRepeatability, string | null> = {
+  onetime: null,
+  daily: 'ყოველდღიური',
+  weekly: 'ყოველკვირეული',
+};
+
+// Shown once a repeatable quest is done for the current period.
+export const QUEST_REPEAT_AVAILABLE_AGAIN: Record<QuestRepeatability, string | null> = {
+  onetime: null,
+  daily: 'ხელახლა ხელმისაწვდომი იქნება ხვალ',
+  weekly: 'ხელახლა ხელმისაწვდომი იქნება მომავალ კვირას',
+};
+
 export type InRangeLocationConfig = {
   latitude: number;
   longitude: number;
@@ -28,6 +46,7 @@ export type ZoneQuestBaseType = {
   description: string | null;
   objective_order: string;
   status: string;
+  repeatability: QuestRepeatability;
   character_id: number | null;
   required_level: number | null;
   start_date: string | null;
@@ -85,7 +104,9 @@ export type UserQuestLogEntryType = {
   questId: number;
   questTitle: string;
   questDescription: string | null;
+  repeatability: QuestRepeatability;
   status: string;
+  completionCount: number; // completed runs of this quest; 0 on an active row
   acceptedAt: string;
   completedAt: string | null;
   zoneId: number;
@@ -121,6 +142,7 @@ export type AvailableQuestType = {
   questId: number;
   questTitle: string;
   questDescription: string | null;
+  repeatability: QuestRepeatability;
   requiredLevel: number | null;
   zoneId: number;
   zoneSlug: string;

@@ -345,6 +345,9 @@ export default function Submit({
   // being sent on to the post itself.
   const [found, setFound] = useState<{ postId: number; items: FoundItemType[] } | null>(null);
 
+  // Set per zone in `zone_settings.guess_posting_rules`; a hidden date is never sent.
+  const dateTakenMode = selectedZone?.settings.date_taken ?? 'mandatory';
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     submitRequestIdRef.current = null;
@@ -462,7 +465,7 @@ export default function Submit({
                   originalFileName: selectedFile.name,
                   fileSize: selectedFile.size,
                   coordinates: finalCoords,
-                  dateTaken: dateTaken ? dateTaken.toISOString() : null,
+                  dateTaken: dateTakenMode !== 'hidden' && dateTaken ? dateTaken.toISOString() : null,
                 }
               );
               if (content == null) {
@@ -556,12 +559,12 @@ export default function Submit({
       return null;
     }
 
-    if (!dateTaken) {
+    if (dateTakenMode === 'mandatory' && !dateTaken) {
       setError('გადაღების თარიღი სავალდებულოა');
       return null;
     }
 
-    const dateErr = validateDateTaken(dateTaken);
+    const dateErr = dateTakenMode === 'hidden' ? null : validateDateTaken(dateTaken);
     if (dateErr) {
       setError(dateErr);
       return null;
@@ -610,7 +613,7 @@ export default function Submit({
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className={`grid grid-cols-1 gap-3 ${dateTakenMode !== 'hidden' ? 'md:grid-cols-2' : ''}`}>
                     <label className="block text-sm">
                       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">სათაური</span>
                       <input
@@ -621,20 +624,27 @@ export default function Submit({
                       />
                     </label>
 
-                    <label className="block text-sm">
-                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">გადაღებულია</span>
-                      <input
-                        type="date"
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-                        value={formatDateOnly(dateTaken)}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const parsed = parseDateOnly(e.target.value);
-                          setDateTaken(parsed);
-                          const err = validateDateTaken(parsed);
-                          setError(err);
-                        }}
-                      />
-                    </label>
+                    {dateTakenMode !== 'hidden' && (
+                      <label className="block text-sm">
+                        <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
+                          გადაღებულია
+                          {dateTakenMode === 'optional' && (
+                            <span className="ml-1 font-normal normal-case tracking-normal text-zinc-400 dark:text-zinc-500">(არასავალდებულო)</span>
+                          )}
+                        </span>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                          value={formatDateOnly(dateTaken)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const parsed = parseDateOnly(e.target.value);
+                            setDateTaken(parsed);
+                            const err = validateDateTaken(parsed);
+                            setError(err);
+                          }}
+                        />
+                      </label>
+                    )}
                   </div>
 
                   {selectedZone && selectedZone.tags.length > 0 && (
@@ -764,7 +774,7 @@ export default function Submit({
                 const final = coords ?? photo?.coordinates ?? null;
                 const hasCoords = final && final.latitude != null && final.longitude != null;
                 const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
-                const disabled = submitLocked || uploading || processing || !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || !dateTaken;
+                const disabled = submitLocked || uploading || processing || !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || (dateTakenMode === 'mandatory' && !dateTaken);
                 return (
                   <button
                     className={`px-3 py-1 text-white rounded-md ${disabled ? 'bg-teal-300 cursor-not-allowed opacity-60' : 'bg-teal-600 cursor-pointer'}`}

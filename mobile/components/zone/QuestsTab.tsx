@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
+import { QuestRepeatabilityBadge } from '@/components/zone/QuestRepeatabilityBadge';
 import { questsApi } from '@/lib/quests';
 import type { ZoneQuestWithStatsType } from '@/types/quest';
 import { useTheme } from '@/constants/colors';
@@ -33,6 +34,7 @@ function QuestRow({ quest, slug }: { quest: ZoneQuestWithStatsType; slug: string
       <View className="flex-1 min-w-0">
         <View className="flex-row items-center gap-1.5 flex-wrap">
           <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{quest.title}</Text>
+          <QuestRepeatabilityBadge repeatability={quest.repeatability} />
           {status ? (
             <Text className={`text-xs font-medium rounded-full px-1.5 py-0.5 ${status.cls}`}>{status.label}</Text>
           ) : null}

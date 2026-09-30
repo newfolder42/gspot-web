@@ -10,6 +10,9 @@ export type ZoneTag = {
   created_at: string;
 };
 
+/** How the "გადაღებულია" field behaves in a zone; mirrors web `lib/zone-guess-posting.ts`. */
+export type ZoneDateTakenMode = 'mandatory' | 'optional' | 'hidden';
+
 export type ZoneSubmitType = {
   id: number;
   slug: string;
@@ -17,6 +20,8 @@ export type ZoneSubmitType = {
   description: string | null;
   settings: {
     upload_rules: string[];
+    /** Absent from servers older than the setting — read as 'mandatory'. */
+    date_taken?: ZoneDateTakenMode;
   };
   tags: ZoneTag[];
 };

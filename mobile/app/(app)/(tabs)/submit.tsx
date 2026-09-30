@@ -20,7 +20,7 @@ import MapboxGL from '@rnmapbox/maps';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
-import { submitApi, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
+import { submitApi, type ZoneDateTakenMode, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
 import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
@@ -158,8 +158,10 @@ function extractDateFromExif(exif: any): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function validateDate(d: Date | null): string | null {
-  if (!d) return 'გადაღების თარიღი სავალდებულოა';
+function validateDate(d: Date | null, mode: ZoneDateTakenMode): string | null {
+  // A hidden date is never sent, so whatever EXIF put there cannot block the submit.
+  if (mode === 'hidden') return null;
+  if (!d) return mode === 'mandatory' ? 'გადაღების თარიღი სავალდებულოა' : null;
   const today = new Date();
   const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const tOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -416,6 +418,9 @@ function PhotoSubmit() {
 
   const submitIdRef = useRef<string | null>(null);
 
+  // Set per zone in `zone_settings.guess_posting_rules`; a hidden date is never sent.
+  const dateTakenMode: ZoneDateTakenMode = selectedZone?.settings.date_taken ?? 'mandatory';
+
   // Glide the fill between steps instead of snapping. The fixed-percentage steps hold their
   // number for as long as their API call takes, so the motion is what says the submit is alive.
   const barAnim = useRef(new Animated.Value(0)).current;
@@ -464,7 +469,7 @@ function PhotoSubmit() {
       if (!selectedZone) throw new Error('საბზონა სავალდებულოა');
       if (!image) throw new Error('ფოტო-სურათი სავალდებულოა');
 
-      const dateErr = validateDate(dateTaken);
+      const dateErr = validateDate(dateTaken, dateTakenMode);
       if (dateErr) throw new Error(dateErr);
 
       if (!coords || !isFinite(coords.latitude) || !isFinite(coords.longitude)) {
@@ -511,7 +516,7 @@ function PhotoSubmit() {
           originalFileName: processed.name,
           fileSize: processed.size,
           coordinates: coords,
-          dateTaken: dateTaken!.toISOString(),
+          dateTaken: dateTakenMode !== 'hidden' && dateTaken ? dateTaken.toISOString() : null,
         });
 
         enterPhase('creating');
@@ -651,7 +656,7 @@ function PhotoSubmit() {
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const isPending = submitMutation.isPending;
-  const dateErr = validateDate(dateTaken);
+  const dateErr = validateDate(dateTaken, dateTakenMode);
   const hasCoords = coords != null && isFinite(coords.latitude) && isFinite(coords.longitude);
   const inGeorgia = hasCoords && isInGeorgia(coords!.latitude, coords!.longitude);
   const canSubmit = !isPending && selectedZone != null && image != null && dateErr == null && hasCoords && inGeorgia;
@@ -753,57 +758,59 @@ function PhotoSubmit() {
       />
 
       {/* ── Date taken ──────────────────────────────────── */}
-      <View className="mb-4">
-        <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-          გადაღებულია <Text className="text-rose-500">*</Text>
-        </Text>
+      {dateTakenMode !== 'hidden' ? (
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            გადაღებულია{dateTakenMode === 'mandatory' ? <Text className="text-rose-500"> *</Text> : null}
+          </Text>
 
-        {Platform.OS === 'ios' ? (
-          <View className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2">
-            <DateTimePicker
-              value={dateTaken ?? new Date()}
-              mode="date"
-              display="compact"
-              maximumDate={new Date()}
-              minimumDate={new Date('2012-01-01')}
-              style={{ alignSelf: 'flex-start' }}
-              onValueChange={(_, date) => {
-                if (date) setDateTaken(date);
-              }}
-            />
-          </View>
-        ) : (
-          <>
-            <Pressable
-              onPress={() => setShowDatePicker(true)}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
-            >
-              <Text className={dateTaken ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
-                {dateTaken ? dateTaken.toISOString().split('T')[0] : 'თარიღის არჩევა'}
-              </Text>
-              <Feather name="calendar" size={18} color={theme.icon} />
-            </Pressable>
-            {showDatePicker ? (
+          {Platform.OS === 'ios' ? (
+            <View className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2">
               <DateTimePicker
                 value={dateTaken ?? new Date()}
                 mode="date"
-                display="default"
+                display="compact"
                 maximumDate={new Date()}
                 minimumDate={new Date('2012-01-01')}
+                style={{ alignSelf: 'flex-start' }}
                 onValueChange={(_, date) => {
-                  setShowDatePicker(false);
                   if (date) setDateTaken(date);
                 }}
-                onDismiss={() => setShowDatePicker(false)}
               />
-            ) : null}
-          </>
-        )}
+            </View>
+          ) : (
+            <>
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
+              >
+                <Text className={dateTaken ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
+                  {dateTaken ? dateTaken.toISOString().split('T')[0] : 'თარიღის არჩევა'}
+                </Text>
+                <Feather name="calendar" size={18} color={theme.icon} />
+              </Pressable>
+              {showDatePicker ? (
+                <DateTimePicker
+                  value={dateTaken ?? new Date()}
+                  mode="date"
+                  display="default"
+                  maximumDate={new Date()}
+                  minimumDate={new Date('2012-01-01')}
+                  onValueChange={(_, date) => {
+                    setShowDatePicker(false);
+                    if (date) setDateTaken(date);
+                  }}
+                  onDismiss={() => setShowDatePicker(false)}
+                />
+              ) : null}
+            </>
+          )}
 
-        {dateTaken && dateErr ? (
-          <Text className="text-xs text-rose-500 mt-1 ml-1">{dateErr}</Text>
-        ) : null}
-      </View>
+          {dateTaken && dateErr ? (
+            <Text className="text-xs text-rose-500 mt-1 ml-1">{dateErr}</Text>
+          ) : null}
+        </View>
+      ) : null}
 
       {/* ── Tags ────────────────────────────────────────── */}
       {selectedZone?.tags?.length ? (

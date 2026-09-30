@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getZone, getZoneMember } from '@/actions/zones';
 import { getCurrentUser } from '@/lib/session';
 import { getZoneSettings, updateZoneSettings, upsertZoneContent } from '@/lib/zones';
+import { DEFAULT_ZONE_GUESS_SCORING_RULES } from '@/lib/zone-guess-posting';
 
 export type SaveZoneMediaPayload = {
   contentType: 'profile-photo' | 'banner';
@@ -97,7 +98,7 @@ export async function saveZoneSettingsAction(
 
   const guessScoringRules = typeof currentSettings?.guess_scoring_rules === 'string'
     ? currentSettings.guess_scoring_rules
-    : JSON.stringify(currentSettings?.guess_scoring_rules ?? {});
+    : JSON.stringify(currentSettings?.guess_scoring_rules ?? DEFAULT_ZONE_GUESS_SCORING_RULES);
 
   const saved = await updateZoneSettings(zone.id, {
     description,

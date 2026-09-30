@@ -9,6 +9,7 @@ import {
   getContentCoordinates,
   recordPostLocation,
 } from '@/lib/postLocations';
+import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
 import { type PostPublishedEvent } from '@/types/events/post-published';
 import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 import type { FoundItemType } from '@/types/item';
@@ -239,6 +240,8 @@ export async function createMobilePost({
         return { refused: 'same_location', message: limit.message };
       }
     }
+
+    await clearHiddenDateTaken({ userId, contentId, zoneId });
 
     const postRes = await query(
       `INSERT INTO posts (user_id, type, title, status, zone_id)
