@@ -9,6 +9,9 @@ import {
 } from '@/lib/quests';
 import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
+import { getRewardDefinitionsByKeys } from '@/lib/rewards';
+import { getItemDefinitionsByAliases } from '@/lib/inventory';
+import { getCatalogRewardKeys, getItemRewardAliases } from '@/types/reward';
 import { logerror } from '@/lib/logger';
 
 type Context = { params: Promise<{ slug: string; questId: string }> };
@@ -30,10 +33,13 @@ export async function GET(req: NextRequest, context: Context) {
     }
 
     const userQuest = await getUserQuest(questId, ctx.user.userId);
-    const [objectives, character, callerLevel] = await Promise.all([
+    // Catalog reward and item tiles need name/icon; xp and reward-limit tiles are self-describing.
+    const [objectives, character, callerLevel, rewardDefinitions, itemDefinitions] = await Promise.all([
       getQuestObjectivesWithProgress(questId, userQuest?.id ?? null),
       quest.character_id ? getQuestCharacter(quest.character_id) : Promise.resolve(null),
       getUserLevel(ctx.user.userId),
+      getRewardDefinitionsByKeys(getCatalogRewardKeys(quest.rewards)),
+      getItemDefinitionsByAliases(getItemRewardAliases(quest.rewards)),
     ]);
 
     const lockReason =
@@ -64,6 +70,8 @@ export async function GET(req: NextRequest, context: Context) {
       canAccept,
       canModerate: canModerate(ctx.member?.role),
       gallery,
+      rewardDefinitions,
+      itemDefinitions,
     });
   } catch (err) {
     await logerror('GET /api/v1/zones/[slug]/quests/[questId] error', { error: String(err) });

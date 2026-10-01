@@ -1,5 +1,8 @@
 // Mirrors the subset of web `src/types/quest.ts` the mobile app consumes.
 
+import type { RewardDefinition, RewardSpec } from '@/types/reward';
+import type { ItemDefinition } from '@/types/item';
+
 export type ObjectiveTypeId = 'in_range_location' | 'capture_photo';
 
 // How often a member may take a quest: once ever, once per Tbilisi calendar day, or once
@@ -51,6 +54,7 @@ export type ZoneQuestBaseType = {
   required_level: number | null;
   start_date: string | null;
   end_date: string | null;
+  rewards: RewardSpec[];
   created_by: number | null;
   created_at: string;
   updated_at: string;
@@ -127,6 +131,8 @@ export type QuestDetailResponse = {
   canAccept: boolean;
   canModerate: boolean;
   gallery: CompletedQuestPhotoType[];
+  rewardDefinitions: RewardDefinition[];
+  itemDefinitions: ItemDefinition[];
 };
 
 export type CaptureMethod = 'exif' | 'live_gps';

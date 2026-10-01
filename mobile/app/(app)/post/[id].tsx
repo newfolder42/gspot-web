@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { KeyboardChatScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
@@ -509,10 +509,11 @@ export default function PostPageScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
-        className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+      <KeyboardChatScrollView
+        style={{ flex: 1, backgroundColor: theme.bg }}
         contentContainerStyle={{ paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
+        offset={insets.bottom}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -707,7 +708,7 @@ export default function PostPageScreen() {
             ))
           )}
         </View>
-      </ScrollView>
+      </KeyboardChatScrollView>
 
       {/* ── Sticky bottom comment input – floats above the keyboard ── */}
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>

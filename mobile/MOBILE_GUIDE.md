@@ -364,13 +364,31 @@ All shared primitive UI lives in `components/ui/`:
 
 | Component | What it does |
 |---|---|
-| `ScreenLayout` | `SafeAreaView` + `KeyboardAvoidingView` wrapper. Handles safe-area insets (notch, home bar) and auto-adjusts layout when soft keyboard appears. Optionally wraps children in a `ScrollView`. |
+| `ScreenLayout` | `SafeAreaView` wrapper. Handles safe-area insets (notch, home bar) and keeps content clear of the soft keyboard; `scroll` wraps children in a `KeyboardScrollView`. |
+| `KeyboardScrollView` | The scroller for any screen or form with a text input — see [Keyboard handling](#keyboard-handling). |
+| `Portal` / `PortalHost` | Draws an overlay above the whole app *inside* the app window. `PortalHost` wraps the `(app)` stack. |
 | `Button` | Pressable with variants (`primary`, `secondary`, `ghost`, `danger`), loading spinner state, and disabled state. |
 | `Input` | Styled `TextInput` wrapper with label, error message, and password visibility toggle. |
 | `ProfileAvatar` | Displays initials + background color derived from the user's alias. Falls back gracefully if no image. |
 | `LevelBadge` | Small badge showing user XP level. |
 | `TagBadge` | Pill badge for post tags. |
-| `AppDrawer` | Slide-in side drawer (280px) with gesture detection (`PanResponder`). Navigates to zones, profile, etc. Animated with `Animated.timing` using the native driver. |
+| `AppDrawer` | Slide-in side drawer (280px) with gesture detection (`PanResponder`), rendered through `Portal`. Navigates to zones, profile, etc. Animated with `Animated.timing` using the native driver. |
+
+### Keyboard handling
+
+`KeyboardProvider` (`react-native-keyboard-controller`, mounted in the root layout) takes over Android's window resizing: the window **no longer shrinks** when the keyboard opens. A plain `ScrollView` keeps its full height underneath it, so whatever lands behind the keyboard can't be scrolled into view. Every screen with a text input therefore picks one of these — never a bare `ScrollView`, and never react-native's own `KeyboardAvoidingView`:
+
+| Screen shape | Use | Examples |
+|---|---|---|
+| Scrolling form / page with inputs | `KeyboardScrollView` (`components/ui/KeyboardScrollView`) — adds the keyboard's height as scroll room, so the whole page stays scrollable, and lifts the focused field above the keyboard. `ScreenLayout scroll` uses it. | submit, hide-and-seek new, inventory, zone page, auth screens |
+| Content + composer pinned to the bottom | `KeyboardChatScrollView` for the content + `KeyboardStickyView` for the composer, with the same `offset` (`insets.bottom`) on both | post comments |
+| Fixed layout, list under a header input, or a centred dialog inside a `Modal` | `KeyboardAvoidingView` **from `react-native-keyboard-controller`** with `behavior="padding"` and `automaticOffset` | search, edit post, report |
+
+Also:
+
+- Lists and scrollers that sit next to an input get `keyboardShouldPersistTaps="handled"` (`KeyboardScrollView` sets it), otherwise the first tap only closes the keyboard.
+- These components are not NativeWind-aware — style them with `style` / `contentContainerStyle`, not `className`.
+- Anything that only needs to *look* like it floats over the app (drawers, popovers) goes through `Portal`, not `Modal`. On Android a `Modal` is a second native window; handing focus back to the app window when it closes makes the keyboard re-evaluate itself and flash up and away.
 
 ---
 

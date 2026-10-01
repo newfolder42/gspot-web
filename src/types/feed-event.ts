@@ -35,6 +35,8 @@ export type QuestCreatedDetails = {
   zoneSlug: string;
   zoneName: string;
   characterName: string | null;
+  /** Absent on events written before the slug was snapshotted. */
+  characterSlug?: string | null;
   characterAvatar: string | null;
   createdByAlias?: string;
 };

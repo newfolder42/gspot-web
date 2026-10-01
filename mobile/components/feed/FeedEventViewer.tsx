@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Dimensions, Image, Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { CharacterLink } from '@/components/ui/CharacterLink';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -28,14 +29,42 @@ type Props = {
   onClose: () => void;
 };
 
-function SlideHeader({ event, icon }: { event: Slide; icon: React.ReactNode }) {
+/** New quests speak as their character (or the zone), not the user who created them. */
+function SlideActor({ event, onNavigate }: { event: Slide; onNavigate?: (path: any, params?: any) => void }) {
+  if (event.type === 'quest_created') {
+    const d = event.details as QuestCreatedDetails;
+    return (
+      <CharacterLink
+        name={d.characterName ?? d.zoneName}
+        zoneSlug={d.zoneSlug}
+        characterSlug={d.characterName ? d.characterSlug : null}
+        onNavigate={onNavigate}
+      />
+    );
+  }
   return (
-    <View className="flex-row items-center gap-2 px-4 py-3">
-      <View>{icon}</View>
+    <>
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
         &apos;{event.actorAlias}
       </Text>
       {event.actorLevel != null ? <LevelBadge level={event.actorLevel} /> : null}
+    </>
+  );
+}
+
+function SlideHeader({
+  event,
+  icon,
+  onNavigate,
+}: {
+  event: Slide;
+  icon: React.ReactNode;
+  onNavigate?: (path: any, params?: any) => void;
+}) {
+  return (
+    <View className="flex-row items-center gap-2 px-4 py-3">
+      <View>{icon}</View>
+      <SlideActor event={event} onNavigate={onNavigate} />
       <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
       <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimePassed(event.createdAt)}</Text>
     </View>
@@ -150,6 +179,7 @@ function QuestCreatedSlide({
     <View>
       <SlideHeader
         event={event}
+        onNavigate={onNavigate}
         icon={
           <ProfileAvatar name={d.characterName ?? d.questTitle} photoUrl={d.characterAvatar} size={32} shape="full" />
         }

@@ -9,6 +9,8 @@ import { ShareButton } from '@/components/ui/ShareButton';
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
 import { QuestObjectiveCapture } from '@/components/zone/QuestObjectiveCapture';
 import { QuestRepeatabilityBadge } from '@/components/zone/QuestRepeatabilityBadge';
+import { RewardSpecTiles } from '@/components/rewards/RewardSpecTiles';
+import { getLevelColor } from '@/components/ui/LevelBadge';
 import { questsApi } from '@/lib/quests';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import { QUEST_REPEAT_AVAILABLE_AGAIN } from '@/types/quest';
@@ -92,7 +94,19 @@ export default function QuestDetailScreen() {
     );
   }
 
-  const { quest, character, objectives, userQuest, lockReason, canAccept, gallery } = data;
+  const {
+    quest,
+    character,
+    objectives,
+    userQuest,
+    lockReason,
+    canAccept,
+    canModerate,
+    gallery,
+    rewardDefinitions = [],
+    itemDefinitions = [],
+  } = data;
+  const rewards = quest.rewards ?? [];
   const hasActiveUserQuest = !!userQuest && userQuest.status === 'active';
   const completedCount = objectives.filter((o) => o.progressStatus === 'completed').length;
   const captureObjective = captureObjectiveId != null ? objectives.find((o) => o.id === captureObjectiveId) ?? null : null;
@@ -114,31 +128,38 @@ export default function QuestDetailScreen() {
           <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{character ? character.name : 'ზონის მისია'}</Text>
           <Text className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{quest.title}</Text>
           {quest.description ? <Text className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5">{quest.description}</Text> : null}
-          <View className="flex-row items-center gap-1.5 mt-2">
-            <Feather name="flag" size={13} color={theme.icon} />
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">ჯილდო · 200 გამოცდილება</Text>
-          </View>
-          <View className="flex-row items-center gap-2 flex-wrap mt-1">
-            <QuestRepeatabilityBadge repeatability={quest.repeatability} />
-            {quest.start_date || quest.end_date ? (
-              <View className="flex-row items-center gap-1.5">
-                <Feather name="calendar" size={13} color={theme.icon} />
-                <Text className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {quest.start_date && quest.end_date
-                    ? `${formatPhotoTakenDate(quest.start_date)} - ${formatPhotoTakenDate(quest.end_date)}`
-                    : quest.start_date
-                      ? `იწყება ${formatPhotoTakenDate(quest.start_date)}`
-                      : `მთავრდება ${formatPhotoTakenDate(quest.end_date)}`}
-                </Text>
-              </View>
-            ) : null}
-            {quest.required_level ? (
-              <View className="flex-row items-center gap-1 rounded-md px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800">
-                <Feather name="lock" size={11} color={theme.icon} />
-                <Text className="text-xs font-medium text-zinc-600 dark:text-zinc-300">დონე {quest.required_level}+</Text>
-              </View>
-            ) : null}
-          </View>
+          {quest.start_date || quest.end_date || quest.required_level || quest.repeatability !== 'onetime' ? (
+            <View className="flex-row items-center gap-2 flex-wrap mt-1">
+              <QuestRepeatabilityBadge repeatability={quest.repeatability} />
+              {quest.start_date || quest.end_date ? (
+                <View className="flex-row items-center gap-1.5">
+                  <Feather name="calendar" size={13} color={theme.icon} />
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {quest.start_date && quest.end_date
+                      ? `${formatPhotoTakenDate(quest.start_date)} - ${formatPhotoTakenDate(quest.end_date)}`
+                      : quest.start_date
+                        ? `იწყება ${formatPhotoTakenDate(quest.start_date)}`
+                        : `მთავრდება ${formatPhotoTakenDate(quest.end_date)}`}
+                  </Text>
+                </View>
+              ) : null}
+              {quest.required_level ? (
+                <View
+                  className="flex-row items-center gap-1 rounded-md px-1.5 py-0.5"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: getLevelColor(quest.required_level) + '70',
+                    backgroundColor: getLevelColor(quest.required_level) + '18',
+                  }}
+                >
+                  <Feather name="lock" size={11} color={getLevelColor(quest.required_level)} />
+                  <Text className="text-xs font-medium" style={{ color: getLevelColor(quest.required_level) }}>
+                    დონე {quest.required_level}+
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
         <ShareButton path={`/zone/${slug}/quests/${questId}`} title={quest.title} size={18} className="p-1" />
       </View>
@@ -175,10 +196,14 @@ export default function QuestDetailScreen() {
         </Pressable>
       ) : null}
 
+      {!userQuest && !canAccept && !canModerate && !lockReason ? (
+        <Text className="text-sm text-zinc-500 dark:text-zinc-400 mt-4">მისიის შესასრულებლად საბზონის წევრი უნდა იყო.</Text>
+      ) : null}
+
       {/* Objectives */}
       <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-6 mb-1">
         ამოცანები · {completedCount}/{objectives.length}
-        {quest.objective_order === 'ordered' ? ' · თანმიმდევრობით' : ''}
+        {quest.objective_order === 'ordered' && objectives.length > 1 ? ' · თანმიმდევრობით' : ''}
       </Text>
       <View>
         {objectives.map((objective, idx) => {
@@ -204,6 +229,7 @@ export default function QuestDetailScreen() {
                 <View className="flex-row items-center gap-1.5 flex-wrap">
                   {objective.title ? <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{objective.title}</Text> : null}
                   {statusLabel ? <Text className="text-xs text-zinc-500 dark:text-zinc-400">· {statusLabel}</Text> : null}
+                  {isLocked ? <Text className="text-xs text-zinc-400 dark:text-zinc-500">· დაბლოკილია</Text> : null}
                 </View>
                 <Text className="text-sm text-zinc-600 dark:text-zinc-300 mt-0.5">{objective.display_text}</Text>
                 {status === 'rejected' && objective.rejectionReason ? (
@@ -222,6 +248,12 @@ export default function QuestDetailScreen() {
             </View>
           );
         })}
+      </View>
+
+      {/* Rewards */}
+      <View className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+        <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">ჯილდო</Text>
+        <RewardSpecTiles rewards={rewards} definitions={rewardDefinitions} itemDefinitions={itemDefinitions} />
       </View>
 
       {/* Completed gallery */}

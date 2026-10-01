@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { ZoneFeedTab } from '@/components/zone/ZoneFeedTab';
 import { LeaderboardTab } from '@/components/zone/LeaderboardTab';
 import { ManageTab } from '@/components/zone/ManageTab';
 import { QuestsTab } from '@/components/zone/QuestsTab';
+import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { zonesApi } from '@/lib/zones';
 
 type Tab = ZoneTabId;
@@ -93,12 +94,12 @@ export default function ZoneScreen() {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
+      <KeyboardScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
         {header}
         {tab === 'leaderboard' ? <LeaderboardTab slug={slug} /> : null}
         {tab === 'quests' ? <QuestsTab slug={slug} /> : null}
         {tab === 'manage' ? <ManageTab slug={slug} /> : null}
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

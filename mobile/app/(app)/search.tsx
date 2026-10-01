@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useNavigation, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
@@ -176,7 +177,8 @@ export default function SearchScreen() {
     results.zones.length === 0;
 
   return (
-    <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+    // Ends the results at the keyboard's top edge, so every hit stays scrollable to.
+    <KeyboardAvoidingView behavior="padding" automaticOffset style={{ flex: 1, backgroundColor: theme.bg }}>
       {loading ? (
         <View className="pt-8 items-center">
           <ActivityIndicator color={Colors.brand} />
@@ -192,6 +194,9 @@ export default function SearchScreen() {
           sections={sections}
           keyExtractor={(item) => item.key}
           contentContainerStyle={{ paddingBottom: insets.bottom }}
+          // First tap opens a result instead of only closing the keyboard.
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           renderItem={({ item }) => <>{item.node}</>}
           renderSectionHeader={({ section }) => (
             <View className="px-4 py-2 bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
@@ -209,6 +214,6 @@ export default function SearchScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

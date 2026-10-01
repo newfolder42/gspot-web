@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
+import { GiftIcon } from '@/components/rewards/RewardTileIcons';
 import { RewardSheet } from '@/components/rewards/RewardSheet';
 import { RewardDetailsModal } from '@/components/rewards/RewardDetailsModal';
 import type { RewardCountType, RewardSummaryType, RewardTarget } from '@/types/reward';
@@ -91,7 +91,7 @@ export function RewardButton({
           className="items-center justify-center rounded-full border border-dashed border-zinc-300 dark:border-zinc-600"
           style={{ height: chipHeight, width: chipHeight }}
         >
-          <Feather name="gift" size={iconSize} color={theme.icon} />
+          <GiftIcon size={iconSize} color={theme.icon} />
         </Pressable>
       ) : null}
 

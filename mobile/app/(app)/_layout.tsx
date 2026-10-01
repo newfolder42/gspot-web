@@ -14,6 +14,7 @@ import { openPushNotification } from '@/lib/notificationRouting';
 import { prefetchPushImages } from '@/lib/imagePrefetch';
 import { Colors, useTheme } from '@/constants/colors';
 import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
+import { PortalHost } from '@/components/ui/Portal';
 
 /**
  * A cold start replays the tap that launched the app. Remembering which one we
@@ -92,6 +93,7 @@ export default function AppLayout() {
 
   return (
     <View className="flex-1">
+    <PortalHost>
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: theme.headerBg },
@@ -125,6 +127,7 @@ export default function AppLayout() {
       <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />
     </Stack>
     <OngoingGameButton />
+    </PortalHost>
     </View>
   );
 }

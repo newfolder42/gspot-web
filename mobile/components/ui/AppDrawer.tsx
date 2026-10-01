@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Modal,
+  BackHandler,
+  Keyboard,
   PanResponder,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -12,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Portal } from '@/components/ui/Portal';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type MobileZone } from '@/lib/search';
 import { useTheme } from '@/constants/colors';
@@ -61,7 +64,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
     outputRange: [0, 1],
   });
 
-  // While a finger owns the panel the modal has to stay mounted even though
+  // While a finger owns the panel the overlay has to stay mounted even though
   // `open` is still false (opening drag) or already false (closing drag).
   const [dragging, setDragging] = useState(false);
   const draggingRef = useRef(false);
@@ -70,16 +73,24 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
     setDragging(value);
   }, []);
 
-  // Programmatic open/close (menu button, navigation). Skipped mid-drag so the
-  // animation never fights the finger.
+  // Once shown, it also stays mounted until it has fully slid back out, so a
+  // close animates instead of vanishing the moment `open` flips.
+  const [mounted, setMounted] = useState(false);
+  if ((open || dragging) && !mounted) setMounted(true);
+  const visible = open || dragging || mounted;
+
+  // Programmatic open/close (menu button, navigation), plus the hand-off once a
+  // drag settles. Skipped mid-drag so the animation never fights the finger.
   useEffect(() => {
-    if (draggingRef.current) return;
+    if (dragging) return;
     Animated.timing(translateX, {
       toValue: open ? 0 : -DRAWER_WIDTH,
       duration: 240,
       useNativeDriver: true,
-    }).start();
-  }, [open]);
+    }).start(({ finished }) => {
+      if (finished && !open) setMounted(false);
+    });
+  }, [open, dragging]);
 
   // Callbacks read through refs so the pan responders can stay stable across
   // renders — swapping panHandlers mid-gesture would drop the drag.
@@ -89,6 +100,21 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
     onOpenRef.current = onOpen;
     onCloseRef.current = onClose;
   });
+
+  // A field still focused behind the panel would keep the keyboard up over it.
+  useEffect(() => {
+    if (visible) Keyboard.dismiss();
+  }, [visible]);
+
+  // Back closes the panel before it navigates anywhere.
+  useEffect(() => {
+    if (!open) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onCloseRef.current();
+      return true;
+    });
+    return () => sub.remove();
+  }, [open]);
 
   // Release handler: snap to whichever end the drag was headed for.
   const settleRef = useRef((toOpen: boolean) => {
@@ -168,81 +194,80 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
         />
       )}
 
-      <Modal
-        visible={open || dragging}
-        transparent
-        animationType="none"
-        onRequestClose={onClose}
-        statusBarTranslucent
-      >
-        {/* Backdrop */}
-        <Animated.View
-          style={{ flex: 1, backgroundColor: theme.overlay, opacity }}
-          pointerEvents={open ? 'auto' : 'none'}
-        >
-          <Pressable style={{ flex: 1 }} onPress={onClose} />
-        </Animated.View>
+      {/* In-window overlay, not a <Modal>: see PortalHost for why. */}
+      {visible ? (
+        <Portal>
+          <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]} pointerEvents="box-none">
+            {/* Backdrop */}
+            <Animated.View
+              style={{ flex: 1, backgroundColor: theme.overlay, opacity }}
+              pointerEvents={open ? 'auto' : 'none'}
+            >
+              <Pressable style={{ flex: 1 }} onPress={onClose} />
+            </Animated.View>
 
-        {/* Drawer panel */}
-        <Animated.View
-          {...drawerPanResponder.panHandlers}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            width: DRAWER_WIDTH,
-            transform: [{ translateX }],
-          }}
-          className="bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800"
-        >
-          {/* Header */}
-          <View style={{ paddingTop: insets.top + 12, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-zinc-900 dark:text-zinc-50">G'Spot</Text>
-              <Pressable onPress={onClose}>
-                <Feather name="x" size={20} color={theme.icon} />
-              </Pressable>
-            </View>
-          </View>
-
-          <ScrollView className="flex-1 pt-2">
-            {/* Main nav – mirrors the web left panel ordering */}
-            <DrawerLink icon="home" label="მთავარი" onPress={() => nav('/(app)/(tabs)/')} />
-            <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/(tabs)/to-guess')} />
-            <DrawerLink icon="flag" label="მისიები" onPress={() => nav('/(app)/quest-log')} />
-            <DrawerLink icon="eye" label="დამალობანა" onPress={() => nav('/(app)/hide-and-seek')} />
-            <DrawerLink icon="users" label="მომხმარებლები" onPress={() => nav('/(app)/new-users')} />
-            <DrawerLink icon="grid" label="საბზონები" onPress={() => nav('/(app)/zones')} />
-            <DrawerLink icon="map" label="რუკა" onPress={() => nav('/(app)/heatmap')} />
-            <DrawerLink icon="bell" label="შეტყობინებები" onPress={() => nav('/(app)/(tabs)/notifications')} />
-
-            {/* My zones */}
-            {myZones.length > 0 ? (
-              <View className="mt-4">
-                <View className="px-4 pb-2">
-                  <Text className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">ჩემი საბზონები</Text>
-                </View>
-                {myZones.map((zone) => (
-                  <Pressable
-                    key={zone.id}
-                    onPress={() => nav('/(app)/zone/[slug]', { slug: zone.slug })}
-                    className="flex-row items-center gap-3 px-4 py-2.5 rounded-xl active:bg-zinc-100 dark:active:bg-zinc-800"
-                  >
-                    <ProfileAvatar name={zone.slug} photoUrl={zone.profilePhotoUrl} size={24} shape="md" />
-                    <Text className="text-sm text-zinc-800 dark:text-zinc-200">{zone.slug}</Text>
+            {/* Drawer panel */}
+            <Animated.View
+              {...drawerPanResponder.panHandlers}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: DRAWER_WIDTH,
+                transform: [{ translateX }],
+              }}
+              className="bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800"
+            >
+              {/* Header */}
+              <View style={{ paddingTop: insets.top + 12, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-lg font-bold text-zinc-900 dark:text-zinc-50">G'Spot</Text>
+                  <Pressable onPress={onClose}>
+                    <Feather name="x" size={20} color={theme.icon} />
                   </Pressable>
-                ))}
+                </View>
               </View>
-            ) : null}
-          </ScrollView>
 
-          {/* Pinned bottom – About */}
-          <View style={{ paddingBottom: insets.bottom + 4, borderTopWidth: 1, borderTopColor: theme.border }} className="pt-1">
-            <DrawerLink icon="info" label="ჩვენს შესახებ" onPress={() => nav('/(app)/about')} />
+              <ScrollView className="flex-1 pt-2">
+                {/* Main nav – mirrors the web left panel ordering */}
+                <DrawerLink icon="home" label="მთავარი" onPress={() => nav('/(app)/(tabs)/')} />
+                <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/(tabs)/to-guess')} />
+                <DrawerLink icon="flag" label="მისიები" onPress={() => nav('/(app)/quest-log')} />
+                <DrawerLink icon="eye" label="დამალობანა" onPress={() => nav('/(app)/hide-and-seek')} />
+                <DrawerLink icon="users" label="მომხმარებლები" onPress={() => nav('/(app)/new-users')} />
+                <DrawerLink icon="grid" label="საბზონები" onPress={() => nav('/(app)/zones')} />
+                <DrawerLink icon="map" label="რუკა" onPress={() => nav('/(app)/heatmap')} />
+                <DrawerLink icon="bell" label="შეტყობინებები" onPress={() => nav('/(app)/(tabs)/notifications')} />
+
+                {/* My zones */}
+                {myZones.length > 0 ? (
+                  <View className="mt-4">
+                    <View className="px-4 pb-2">
+                      <Text className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">ჩემი საბზონები</Text>
+                    </View>
+                    {myZones.map((zone) => (
+                      <Pressable
+                        key={zone.id}
+                        onPress={() => nav('/(app)/zone/[slug]', { slug: zone.slug })}
+                        className="flex-row items-center gap-3 px-4 py-2.5 rounded-xl active:bg-zinc-100 dark:active:bg-zinc-800"
+                      >
+                        <ProfileAvatar name={zone.slug} photoUrl={zone.profilePhotoUrl} size={24} shape="md" />
+                        <Text className="text-sm text-zinc-800 dark:text-zinc-200">{zone.slug}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+              </ScrollView>
+
+              {/* Pinned bottom – About */}
+              <View style={{ paddingBottom: insets.bottom + 4, borderTopWidth: 1, borderTopColor: theme.border }} className="pt-1">
+                <DrawerLink icon="info" label="ჩვენს შესახებ" onPress={() => nav('/(app)/about')} />
+              </View>
+            </Animated.View>
           </View>
-        </Animated.View>
-      </Modal>
+        </Portal>
+      ) : null}
     </>
   );
 }

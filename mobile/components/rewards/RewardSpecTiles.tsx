@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
+import { GiftIcon, ProgressIcon } from '@/components/rewards/RewardTileIcons';
 import { ItemIcon } from '@/components/inventory/ItemIcon';
 import type { RewardDefinition, RewardSpec } from '@/types/reward';
 import type { ItemDefinition } from '@/types/item';
@@ -101,7 +101,7 @@ export function RewardSpecTiles({
         if (reward.type === 'user-xp') {
           return (
             <Tile key="user-xp" label={`${reward.value}`} variant="dashed">
-              <Feather name="battery-charging" size={20} color={ICON_COLOR} />
+              <ProgressIcon size={20} color={ICON_COLOR} />
             </Tile>
           );
         }
@@ -109,7 +109,7 @@ export function RewardSpecTiles({
         if (reward.type === 'reward-limit') {
           return (
             <Tile key="reward-limit" label={`+${reward.value}`} variant="dashed">
-              <Feather name="gift" size={20} color={ICON_COLOR} />
+              <GiftIcon size={20} color={ICON_COLOR} />
             </Tile>
           );
         }

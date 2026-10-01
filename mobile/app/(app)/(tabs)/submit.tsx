@@ -7,7 +7,6 @@ import {
   PermissionsAndroid,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -20,6 +19,7 @@ import MapboxGL from '@rnmapbox/maps';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
+import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { submitApi, type ZoneDateTakenMode, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
@@ -691,10 +691,9 @@ function PhotoSubmit() {
 
   return (
     <>
-    <ScrollView
-      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+    <KeyboardScrollView
+      style={{ flex: 1, backgroundColor: theme.bg }}
       contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: insets.bottom + 32 }}
-      keyboardShouldPersistTaps="handled"
       scrollEnabled={scrollEnabled}
     >
       {/* ── Zone picker ─────────────────────────────────── */}
@@ -997,7 +996,7 @@ function PhotoSubmit() {
           <Text className="text-base font-semibold text-white">ატვირთვა</Text>
         )}
       </Pressable>
-    </ScrollView>
+    </KeyboardScrollView>
 
     {sourceDialogOpen && (
       <PhotoDialog title="ფოტოს არჩევა" onClose={() => setSourceDialogOpen(false)}>
@@ -1068,13 +1067,12 @@ export default function SubmitScreen() {
       {tab === 'photo' ? (
         <PhotoSubmit />
       ) : (
-        <ScrollView
-          className="flex-1"
+        <KeyboardScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
-          keyboardShouldPersistTaps="handled"
         >
           <CreateHideAndSeek />
-        </ScrollView>
+        </KeyboardScrollView>
       )}
     </View>
   );

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { InventoryBag } from '@/components/inventory/InventoryBag';
-import { Colors } from '@/constants/colors';
+import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
+import { Colors, useTheme } from '@/constants/colors';
 
 /** ინვენტარი — reachable from the home header and from your own profile. */
 export default function InventoryScreen() {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -23,15 +25,14 @@ export default function InventoryScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-zinc-50 dark:bg-zinc-950"
+    <KeyboardScrollView
+      style={{ flex: 1, backgroundColor: theme.bg }}
       contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 16 + insets.bottom }}
-      keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.brand]} tintColor={Colors.brand} />
       }
     >
       <InventoryBag />
-    </ScrollView>
+    </KeyboardScrollView>
   );
 }
