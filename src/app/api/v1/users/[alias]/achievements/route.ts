@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, context: Context) {
     const userId = await getUserIdByAlias(alias);
     if (!userId) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
 
-    const achievements = (await getAccountAchievementsByAlias(userId)) ?? [];
+    const achievements = (await getAccountAchievementsByAlias(userId, auth.user.userId)) ?? [];
 
     // Catalog reward and item tiles need name/icon; xp and reward-limit tiles are self-describing.
     const rewardKeys = Array.from(new Set(achievements.flatMap((a) => getCatalogRewardKeys(a.rewards))));

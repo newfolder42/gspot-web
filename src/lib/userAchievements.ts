@@ -42,7 +42,39 @@ function categoryOrder(category: string) {
   return order[category] ?? 99;
 }
 
-export async function getAccountAchievementsByAlias(userId: number): Promise<AccountAchievement[] | null> {
+/**
+ * Strips everything that identifies a hidden achievement, keeping only what the
+ * counters need (category, earned or not). The key is rebuilt from the row index
+ * because the real one names the achievement.
+ */
+function redactHidden(item: AccountAchievement, index: number): AccountAchievement {
+  if (item.state !== 'hidden') return item;
+
+  return {
+    ...item,
+    achievementId: -(index + 1),
+    trackId: -(index + 1),
+    trackKey: `hidden-${index}`,
+    key: `hidden-${index}`,
+    name: '',
+    maxProgress: null,
+    imageUrl: null,
+    progress: 0,
+    achievedAt: null,
+    inProgress: false,
+    rewards: [],
+    redacted: true,
+  };
+}
+
+/**
+ * Hidden achievements keep their details only for their owner; anyone else
+ * (or a signed-out visitor) gets them redacted, still counted in the totals.
+ */
+export async function getAccountAchievementsByAlias(
+  userId: number,
+  viewerId: number | null
+): Promise<AccountAchievement[] | null> {
   try {
     const res = await query(
       `SELECT *
@@ -142,7 +174,7 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
       };
     });
 
-    return mapped.sort((a, b) => {
+    const sorted = mapped.sort((a, b) => {
       const leftCategory = categoryOrder(a.category);
       const rightCategory = categoryOrder(b.category);
       if (leftCategory !== rightCategory) return leftCategory - rightCategory;
@@ -151,6 +183,8 @@ export async function getAccountAchievementsByAlias(userId: number): Promise<Acc
 
       return sortMilestones(a, b);
     });
+
+    return viewerId === userId ? sorted : sorted.map(redactHidden);
   } catch (err) {
     await logerror('getAccountAchievementsByAlias error', [err]);
     return null;

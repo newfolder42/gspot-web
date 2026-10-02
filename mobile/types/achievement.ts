@@ -17,4 +17,6 @@ export type AccountAchievement = {
   inProgress: boolean;
   isAchieved: boolean;
   rewards: RewardSpec[];
+  /** Hidden achievement shown to someone other than its owner: details withheld, still counted. */
+  redacted?: boolean;
 };

@@ -32,9 +32,12 @@ function sortByMilestone(a: AccountAchievement, b: AccountAchievement) {
   return a.achievementId - b.achievementId;
 }
 
-/** Hidden and not yet earned: the name, the progress and the rewards stay withheld, as on web. */
+/**
+ * Hidden and not yet earned, or someone else's hidden one (redacted by the server):
+ * the name, the progress and the rewards stay withheld, as on web.
+ */
 function isMystery(item: AccountAchievement) {
-  return item.state === 'hidden' && !item.isAchieved;
+  return item.state === 'hidden' && (!item.isAchieved || Boolean(item.redacted));
 }
 
 function groupAchievements(items: AccountAchievement[]) {
@@ -78,7 +81,7 @@ function AchievementCard({
   const mystery = isMystery(item);
   const achieved = item.isAchieved;
   /** Earned, and it was one of the secret ones: the card keeps a mystery mark. */
-  const secretEarned = item.state === 'hidden' && achieved;
+  const secretEarned = item.state === 'hidden' && achieved && !mystery;
 
   return (
     <View
