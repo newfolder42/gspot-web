@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { postsApi } from '@/lib/posts';
 import { processPostPhoto } from '@/lib/image';
+import { requestLibraryAccess } from '@/lib/photoAccess';
 import { extractGPSFromExif, type Coords } from '@/lib/location';
 import type { PhotoGuessResult } from '@/types/post-guess';
 import { useTheme } from '@/constants/colors';
@@ -29,14 +30,13 @@ export function NewPhotoGuess({ postId, onClose, onSubmitted }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const pick = async (source: PhotoSource) => {
-    // exif:true below needs unredacted GPS metadata for extractGPSFromExif — that
-    // only comes through reliably while the app holds the media permission, so
-    // this path keeps the explicit request (see the same tradeoff in submit.tsx).
-    const perm =
+    // Gallery picks without GPS (e.g. ACCESS_MEDIA_LOCATION denied on Android) land on
+    // the 'no-gps' stage.
+    const granted =
       source === 'camera'
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
+        ? (await ImagePicker.requestCameraPermissionsAsync()).granted
+        : await requestLibraryAccess({ withLocation: true });
+    if (!granted) {
       setErrorMsg('ფოტოზე წვდომა საჭიროა.');
       setStage('error');
       return;

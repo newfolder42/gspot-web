@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { CompassIcon, HeatmapIcon, HomeIcon, InfoIcon, MapPinIcon, NewUsersIcon } from "@/components/icons";
+import { CompassIcon, HeatmapIcon, HomeIcon, InfoIcon, MapPinIcon, NewUsersIcon, SmartphoneIcon } from "@/components/icons";
 import { ZoneBaseType } from "@/types/zone";
 import ProfileAvatar from "@/components/common/profileAvatar";
+import { isIOSUserAgent } from "@/lib/device";
+import { playStoreUrl } from "@/lib/play-store";
 
 type MobileNavProps = {
   open: boolean;
@@ -13,6 +15,9 @@ type MobileNavProps = {
 
 export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
   if (!open) return null;
+
+  // Only ever rendered client-side (open starts false), so navigator is available.
+  const showAppLink = !isIOSUserAgent(navigator.userAgent);
 
   return (
     <>
@@ -110,6 +115,18 @@ export default function MobileNav({ open, setOpen, zones }: MobileNavProps) {
           )}
           </div>
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-4">
+            {showAppLink && (
+              <a
+                href={playStoreUrl("mobile_nav")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+                onClick={() => setOpen(false)}
+              >
+                <SmartphoneIcon className="w-5 h-5" />
+                <span>Android აპლიკაცია</span>
+              </a>
+            )}
             <Link
               href="/about"
               className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"

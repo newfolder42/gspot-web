@@ -6,6 +6,10 @@ import { getCurrentUser } from "@/lib/session";
 import { buildLandingPath, getLandingAttribution, type LandingAttributionSearchParams } from '@/lib/landing-attribution';
 import { APP_NAME } from "@/types/constants";
 import { FlagIcon, ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
+import { isIOSUserAgent } from "@/lib/device";
+import { playStoreUrl } from "@/lib/play-store";
+import { headers } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 
 type Props = {
@@ -13,7 +17,8 @@ type Props = {
 };
 
 export default async function Page({ searchParams }: Props) {
-  const [user, resolvedSearchParams] = await Promise.all([getCurrentUser(), searchParams]);
+  const [user, resolvedSearchParams, requestHeaders] = await Promise.all([getCurrentUser(), searchParams, headers()]);
+  const showAppPromo = !user && !isIOSUserAgent(requestHeaders.get("user-agent"));
 
   const landing = user ? null : getLandingAttribution(resolvedSearchParams);
   const landingPath = landing ? buildLandingPath(resolvedSearchParams) : null;
@@ -80,6 +85,22 @@ export default async function Page({ searchParams }: Props) {
                 რეგისტრაცია
               </Link>
             </div>
+            {showAppPromo && (
+              // Official badge: keep ≥28px tall, unmodified, with ¼-height clear space around it.
+              <a
+                href={playStoreUrl("home_hero")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-block"
+              >
+                <Image
+                  src="/google-play-badge-ka.svg"
+                  alt="მიიღეთ Google Play-ზე"
+                  width={162}
+                  height={48}
+                />
+              </a>
+            )}
             <p className="mt-8 text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
               გაეცანი პოპულარულ პოსტებს
             </p>

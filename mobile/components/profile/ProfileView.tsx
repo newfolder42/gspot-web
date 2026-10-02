@@ -29,6 +29,7 @@ import { AchievementsTab } from '@/components/profile/AchievementsTab';
 import { ConnectionsTab } from '@/components/profile/ConnectionsTab';
 import { usersApi, type XPInfo } from '@/lib/users';
 import { processProfilePhoto } from '@/lib/image';
+import { requestLibraryAccess } from '@/lib/photoAccess';
 import { formatAge } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
@@ -283,8 +284,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
 
   async function changeAvatar() {
     if (!isOwn || uploading) return;
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
+    if (!(await requestLibraryAccess({ withLocation: false }))) {
       Alert.alert('წვდომა საჭიროა', 'გალერეაზე წვდომა საჭიროა სურათის ასარჩევად.');
       return;
     }

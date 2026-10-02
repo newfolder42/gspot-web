@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
@@ -23,6 +22,7 @@ import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { submitApi, type ZoneDateTakenMode, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
+import { requestLibraryAccess } from '@/lib/photoAccess';
 import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { Colors, useTheme } from '@/constants/colors';
@@ -572,16 +572,12 @@ function PhotoSubmit() {
         return;
       }
     } else {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
+      if (!(await requestLibraryAccess({ withLocation: true }))) {
         setSourceDialogOpen(false);
         Alert.alert('წვდომა საჭიროა', 'გალერეაზე წვდომა საჭიროა ფოტოს ასარჩევად.');
         return;
       }
     }
-
-    // ACCESS_MEDIA_LOCATION is auto-granted alongside READ_MEDIA_IMAGES on Android 10+.
-    // No runtime request needed — only the manifest declaration matters.
 
     setProcessing(true);
     try {
@@ -616,27 +612,9 @@ function PhotoSubmit() {
         height: asset.height ?? 0,
       });
 
-      let gps: { latitude: number; longitude: number } | null = null;
-
-      // Android: MediaStore strips GPS from content URIs. Use getAssetInfoAsync() which
-      // reads the original file metadata using ACCESS_MEDIA_LOCATION (must be in manifest).
-      // NOTE: if the user picked with "limited access" Android will still return null.
-      if (Platform.OS === 'android' && source === 'library' && asset.assetId) {
-        try {
-          const info = await MediaLibrary.getAssetInfoAsync(asset.assetId, {
-            shouldDownloadFromNetwork: false,
-          });
-          if (__DEV__) console.log('[GPS] getAssetInfoAsync location =', JSON.stringify(info?.location));
-          if (info?.location) {
-            gps = { latitude: info.location.latitude, longitude: info.location.longitude };
-          }
-        } catch (e) {
-          if (__DEV__) console.warn('[GPS] getAssetInfoAsync failed:', e);
-        }
-      }
-
-      // Camera captures and iOS: GPS is intact in EXIF
-      if (!gps) gps = extractGPSFromExif((asset as any).exif);
+      // Camera captures and iOS: GPS is intact in EXIF. Android gallery picks keep it only
+      // when ACCESS_MEDIA_LOCATION was granted; otherwise the pin is placed manually.
+      const gps = extractGPSFromExif((asset as any).exif);
 
       if (gps) {
         setCoords(gps);

@@ -1,4 +1,5 @@
 import { APP_NAME } from "@/types/constants";
+import { playStoreUrl } from "@/lib/play-store";
 import Link from "next/link";
 
 export default function Footer() {
@@ -16,6 +17,16 @@ export default function Footer() {
                 <Link href="/about" className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
                   ჩვენს შესახებ
                 </Link>
+              </li>
+              <li>
+                <a
+                  href={playStoreUrl("footer")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  მობილური აპლიკაცია (Android)
+                </a>
               </li>
             </ul>
           </div>
