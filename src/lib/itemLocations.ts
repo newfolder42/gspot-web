@@ -129,24 +129,17 @@ async function getLootTable(locationIds: number[]): Promise<Map<number, LootRow[
 }
 
 /**
- * Which aliases this location hands out on one find: every mandatory entry, plus at most
- * one probability entry. The probability rows are rolled in their configured order and
- * the first one that hits wins — so a 100% row placed last still acts as a floor, and
- * percentages that add up past 100 simply favour the earlier rows.
+ * Which aliases this location hands out on one find: every mandatory entry, plus each
+ * probability entry whose roll hits. Every probability row is rolled independently, so
+ * one find can win several of them, and one row's chance never affects another's.
  */
 function rollLoot(loot: LootRow[]): string[] {
-  const aliases = loot.filter((l) => l.grantMode === 'mandatory').map((l) => l.alias);
-
-  for (const entry of loot) {
-    if (entry.grantMode !== 'probability') continue;
-    const chance = entry.probabilityPercent ?? 0;
-    if (Math.random() * 100 < chance) {
-      aliases.push(entry.alias);
-      break;
-    }
-  }
-
-  return aliases;
+  return loot
+    .filter(
+      (l) =>
+        l.grantMode === 'mandatory' || Math.random() * 100 < (l.probabilityPercent ?? 0)
+    )
+    .map((l) => l.alias);
 }
 
 /**

@@ -183,7 +183,7 @@ export const up = (pgm) => {
     id: { type: 'serial', primaryKey: true },
     location_id: { type: 'integer', notNull: true, references: 'item_locations', onDelete: 'cascade' },
     item_id: { type: 'integer', notNull: true, references: 'items', onDelete: 'cascade' },
-    // 'mandatory' rows are all granted; 'probability' rows are rolled and at most one wins
+    // 'mandatory' rows are all granted; each 'probability' row is rolled independently
     grant_mode: { type: 'varchar(20)', notNull: true, default: 'mandatory' },
     probability_percent: { type: 'integer' },
     sort_order: { type: 'integer', notNull: true, default: 0 },
