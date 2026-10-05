@@ -1,5 +1,4 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { itemQualityColor } from '@/types/item';
 import type { FoundItemType } from '@/types/item';
 import { useTheme } from '@/constants/colors';
 import { BackpackIcon } from './BackpackIcon';
@@ -40,13 +39,7 @@ export function ItemFoundModal({
 
           <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
             {items.map((item) => (
-              <View
-                key={item.alias}
-                className="rounded-xl bg-zinc-50 dark:bg-zinc-950 p-3"
-                style={{ borderWidth: 2, borderColor: itemQualityColor(item.quality) }}
-              >
-                <ItemDetails item={item} />
-              </View>
+              <ItemDetails key={item.alias} item={item} />
             ))}
           </ScrollView>
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,14 +8,14 @@ import {
   View,
   type ViewToken,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { NewGuess } from '@/components/NewGuess';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { SHUFFLE_DECK_SIZE, SHUFFLE_EXCLUDE_LIMIT, shuffleApi } from '@/lib/shuffle';
+import { shareLink } from '@/lib/share';
 import { Colors } from '@/constants/colors';
 import type { MobilePostType } from '@/types/post';
 
@@ -28,19 +28,120 @@ const SKIP_AFTER_MS = 2000;
 /** A card counts as the active one once this much of it is on screen. */
 const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
 
+/** White icons sit straight on the photo, so a soft shadow keeps them legible on bright shots. */
+const RAIL_ICON_SHADOW = {
+  textShadowColor: 'rgba(0,0,0,0.6)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 4,
+} as const;
+
+function RailButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Feather>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="h-12 w-12 items-center justify-center active:opacity-70"
+    >
+      <Feather name={icon} size={30} color="#fff" style={RAIL_ICON_SHADOW} />
+    </Pressable>
+  );
+}
+
+type CardProps = {
+  item: MobilePostType;
+  index: number;
+  height: number;
+  onGuess: (post: MobilePostType) => void;
+};
+
+/**
+ * Memoised so the active-card bookkeeping re-renders the screen without
+ * repainting every photo in the window mid-scroll.
+ */
+const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: CardProps) {
+  const router = useRouter();
+
+  return (
+    <View style={{ height }} className="bg-black">
+      {/* The photo itself is a guess button — the whole card is the target. */}
+      <Pressable className="flex-1" onPress={() => onGuess(item)}>
+        <Image
+          source={{ uri: item.imageVariants?.feed ?? item.image }}
+          className="w-full h-full"
+          resizeMode="contain"
+          // Android fades a photo in over 300ms by default, which reads as the card arriving slowly.
+          fadeDuration={0}
+        />
+      </Pressable>
+
+      {/* Who and where, over the top of the photo; empty areas pass taps through to the guess. */}
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 top-0 px-3 pt-3 pb-6"
+        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+      >
+        <View pointerEvents="box-none" className="flex-row items-center gap-1.5">
+          <Pressable
+            className="flex-row items-center gap-1.5"
+            onPress={() =>
+              router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })
+            }
+          >
+            <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
+            <Text className="text-sm font-semibold text-zinc-100">{item.zoneSlug}</Text>
+          </Pressable>
+          <Text className="text-xs text-zinc-400">•</Text>
+          <Pressable
+            className="flex-row items-center gap-1"
+            onPress={() =>
+              router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } })
+            }
+          >
+            <Text className="text-sm font-semibold text-zinc-100">&apos;{item.author}</Text>
+            {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
+          </Pressable>
+          <Text className="ml-auto text-xs text-zinc-300">{index + 1}</Text>
+        </View>
+        {item.title ? <Text className="mt-1 text-sm text-zinc-200">{item.title}</Text> : null}
+      </View>
+
+      {/* Reels-style action rail. Skipping is the scroll itself, so there is no button for it. */}
+      <View pointerEvents="box-none" className="absolute right-3 items-center gap-4" style={{ bottom: 28 }}>
+        <RailButton icon="map-pin" label="გამოცნობა" onPress={() => onGuess(item)} />
+        <RailButton
+          icon="message-circle"
+          label="კომენტარები"
+          onPress={() =>
+            router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } })
+          }
+        />
+        <RailButton icon="share-2" label="გაზიარება" onPress={() => shareLink({ path: `/post/${item.id}` })} />
+      </View>
+    </View>
+  );
+});
+
 /**
  * Shuffle guess, played like reels: one full-screen photo per page, scroll on to
  * skip it, or guess it on the map with the same modal the post page uses.
  */
-export default function GuessShuffleScreen() {
+export function GuessShuffle() {
   const router = useRouter();
-  // The cards run to the bottom edge, so the action bar clears the system bar itself.
-  const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<MobilePostType>>(null);
 
   const [cardHeight, setCardHeight] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showGuess, setShowGuess] = useState(false);
+  const [guessPost, setGuessPost] = useState<MobilePostType | null>(null);
 
   const activeIndexRef = useRef(0);
   const postsRef = useRef<MobilePostType[]>([]);
@@ -77,7 +178,15 @@ export default function GuessShuffleScreen() {
   // The viewability callback keeps one identity for the list's whole life, so
   // it reads the current deck through a ref rather than a closure.
   useEffect(() => { postsRef.current = posts; }, [posts]);
-  useEffect(() => { shownAt.current = Date.now(); }, []);
+
+  // A tab stays mounted when the player leaves it: hand the skips over then, and
+  // restart the card's clock on return so time away doesn't count as time spent looking.
+  useFocusEffect(
+    useCallback(() => {
+      shownAt.current = Date.now();
+      return () => { flushSkips(); };
+    }, [flushSkips]),
+  );
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
@@ -93,8 +202,6 @@ export default function GuessShuffleScreen() {
       Image.prefetch(post.imageVariants?.feed ?? post.image);
     }
   }, [posts, activeIndex]);
-
-  useEffect(() => () => { flushSkips(); }, [flushSkips]);
 
   // FlatList refuses a changing onViewableItemsChanged, so this identity is fixed.
   const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -120,68 +227,11 @@ export default function GuessShuffleScreen() {
     listRef.current?.scrollToIndex({ index: activeIndexRef.current + 1, animated: true });
   }, []);
 
-  const activePost = posts[activeIndex] ?? null;
-
-  const renderCard = ({ item, index }: { item: MobilePostType; index: number }) => (
-    <View style={{ height: cardHeight }} className="bg-black">
-      <Image
-        source={{ uri: item.imageVariants?.feed ?? item.image }}
-        className="w-full h-full"
-        resizeMode="contain"
-      />
-
-      {/* Who and where, over the top of the photo */}
-      <View
-        className="absolute inset-x-0 top-0 px-3 pt-3 pb-6"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-      >
-        <View className="flex-row items-center gap-1.5">
-          <Pressable
-            className="flex-row items-center gap-1.5"
-            onPress={() =>
-              router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })
-            }
-          >
-            <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
-            <Text className="text-sm font-semibold text-zinc-100">{item.zoneSlug}</Text>
-          </Pressable>
-          <Text className="text-xs text-zinc-400">•</Text>
-          <Pressable
-            className="flex-row items-center gap-1"
-            onPress={() =>
-              router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } })
-            }
-          >
-            <Text className="text-sm font-semibold text-zinc-100">&apos;{item.author}</Text>
-            {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
-          </Pressable>
-          <Text className="ml-auto text-xs text-zinc-300">{index + 1}</Text>
-        </View>
-        {item.title ? <Text className="mt-1 text-sm text-zinc-200">{item.title}</Text> : null}
-      </View>
-
-      {/* Skip / guess. Scrolling on does the same as გამოტოვება. */}
-      <View
-        className="absolute inset-x-0 bottom-0 flex-row items-center gap-2 px-3 pt-6"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)', paddingBottom: insets.bottom + 20 }}
-      >
-        <Pressable
-          onPress={goToNext}
-          className="flex-row items-center gap-1.5 rounded-xl px-4 h-11 justify-center active:opacity-80"
-          style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
-        >
-          <Feather name="chevron-down" size={16} color="#fff" />
-          <Text className="text-sm font-semibold text-white">გამოტოვება</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setShowGuess(true)}
-          className="ml-auto flex-row items-center gap-1.5 rounded-xl bg-teal-600 px-5 h-11 justify-center active:opacity-80"
-        >
-          <Feather name="map-pin" size={16} color="#fff" />
-          <Text className="text-sm font-semibold text-white">გამოცნობა</Text>
-        </Pressable>
-      </View>
-    </View>
+  const renderCard = useCallback(
+    ({ item, index }: { item: MobilePostType; index: number }) => (
+      <ShuffleCard item={item} index={index} height={cardHeight} onGuess={setGuessPost} />
+    ),
+    [cardHeight],
   );
 
   return (
@@ -200,8 +250,8 @@ export default function GuessShuffleScreen() {
       ) : posts.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-sm text-zinc-400 text-center mb-4">ახალი გამოსაცნობი ჯერჯერობით არ არის</Text>
-          <Pressable onPress={() => router.back()} className="px-4 py-2 rounded-lg bg-zinc-800">
-            <Text className="text-brand text-sm font-semibold">დაბრუნება</Text>
+          <Pressable onPress={() => router.navigate('/(app)/(tabs)')} className="px-4 py-2 rounded-lg bg-zinc-800">
+            <Text className="text-brand text-sm font-semibold">მთავარზე დაბრუნება</Text>
           </Pressable>
         </View>
       ) : (
@@ -211,9 +261,16 @@ export default function GuessShuffleScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderCard}
           getItemLayout={(_, index) => ({ length: cardHeight, offset: cardHeight * index, index })}
-          pagingEnabled
+          // Reels feel: any flick settles on the adjacent card (momentum can't carry
+          // past it), and the fast rate makes the settle snappy instead of drifting.
+          snapToInterval={cardHeight}
+          snapToAlignment="start"
           decelerationRate="fast"
+          disableIntervalMomentum
           showsVerticalScrollIndicator={false}
+          windowSize={3}
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={VIEWABILITY_CONFIG}
           ListFooterComponent={
@@ -230,13 +287,13 @@ export default function GuessShuffleScreen() {
         />
       )}
 
-      {showGuess && activePost ? (
+      {guessPost ? (
         <NewGuess
-          post={activePost}
-          onSubmitted={() => guessedIds.current.add(Number(activePost.id))}
+          post={guessPost}
+          onSubmitted={() => guessedIds.current.add(Number(guessPost.id))}
           onClose={() => {
-            setShowGuess(false);
-            if (guessedIds.current.has(Number(activePost.id))) goToNext();
+            setGuessPost(null);
+            if (guessedIds.current.has(Number(guessPost.id))) goToNext();
           }}
         />
       ) : null}

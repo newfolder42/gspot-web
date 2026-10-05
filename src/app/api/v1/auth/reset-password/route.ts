@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/otp';
-import { resetPassword } from '@/lib/auth';
+import { resetPassword } from '@/lib/password';
 import { logerror } from '@/lib/logger';
 
 const ResetPasswordSchema = z.object({

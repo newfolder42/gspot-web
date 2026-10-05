@@ -2,7 +2,7 @@
   "expo": {
     "name": "G'Spot",
     "slug": "gspot-mobile",
-    "version": "0.14.0",
+    "version": "0.14.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
       },
       "googleServicesFile": "./google-services.json",
       "package": "ge.gspot.mobile",
-      "versionCode": 20,
+      "versionCode": 23,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -86,7 +86,8 @@
       "expo-status-bar",
       "./plugins/withWindowsCmakePin",
       "./plugins/withAndroidArchitectures",
-      "./plugins/withAndroidReleaseOptimization"
+      "./plugins/withAndroidReleaseOptimization",
+      "./plugins/withAndroidReleaseSigning"
     ],
     "scheme": "gspot",
     "experiments": {

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import { createPostGuess, getPhotoCoordinates } from '@/lib/posts';
 import { calculateGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { formatCoordinates } from '@/lib/utils';
@@ -28,6 +28,8 @@ declare global {
 export default function NewGuess({ postId, postImage, postTitle, layout = 'toggle', closeLabel = 'დახურვა', onClose, onSubmitted }:
   { postId: number; postImage?: string; postTitle?: string; layout?: 'toggle' | 'split'; closeLabel?: string; onSubmitted?: (guess: PostGuessType) => void; onClose?: () => void }) {
   const split = layout === 'split';
+  // The submit button also lives in the narrow-screen footer, outside the form.
+  const formId = useId();
   // No pin until the player places one: an unplaced guess can't be submitted by
   // accident, and the map opens on Tbilisi rather than on a pre-made answer.
   const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -231,6 +233,67 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
     }
   };
 
+  const imageToggle = (
+    <button
+      type="button"
+      onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
+      // A checkbox, not a swap: the icon stays and the lit state says the photo is up.
+      aria-pressed={showMapOrImage === "image"}
+      className={`p-2 rounded-md transition ${showMapOrImage === "image"
+        ? 'bg-teal-100 text-teal-700 ring-1 ring-teal-500 dark:bg-teal-500/20 dark:text-teal-300 dark:ring-teal-400'
+        : 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700'}`}
+      title="სურათი"
+      aria-label="სურათი"
+    >
+      <ImageIcon className="w-5 h-5" />
+    </button>
+  );
+
+  const guessHint = (
+    <>
+      {selectedCoords === null && submitting === null && (
+        <span className="mr-auto text-xs text-zinc-500 dark:text-zinc-400">
+          მონიშნე ადგილი რუკაზე
+        </span>
+      )}
+      {selectedCoords !== null && !guessInGeorgia && submitting === null && (
+        <span className="mr-auto text-xs text-red-600 dark:text-red-400">
+          ლოკაცია უნდა იყოს საქართველოში
+        </span>
+      )}
+      {submitting === 'error' && (
+        <span className="mr-auto text-xs text-red-600 dark:text-red-400">
+          გამოცნობა ვერ შეინახა
+        </span>
+      )}
+    </>
+  );
+
+  const guessActions = (
+    <>
+      {submitting !== 'success' && submitting !== 'error' && (
+        <button
+          type="submit"
+          form={formId}
+          disabled={submitting !== null || !guessInGeorgia}
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-teal-600 text-white disabled:opacity-50"
+        >
+          <MapPinIcon className="w-4 h-4" />
+          {submitting ? 'მიმდინარეობს...' : 'ცდა'}
+        </button>
+      )}
+      {(submitting === 'success' || submitting === 'error') && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-5 py-2 rounded-md bg-teal-600 text-white"
+        >
+          {submitting === 'success' ? closeLabel : 'დახურვა'}
+        </button>
+      )}
+    </>
+  );
+
   return (
     <>
       {postImage && (
@@ -241,18 +304,8 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
               {postTitle}
             </span>
             <div className="flex flex-shrink-0 items-center gap-2">
-              <button
-                onClick={() => setShowMapOrImage(showMapOrImage === "image" ? "map" : "image")}
-                className={`p-2 rounded-md bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition ${split ? 'md:hidden' : ''}`}
-                title={showMapOrImage === "image" ? 'რუკა' : 'სურათი'}
-                aria-label="Toggle between image and map"
-              >
-                {showMapOrImage === "image" ? (
-                  <MapPinIcon className="w-5 h-5" />
-                ) : (
-                  <ImageIcon className="w-5 h-5" />
-                )}
-              </button>
+              {/* From md up the toggle stays up here; on narrow screens it sits by ცდა, within thumb reach. */}
+              {!split && <div className="hidden md:block">{imageToggle}</div>}
 
               <button
                 onClick={onClose}
@@ -266,7 +319,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
           </div>
 
           {/* Panels container */}
-          <div className="flex-1 flex flex-row">
+          <div className="flex-1 min-h-0 flex flex-row">
             {/* Image Panel */}
             <div className={`${showMapOrImage === "image" ? 'w-full h-full' : 'hidden'} ${split ? 'md:flex md:w-1/2 md:h-full' : ''} relative flex items-center justify-center overflow-hidden`}>
               <ZoomableImage className="w-full h-full">
@@ -282,7 +335,7 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
 
             {/* Map Panel */}
             <div className={`${showMapOrImage === "map" ? 'w-full h-full' : 'hidden'} ${split ? 'md:flex md:w-1/2 md:h-full' : ''} relative flex flex-col overflow-hidden`}>
-              <form onSubmit={submit} className="h-full flex flex-col p-4 gap-3">
+              <form id={formId} onSubmit={submit} className="h-full flex flex-col p-4 gap-3">
                 <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 relative flex-1">
                   <div ref={mapRef} className={`w-full h-full bg-zinc-100 dark:bg-zinc-800 ${submitting !== null ? 'pointer-events-none' : ''}`} />
 
@@ -307,42 +360,21 @@ export default function NewGuess({ postId, postImage, postTitle, layout = 'toggl
                   </div>
                 </div>
 
-                <div className="flex gap-2 items-center justify-end">
-                  {selectedCoords === null && submitting === null && (
-                    <span className="mr-auto text-xs text-zinc-500 dark:text-zinc-400">
-                      მონიშნე ადგილი რუკაზე
-                    </span>
-                  )}
-                  {selectedCoords !== null && !guessInGeorgia && submitting === null && (
-                    <span className="mr-auto text-xs text-red-600 dark:text-red-400">
-                      ლოკაცია უნდა იყოს საქართველოში
-                    </span>
-                  )}
-                  {submitting === 'error' && (
-                    <span className="mr-auto text-xs text-red-600 dark:text-red-400">
-                      გამოცნობა ვერ შეინახა
-                    </span>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={submitting !== null || !guessInGeorgia}
-                    hidden={submitting === 'success' || submitting === 'error'}
-                    className="px-4 py-2 rounded-md bg-teal-600 text-white disabled:opacity-50"
-                  >
-                    {submitting ? 'მიმდინარეობს...' : 'ცდა'}
-                  </button>
-                  {(submitting === 'success' || submitting === 'error') && (
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="px-5 py-2 rounded-md bg-teal-600 text-white"
-                    >
-                      {submitting === 'success' ? closeLabel : 'დახურვა'}
-                    </button>
-                  )}
+                {/* Narrow screens get these in the footer below instead. */}
+                <div className="hidden md:flex gap-2 items-center justify-end">
+                  {guessHint}
+                  {guessActions}
                 </div>
               </form>
             </div>
+          </div>
+
+          {/* Narrow-screen footer: image toggle and ცდა together, since the photo and
+              the map take turns on screen and the header is out of thumb reach. */}
+          <div className="md:hidden flex items-center gap-2 px-4 pb-4 pt-2">
+            {imageToggle}
+            <div className="flex min-w-0 flex-1 items-center">{guessHint}</div>
+            {guessActions}
           </div>
         </div>
       )}

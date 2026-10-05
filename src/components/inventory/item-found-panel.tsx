@@ -1,6 +1,5 @@
 'use client';
 
-import { itemQualityColor } from '@/types/item';
 import type { FoundItemType } from '@/types/item';
 import { BackpackIcon } from '@/components/icons';
 import ItemDetails from './item-details';
@@ -30,13 +29,7 @@ export default function ItemFoundPanel({
 
         <div className="mt-3 flex flex-col gap-3">
           {items.map((item) => (
-            <div
-              key={item.alias}
-              className="rounded-md bg-zinc-50 dark:bg-zinc-900 p-3"
-              style={{ border: `2px solid ${itemQualityColor(item.quality)}` }}
-            >
-              <ItemDetails item={item} />
-            </div>
+            <ItemDetails key={item.alias} item={item} />
           ))}
         </div>
 

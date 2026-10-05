@@ -1,10 +1,8 @@
-"use server";
-
 import bcrypt from 'bcrypt';
 import { query } from "@/lib/db";
 import type { UserToRegister } from '@/types/user';
 import { logerror } from './logger';
-import { createOTP } from './otp';
+import { createOTP, isOTPOnCooldown } from './otp';
 import { sendOTPEmail, sendWelcomeEmail } from './email';
 
 function isEmail(s: string) {
@@ -162,6 +160,12 @@ export async function initiatePasswordReset(email: string): Promise<{ success: b
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
+    // Without this anyone could flood an address with reset emails, each one
+    // also cancelling the code before it. The code already sent stays valid.
+    if (await isOTPOnCooldown(normalizedEmail)) {
+      return { success: false, error: 'TOO_SOON' };
+    }
+
     try {
       const otpCode = await createOTP(normalizedEmail);
       await sendOTPEmail(normalizedEmail, otpCode);
@@ -173,37 +177,6 @@ export async function initiatePasswordReset(email: string): Promise<{ success: b
     return { success: true };
   } catch (err) {
     await logerror('initiatePasswordReset error', [err]);
-    return { success: false, error: 'SERVER_ERROR' };
-  }
-}
-
-export async function resetPassword(email: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const normalizedEmail = email.toLowerCase();
-
-    if (typeof newPassword !== 'string' || newPassword.length < 6) {
-      return { success: false, error: 'INVALID_PASSWORD' };
-    }
-
-    const userResult = await query(
-      'SELECT id FROM users WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
-
-    if (userResult.rows.length === 0) {
-      return { success: false, error: 'USER_NOT_FOUND' };
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-
-    await query(
-      'UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2',
-      [passwordHash, normalizedEmail]
-    );
-
-    return { success: true };
-  } catch (err) {
-    await logerror('resetPassword error', [err]);
     return { success: false, error: 'SERVER_ERROR' };
   }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { signup, userAliasTaken } from "@/lib/auth";
+import { signup, userAliasTaken } from "@/actions/auth";
 import OTPVerificationForm from "./otp-verification-form";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";

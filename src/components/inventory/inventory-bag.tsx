@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadInventoryAction } from '@/actions/inventory';
-import { INVENTORY_DEFAULT_PAGE_SIZE, itemQualityColor } from '@/types/item';
+import { INVENTORY_DEFAULT_PAGE_SIZE } from '@/types/item';
 import type { InventoryItemType, InventoryPageType } from '@/types/item';
 import { BackpackIcon, XIcon } from '@/components/icons';
 import ItemSlot, { EmptySlot } from './item-slot';
@@ -117,21 +117,15 @@ export default function InventoryBag({ initial, pageSize = INVENTORY_DEFAULT_PAG
           onClick={() => setSelected(null)}
           role="presentation"
         >
-          <div
-            className="w-full max-w-sm rounded-md bg-white dark:bg-zinc-950 p-4 shadow-xl"
-            style={{ border: `2px solid ${itemQualityColor(selected.quality)}` }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                aria-label="დახურვა"
-                className="p-1 rounded text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-              >
-                <XIcon className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              aria-label="დახურვა"
+              className="absolute -top-8 right-0 p-1 rounded text-zinc-300 hover:text-white"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
             <ItemDetails item={selected} />
           </div>
         </div>

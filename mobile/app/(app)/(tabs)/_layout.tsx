@@ -40,14 +40,6 @@ export default function TabsLayout() {
     </View>
   );
 
-  const ToGuessHeaderRight = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Pressable onPress={() => router.push('/(app)/guess-shuffle')} style={{ marginRight: 14 }}>
-        <MaterialCommunityIcons name="dice-5-outline" size={22} color={theme.icon} />
-      </Pressable>
-    </View>
-  );
-
   const AccountHeaderRight = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Pressable onPress={() => router.push('/(app)/inventory')} style={{ marginRight: 18 }}>
@@ -95,8 +87,8 @@ export default function TabsLayout() {
         options={{
           title: 'გამოსაცნობები',
           tabBarLabel: 'გამოსაცნობი',
-          tabBarIcon: ({ color, size }) => <Feather name="map-pin" size={size} color={color} />,
-          headerRight: () => <ToGuessHeaderRight />,
+          // A dice, because the tab deals random photos for now.
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="dice-5-outline" size={size + 2} color={color} />,
         }}
       />
       <Tabs.Screen

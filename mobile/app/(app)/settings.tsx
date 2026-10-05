@@ -85,6 +85,15 @@ export default function SettingsScreen() {
       </View>
       <View className="mx-4 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 overflow-hidden">
         <Pressable
+          onPress={() => router.push('/(app)/change-password')}
+          className="flex-row items-center px-4 py-4 border-b border-zinc-100 dark:border-zinc-800 active:bg-zinc-50 dark:active:bg-zinc-800"
+          android_ripple={{ color: theme.ripple }}
+        >
+          <Feather name="lock" size={18} color={theme.icon} />
+          <Text className="flex-1 text-zinc-900 dark:text-zinc-100 ml-3 text-base font-medium">პაროლის შეცვლა</Text>
+          <Feather name="chevron-right" size={18} color={theme.icon} />
+        </Pressable>
+        <Pressable
           onPress={handleLogout}
           className="flex-row items-center px-4 py-4 active:bg-zinc-50 dark:active:bg-zinc-800"
           android_ripple={{ color: theme.ripple }}

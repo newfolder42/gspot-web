@@ -110,7 +110,6 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="post/[id]" options={{ title: 'პოსტი' }} />
-      <Stack.Screen name="guess-shuffle" options={{ title: 'არეულად გამოსაცნობები', headerRight: () => null }} />
       <Stack.Screen name="zone/[slug]/index" options={{ title: 'ზონა' }} />
       <Stack.Screen name="zone/[slug]/quests/[questId]" options={{ title: 'მისია' }} />
       <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />
@@ -125,6 +124,7 @@ export default function AppLayout() {
       <Stack.Screen name="hide-and-seek/new" options={{ title: 'ახალი დამალობანა', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />
       <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />
+      <Stack.Screen name="change-password" options={{ title: 'პაროლის შეცვლა', headerRight: () => null }} />
     </Stack>
     <OngoingGameButton />
     </PortalHost>

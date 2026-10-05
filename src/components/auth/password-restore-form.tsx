@@ -1,8 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react";
-import { initiatePasswordReset, resetPassword } from "@/lib/auth";
-import { verifyOTP } from "@/lib/otp";
+import { initiatePasswordReset, resetPasswordWithCode } from "@/actions/auth";
 import { useRouter } from "next/navigation";
 
 export default function PasswordRestoreForm() {
@@ -63,6 +62,11 @@ export default function PasswordRestoreForm() {
       if (result.success) {
         setStep("otp");
         setResendCooldown(60);
+      } else if (result.error === 'TOO_SOON') {
+        // A code went to this email under a minute ago and is still valid.
+        setStep("otp");
+        setResendCooldown(60);
+        setError('გთხოვ მოიცადე სანამ ახალი კოდის გაგზავნას შეძლებ (1 წუთი).');
       } else {
         const errorMessages: Record<string, string> = {
           INVALID_EMAIL: 'არასწორი მეილის ფორმატი',
@@ -115,40 +119,18 @@ export default function PasswordRestoreForm() {
     handleOTPVerify(pastedData);
   };
 
-  const handleOTPVerify = async (codeToVerify?: string) => {
+  // The code is only checked (and spent) together with the new password in
+  // resetPasswordWithCode, so this step just collects it.
+  const handleOTPVerify = (codeToVerify?: string) => {
     const otpCode = codeToVerify || code.join("");
 
-    if (otpCode.length !== 6) {
+    if (!/^\d{6}$/.test(otpCode)) {
       setError("გთხოვ შეიყვანე 6-ნიშნა კოდი");
       return;
     }
 
-    setLoading(true);
     setError(null);
-
-    try {
-      const result = await verifyOTP(email, otpCode);
-
-      if (result.success) {
-        setStep("password");
-      } else {
-        const errorMessages: Record<string, string> = {
-          INVALID_CODE: 'არასწორი კოდი',
-          EXPIRED: 'კოდის ვადა გასულია',
-          NOT_FOUND: 'კოდი ვერ მოიძებნა',
-          SERVER_ERROR: 'სერვერის შეცდომა',
-        };
-        setError(errorMessages[result.error || ''] || "დაფიქსირდა შეცდომა");
-        setCode(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      }
-    } catch {
-      setError("დაფიქსირდა შეცდომა. გთხოვ ხელახლა სცადე.");
-      setCode(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setLoading(false);
-    }
+    setStep("password");
   };
 
   const handleResendOTP = async () => {
@@ -164,6 +146,9 @@ export default function PasswordRestoreForm() {
         setResendCooldown(60);
         setCode(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
+      } else if (result.error === 'TOO_SOON') {
+        setResendCooldown(60);
+        setError('გთხოვ მოიცადე სანამ ახალი კოდის გაგზავნას შეძლებ (1 წუთი).');
       } else {
         setError("კოდის გაგზავნა ვერ მოხერხდა");
       }
@@ -195,11 +180,25 @@ export default function PasswordRestoreForm() {
 
     setLoading(true);
     try {
-      const result = await resetPassword(email, password);
+      const result = await resetPasswordWithCode(email, code.join(""), password);
 
       if (result.success) {
         router.push("/auth/signin?reset=success");
       } else {
+        const codeErrors: Record<string, string> = {
+          INVALID_CODE: 'არასწორი კოდი',
+          EXPIRED: 'კოდის ვადა გასულია',
+          NOT_FOUND: 'კოდი ვერ მოიძებნა',
+        };
+        const codeError = codeErrors[result.error || ''];
+        if (codeError) {
+          // Back to the code step so the user can retype it or request a new one.
+          setStep("otp");
+          setCode(["", "", "", "", "", ""]);
+          setError(codeError);
+          return;
+        }
+
         const errorMessages: Record<string, string> = {
           INVALID_PASSWORD: 'პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო',
           USER_NOT_FOUND: 'მომხმარებელი ვერ მოიძებნა',

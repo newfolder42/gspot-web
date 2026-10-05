@@ -20,6 +20,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   EMAIL_SEND_FAILED: 'მეილის გაგზავნა ვერ მოხერხდა.',
   INVALID_EMAIL: 'არასწორი მეილის ფორმატი.',
   INVALID_PASSWORD: 'პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო.',
+  WRONG_PASSWORD: 'მიმდინარე პაროლი არასწორია.',
   INVALID_REFRESH_TOKEN: 'სესია ამოიწურა. გთხოვ შეხვიდე ხელახლა.',
   SERVER_ERROR: 'სერვერის შეცდომა. გთხოვ ხელახლა სცადე.',
   NO_PENDING_REGISTRATION: 'რეგისტრაცია ვერ მოიძებნა. გთხოვ თავიდან სცადე.',
@@ -75,6 +76,11 @@ export const authApi = {
   resetPassword: (email: string, code: string, newPassword: string): Promise<void> =>
     call(() =>
       apiClient.post('/auth/reset-password', { email, code, newPassword }).then(() => undefined)
+    ),
+
+  changePassword: (currentPassword: string, newPassword: string): Promise<void> =>
+    call(() =>
+      apiClient.post('/account/password', { currentPassword, newPassword }).then(() => undefined)
     ),
 
   checkAlias: (alias: string): Promise<{ available: boolean }> =>

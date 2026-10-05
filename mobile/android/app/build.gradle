@@ -109,12 +109,20 @@ packagingOptions {
         applicationId 'ge.gspot.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 20
-        versionName "0.14.0"
+        versionCode 23
+        versionName "0.14.1"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
+        release { // gspot-release-signing
+            if (findProperty('GSPOT_UPLOAD_STORE_FILE')) {
+                storeFile file(findProperty('GSPOT_UPLOAD_STORE_FILE'))
+                storePassword findProperty('GSPOT_UPLOAD_STORE_PASSWORD')
+                keyAlias findProperty('GSPOT_UPLOAD_KEY_ALIAS')
+                keyPassword findProperty('GSPOT_UPLOAD_KEY_PASSWORD')
+            }
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -129,7 +137,7 @@ packagingOptions {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig findProperty('GSPOT_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

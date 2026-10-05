@@ -100,8 +100,17 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
     ? [result.photoCoordinates.longitude, result.photoCoordinates.latitude]
     : null;
 
+  const imageShown = imageMode !== 'hidden';
+
   return (
-    <Modal animationType="slide" presentationStyle="fullScreen" visible>
+    // Android back closes the guess and lands on the card/post underneath; the
+    // answer is already on its way once submitting, so back waits it out.
+    <Modal
+      animationType="slide"
+      presentationStyle="fullScreen"
+      visible
+      onRequestClose={() => { if (phase !== 'submitting') onClose(); }}
+    >
       <View className="flex-1 bg-zinc-950">
 
         {/* Header */}
@@ -112,24 +121,9 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           <Text className="text-base font-semibold text-zinc-100 flex-1 mr-2" numberOfLines={1}>
             {post.title || 'გამოიცანი'}
           </Text>
-          <View className="flex-row items-center gap-2">
-            {post.image ? (
-              <Pressable
-                onPress={() => setImageMode((m) => (m === 'hidden' ? 'band' : 'hidden'))}
-                className="p-2 rounded-md bg-zinc-800"
-                hitSlop={8}
-              >
-                <Feather
-                  name={imageMode === 'hidden' ? 'image' : 'map-pin'}
-                  size={18}
-                  color={Colors.onImageMuted}
-                />
-              </Pressable>
-            ) : null}
-            <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
-              <Feather name="x" size={18} color={Colors.onImageMuted} />
-            </Pressable>
-          </View>
+          <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
+            <Feather name="x" size={18} color={Colors.onImageMuted} />
+          </Pressable>
         </View>
 
         {/* Image panel — toggleable, pinch and double-tap to zoom */}
@@ -291,50 +285,68 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
           ) : null}
         </View>
 
-        {/* Bottom action bar */}
+        {/* Bottom action bar — the image toggle sits beside the thumb-reach actions */}
         <View
-          className="px-4 pt-3 bg-zinc-900 border-t border-zinc-800"
+          className="flex-row items-center gap-3 px-4 pt-3 bg-zinc-900 border-t border-zinc-800"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
-          {phase === 'placing' ? (
+          {/* A checkbox, not a swap: the icon stays, the lit state says the photo is up. */}
+          {post.image ? (
             <Pressable
-              onPress={handleSubmit}
-              disabled={!guessCoords}
-              className={`h-12 rounded-xl items-center justify-center active:opacity-80 ${
-                guessCoords ? 'bg-teal-600' : 'bg-teal-900'
+              onPress={() => setImageMode((m) => (m === 'hidden' ? 'band' : 'hidden'))}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: imageShown }}
+              accessibilityLabel="სურათი"
+              className={`h-12 w-12 rounded-xl items-center justify-center border active:opacity-80 ${
+                imageShown ? 'bg-teal-500/20 border-teal-400' : 'bg-zinc-800 border-zinc-800'
               }`}
             >
-              <Text className={`text-base font-semibold ${guessCoords ? 'text-white' : 'text-teal-200/50'}`}>
-                ცდა
-              </Text>
+              <Feather name="image" size={20} color={imageShown ? '#5EEAD4' : Colors.onImageMuted} />
             </Pressable>
-          ) : phase === 'submitting' ? (
-            <View className="h-12 rounded-xl bg-teal-800 items-center justify-center">
-              <ActivityIndicator color="#fff" />
-            </View>
-          ) : phase === 'result' ? (
-            <Pressable
-              onPress={onClose}
-              className="h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
-            >
-              <Text className="text-base font-semibold text-zinc-100">დახურვა</Text>
-            </Pressable>
-          ) : (
-            <View className="flex-row gap-3">
+          ) : null}
+
+          <View className="flex-1">
+            {phase === 'placing' ? (
               <Pressable
-                onPress={() => setPhase('placing')}
-                className="flex-1 h-12 rounded-xl bg-teal-700 items-center justify-center active:opacity-80"
+                onPress={handleSubmit}
+                disabled={!guessCoords}
+                className={`h-12 rounded-xl flex-row items-center justify-center gap-2 active:opacity-80 ${
+                  guessCoords ? 'bg-teal-600' : 'bg-teal-900'
+                }`}
               >
-                <Text className="text-base font-semibold text-white">ხელახლა ცდა</Text>
+                <Feather name="map-pin" size={18} color={guessCoords ? '#fff' : 'rgba(153,246,228,0.5)'} />
+                <Text className={`text-base font-semibold ${guessCoords ? 'text-white' : 'text-teal-200/50'}`}>
+                  ცდა
+                </Text>
               </Pressable>
+            ) : phase === 'submitting' ? (
+              <View className="h-12 rounded-xl bg-teal-800 items-center justify-center">
+                <ActivityIndicator color="#fff" />
+              </View>
+            ) : phase === 'result' ? (
               <Pressable
                 onPress={onClose}
-                className="flex-1 h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
+                className="h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
               >
-                <Text className="text-base font-semibold text-zinc-400">დახურვა</Text>
+                <Text className="text-base font-semibold text-zinc-100">დახურვა</Text>
               </Pressable>
-            </View>
-          )}
+            ) : (
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => setPhase('placing')}
+                  className="flex-1 h-12 rounded-xl bg-teal-700 items-center justify-center active:opacity-80"
+                >
+                  <Text className="text-base font-semibold text-white">ხელახლა ცდა</Text>
+                </Pressable>
+                <Pressable
+                  onPress={onClose}
+                  className="flex-1 h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
+                >
+                  <Text className="text-base font-semibold text-zinc-400">დახურვა</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
         </View>
 
       </View>

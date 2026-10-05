@@ -1,15 +1,5 @@
-import { ScreenLayout } from '@/components/ui/ScreenLayout';
-import { FeedList } from '@/components/feed/FeedList';
-import { feedApi } from '@/lib/feed';
+import { GuessShuffle } from '@/components/shuffle/GuessShuffle';
 
 export default function ToGuessScreen() {
-  return (
-    <ScreenLayout edges={[]}>
-      <FeedList
-        queryKey={['to-guess-feed']}
-        loader={feedApi.loadToGuess}
-        emptyText="გამოსაცნობი ჯერჯერობით არ არის"
-      />
-    </ScreenLayout>
-  );
+  return <GuessShuffle />;
 }

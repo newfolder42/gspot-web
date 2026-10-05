@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { verifyOTP, resendOTP } from "@/lib/otp";
-import { completePendingRegistration } from "@/lib/auth";
+import { verifyRegistrationCode, resendRegistrationCode } from "@/actions/auth";
 
 interface OTPVerificationFormProps {
   email: string;
@@ -76,15 +75,12 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
     setError(null);
 
     try {
-      const result = await verifyOTP(email, otpCode);
+      const result = await verifyRegistrationCode(email, otpCode);
 
       if (result.success) {
-        const completeResult = await completePendingRegistration(email);
-        if (completeResult.success) {
-          onSuccess?.();
-        } else {
-          setError('ახალი ანგარიშის შექმნამ ხელი შეუშალა');
-        }
+        onSuccess?.();
+      } else if (result.error === 'REGISTRATION_FAILED') {
+        setError('ახალი ანგარიშის შექმნამ ხელი შეუშალა');
       } else {
         const errorMessages: Record<string, string> = {
           INVALID_CODE: 'არასწორი კოდი',
@@ -113,7 +109,7 @@ export default function OTPVerificationForm({ email, onSuccess, onBack }: OTPVer
     setError(null);
 
     try {
-      const result = await resendOTP(email);
+      const result = await resendRegistrationCode(email);
 
       if (result.success) {
         setResendCooldown(60);

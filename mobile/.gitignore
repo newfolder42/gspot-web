@@ -4,3 +4,5 @@
 
 expo-env.d.ts
 # @end expo-cli
+# Local production env (read by release builds)
+.env.production

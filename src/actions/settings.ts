@@ -1,43 +1,30 @@
 "use server";
 
-import { query } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { logerror } from "@/lib/logger";
 import {
   getNotificationSettings as getNotificationSettingsByUserId,
   setEmailNotifications as setEmailNotificationsByUserId,
 } from "@/lib/settings";
-import bcrypt from 'bcrypt';
+import { changePassword } from "@/lib/password";
 
 export async function updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, message: "არ ხარ ავტორიზებული" };
-    }
-
-    const result = await query('SELECT password_hash FROM users WHERE id = $1', [user.userId]);
-    if (result.rows.length === 0) {
-      return { success: false, message: "მომხმარებელი ვერ მოიძებნა" };
-    }
-
-    const isValid = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
-    if (!isValid) {
-      return { success: false, message: "არასწორი პაროლი" };
-    }
-
-    if (newPassword.length < 6) {
-      return { success: false, message: "პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო" };
-    }
-
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.userId]);
-
-    return { success: true, message: "პაროლი წარმატებით შეიცვალა" };
-  } catch (err) {
-    await logerror('updatePassword error:', [err]);
-    return { success: false, message: "პაროლის განახლებისას მოხდა შეცდომა" };
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, message: "არ ხარ ავტორიზებული" };
   }
+
+  const result = await changePassword(user.userId, currentPassword, newPassword);
+  if (result.success) {
+    return { success: true, message: "პაროლი წარმატებით შეიცვალა" };
+  }
+
+  const messages: Record<typeof result.error, string> = {
+    USER_NOT_FOUND: "მომხმარებელი ვერ მოიძებნა",
+    WRONG_PASSWORD: "არასწორი პაროლი",
+    INVALID_PASSWORD: "პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო",
+    SERVER_ERROR: "პაროლის განახლებისას მოხდა შეცდომა",
+  };
+  return { success: false, message: messages[result.error] };
 }
 
 export async function updateEmailNotifications(enabled: boolean): Promise<{ success: boolean; message: string | null }> {
