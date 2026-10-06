@@ -92,7 +92,7 @@ function QuestSlide({ event, onNavigate }: { event: Slide; onNavigate: (path: an
       >
         <Feather name="flag" size={15} color="#D97706" />
         <Text className="text-base font-semibold text-amber-600 dark:text-amber-400 flex-1">
-          შეასრულა მისია {d.questTitle}
+          შეასრულა მისია "{d.questTitle}"
         </Text>
       </Pressable>
 

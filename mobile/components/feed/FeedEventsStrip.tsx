@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -79,13 +79,32 @@ export function FeedEventsStrip() {
   const bubbles = data?.bubbles ?? [];
   const own = data?.own ?? [];
 
-  // story=own — deep link used by the "მოიწონა შენი ამბავი" notification. The
-  // param is cleared once consumed so returning to the tab doesn't reopen it.
+  const mounted = useRef(true);
   useEffect(() => {
-    if (story !== 'own' || own.length === 0) return;
-    setViewer({ mode: 'own', events: own });
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // story=own — deep link used by the "მოიწონა შენი ამბავი" notification. The
+  // cached strip can be up to a minute old, so the seen/reaction counts the
+  // notification is about would be missing: fetch fresh before opening. The
+  // param is cleared right away so returning to the tab doesn't reopen it.
+  useEffect(() => {
+    if (story !== 'own') return;
     router.setParams({ story: undefined });
-  }, [story, own, router]);
+    queryClient
+      .query({ queryKey: ['feed-events'], queryFn: () => feedEventsApi.getStrip(), staleTime: 0 })
+      .then((fresh) => {
+        if (mounted.current && fresh.own.length > 0) setViewer({ mode: 'own', events: fresh.own });
+      })
+      .catch(() => {
+        // offline — fall back to whatever the strip already has
+        const cached = queryClient.getQueryData<{ own: OwnFeedEvent[] }>(['feed-events']);
+        if (mounted.current && cached && cached.own.length > 0) setViewer({ mode: 'own', events: cached.own });
+      });
+  }, [story, router, queryClient]);
 
   const openGroup = async (groupKey: string) => {
     if (openingKey) return;

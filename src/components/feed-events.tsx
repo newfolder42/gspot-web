@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { loadFeedEventStrip, loadFeedEventGroup } from '@/actions/feedEvents';
 import {
   FeedEvent,
@@ -31,24 +32,36 @@ export default function FeedEvents() {
 
   useEffect(() => {
     let cancelled = false;
-    // ?story=own — deep link used by the "მოიწონა შენი ამბავი" notification
-    const wantsOwn = new URLSearchParams(window.location.search).get('story') === 'own';
-
     loadFeedEventStrip()
       .then(({ bubbles, own }) => {
         if (cancelled) return;
         setBubbles(bubbles);
         setOwn(own);
-        if (wantsOwn && own.length > 0) {
-          setViewer({ mode: 'own', events: own });
-          const url = new URL(window.location.href);
-          url.searchParams.delete('story');
-          window.history.replaceState(null, '', url.pathname + url.search);
-        }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  // ?story=own — deep link used by the "მოიწონა შენი ამბავი" notification.
+  // Watched through the router (not read once on mount) so tapping it while
+  // already on the feed still opens it, and the strip is always re-fetched so
+  // the seen/reaction counts are current rather than from the first page load.
+  const wantsOwn = useSearchParams().get('story') === 'own';
+  useEffect(() => {
+    if (!wantsOwn) return;
+    let cancelled = false;
+    loadFeedEventStrip().then(({ bubbles, own }) => {
+      if (cancelled) return;
+      setBubbles(bubbles);
+      setOwn(own);
+      setLoading(false);
+      if (own.length > 0) setViewer({ mode: 'own', events: own });
+      const url = new URL(window.location.href);
+      url.searchParams.delete('story');
+      window.history.replaceState(null, '', url.pathname + url.search);
+    });
+    return () => { cancelled = true; };
+  }, [wantsOwn]);
 
   const openGroup = async (groupKey: string) => {
     if (openingKey) return;

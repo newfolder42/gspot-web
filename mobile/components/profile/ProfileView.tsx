@@ -54,7 +54,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 /** Mirrors web QuestCompletionTitle. */
 function questCompletionTitle(questTitle: string | null | undefined): string {
-  return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
+  return questTitle ? `შეასრულა მისია "${questTitle}"` : 'შეასრულა მისია';
 }
 
 /** Thousands separator, standing in for web's `toLocaleString`. */
@@ -358,12 +358,12 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
       {/* Header card — same three blocks as the web account layout: identity row,
           XP + streak row, then the tab bar. The XP row spans the full card width
           so the follow button can never squeeze it (as it did on other profiles). */}
-      <View className="mx-4 mt-4 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-100 dark:border-zinc-800">
+      <View className="mx-4 mt-4 p-4">
         <View className="flex-row gap-4 items-center">
           <Pressable onPress={changeAvatar} disabled={!isOwn} className="relative">
             <ProfileAvatar name={user.alias} photoUrl={profilePhoto?.url ?? null} size={80} shape="md" />
             {isOwn ? (
-              <View className="absolute bottom-1 right-1 h-6 w-6 rounded-full bg-teal-600 items-center justify-center border-2 border-white dark:border-zinc-900">
+              <View className="absolute bottom-1 right-1 h-6 w-6 rounded-full bg-teal-600 items-center justify-center border-2 border-zinc-50 dark:border-zinc-950">
                 {uploading ? (
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (

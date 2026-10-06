@@ -215,7 +215,7 @@ export default function QuestDetailScreen() {
           const canCapture = hasActiveUserQuest && attemptable && status !== 'pending_review' && status !== 'completed';
 
           return (
-            <View key={objective.id} className={`flex-row items-start gap-3 py-3 border-b border-zinc-100 dark:border-zinc-800 ${isLocked ? 'opacity-50' : ''}`}>
+            <View key={objective.id} className={`flex-row items-start gap-3 py-3 ${idx < objectives.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800' : ''} ${isLocked ? 'opacity-50' : ''}`}>
               <View className={`w-6 h-6 rounded-full items-center justify-center mt-0.5 ${isCompleted ? 'bg-teal-600' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
                 {isCompleted ? (
                   <Feather name="check" size={13} color="#fff" />

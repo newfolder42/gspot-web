@@ -8,7 +8,7 @@ import PostActionBar from "./post-action-bar";
 import { FlagIcon, TrophyIcon } from "./icons";
 
 export function QuestCompletionTitle({ questTitle }: { questTitle: string | null }) {
-  return <>{questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია'}</>;
+  return <>{questTitle ? `შეასრულა მისია "${questTitle}"` : 'შეასრულა მისია'}</>;
 }
 
 export function QuestCompletionGridItem({ post }: { post: QuestCompletionPostType }) {

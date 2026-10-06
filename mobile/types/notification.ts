@@ -248,7 +248,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'connection-created-quest-post': {
       const d = details as NotificationConnectionCreatedQuestPostDetailsType;
-      return `${d.authorAlias}-მა შეასრულა მისია: ${d.title}`;
+      return `${d.authorAlias}-მა შეასრულა მისია: "${d.title}"`;
     }
     case 'gps-post-failed': {
       const d = details as NotificationGpsPostPublishFailedDetailsType;
@@ -323,7 +323,7 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'connection-completed-zone-quest': {
       const d = details as NotificationConnectionCompletedZoneQuestDetailsType;
-      return `${d.userAlias}-მა შეასრულა მისია: ${d.questTitle}`;
+      return `${d.userAlias}-მა შეასრულა მისია: "${d.questTitle}"`;
     }
     case 'hide-and-seek-created': {
       const d = details as NotificationHideAndSeekDetailsType;

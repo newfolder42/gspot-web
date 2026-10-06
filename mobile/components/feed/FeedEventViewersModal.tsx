@@ -13,6 +13,9 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
   const { data: viewers, isLoading } = useQuery({
     queryKey: ['feed-event-viewers', eventId],
     queryFn: () => feedEventsApi.getViewers(eventId),
+    // viewers and reactions keep arriving — always show the current list
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const insets = useSafeAreaInsets();

@@ -232,12 +232,6 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
             </ul>
           </div>
         )}
-
-        {game.coordinates && (
-          <p className="font-mono text-xs text-zinc-400">
-            {game.coordinates.latitude.toFixed(5)}, {game.coordinates.longitude.toFixed(5)}
-          </p>
-        )}
       </div>
 
       {showMap && <ChecksMap postId={game.postId} onClose={() => setShowMap(false)} />}

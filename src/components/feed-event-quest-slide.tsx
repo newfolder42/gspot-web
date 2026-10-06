@@ -30,7 +30,7 @@ export function QuestSlide({ event }: { event: Slide }) {
         className="block px-4 pb-3 text-base font-semibold text-amber-600 dark:text-amber-400 hover:underline"
       >
         <FlagIcon className="inline w-4 h-4 mr-1 -mt-0.5" />
-        შეასრულა მისია {d.questTitle}
+        შეასრულა მისია "{d.questTitle}"
       </Link>
       {photos.length > 0 ? (
         <div className={`grid gap-0.5 ${photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>

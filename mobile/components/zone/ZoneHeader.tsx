@@ -14,7 +14,7 @@ export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
   const visibleDescription = expanded || !shouldTruncate ? description : `${description.slice(0, 100).trimEnd()}...`;
 
   return (
-    <View className="bg-white dark:bg-zinc-900">
+    <View>
       {/* Banner, Reddit-style: no avatar overlap. */}
       <View className="h-28 bg-zinc-200 dark:bg-zinc-800">
         {zone.bannerUrl ? (

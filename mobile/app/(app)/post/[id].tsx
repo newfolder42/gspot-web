@@ -505,7 +505,7 @@ export default function PostPageScreen() {
   const gamePlayers = post.type === 'hide-and-seek' ? post.players ?? [] : [];
   const isHideAndSeekHost = !!game && Number(user?.id) === game.hostId;
   const questPhotos = post.photos ?? [];
-  const questTitle = post.questTitle ? `შეასრულა მისია ${post.questTitle}` : 'შეასრულა მისია';
+  const questTitle = post.questTitle ? `შეასრულა მისია "${post.questTitle}"` : 'შეასრულა მისია';
 
   return (
     <View style={{ flex: 1 }}>

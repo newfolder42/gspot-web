@@ -23,7 +23,7 @@ function formatTimeAgo(timestamp: string): string {
 
 /** Mirrors web QuestCompletionTitle */
 function questCompletionTitle(questTitle: string | null | undefined): string {
-  return questTitle ? `შეასრულა მისია ${questTitle}` : 'შეასრულა მისია';
+  return questTitle ? `შეასრულა მისია "${questTitle}"` : 'შეასრულა მისია';
 }
 
 /**
