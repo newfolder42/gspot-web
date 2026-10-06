@@ -253,9 +253,8 @@ export default function NotificationsScreen() {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-between">
-        <Text className="text-base font-semibold text-zinc-900 dark:text-zinc-50">შეტყობინებები</Text>
-        {unseenCount > 0 ? (
+      {unseenCount > 0 ? (
+        <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-end">
           <Pressable onPress={markAllAsRead} disabled={markingAll} hitSlop={6} className="flex-row items-center gap-1.5">
             <MaterialCommunityIcons
               name="email-open-multiple-outline"
@@ -266,8 +265,8 @@ export default function NotificationsScreen() {
               ყველას წაკითხულად მონიშვნა
             </Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       <FlatList
         data={allNotifications}
