@@ -110,6 +110,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="post/[id]" options={{ title: 'პოსტი' }} />
+      <Stack.Screen name="to-guess-feed" options={{ title: 'გამოსაცნობები' }} />
       <Stack.Screen name="zone/[slug]/index" options={{ title: 'ზონა' }} />
       <Stack.Screen name="zone/[slug]/quests/[questId]" options={{ title: 'მისია' }} />
       <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />

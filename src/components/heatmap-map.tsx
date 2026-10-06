@@ -48,6 +48,8 @@ type Props = {
   className?: string;
   emptyMessage?: string;
   showLegend?: boolean;
+  /** frames the data on load; off keeps the default view on Georgia */
+  fitToPoints?: boolean;
 };
 
 export default function HeatmapMap({
@@ -57,6 +59,7 @@ export default function HeatmapMap({
   className = 'h-[70vh] min-h-[380px] w-full',
   emptyMessage = 'რუკაზე საჩვენებელი კოორდინატები ჯერ არ არის.',
   showLegend = true,
+  fitToPoints = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -159,10 +162,12 @@ export default function HeatmapMap({
           });
         }
 
-        const bounds = new window.mapboxgl.LngLatBounds();
-        points.forEach((p) => bounds.extend([p.longitude, p.latitude]));
-        if (!bounds.isEmpty()) {
-          map.fitBounds(bounds, { padding: 48, maxZoom: Math.min(12, maxZoom), duration: 0 });
+        if (fitToPoints) {
+          const bounds = new window.mapboxgl.LngLatBounds();
+          points.forEach((p) => bounds.extend([p.longitude, p.latitude]));
+          if (!bounds.isEmpty()) {
+            map.fitBounds(bounds, { padding: 48, maxZoom: Math.min(12, maxZoom), duration: 0 });
+          }
         }
 
         setReady(true);
@@ -179,7 +184,7 @@ export default function HeatmapMap({
       }
       setReady(false);
     };
-  }, [points, maxZoom, pointZoom]);
+  }, [points, maxZoom, pointZoom, fitToPoints]);
 
   if (points.length === 0) {
     return (

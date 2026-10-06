@@ -232,7 +232,7 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
               <ScrollView className="flex-1 pt-2">
                 {/* Main nav – mirrors the web left panel ordering */}
                 <DrawerLink icon="home" label="მთავარი" onPress={() => nav('/(app)/(tabs)/')} />
-                <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/(tabs)/to-guess')} />
+                <DrawerLink icon="map-pin" label="გამოსაცნობები" onPress={() => nav('/(app)/to-guess-feed')} />
                 <DrawerLink icon="flag" label="მისიები" onPress={() => nav('/(app)/quest-log')} />
                 <DrawerLink icon="eye" label="დამალობანა" onPress={() => nav('/(app)/hide-and-seek')} />
                 <DrawerLink icon="users" label="მომხმარებლები" onPress={() => nav('/(app)/new-users')} />

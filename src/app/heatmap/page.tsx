@@ -37,6 +37,7 @@ export default async function HeatmapPage() {
         points={heatmap.points}
         maxZoom={heatmapGlobalMaxZoom}
         pointZoom={heatmapGlobalMaxZoom}
+        fitToPoints={false}
         emptyMessage="ჯერ არცერთი პოსტი არ არის კოორდინატებით."
       />
     </div>

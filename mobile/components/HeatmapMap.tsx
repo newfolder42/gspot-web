@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom } from '@/lib/map';
@@ -10,6 +10,9 @@ MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 // (matches web heatmap-map.tsx).
 const LONE_POST_WEIGHT = 0.45;
 
+// Zoom that frames Georgia around Tbilisi on a phone-sized screen.
+const heatmapStartZoom = 7;
+
 type Props = {
   points: HeatmapPointType[];
   maxZoom: number;
@@ -19,6 +22,7 @@ type Props = {
 };
 
 export function HeatmapMap({ points, maxZoom, pointZoom, emptyMessage }: Props) {
+  const cameraRef = useRef<MapboxGL.Camera>(null);
   const shape = useMemo(
     () => ({
       type: 'FeatureCollection' as const,
@@ -44,6 +48,16 @@ export function HeatmapMap({ points, maxZoom, pointZoom, emptyMessage }: Props) 
       ? ['interpolate', ['linear'], ['get', 'weight'], 1, LONE_POST_WEIGHT, maxWeight, 1]
       : LONE_POST_WEIGHT;
 
+  // The camera can still sit on the world view when the style finishes loading,
+  // which shows empty black sea; pin it on Georgia once the map is ready.
+  const frameGeorgia = () => {
+    cameraRef.current?.setCamera({
+      centerCoordinate: mapDefaultCenter,
+      zoomLevel: heatmapStartZoom,
+      animationDuration: 0,
+    });
+  };
+
   if (points.length === 0) {
     return (
       <View className="flex-1 items-center justify-center px-8">
@@ -56,6 +70,7 @@ export function HeatmapMap({ points, maxZoom, pointZoom, emptyMessage }: Props) 
     <MapboxGL.MapView
       style={{ flex: 1 }}
       styleURL="mapbox://styles/mapbox/standard-satellite"
+      onDidFinishLoadingMap={frameGeorgia}
       scrollEnabled
       pitchEnabled={false}
       rotateEnabled={false}
@@ -65,7 +80,8 @@ export function HeatmapMap({ points, maxZoom, pointZoom, emptyMessage }: Props) 
       {/* Uncontrolled camera: `defaultSettings` opens on Georgia straight away,
           instead of animating in from the world view. */}
       <MapboxGL.Camera
-        defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: 6 }}
+        ref={cameraRef}
+        defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: heatmapStartZoom }}
         maxBounds={mapMaxBounds}
         maxZoomLevel={Math.min(maxZoom, mapMaxZoom)}
       />
