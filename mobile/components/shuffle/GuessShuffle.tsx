@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { NewGuess } from '@/components/NewGuess';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
@@ -18,6 +18,8 @@ import { SHUFFLE_DECK_SIZE, SHUFFLE_EXCLUDE_LIMIT, shuffleApi } from '@/lib/shuf
 import { shareLink } from '@/lib/share';
 import { Colors } from '@/constants/colors';
 import type { MobilePostType } from '@/types/post';
+
+const SHUFFLE_QUERY_KEY = ['guess-shuffle'];
 
 /** Deal the next deck once this few cards are left, so it lands before it's needed. */
 const REFILL_AT = 3;
@@ -136,7 +138,7 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: 
  * skip it, or guess it on the map with the same modal the post page uses.
  */
 export function GuessShuffle() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const listRef = useRef<FlatList<MobilePostType>>(null);
 
   const [cardHeight, setCardHeight] = useState(0);
@@ -158,7 +160,7 @@ export function GuessShuffle() {
   }, []);
 
   const query = useInfiniteQuery({
-    queryKey: ['guess-shuffle'],
+    queryKey: SHUFFLE_QUERY_KEY,
     queryFn: async () => {
       // Sent first so the new deck already knows about them.
       await flushSkips();
@@ -171,21 +173,44 @@ export function GuessShuffle() {
     // nothing; a short deck means the pool is used up.
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < SHUFFLE_DECK_SIZE ? undefined : allPages.length,
+    // The deck is a session, not a cache: a refetch replays every page with the
+    // dealt ids excluded, which comes back empty and wipes the deck. Only
+    // `reload` below starts a new one.
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const posts = useMemo(() => query.data?.pages.flat() ?? [], [query.data]);
+
+  /** Throws the deck away and deals a fresh one from scratch. */
+  const reload = useCallback(() => {
+    pendingSkips.current = [];
+    dealtIds.current = [];
+    activeIndexRef.current = 0;
+    postsRef.current = [];
+    setActiveIndex(0);
+    queryClient.resetQueries({ queryKey: SHUFFLE_QUERY_KEY });
+  }, [queryClient]);
 
   // The viewability callback keeps one identity for the list's whole life, so
   // it reads the current deck through a ref rather than a closure.
   useEffect(() => { postsRef.current = posts; }, [posts]);
 
+  const deckIsEmpty = query.isSuccess && posts.length === 0;
+  const deckIsEmptyRef = useRef(false);
+  useEffect(() => { deckIsEmptyRef.current = deckIsEmpty; }, [deckIsEmpty]);
+
   // A tab stays mounted when the player leaves it: hand the skips over then, and
   // restart the card's clock on return so time away doesn't count as time spent looking.
+  // An empty deck gets another try on return, since new posts may have arrived meanwhile.
   useFocusEffect(
     useCallback(() => {
       shownAt.current = Date.now();
+      if (deckIsEmptyRef.current) reload();
       return () => { flushSkips(); };
-    }, [flushSkips]),
+    }, [flushSkips, reload]),
   );
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
@@ -243,15 +268,15 @@ export function GuessShuffle() {
       ) : query.isError ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-sm text-zinc-400 text-center mb-4">დეკის ჩატვირთვა ვერ მოხერხდა</Text>
-          <Pressable onPress={() => query.refetch()} className="px-4 py-2 rounded-lg bg-zinc-800">
+          <Pressable onPress={reload} className="px-4 py-2 rounded-lg bg-zinc-800">
             <Text className="text-brand text-sm font-semibold">ხელახლა ცდა</Text>
           </Pressable>
         </View>
       ) : posts.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-sm text-zinc-400 text-center mb-4">ახალი გამოსაცნობი ჯერჯერობით არ არის</Text>
-          <Pressable onPress={() => router.navigate('/(app)/(tabs)')} className="px-4 py-2 rounded-lg bg-zinc-800">
-            <Text className="text-brand text-sm font-semibold">მთავარზე დაბრუნება</Text>
+          <Pressable onPress={reload} className="px-4 py-2 rounded-lg bg-zinc-800">
+            <Text className="text-brand text-sm font-semibold">განახლება</Text>
           </Pressable>
         </View>
       ) : (
