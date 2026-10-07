@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "G'spot | გამოიცანი სადაა გადაღებული!",
+  title: "G'Spot | გამოიცანი სადაა გადაღებული!",
   description:
     "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
   metadataBase: new URL("https://gspot.ge"),
@@ -38,13 +38,13 @@ export const metadata: Metadata = {
     description:
       "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
     url: "https://gspot.ge",
-    siteName: "G'spot.ge",
+    siteName: "G'Spot.ge",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "G'spot.ge | გამოიცანი სადაა გადაღებული!",
+        alt: "G'Spot.ge | გამოიცანი სადაა გადაღებული!",
       },
     ],
     locale: "ka_GE",

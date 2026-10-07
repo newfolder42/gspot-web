@@ -6,7 +6,7 @@ import { listHideAndSeekGamesForUser } from '@/lib/hideAndSeek';
 import type { HideAndSeekListFilter } from '@/types/hide-and-seek';
 
 export const metadata = {
-  title: "დამალობანა | G'spot",
+  title: "დამალობანა | G'Spot",
   description: 'მიმდინარე და დასრულებული დამალობანები.',
 };
 

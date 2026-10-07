@@ -10,8 +10,8 @@ import ProfileAvatar from "@/components/common/profileAvatar";
 import { MIN_LEVEL_CREATE_ZONE } from "@/lib/permissions";
 
 export const metadata: Metadata = {
-  title: "საბზონების დათვალიერება | G'spot",
-  description: "აღმოაჩინე G'spot-ის საბზონები, იპოვე შენი წევრობის სივრცეები და გადადი ინტერესის მიხედვით ახალ ნაკადებში.",
+  title: "საბზონების დათვალიერება | G'Spot",
+  description: "აღმოაჩინე G'Spot-ის საბზონები, იპოვე შენი წევრობის სივრცეები და გადადი ინტერესის მიხედვით ახალ ნაკადებში.",
 };
 
 function zoneColors(slug: string) {
