@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { aboutApi } from '@/lib/about';
 
 const ISSUES_URL = 'https://github.com/newfolder42/gspot-web/issues';
+const DONATE_URL = 'https://www.kisa.ge/donate/o0tah9lunx';
 const INITIAL_RELEASES = 5;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -75,6 +76,12 @@ export default function AboutScreen() {
             უკუკავშირისთვის გადადი{' '}
             <Text className="text-teal-600 dark:text-teal-400" onPress={() => Linking.openURL(ISSUES_URL)}>
               ბმულზე
+            </Text>
+          </Text>
+          <Text className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 leading-5">
+            ეს პერსონალური პროექტია. თუ მოგწონს და გინდა მხარი დამიჭირო, შეგიძლია ყავაზე დამპატიჟო{' '}
+            <Text className="text-teal-600 dark:text-teal-400" onPress={() => Linking.openURL(DONATE_URL)}>
+              kisa.ge
             </Text>
           </Text>
         </View>

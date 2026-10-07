@@ -32,6 +32,18 @@ export default function AboutPage() {
             )
           </p>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            {APP_NAME} პერსონალური პროექტია. თუ მოგწონს და გინდა მხარი დამიჭირო, შეგიძლია ლუდზე* დამპატიჟო (
+            <a
+              href="https://www.kisa.ge/donate/o0tah9lunx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-800 dark:text-zinc-100 hover:underline"
+            >
+              kisa.ge
+            </a>
+            )
+          </p>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             საიტის ფუნქციონირებისთვის გამოყენებულია შემდეგი ტექნოლოგიები:
           </p>
         </div>
