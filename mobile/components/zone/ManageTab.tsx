@@ -89,6 +89,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
       {/* Description */}
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">აღწერა</Text>
       <TextInput
+        disableFullscreenUI
         value={description}
         onChangeText={setDescription}
         multiline
@@ -101,6 +102,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
       {/* Upload rules */}
       <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5 mt-4">ატვირთვის წესები (თითო ხაზზე)</Text>
       <TextInput
+        disableFullscreenUI
         value={rulesText}
         onChangeText={setRulesText}
         multiline
@@ -148,6 +150,7 @@ function ManageEditor({ slug, initial }: { slug: string; initial: ZoneSettings }
       </View>
       <View className="flex-row items-center gap-2">
         <TextInput
+          disableFullscreenUI
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="ახალი თეგი"

@@ -1,26 +1,29 @@
-import { ActivityIndicator, Dimensions, FlatList, Image, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type MobileZone } from '@/lib/search';
+import { useLayout } from '@/lib/layout';
 import { useTheme } from '@/constants/colors';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = (SCREEN_WIDTH - 12 * 3) / 2; // 2-column grid, 12px gaps
+const GAP = 12;
+/** Cards never get narrower than this, so a wider window fits more columns (2 upright). */
+const MIN_CARD_WIDTH = 170;
+const MAX_COLUMNS = 4;
 
-function ZoneCard({ zone }: { zone: MobileZone }) {
+function ZoneCard({ zone, width }: { zone: MobileZone; width: number }) {
   const router = useRouter();
   const theme = useTheme();
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: zone.slug } })}
-      style={{ width: CARD_WIDTH }}
+      style={{ width }}
       className="rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
     >
       {/* Banner / cover image */}
-      <View className="w-full bg-zinc-200 dark:bg-zinc-800" style={{ height: CARD_WIDTH * 0.55 }}>
+      <View className="w-full bg-zinc-200 dark:bg-zinc-800" style={{ height: width * 0.55 }}>
         {zone.bannerUrl ? (
           <Image
             source={{ uri: zone.bannerUrl }}
@@ -62,6 +65,7 @@ function ZoneCard({ zone }: { zone: MobileZone }) {
 
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
+  const { availableWidth } = useLayout();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['zones-list'],
     queryFn: () => searchApi.getZones(),
@@ -90,16 +94,21 @@ export default function ZonesScreen() {
   const myZones = data.zones.filter((z) => z.isMember);
   const otherZones = data.zones.filter((z) => !z.isMember);
 
+  // Upright (~390dp) this is the old 2-column grid with the same card width.
+  const gridWidth = availableWidth - GAP * 2;
+  const columns = Math.min(MAX_COLUMNS, Math.max(2, Math.floor((gridWidth + GAP) / (MIN_CARD_WIDTH + GAP))));
+  const cardWidth = (gridWidth - GAP * (columns - 1)) / columns;
+
   type ListItem =
     | { type: 'header'; key: string; label: string }
-    | { type: 'row'; key: string; left: MobileZone; right: MobileZone | null };
+    | { type: 'row'; key: string; zones: MobileZone[] };
 
   const items: ListItem[] = [];
 
   function toRows(zones: MobileZone[], prefix: string): ListItem[] {
     const rows: ListItem[] = [];
-    for (let i = 0; i < zones.length; i += 2) {
-      rows.push({ type: 'row', key: `${prefix}-${i}`, left: zones[i], right: zones[i + 1] ?? null });
+    for (let i = 0; i < zones.length; i += columns) {
+      rows.push({ type: 'row', key: `${prefix}-${i}`, zones: zones.slice(i, i + columns) });
     }
     return rows;
   }
@@ -130,9 +139,10 @@ export default function ZonesScreen() {
           );
         }
         return (
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <ZoneCard zone={item.left} />
-            {item.right ? <ZoneCard zone={item.right} /> : <View style={{ width: CARD_WIDTH }} />}
+          <View style={{ flexDirection: 'row', gap: GAP }}>
+            {item.zones.map((zone) => (
+              <ZoneCard key={zone.slug} zone={zone} width={cardWidth} />
+            ))}
           </View>
         );
       }}

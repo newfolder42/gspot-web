@@ -7,6 +7,7 @@ import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { rewardsApi } from '@/lib/rewards';
 import { formatTimePassed } from '@/lib/dates';
 import { useTheme } from '@/constants/colors';
+import { useDialogScrollHeight } from '@/lib/layout';
 
 type Props = {
   postId: number;
@@ -18,6 +19,7 @@ type Props = {
 export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
   const theme = useTheme();
   const router = useRouter();
+  const listHeight = useDialogScrollHeight(54, 400);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['reward-users', postId, commentId],
@@ -51,7 +53,7 @@ export function RewardDetailsModal({ postId, commentId, onClose }: Props) {
             </Pressable>
           </View>
 
-          <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ padding: 16 }}>
+          <ScrollView style={{ maxHeight: listHeight }} contentContainerStyle={{ padding: 16 }}>
             {isLoading ? (
               <View className="py-6 items-center">
                 <ActivityIndicator color="#14B8A6" />

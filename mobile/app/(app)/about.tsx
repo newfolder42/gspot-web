@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { aboutApi } from '@/lib/about';
+import { useLayout } from '@/lib/layout';
 
 const ISSUES_URL = 'https://github.com/newfolder42/gspot-web/issues';
 const DONATE_URL = 'https://www.kisa.ge/donate/o0tah9lunx';
@@ -23,6 +24,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 /** Mirrors web /about — intro, features, roadmap, tech chips and the changelog. */
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const navigation = useNavigation();
   const [expanded, setExpanded] = useState(false);
 
@@ -60,7 +62,7 @@ export default function AboutScreen() {
   const releases = expanded ? data.changelog : data.changelog.slice(0, INITIAL_RELEASES);
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 + insets.bottom }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}>
       {/* Intro */}
       <Section title={`${data.appName}-ის შესახებ`}>
         <View className="px-4 py-3">

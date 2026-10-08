@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/constants/colors';
 
@@ -22,12 +22,14 @@ export function PhotoDialog({ title, onClose, children }: PhotoDialogProps) {
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
       <Pressable
         style={{ flex: 1, backgroundColor: 'rgba(24,24,27,0.7)' }}
-        className="items-center justify-center px-6"
+        className="items-center justify-center px-6 py-4"
         onPress={onClose}
       >
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+          // A short window scrolls the body instead of cutting the card off.
+          style={{ maxHeight: '100%' }}
         >
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{title}</Text>
@@ -36,7 +38,9 @@ export function PhotoDialog({ title, onClose, children }: PhotoDialogProps) {
             </Pressable>
           </View>
 
-          <View className="px-4 py-5">{children}</View>
+          <ScrollView>
+            <View className="px-4 py-5">{children}</View>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardChatScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +27,7 @@ import type { GuessResult } from '@/types/post-guess';
 import { Colors, useTheme } from '@/constants/colors';
 import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
 import { formatDistance } from '@/types/hide-and-seek';
+import { useLayout } from '@/lib/layout';
 
 /** Matches web DEPTH_COLORS cycle */
 const DEPTH_BORDER_COLORS = [
@@ -323,6 +324,7 @@ export default function PostPageScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { isTwoPane, isLandscape, availableWidth, photoMaxHeight, gutter } = useLayout();
   const [commentBody, setCommentBody] = useState('');
   const [replyTo, setReplyTo] = useState<PostCommentType | null>(null);
   const [showGuess, setShowGuess] = useState(false);
@@ -507,254 +509,311 @@ export default function PostPageScreen() {
   const questPhotos = post.photos ?? [];
   const questTitle = post.questTitle ? `შეასრულა მისია "${post.questTitle}"` : 'შეასრულა მისია';
 
-  return (
-    <View style={{ flex: 1 }}>
-      <KeyboardChatScrollView
-        style={{ flex: 1, backgroundColor: theme.bg }}
-        contentContainerStyle={{ paddingBottom: 16 }}
-        keyboardShouldPersistTaps="handled"
-        offset={insets.bottom}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={['#14B8A6']}
-            tintColor="#14B8A6"
-          />
-        }
-      >
-        {/* ── Header – mirrors web PostDetailClient flex items-start p-2 ── */}
-        <View className="p-2">
-          <View className="flex-row items-start">
-            <View className="flex-1 flex-row items-center gap-1.5 flex-wrap">
-              {/* Zone avatar + slug – tappable */}
-              <Pressable
-                className="flex-row items-center gap-1.5"
-                onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: post.zoneSlug ?? '' } })}
-              >
-                <ProfileAvatar name={post.zoneSlug ?? ''} photoUrl={post.zoneProfilePhoto} size={24} shape="md" />
-                <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{post.zoneSlug}</Text>
-              </Pressable>
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
-              {/* Author + level – tappable */}
-              <Pressable
-                className="flex-row items-center gap-1"
-                onPress={() => router.push({ pathname: '/(app)/user/[alias]', params: { alias: post.author } })}
-              >
-                <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{post.author}</Text>
-                {post.authorLevel != null ? <LevelBadge level={post.authorLevel} /> : null}
-              </Pressable>
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(post.date)}</Text>
-              {post.status === 'failed' ? (
-                <View className="w-3 h-3 rounded-full bg-rose-600" />
-              ) : null}
-            </View>
-            {/* Three-dots options menu – edit/delete for the owner, report otherwise */}
-            {isOwner ? (
-              <Pressable
-                onPress={handlePostOptions}
-                disabled={deletePostMutation.isPending}
-                hitSlop={10}
-                className="ml-2 p-1"
-              >
-                <Feather name="more-horizontal" size={18} color={theme.icon} />
-              </Pressable>
-            ) : user ? (
-              <Pressable onPress={handleReportOptions} hitSlop={10} className="ml-2 p-1">
-                <Feather name="more-horizontal" size={18} color={theme.icon} />
-              </Pressable>
+  // Upright a lone quest photo is a full-width square. Sideways that square is taller
+  // than the window, so it shrinks to what fits and sits in the middle of its pane.
+  const paneWidth = isTwoPane ? availableWidth / 2 : availableWidth;
+  const lonePhotoSide = isLandscape && questPhotos.length === 1 ? Math.min(photoMaxHeight, paneWidth) : null;
+
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      colors={['#14B8A6']}
+      tintColor="#14B8A6"
+    />
+  );
+
+  // The post itself: who, what, the photo and everything you can do with it.
+  const postBlocks = (
+    <>
+      {/* ── Header – mirrors web PostDetailClient flex items-start p-2 ── */}
+      <View className="p-2">
+        <View className="flex-row items-start">
+          <View className="flex-1 flex-row items-center gap-1.5 flex-wrap">
+            {/* Zone avatar + slug – tappable */}
+            <Pressable
+              className="flex-row items-center gap-1.5"
+              onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: post.zoneSlug ?? '' } })}
+            >
+              <ProfileAvatar name={post.zoneSlug ?? ''} photoUrl={post.zoneProfilePhoto} size={24} shape="md" />
+              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{post.zoneSlug}</Text>
+            </Pressable>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+            {/* Author + level – tappable */}
+            <Pressable
+              className="flex-row items-center gap-1"
+              onPress={() => router.push({ pathname: '/(app)/user/[alias]', params: { alias: post.author } })}
+            >
+              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{post.author}</Text>
+              {post.authorLevel != null ? <LevelBadge level={post.authorLevel} /> : null}
+            </Pressable>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(post.date)}</Text>
+            {post.status === 'failed' ? (
+              <View className="w-3 h-3 rounded-full bg-rose-600" />
             ) : null}
           </View>
-
-          {isQuest ? (
-            /* Quest title – teal link → zone quest detail */
+          {/* Three-dots options menu – edit/delete for the owner, report otherwise */}
+          {isOwner ? (
             <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: '/(app)/zone/[slug]/quests/[questId]',
-                  params: { slug: post.zoneSlug ?? '', questId: String(post.questId ?? '') },
-                })
-              }
+              onPress={handlePostOptions}
+              disabled={deletePostMutation.isPending}
+              hitSlop={10}
+              className="ml-2 p-1"
             >
-              <Text className="mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400">
-                {questTitle}
-              </Text>
+              <Feather name="more-horizontal" size={18} color={theme.icon} />
             </Pressable>
-          ) : (
-            <>
-              {/* Tag – solid colour, white text */}
-              {post.tag ? <TagBadge name={post.tag.name} color={post.tag.color} /> : null}
-              {/* Title */}
-              {post.title ? (
-                <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</Text>
-              ) : null}
-            </>
-          )}
+          ) : user ? (
+            <Pressable onPress={handleReportOptions} hitSlop={10} className="ml-2 p-1">
+              <Feather name="more-horizontal" size={18} color={theme.icon} />
+            </Pressable>
+          ) : null}
         </View>
 
-        {/* ── Media block ── */}
         {isQuest ? (
-          questPhotos.length > 0 ? (
-            <View>
-              <View className="flex-row flex-wrap">
-                {questPhotos.map((photo, idx) => (
-                  <View
-                    key={idx}
-                    style={{ width: questPhotos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }}
-                  >
-                    <ZoomableImage
-                      uri={photo.variants?.feed ?? photo.url}
-                      fullUri={photo.url}
-                      title={photo.objectiveTitle}
-                      className="flex-1 relative bg-zinc-100 dark:bg-zinc-900"
-                      resizeMode="cover"
-                    >
-                      {photo.objectiveTitle ? (
-                        <View pointerEvents="none" className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
-                          <Text className="text-xs font-medium text-white" numberOfLines={1}>{photo.objectiveTitle}</Text>
-                        </View>
-                      ) : null}
-                    </ZoomableImage>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null
-        ) : post.image ? (
-          // The feed rendition is what the list already painted and cached (no thumb
-          // placeholder, it would only stage a cold thumb under a cached image), and at
-          // h-80 it out-resolves the slot anyway; the master is only worth its several
-          // MB once the photo is pinch-zoomed.
-          <PostPhoto
-            uri={post.imageVariants?.feed ?? post.image}
-            fullUri={post.image}
-            title={post.title}
-            dateTaken={post.dateTaken}
-          />
-        ) : null}
-
-        {/* ── Post action bar – votes, reward, stats. Mirrors web PostComments header. ── */}
-        <PostActionBar
-          postId={post.id}
-          voteScore={votes.score}
-          userVote={votes.userVote}
-          rewards={rewards.rewards}
-          userReward={rewards.userReward}
-          guessCount={post.type === 'gps-photo' ? (post.guessCount ?? 0) : null}
-          commentCount={commentsCount}
-          className="px-4 pt-3"
-        />
-
-        {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers,
-             "რუკაზე ნახვა" for the author once guesses exist. ── */}
-        {canGuess ? (
-          <View className="flex-row gap-2 px-4 pt-3">
-            <Pressable
-              onPress={() => setShowGuess(true)}
-              className="flex-1 h-11 rounded-xl bg-teal-600 flex-row items-center justify-center gap-2 active:opacity-80"
-            >
-              <Feather name="map-pin" size={16} color="#fff" />
-              <Text className="text-sm font-semibold text-white">რუკაზე</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setShowPhotoGuess(true)}
-              className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
-            >
-              <Feather name="camera" size={16} color={theme.icon} />
-              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ადგილზე</Text>
-            </Pressable>
-          </View>
-        ) : alreadyGuessed ? (
-          <View className="px-4 pt-3">
-            <View className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2">
-              <Feather name="check-circle" size={16} color="#14B8A6" />
-              <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">გამოცნობილია</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {isOwner && !isQuest && (post.guessCount ?? 0) > 0 ? (
-          <View className="px-4 pt-3">
-            <Pressable
-              onPress={() => setShowGuessMap(true)}
-              className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
-            >
-              <Feather name="map" size={16} color={theme.icon} />
-              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">რუკაზე ნახვა</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
-        {game ? (
-          <View className="pt-3">
-            <HideAndSeekPanel
-              game={game}
-              players={gamePlayers}
-              currentUserId={user?.id != null ? Number(user.id) : null}
-              onChanged={refreshGame}
-            />
-          </View>
-        ) : null}
-
-        {/* ── Comments ── */}
-        <View className="px-4 pt-4">
-          <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">კომენტარები</Text>
-          {comments.length === 0 ? (
-            <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
-          ) : (
-            comments.map((comment) => (
-              <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={handleReply} />
-            ))
-          )}
-        </View>
-      </KeyboardChatScrollView>
-
-      {/* ── Sticky bottom comment input – floats above the keyboard ── */}
-      <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-        <View className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800" style={{ paddingBottom: insets.bottom }}>
-        {replyTo ? (
-          <View className="px-3 pt-2 flex-row items-center justify-between">
-            <Text className="text-xs text-teal-700 dark:text-teal-300 flex-1 mr-2" numberOfLines={1}>
-              ↩ პასუხობ &apos;{replyTo.author}-ს
-            </Text>
-            <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-              <Feather name="x" size={14} color="#14B8A6" />
-            </Pressable>
-          </View>
-        ) : null}
-        <View className="flex-row items-end gap-2 px-3 py-2">
-          <TextInput
-            ref={inputRef}
-            value={commentBody}
-            onChangeText={setCommentBody}
-            placeholder={replyTo ? 'დაწერე პასუხი...' : 'დაწერე კომენტარი...'}
-            placeholderTextColor={theme.textMuted}
-            multiline
-            maxLength={2000}
-            className="text-zinc-900 dark:text-zinc-50"
-            style={{
-              flex: 1,
-              maxHeight: 96,
-              backgroundColor: 'transparent',
-              fontSize: 14,
-              lineHeight: 20,
-              paddingVertical: 8,
-            }}
-          />
+          /* Quest title – teal link → zone quest detail */
           <Pressable
-            onPress={() => addCommentMutation.mutate()}
-            disabled={!commentBody.trim() || addCommentMutation.isPending}
-            className="mb-1 w-9 h-9 rounded-full bg-teal-600 items-center justify-center"
-            style={{ opacity: !commentBody.trim() || addCommentMutation.isPending ? 0.4 : 1 }}
+            onPress={() =>
+              router.push({
+                pathname: '/(app)/zone/[slug]/quests/[questId]',
+                params: { slug: post.zoneSlug ?? '', questId: String(post.questId ?? '') },
+              })
+            }
           >
-            {addCommentMutation.isPending
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Feather name="send" size={16} color="#fff" />}
+            <Text className="mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400">
+              {questTitle}
+            </Text>
+          </Pressable>
+        ) : (
+          <>
+            {/* Tag – solid colour, white text */}
+            {post.tag ? <TagBadge name={post.tag.name} color={post.tag.color} /> : null}
+            {/* Title */}
+            {post.title ? (
+              <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{post.title}</Text>
+            ) : null}
+          </>
+        )}
+      </View>
+
+      {/* ── Media block ── */}
+      {isQuest ? (
+        questPhotos.length > 0 ? (
+          <View>
+            <View className="flex-row flex-wrap" style={lonePhotoSide ? { justifyContent: 'center' } : undefined}>
+              {questPhotos.map((photo, idx) => (
+                <View
+                  key={idx}
+                  style={
+                    lonePhotoSide
+                      ? { width: lonePhotoSide, height: lonePhotoSide, padding: 1 }
+                      : { width: questPhotos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }
+                  }
+                >
+                  <ZoomableImage
+                    uri={photo.variants?.feed ?? photo.url}
+                    fullUri={photo.url}
+                    title={photo.objectiveTitle}
+                    className="flex-1 relative bg-zinc-100 dark:bg-zinc-900"
+                    resizeMode="cover"
+                  >
+                    {photo.objectiveTitle ? (
+                      <View pointerEvents="none" className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+                        <Text className="text-xs font-medium text-white" numberOfLines={1}>{photo.objectiveTitle}</Text>
+                      </View>
+                    ) : null}
+                  </ZoomableImage>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null
+      ) : post.image ? (
+        // The feed rendition is what the list already painted and cached (no thumb
+        // placeholder, it would only stage a cold thumb under a cached image), and at
+        // h-80 it out-resolves the slot anyway; the master is only worth its several
+        // MB once the photo is pinch-zoomed.
+        <PostPhoto
+          uri={post.imageVariants?.feed ?? post.image}
+          fullUri={post.image}
+          title={post.title}
+          dateTaken={post.dateTaken}
+        />
+      ) : null}
+
+      {/* ── Post action bar – votes, reward, stats. Mirrors web PostComments header. ── */}
+      <PostActionBar
+        postId={post.id}
+        voteScore={votes.score}
+        userVote={votes.userVote}
+        rewards={rewards.rewards}
+        userReward={rewards.userReward}
+        guessCount={post.type === 'gps-photo' ? (post.guessCount ?? 0) : null}
+        commentCount={commentsCount}
+        className="px-4 pt-3"
+      />
+
+      {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers,
+           "რუკაზე ნახვა" for the author once guesses exist. ── */}
+      {canGuess ? (
+        <View className="flex-row gap-2 px-4 pt-3">
+          <Pressable
+            onPress={() => setShowGuess(true)}
+            className="flex-1 h-11 rounded-xl bg-teal-600 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            <Feather name="map-pin" size={16} color="#fff" />
+            <Text className="text-sm font-semibold text-white">რუკაზე</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setShowPhotoGuess(true)}
+            className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            <Feather name="camera" size={16} color={theme.icon} />
+            <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ადგილზე</Text>
           </Pressable>
         </View>
+      ) : alreadyGuessed ? (
+        <View className="px-4 pt-3">
+          <View className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2">
+            <Feather name="check-circle" size={16} color="#14B8A6" />
+            <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">გამოცნობილია</Text>
+          </View>
         </View>
-      </KeyboardStickyView>
+      ) : null}
+
+      {isOwner && !isQuest && (post.guessCount ?? 0) > 0 ? (
+        <View className="px-4 pt-3">
+          <Pressable
+            onPress={() => setShowGuessMap(true)}
+            className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            <Feather name="map" size={16} color={theme.icon} />
+            <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">რუკაზე ნახვა</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {game ? (
+        <View className="pt-3">
+          <HideAndSeekPanel
+            game={game}
+            players={gamePlayers}
+            currentUserId={user?.id != null ? Number(user.id) : null}
+            onChanged={refreshGame}
+          />
+        </View>
+      ) : null}
+    </>
+  );
+
+  // The thread under it.
+  const commentsBlock = (
+    <>
+      {/* ── Comments ── */}
+      <View className="px-4 pt-4">
+        <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">კომენტარები</Text>
+        {comments.length === 0 ? (
+          <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
+        ) : (
+          comments.map((comment) => (
+            <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={handleReply} />
+          ))
+        )}
+      </View>
+    </>
+  );
+
+  // The comment box, sticking to the top of the keyboard when it is up.
+  const composer = (
+    <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+      <View className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800" style={{ paddingBottom: insets.bottom }}>
+      {replyTo ? (
+        <View className="px-3 pt-2 flex-row items-center justify-between">
+          <Text className="text-xs text-teal-700 dark:text-teal-300 flex-1 mr-2" numberOfLines={1}>
+            ↩ პასუხობ &apos;{replyTo.author}-ს
+          </Text>
+          <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+            <Feather name="x" size={14} color="#14B8A6" />
+          </Pressable>
+        </View>
+      ) : null}
+      <View className="flex-row items-end gap-2 px-3 py-2">
+        <TextInput
+          disableFullscreenUI
+          ref={inputRef}
+          value={commentBody}
+          onChangeText={setCommentBody}
+          placeholder={replyTo ? 'დაწერე პასუხი...' : 'დაწერე კომენტარი...'}
+          placeholderTextColor={theme.textMuted}
+          multiline
+          maxLength={2000}
+          className="text-zinc-900 dark:text-zinc-50"
+          style={{
+            flex: 1,
+            maxHeight: 96,
+            backgroundColor: 'transparent',
+            fontSize: 14,
+            lineHeight: 20,
+            paddingVertical: 8,
+          }}
+        />
+        <Pressable
+          onPress={() => addCommentMutation.mutate()}
+          disabled={!commentBody.trim() || addCommentMutation.isPending}
+          className="mb-1 w-9 h-9 rounded-full bg-teal-600 items-center justify-center"
+          style={{ opacity: !commentBody.trim() || addCommentMutation.isPending ? 0.4 : 1 }}
+        >
+          {addCommentMutation.isPending
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Feather name="send" size={16} color="#fff" />}
+        </Pressable>
+      </View>
+      </View>
+    </KeyboardStickyView>
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      {isTwoPane ? (
+        // Sideways: the post on the left, its thread on the right. The comment box
+        // rides above the keyboard inside the thread's pane, so typing a reply
+        // never pushes the photo away.
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <ScrollView
+            style={{ flex: 1, backgroundColor: theme.bg }}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            refreshControl={refreshControl}
+          >
+            {postBlocks}
+          </ScrollView>
+          <View style={{ flex: 1, backgroundColor: theme.bg, borderLeftWidth: 1, borderLeftColor: theme.border }}>
+            <KeyboardChatScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 16 }}
+              keyboardShouldPersistTaps="handled"
+              offset={insets.bottom}
+              refreshControl={refreshControl}
+            >
+              {commentsBlock}
+            </KeyboardChatScrollView>
+            {composer}
+          </View>
+        </View>
+      ) : (
+        <>
+          <KeyboardChatScrollView
+            style={{ flex: 1, backgroundColor: theme.bg }}
+            contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: gutter }}
+            keyboardShouldPersistTaps="handled"
+            offset={insets.bottom}
+            refreshControl={refreshControl}
+          >
+            {postBlocks}
+            {commentsBlock}
+          </KeyboardChatScrollView>
+          {composer}
+        </>
+      )}
       {showGuess ? (
         <NewGuess
           post={post}

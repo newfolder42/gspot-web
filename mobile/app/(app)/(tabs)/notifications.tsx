@@ -13,6 +13,7 @@ import {
 } from '@/types/notification';
 import { BackpackIcon } from '@/components/inventory/BackpackIcon';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 const PAGE_SIZE = 20;
 const NOTIFICATIONS_QUERY_KEY = ['notifications'] as const;
@@ -162,6 +163,7 @@ function NotificationRow({
 export default function NotificationsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { gutter } = useLayout();
   const queryClient = useQueryClient();
   const [markingAll, setMarkingAll] = useState(false);
 
@@ -254,7 +256,10 @@ export default function NotificationsScreen() {
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
       {unseenCount > 0 ? (
-        <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-end">
+        <View
+          className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-end"
+          style={{ paddingHorizontal: 16 + gutter }}
+        >
           <Pressable onPress={markAllAsRead} disabled={markingAll} hitSlop={6} className="flex-row items-center gap-1.5">
             <MaterialCommunityIcons
               name="email-open-multiple-outline"
@@ -270,6 +275,7 @@ export default function NotificationsScreen() {
 
       <FlatList
         data={allNotifications}
+        contentContainerStyle={{ paddingHorizontal: gutter }}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <NotificationRow

@@ -6,10 +6,12 @@ import { Feather } from '@expo/vector-icons';
 import { settingsApi } from '@/lib/settings';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 export default function SettingsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const { logout } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -41,7 +43,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}>
       {/* Notifications */}
       <View className="px-4 pt-5 pb-2">
         <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">

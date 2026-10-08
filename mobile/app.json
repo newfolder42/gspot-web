@@ -2,8 +2,8 @@
   "expo": {
     "name": "G'Spot",
     "slug": "gspot-mobile",
-    "version": "0.14.3",
-    "orientation": "portrait",
+    "version": "0.14.5",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "android": {
@@ -13,7 +13,7 @@
       },
       "googleServicesFile": "./google-services.json",
       "package": "ge.gspot.mobile",
-      "versionCode": 25,
+      "versionCode": 26,
       "intentFilters": [
         {
           "action": "VIEW",

@@ -20,6 +20,7 @@ export const Input = forwardRef<TextInput, InputProps>(
         ) : null}
 
         <TextInput
+          disableFullscreenUI
           ref={ref}
           className={[
             'bg-zinc-100 dark:bg-zinc-800',

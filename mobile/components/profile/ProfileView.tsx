@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   FlatList,
   Image,
   Pressable,
@@ -30,17 +29,23 @@ import { ConnectionsTab } from '@/components/profile/ConnectionsTab';
 import { usersApi, type XPInfo } from '@/lib/users';
 import { processProfilePhoto } from '@/lib/image';
 import { requestLibraryAccess } from '@/lib/photoAccess';
+import { useLayout } from '@/lib/layout';
 import { formatAge } from '@/lib/dates';
 import type { MobilePostType } from '@/types/post';
 
 const MAX_LEVEL = 60;
 /** Only used if the API response predates `xpInfo`. */
 const FALLBACK_XP_PER_LEVEL = 100;
+/**
+ * Grid columns: 3 upright, 6 once the window is wide enough (landscape). Both
+ * divide the page size evenly, so a full page is always whole rows.
+ */
 const COLUMNS = 3;
+const WIDE_COLUMNS = 6;
+const WIDE_MIN_WIDTH = 560;
 /** Grid page size, matching web's POSTS_PER_PAGE_GRID (a whole number of rows). */
 const POSTS_PAGE_SIZE = 18;
 const GAP = 2;
-const CELL_SIZE = (Dimensions.get('window').width - GAP * (COLUMNS + 1)) / COLUMNS;
 const PROFILE_PHOTO_MAX = 5 * 1024 * 1024;
 
 type Tab = 'posts' | 'guesses' | 'achievements' | 'connections';
@@ -118,18 +123,24 @@ function PostsTab({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { availableWidth, gutter } = useLayout();
+  const columns = availableWidth >= WIDE_MIN_WIDTH ? WIDE_COLUMNS : COLUMNS;
   const rows = useMemo(() => {
     const r: MobilePostType[][] = [];
-    for (let i = 0; i < posts.length; i += COLUMNS) r.push(posts.slice(i, i + COLUMNS));
+    for (let i = 0; i < posts.length; i += columns) r.push(posts.slice(i, i + columns));
     return r;
-  }, [posts]);
+  }, [posts, columns]);
+  // Percent, not pixels: under the side tab rail the grid is narrower than the
+  // window, and a percent cell tiles whatever width it is given. The row's and the
+  // cell's GAP / 2 padding keep the same gaps between cells and at the edges.
+  const cellStyle = { width: `${100 / columns}%`, aspectRatio: 1, padding: GAP / 2 } as const;
 
   return (
     <FlatList
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
       data={rows}
       keyExtractor={(row) => String(row[0].id)}
-      ListHeaderComponent={header}
+      ListHeaderComponent={<View style={{ paddingHorizontal: gutter }}>{header}</View>}
       refreshControl={refreshControl}
       contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
       initialNumToRender={6}
@@ -146,50 +157,51 @@ function PostsTab({
               ? (cover?.variants?.thumb ?? cover?.url)
               : (post.imageVariants?.thumb ?? post.image);
             return (
-              <Pressable
-                key={post.id}
-                onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(post.id) } })}
-                style={{ width: CELL_SIZE, height: CELL_SIZE, margin: GAP / 2 }}
-              >
-                {coverUri ? (
-                  <Image source={{ uri: coverUri }} style={{ width: CELL_SIZE, height: CELL_SIZE }} resizeMode="cover" />
-                ) : (
-                  <View style={{ width: CELL_SIZE, height: CELL_SIZE }} className="items-center justify-center bg-amber-500">
-                    <Feather name="flag" size={22} color="#fff" />
-                  </View>
-                )}
-                {isQuest ? (
-                  <>
-                    <View className="absolute top-1.5 left-1.5">
-                      <Feather name="flag" size={16} color="#FBBF24" />
+              <View key={post.id} style={cellStyle}>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(post.id) } })}
+                  style={{ flex: 1 }}
+                >
+                  {coverUri ? (
+                    <Image source={{ uri: coverUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  ) : (
+                    <View style={{ width: '100%', height: '100%' }} className="items-center justify-center bg-amber-500">
+                      <Feather name="flag" size={22} color="#fff" />
                     </View>
-                    {post.questTitle ? (
-                      <View
-                        className="absolute bottom-0 inset-x-0 px-1.5 pt-3 pb-1"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-                      >
-                        <Text className="text-[10px] font-medium text-white" numberOfLines={1}>
-                          {questCompletionTitle(post.questTitle)}
-                        </Text>
+                  )}
+                  {isQuest ? (
+                    <>
+                      <View className="absolute top-1.5 left-1.5">
+                        <Feather name="flag" size={16} color="#FBBF24" />
                       </View>
-                    ) : null}
-                  </>
-                ) : null}
-                {/* Vote / guess / comment / reward counts, as on the web profile grid. */}
-                <PostStatsBadge
-                  className="absolute top-1.5 right-1.5"
-                  size="sm"
-                  voteScore={post.voteScore ?? 0}
-                  guessCount={isQuest ? null : (post.guessCount ?? 0)}
-                  commentCount={post.commentCount ?? 0}
-                  rewards={post.rewards}
-                />
-              </Pressable>
+                      {post.questTitle ? (
+                        <View
+                          className="absolute bottom-0 inset-x-0 px-1.5 pt-3 pb-1"
+                          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+                        >
+                          <Text className="text-[10px] font-medium text-white" numberOfLines={1}>
+                            {questCompletionTitle(post.questTitle)}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {/* Vote / guess / comment / reward counts, as on the web profile grid. */}
+                  <PostStatsBadge
+                    className="absolute top-1.5 right-1.5"
+                    size="sm"
+                    voteScore={post.voteScore ?? 0}
+                    guessCount={isQuest ? null : (post.guessCount ?? 0)}
+                    commentCount={post.commentCount ?? 0}
+                    rewards={post.rewards}
+                  />
+                </Pressable>
+              </View>
             );
           })}
-          {row.length < COLUMNS
-            ? Array.from({ length: COLUMNS - row.length }).map((_, i) => (
-                <View key={`e-${i}`} style={{ width: CELL_SIZE, height: CELL_SIZE, margin: GAP / 2 }} />
+          {row.length < columns
+            ? Array.from({ length: columns - row.length }).map((_, i) => (
+                <View key={`e-${i}`} style={cellStyle} />
               ))
             : null}
         </View>
@@ -219,6 +231,7 @@ function PostsTab({
 export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean }) {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const [tab, setTab] = useState<Tab>('posts');
   const [uploading, setUploading] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -469,7 +482,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
     <>
       <ScrollView
         className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}
         refreshControl={refreshControl}
       >
         {header}

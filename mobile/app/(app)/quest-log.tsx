@@ -8,6 +8,7 @@ import { QuestRepeatabilityBadge } from '@/components/zone/QuestRepeatabilityBad
 import { questsApi } from '@/lib/quests';
 import type { AvailableQuestType, UserQuestLogEntryType } from '@/types/quest';
 import { useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 type Row =
   | { kind: 'log'; entry: UserQuestLogEntryType }
@@ -89,6 +90,7 @@ function AvailableRow({ quest }: { quest: AvailableQuestType }) {
 
 export default function QuestLogScreen() {
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['quest-log'],
     queryFn: () => questsApi.getLog(),
@@ -126,7 +128,7 @@ export default function QuestLogScreen() {
   return (
     <SectionList
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
-      contentContainerStyle={{ padding: 16, paddingBottom: 16 + insets.bottom }}
+      contentContainerStyle={{ padding: 16, paddingHorizontal: 16 + gutter, paddingBottom: 16 + insets.bottom }}
       sections={sections}
       stickySectionHeadersEnabled={false}
       keyExtractor={(row) => (row.kind === 'log' ? `log-${row.entry.userQuestId}` : `available-${row.quest.questId}`)}

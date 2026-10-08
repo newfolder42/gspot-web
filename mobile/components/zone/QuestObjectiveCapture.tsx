@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { questsApi } from '@/lib/quests';
@@ -113,72 +113,78 @@ export function QuestObjectiveCapture({ userQuestId, objectiveId, type, config, 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
       <View className="flex-1 bg-black/60 items-center justify-center p-6">
-        <View className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
-          <Text className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
-            {needsLocation ? 'ადგილზე გადაღება' : 'ფოტოს გადაღება'}
-          </Text>
+        {/* Bounded by the window, so a short one scrolls the card instead of cutting it off. */}
+        <View
+          className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800"
+          style={{ maxHeight: '100%' }}
+        >
+          <ScrollView>
+            <Text className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
+              {needsLocation ? 'ადგილზე გადაღება' : 'ფოტოს გადაღება'}
+            </Text>
 
-          {stage === 'idle' ? (
-            <>
-              <Pressable
-                onPress={capture}
-                className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-8 items-center"
-              >
-                <Feather name="camera" size={28} color={theme.icon} />
-                <Text className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 text-center">
-                  {needsLocation ? 'გადაიღე ფოტო ადგილზე ამოცანის შესასრულებლად.' : 'გადაიღე ფოტო ამოცანის შესასრულებლად.'}
-                </Text>
-              </Pressable>
-              <View className="flex-row gap-3 mt-4">
-                <Pressable onPress={onClose} className="flex-1 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 items-center">
-                  <Text className="text-zinc-700 dark:text-zinc-200 font-medium">გაუქმება</Text>
+            {stage === 'idle' ? (
+              <>
+                <Pressable
+                  onPress={capture}
+                  className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-8 items-center"
+                >
+                  <Feather name="camera" size={28} color={theme.icon} />
+                  <Text className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 text-center">
+                    {needsLocation ? 'გადაიღე ფოტო ადგილზე ამოცანის შესასრულებლად.' : 'გადაიღე ფოტო ამოცანის შესასრულებლად.'}
+                  </Text>
                 </Pressable>
-                <Pressable onPress={capture} className="flex-1 py-3 rounded-xl bg-teal-600 items-center flex-row justify-center gap-2">
-                  <Feather name="camera" size={16} color="#fff" />
-                  <Text className="text-white font-medium">გადაღება</Text>
+                <View className="flex-row gap-3 mt-4">
+                  <Pressable onPress={onClose} className="flex-1 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 items-center">
+                    <Text className="text-zinc-700 dark:text-zinc-200 font-medium">გაუქმება</Text>
+                  </Pressable>
+                  <Pressable onPress={capture} className="flex-1 py-3 rounded-xl bg-teal-600 items-center flex-row justify-center gap-2">
+                    <Feather name="camera" size={16} color="#fff" />
+                    <Text className="text-white font-medium">გადაღება</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
+
+            {stage === 'processing' ? (
+              <View className="py-8 items-center gap-3">
+                <ActivityIndicator color="#14B8A6" />
+                <Text className="text-sm text-zinc-500 dark:text-zinc-400">მუშავდება...</Text>
+              </View>
+            ) : null}
+
+            {stage === 'no-location' ? (
+              <FeedbackBlock
+                tone="error"
+                message="ლოკაცია ვერ მოიძებნა (არც ფოტოზე, არც მოწყობილობაზე). დართე წვდომა ლოკაციაზე და სცადე თავიდან."
+                onClose={onClose}
+                onRetry={retake}
+              />
+            ) : null}
+
+            {stage === 'out-of-range' ? (
+              <FeedbackBlock
+                tone="warn"
+                message={`ამოცანის ლოკაციიდან ${distance !== null ? `${Math.round(distance)} მ-ით ` : ''}შორს ხარ. მიდი უფრო ახლოს და სცადე თავიდან.`}
+                onClose={onClose}
+                onRetry={retake}
+              />
+            ) : null}
+
+            {stage === 'error' ? (
+              <FeedbackBlock tone="error" message={errorMsg ?? 'შეცდომა მოხდა.'} onClose={onClose} onRetry={retake} />
+            ) : null}
+
+            {stage === 'success' ? (
+              <View className="items-center gap-3 py-2">
+                <Feather name="check-circle" size={40} color="#14B8A6" />
+                <Text className="text-sm text-zinc-500 dark:text-zinc-400 text-center">გაგზავნილია მოდერატორის შესამოწმებლად.</Text>
+                <Pressable onPress={onClose} className="mt-2 w-full py-3 rounded-xl bg-teal-600 items-center">
+                  <Text className="text-white font-medium">დახურვა</Text>
                 </Pressable>
               </View>
-            </>
-          ) : null}
-
-          {stage === 'processing' ? (
-            <View className="py-8 items-center gap-3">
-              <ActivityIndicator color="#14B8A6" />
-              <Text className="text-sm text-zinc-500 dark:text-zinc-400">მუშავდება...</Text>
-            </View>
-          ) : null}
-
-          {stage === 'no-location' ? (
-            <FeedbackBlock
-              tone="error"
-              message="ლოკაცია ვერ მოიძებნა (არც ფოტოზე, არც მოწყობილობაზე). დართე წვდომა ლოკაციაზე და სცადე თავიდან."
-              onClose={onClose}
-              onRetry={retake}
-            />
-          ) : null}
-
-          {stage === 'out-of-range' ? (
-            <FeedbackBlock
-              tone="warn"
-              message={`ამოცანის ლოკაციიდან ${distance !== null ? `${Math.round(distance)} მ-ით ` : ''}შორს ხარ. მიდი უფრო ახლოს და სცადე თავიდან.`}
-              onClose={onClose}
-              onRetry={retake}
-            />
-          ) : null}
-
-          {stage === 'error' ? (
-            <FeedbackBlock tone="error" message={errorMsg ?? 'შეცდომა მოხდა.'} onClose={onClose} onRetry={retake} />
-          ) : null}
-
-          {stage === 'success' ? (
-            <View className="items-center gap-3 py-2">
-              <Feather name="check-circle" size={40} color="#14B8A6" />
-              <Text className="text-sm text-zinc-500 dark:text-zinc-400 text-center">გაგზავნილია მოდერატორის შესამოწმებლად.</Text>
-              <Pressable onPress={onClose} className="mt-2 w-full py-3 rounded-xl bg-teal-600 items-center">
-                <Text className="text-white font-medium">დახურვა</Text>
-              </Pressable>
-            </View>
-          ) : null}
+            ) : null}
+          </ScrollView>
         </View>
       </View>
     </Modal>

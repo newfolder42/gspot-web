@@ -6,6 +6,7 @@ import { PostPhoto } from '@/components/ui/PostPhoto';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { PostActionBar } from '@/components/PostActionBar';
+import { useLayout } from '@/lib/layout';
 import type { MobilePostType } from '@/types/post';
 
 function formatTimeAgo(timestamp: string): string {
@@ -32,8 +33,12 @@ function questCompletionTitle(questTitle: string | null | undefined): string {
  */
 export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; showZone?: boolean }) {
   const router = useRouter();
+  const { isLandscape, availableWidth, photoMaxHeight } = useLayout();
   const isQuest = item.type === 'quest-completion';
   const photos = item.photos ?? [];
+  // Upright a lone quest photo is a full-width square. Sideways that square is
+  // taller than the window, so it shrinks to what fits and sits in the middle.
+  const lonePhotoSide = isLandscape && photos.length === 1 ? Math.min(photoMaxHeight, availableWidth) : null;
   const openPost = () => router.push({ pathname: '/(app)/post/[id]', params: { id: String(item.id) } });
 
   return (
@@ -100,11 +105,15 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
       {isQuest ? (
         photos.length > 0 ? (
           <Pressable onPress={openPost}>
-            <View className="flex-row flex-wrap">
+            <View className="flex-row flex-wrap" style={lonePhotoSide ? { justifyContent: 'center' } : undefined}>
               {photos.map((photo, idx) => (
                 <View
                   key={idx}
-                  style={{ width: photos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }}
+                  style={
+                    lonePhotoSide
+                      ? { width: lonePhotoSide, height: lonePhotoSide, padding: 1 }
+                      : { width: photos.length === 1 ? '100%' : '50%', aspectRatio: 1, padding: 1 }
+                  }
                 >
                   <View className="flex-1 relative bg-zinc-100 dark:bg-zinc-900">
                     <ProgressiveImage

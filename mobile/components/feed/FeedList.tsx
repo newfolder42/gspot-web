@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } fr
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { HideAndSeekCard } from '@/components/hideandseek/HideAndSeekCard';
+import { useLayout } from '@/lib/layout';
 import type { MobilePostType } from '@/types/post';
 
 const PAGE_SIZE = 4;
@@ -16,7 +17,7 @@ type FeedLoader = (params: {
 }) => Promise<MobilePostType[]>;
 
 /**
- * Paginated, pull-to-refresh feed list shared by the global and to-guess feeds.
+ * Paginated, pull-to-refresh feed list shared by the home and to-guess feeds.
  * Pass a stable `queryKey` and the matching `feedApi` loader.
  */
 export function FeedList({
@@ -34,6 +35,7 @@ export function FeedList({
   /** Refetched alongside the feed on pull-to-refresh — the header runs its own query. */
   onRefresh?: () => Promise<unknown> | void;
 }) {
+  const { gutter } = useLayout();
   const query = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) =>
@@ -46,7 +48,8 @@ export function FeedList({
     getNextPageParam: (lastPage) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
       const lastPost = lastPage[lastPage.length - 1];
-      return { cursorDate: lastPost.date, cursorId: Number(lastPost.id) };
+      // Activity-ranked feeds sort by `feedAt`; the others have none and sort by `date`.
+      return { cursorDate: lastPost.feedAt ?? lastPost.date, cursorId: Number(lastPost.id) };
     },
   });
 
@@ -90,6 +93,8 @@ export function FeedList({
     <FlatList
       className="flex-1 bg-zinc-50 dark:bg-zinc-950"
       data={posts}
+      // Centres the feed in a column when the window is wider than a phone held upright.
+      contentContainerStyle={{ paddingHorizontal: gutter }}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) =>
         item.type === 'hide-and-seek' ? <HideAndSeekCard item={item} /> : <FeedPostCard item={item} />

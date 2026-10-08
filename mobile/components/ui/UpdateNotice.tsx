@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { checkAppVersion, currentAppVersion } from '@/lib/appVersion';
 import { storage } from '@/lib/storage';
@@ -50,12 +50,14 @@ export function UpdateNotice() {
     <Modal transparent animationType="fade" visible onRequestClose={dismiss}>
       <Pressable
         style={{ flex: 1, backgroundColor: 'rgba(24,24,27,0.6)' }}
-        className="items-center justify-center px-6"
+        className="items-center justify-center px-6 py-4"
         onPress={dismiss}
       >
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+          // A short window scrolls the message instead of cutting the card off.
+          style={{ maxHeight: '100%' }}
         >
           <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center gap-2">
             <Feather name="download" size={16} color="#14B8A6" />
@@ -64,20 +66,22 @@ export function UpdateNotice() {
             </Text>
           </View>
 
-          <View className="px-4 py-4 gap-2">
-            <Text className="text-sm text-zinc-700 dark:text-zinc-300">
-              ხელმისაწვდომია ახალი ვერსია {version}. შენ იყენებ {currentAppVersion()} ვერსიას 
-              გთხოვ, განაახლო აპლიკაცია.
-            </Text>
-            {notes ? (
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">{notes}</Text>
-            ) : null}
-            {required ? (
-              <Text className="text-xs text-amber-600 dark:text-amber-500">
-                ამ ვერსიით აპლიკაცია სწორად ვეღარ იმუშავებს.
+          <ScrollView>
+            <View className="px-4 py-4 gap-2">
+              <Text className="text-sm text-zinc-700 dark:text-zinc-300">
+                ხელმისაწვდომია ახალი ვერსია {version}. შენ იყენებ {currentAppVersion()} ვერსიას 
+                გთხოვ, განაახლო აპლიკაცია.
               </Text>
-            ) : null}
-          </View>
+              {notes ? (
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">{notes}</Text>
+              ) : null}
+              {required ? (
+                <Text className="text-xs text-amber-600 dark:text-amber-500">
+                  ამ ვერსიით აპლიკაცია სწორად ვეღარ იმუშავებს.
+                </Text>
+              ) : null}
+            </View>
+          </ScrollView>
 
           <View className="px-4 pb-4">
             <Pressable

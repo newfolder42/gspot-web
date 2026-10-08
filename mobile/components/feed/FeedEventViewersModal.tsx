@@ -30,7 +30,8 @@ export function FeedEventViewersModal({ eventId, onClose }: { eventId: number; o
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="bg-white dark:bg-zinc-900 rounded-t-3xl"
-          style={{ maxHeight: '70%', paddingBottom: insets.bottom }}
+          // Full width on a phone; centred at 560dp once the window is wider than that.
+          style={{ maxHeight: '70%', paddingBottom: insets.bottom, width: '100%', maxWidth: 560, alignSelf: 'center' }}
         >
           <View className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">

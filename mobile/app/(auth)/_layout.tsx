@@ -2,6 +2,7 @@ import { Stack, Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import { Colors, useTheme } from '@/constants/colors';
+import { sideInsetsLayout } from '@/components/ui/SideInsets';
 
 export default function AuthLayout() {
   const { user, isLoading } = useAuth();
@@ -19,6 +20,7 @@ export default function AuthLayout() {
 
   return (
     <Stack
+      screenLayout={sideInsetsLayout}
       screenOptions={{
         headerStyle: {
           backgroundColor: theme.headerBg,

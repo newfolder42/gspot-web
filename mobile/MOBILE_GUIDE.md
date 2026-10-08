@@ -437,6 +437,34 @@ const theme = useTheme();          // resolves against the OS appearance
 fixed ground); `useTheme()` holds what does (`bg`, `surface`, `border`, `text`,
 `textMuted`, `icon`, `iconFaint`, `headerBg`, `tabBarBg`, `overlay`, `ripple`, …).
 
+### Portrait and landscape
+
+The app rotates with the device. A landscape phone is only ~360dp tall, so a few
+rules keep screens usable (all of them leave a phone held upright exactly as it was):
+
+- **Never read `Dimensions.get('window')` at module level** — it is evaluated once
+  at load and goes stale on the first rotation. Use `useLayout()` from
+  `lib/layout.ts` (live window size, `isLandscape`, `isTwoPane`, `gutter`,
+  `photoMaxHeight`, …).
+- **Wide windows get a centred column, not a stretched one.** Put
+  `paddingHorizontal: gutter` on a list's/scroller's `contentContainerStyle`
+  (`gutter` is 0 on a phone upright). Do not narrow the scroller itself, or the
+  empty margins stop scrolling.
+- **Side insets** (display cutout, three-button navigation bar) are applied once per
+  navigator via `screenLayout={...SideInsets}` — screens only deal with top/bottom.
+  Full-screen `<Modal>`s sit outside the navigator and add `insets.left/right` themselves.
+- **Two panes where it pays off** (`isTwoPane`): the post page, the submit form and the
+  guess screen split in two sideways. Keep the heavy child (a `MapView`) in the same
+  position in the tree in both layouts so a rotation does not rebuild it.
+- **Dialogs** must fit ~330dp: cap scrolling regions with `useDialogScrollHeight(chrome, max)`
+  or give the card `maxHeight: '100%'` with a `ScrollView` body.
+- **Text inputs** carry `disableFullscreenUI`, otherwise Android replaces the whole
+  screen with its fullscreen editor in landscape.
+- iOS is not supported yet; its `Modal`s would also need `supportedOrientations`.
+
+Tabs become a left icon rail in landscape (`tabBarPosition: 'left'` in
+`app/(app)/(tabs)/_layout.tsx`) to save a 49dp bottom bar.
+
 Some surfaces stay dark in **both** schemes by design — the full-screen map
 modals (`NewGuess`, `GuessesMap`), the photo viewer (`ZoomableImage`), the photo
 letterbox in `submit`, and the badges/scrims drawn over post images. Their
@@ -536,7 +564,7 @@ This is the central config for the Expo project. Key fields:
     "name": "G'Spot",               // display name on home screen
     "slug": "gspot-mobile",         // unique identifier on expo.dev
     "version": "0.1.0",             // displayed version
-    "orientation": "portrait",       // lock to portrait
+    "orientation": "default",        // follows the device (rotation lock respected); see §14 "Portrait and landscape"
     "newArchEnabled": true,          // React Native new architecture (Fabric renderer)
     "android": {
       "package": "ge.gspot.mobile"  // Android package name (like a namespace)

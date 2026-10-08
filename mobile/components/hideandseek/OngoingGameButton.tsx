@@ -2,9 +2,11 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCountdown } from '@/components/hideandseek/useCountdown';
 import { hideAndSeekApi } from '@/lib/hideAndSeek';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLayout } from '@/lib/layout';
 import { Colors } from '@/constants/colors';
 
 /** Matches the web button; a game's state changes slowly enough for a minute. */
@@ -17,6 +19,8 @@ const POLL_MS = 60_000;
 export function OngoingGameButton({ bottomOffset = 90 }: { bottomOffset?: number }) {
   const router = useRouter();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { isLandscape } = useLayout();
 
   const { data: game, refetch } = useQuery({
     queryKey: ['hide-and-seek', 'active'],
@@ -30,7 +34,9 @@ export function OngoingGameButton({ bottomOffset = 90 }: { bottomOffset?: number
   if (!game || expired) return null;
 
   return (
-    <View style={{ position: 'absolute', right: 16, bottom: bottomOffset, zIndex: 40 }}>
+    // `bottomOffset` clears the tab bar upright. Sideways the tabs are a rail on the
+    // left, so it only has to clear a comment box (post page) and the system bars.
+    <View style={{ position: 'absolute', right: 16 + insets.right, bottom: isLandscape ? 72 + insets.bottom : bottomOffset, zIndex: 40 }}>
       <Pressable
         onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: String(game.postId) } })}
         className="flex-row items-center gap-2.5 rounded-full pl-3 pr-4 py-2.5"

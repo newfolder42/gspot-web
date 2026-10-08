@@ -5,11 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { InventoryBag } from '@/components/inventory/InventoryBag';
 import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 /** ინვენტარი — reachable from the home header and from your own profile. */
 export default function InventoryScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -27,7 +29,7 @@ export default function InventoryScreen() {
   return (
     <KeyboardScrollView
       style={{ flex: 1, backgroundColor: theme.bg }}
-      contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 16 + insets.bottom }}
+      contentContainerStyle={{ flexGrow: 1, padding: 16, paddingHorizontal: 16 + gutter, paddingBottom: 16 + insets.bottom }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.brand]} tintColor={Colors.brand} />
       }

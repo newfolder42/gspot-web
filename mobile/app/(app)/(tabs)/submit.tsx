@@ -26,6 +26,7 @@ import { requestLibraryAccess } from '@/lib/photoAccess';
 import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 import { CreateHideAndSeek } from '@/components/hideandseek/CreateHideAndSeek';
 import { ItemFoundModal } from '@/components/inventory/ItemFoundModal';
 import { PhotoDialog, PhotoSourceButtons, type PhotoSource } from '@/components/ui/PhotoDialog';
@@ -394,6 +395,7 @@ function MapCoordPicker({
 function PhotoSubmit() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { isTwoPane, gutter } = useLayout();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -667,313 +669,344 @@ function PhotoSubmit() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // The form is one column upright. Sideways it splits: the photo and its map on the
+  // left, the fields and the submit button on the right, so the whole form is in view
+  // at once instead of a 360dp-tall slice of a very long column.
+  const fieldsBlock = (
+    <>
+    {/* ── Zone picker ─────────────────────────────────── */}
+    <View className="mb-4">
+      <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+        საბზონა <Text className="text-rose-500">*</Text>
+      </Text>
+      <Pressable
+        onPress={() => setZonePickerOpen((v) => !v)}
+        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
+      >
+        <Text className={selectedZone ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
+          {selectedZone ? selectedZone.slug : 'აირჩიე საბზონა'}
+        </Text>
+        <Feather name={zonePickerOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.icon} />
+      </Pressable>
+
+      {zonePickerOpen ? (
+        <View className="mt-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
+          {sortedZones.length === 0 ? (
+            <View className="px-4 py-3">
+              <Text className="text-sm text-zinc-500 dark:text-zinc-400">შენ არ ხარ არცერთი საბზონის წევრი</Text>
+            </View>
+          ) : (
+            sortedZones.map((zone) => (
+              <Pressable
+                key={zone.id}
+                onPress={() => {
+                  setSelectedZone(zone);
+                  setSelectedTagId(null);
+                  setZonePickerOpen(false);
+                }}
+                className={`px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 active:opacity-70 ${zone.id === selectedZone?.id ? 'bg-teal-50 dark:bg-teal-950' : ''
+                  }`}
+              >
+                <Text
+                  className={`text-sm ${zone.id === selectedZone?.id
+                    ? 'font-semibold text-teal-700 dark:text-teal-300'
+                    : 'text-zinc-800 dark:text-zinc-200'
+                    }`}
+                >
+                  {zone.slug}
+                </Text>
+                {zone.description ? (
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{zone.description}</Text>
+                ) : null}
+              </Pressable>
+            ))
+          )}
+        </View>
+      ) : null}
+    </View>
+
+    {/* ── Title ───────────────────────────────────────── */}
+    <Input
+      label="სათაური"
+      placeholder="მაგ: ძველი ეკლესია კახეთში"
+      value={title}
+      onChangeText={setTitle}
+      maxLength={250}
+    />
+
+    {/* ── Date taken ──────────────────────────────────── */}
+    {dateTakenMode !== 'hidden' ? (
+      <View className="mb-4">
+        <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+          გადაღებულია{dateTakenMode === 'mandatory' ? <Text className="text-rose-500"> *</Text> : null}
+        </Text>
+
+        {Platform.OS === 'ios' ? (
+          <View className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2">
+            <DateTimePicker
+              value={dateTaken ?? new Date()}
+              mode="date"
+              display="compact"
+              maximumDate={new Date()}
+              minimumDate={new Date('2012-01-01')}
+              style={{ alignSelf: 'flex-start' }}
+              onValueChange={(_, date) => {
+                if (date) setDateTaken(date);
+              }}
+            />
+          </View>
+        ) : (
+          <>
+            <Pressable
+              onPress={() => setShowDatePicker(true)}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
+            >
+              <Text className={dateTaken ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
+                {dateTaken ? dateTaken.toISOString().split('T')[0] : 'თარიღის არჩევა'}
+              </Text>
+              <Feather name="calendar" size={18} color={theme.icon} />
+            </Pressable>
+            {showDatePicker ? (
+              <DateTimePicker
+                value={dateTaken ?? new Date()}
+                mode="date"
+                display="default"
+                maximumDate={new Date()}
+                minimumDate={new Date('2012-01-01')}
+                onValueChange={(_, date) => {
+                  setShowDatePicker(false);
+                  if (date) setDateTaken(date);
+                }}
+                onDismiss={() => setShowDatePicker(false)}
+              />
+            ) : null}
+          </>
+        )}
+
+        {dateTaken && dateErr ? (
+          <Text className="text-xs text-rose-500 mt-1 ml-1">{dateErr}</Text>
+        ) : null}
+      </View>
+    ) : null}
+
+    {/* ── Tags ────────────────────────────────────────── */}
+    {selectedZone?.tags?.length ? (
+      <View className="mb-4">
+        <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">თეგი</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {selectedZone.tags.map((tag: ZoneTag) => {
+            const active = tag.id === selectedTagId;
+            return (
+              <Pressable
+                key={tag.id}
+                onPress={() => setSelectedTagId((prev) => (prev === tag.id ? null : tag.id))}
+                style={active ? { backgroundColor: tag.color, borderColor: tag.color } : undefined}
+                className={`px-3 py-1.5 rounded-full border ${active ? '' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700'
+                  }`}
+              >
+                <Text
+                  className={`text-xs font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  {tag.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    ) : null}
+    </>
+  );
+
+  const photoBlock = (
+    <>
+    {/* ── Image section ────────────────────────────────── */}
+    {!image ? (
+      processing ? (
+        <View className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4">
+          <ActivityIndicator size="large" color="#14B8A6" />
+          <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">ფოტოს დამუშავება...</Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">GPS და თარიღის ამოღება EXIF-იდან</Text>
+        </View>
+      ) : (
+        <Pressable
+          onPress={handlePickOptions}
+          className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4 active:opacity-70"
+        >
+          <Feather name="camera" size={28} color={theme.icon} />
+          <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            ფოტოს არჩევა ან გადაღება
+          </Text>
+          <Text className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">JPEG / WebP / PNG · მაქს 15 MB</Text>
+        </Pressable>
+      )
+    ) : (
+      <>
+        {/* Map coord picker */}
+        <View className="mb-3">
+          <View className="flex-row items-center justify-between mb-1.5">
+            <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              ლოკაცია <Text className="text-rose-500">*</Text>
+            </Text>
+            {gpsAutoDetected && coords ? (
+              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800">
+                <Feather name="check-circle" size={11} color="#14B8A6" />
+                <Text className="text-xs text-teal-700 dark:text-teal-300">GPS ფოტოდან</Text>
+              </View>
+            ) : !coords ? (
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">შეეხე რუკას პინის დასაყენებლად</Text>
+            ) : null}
+          </View>
+          <MapCoordPicker
+            coords={coords}
+            onChange={(c) => { setCoords(c); setGpsAutoDetected(false); }}
+            onScrollLock={setScrollEnabled}
+            animateToCoordsKey={coordsAnimKey}
+          />
+        </View>
+
+        {/* Image thumbnail + replace */}
+        <View className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-950 overflow-hidden mb-4">
+          <Image
+            source={{ uri: image.uri }}
+            style={{ width: '100%', height: 240 }}
+            resizeMode="contain"
+          />
+          <View className="px-3 py-2.5 flex-row items-center justify-between bg-zinc-900 border-t border-zinc-800">
+            <Text className="text-xs text-zinc-400 flex-1 mr-3" numberOfLines={1}>
+              {image.name}
+            </Text>
+            <Pressable
+              onPress={() => {
+                setImage(null);
+                setCoords(null);
+                setGpsAutoDetected(false);
+                setDateTaken(null);
+              }}
+              hitSlop={8}
+            >
+              <Text className="text-xs text-rose-400">ფოტოს ცვლილება</Text>
+            </Pressable>
+          </View>
+        </View>
+      </>
+    )}
+    </>
+  );
+
+  const submitBlock = (
+    <>
+    {/* ── Zone rules ──────────────────────────────────── */}
+    {selectedZone?.settings?.upload_rules?.length ? (
+      <View className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 mb-5">
+        <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">წესები</Text>
+        {selectedZone.settings.upload_rules.map((rule, idx) => (
+          <Text key={idx} className="text-sm text-zinc-600 dark:text-zinc-300 leading-5 mb-1">
+            {idx + 1}. {rule}
+          </Text>
+        ))}
+      </View>
+    ) : null}
+
+    {/* ── Submit progress ──────────────────────────────── */}
+    {progress ? (
+      <View
+        className="mb-4"
+        accessibilityRole="progressbar"
+        accessibilityLabel={PHASE_LABEL[progress.phase]}
+        accessibilityValue={{ min: 0, max: 100, now: progress.pct }}
+      >
+        <View className="flex-row items-center justify-between mb-1.5">
+          <View className="flex-row items-center gap-2">
+            {progress.phase === 'done' ? (
+              <Feather name="check-circle" size={13} color={Colors.brand} />
+            ) : (
+              <ActivityIndicator size="small" color={Colors.brand} />
+            )}
+            <Text className="text-xs text-zinc-600 dark:text-zinc-300">
+              {PHASE_LABEL[progress.phase]}
+            </Text>
+          </View>
+          <Text className="text-xs font-semibold text-teal-600 dark:text-teal-400">
+            {progress.pct}%
+          </Text>
+        </View>
+
+        <View className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+          <Animated.View
+            style={{
+              height: 8,
+              borderRadius: 9999,
+              backgroundColor: Colors.brand,
+              width: barAnim.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+                extrapolate: 'clamp',
+              }),
+            }}
+          />
+        </View>
+
+        {progress.phase !== 'done' ? (
+          <View className="flex-row items-center justify-between mt-1.5">
+            <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
+              ნაბიჯი {SUBMIT_PHASES.indexOf(progress.phase) + 1} / {SUBMIT_PHASES.length}
+            </Text>
+            {progress.phase === 'uploading' && progress.total > 0 ? (
+              <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                {formatMb(progress.loaded)} / {formatMb(progress.total)}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    ) : null}
+
+    {/* ── Inline error ─────────────────────────────────── */}
+    {error ? (
+      <View className="mb-4 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800">
+        <Text className="text-sm text-rose-700 dark:text-rose-300">{error}</Text>
+      </View>
+    ) : null}
+
+    {/* ── Submit button ────────────────────────────────── */}
+    <Pressable
+      onPress={() => submitMutation.mutate()}
+      disabled={!canSubmit}
+      style={{ opacity: canSubmit ? 1 : 0.45 }}
+      className="h-12 rounded-xl bg-teal-600 items-center justify-center active:opacity-80"
+    >
+      {isPending ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text className="text-base font-semibold text-white">ატვირთვა</Text>
+      )}
+    </Pressable>
+    </>
+  );
+
   return (
     <>
     <KeyboardScrollView
       style={{ flex: 1, backgroundColor: theme.bg }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: insets.bottom + 32 }}
+      contentContainerStyle={{ paddingHorizontal: 16 + (isTwoPane ? 0 : gutter), paddingTop: 16, paddingBottom: insets.bottom + 32 }}
       scrollEnabled={scrollEnabled}
     >
-      {/* ── Zone picker ─────────────────────────────────── */}
-      <View className="mb-4">
-        <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-          საბზონა <Text className="text-rose-500">*</Text>
-        </Text>
-        <Pressable
-          onPress={() => setZonePickerOpen((v) => !v)}
-          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
-        >
-          <Text className={selectedZone ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
-            {selectedZone ? selectedZone.slug : 'აირჩიე საბზონა'}
-          </Text>
-          <Feather name={zonePickerOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.icon} />
-        </Pressable>
-
-        {zonePickerOpen ? (
-          <View className="mt-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
-            {sortedZones.length === 0 ? (
-              <View className="px-4 py-3">
-                <Text className="text-sm text-zinc-500 dark:text-zinc-400">შენ არ ხარ არცერთი საბზონის წევრი</Text>
-              </View>
-            ) : (
-              sortedZones.map((zone) => (
-                <Pressable
-                  key={zone.id}
-                  onPress={() => {
-                    setSelectedZone(zone);
-                    setSelectedTagId(null);
-                    setZonePickerOpen(false);
-                  }}
-                  className={`px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 active:opacity-70 ${zone.id === selectedZone?.id ? 'bg-teal-50 dark:bg-teal-950' : ''
-                    }`}
-                >
-                  <Text
-                    className={`text-sm ${zone.id === selectedZone?.id
-                      ? 'font-semibold text-teal-700 dark:text-teal-300'
-                      : 'text-zinc-800 dark:text-zinc-200'
-                      }`}
-                  >
-                    {zone.slug}
-                  </Text>
-                  {zone.description ? (
-                    <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{zone.description}</Text>
-                  ) : null}
-                </Pressable>
-              ))
-            )}
-          </View>
-        ) : null}
-      </View>
-
-      {/* ── Title ───────────────────────────────────────── */}
-      <Input
-        label="სათაური"
-        placeholder="მაგ: ძველი ეკლესია კახეთში"
-        value={title}
-        onChangeText={setTitle}
-        maxLength={250}
-      />
-
-      {/* ── Date taken ──────────────────────────────────── */}
-      {dateTakenMode !== 'hidden' ? (
-        <View className="mb-4">
-          <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-            გადაღებულია{dateTakenMode === 'mandatory' ? <Text className="text-rose-500"> *</Text> : null}
-          </Text>
-
-          {Platform.OS === 'ios' ? (
-            <View className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2">
-              <DateTimePicker
-                value={dateTaken ?? new Date()}
-                mode="date"
-                display="compact"
-                maximumDate={new Date()}
-                minimumDate={new Date('2012-01-01')}
-                style={{ alignSelf: 'flex-start' }}
-                onValueChange={(_, date) => {
-                  if (date) setDateTaken(date);
-                }}
-              />
-            </View>
-          ) : (
-            <>
-              <Pressable
-                onPress={() => setShowDatePicker(true)}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3.5 flex-row items-center justify-between"
-              >
-                <Text className={dateTaken ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}>
-                  {dateTaken ? dateTaken.toISOString().split('T')[0] : 'თარიღის არჩევა'}
-                </Text>
-                <Feather name="calendar" size={18} color={theme.icon} />
-              </Pressable>
-              {showDatePicker ? (
-                <DateTimePicker
-                  value={dateTaken ?? new Date()}
-                  mode="date"
-                  display="default"
-                  maximumDate={new Date()}
-                  minimumDate={new Date('2012-01-01')}
-                  onValueChange={(_, date) => {
-                    setShowDatePicker(false);
-                    if (date) setDateTaken(date);
-                  }}
-                  onDismiss={() => setShowDatePicker(false)}
-                />
-              ) : null}
-            </>
-          )}
-
-          {dateTaken && dateErr ? (
-            <Text className="text-xs text-rose-500 mt-1 ml-1">{dateErr}</Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      {/* ── Tags ────────────────────────────────────────── */}
-      {selectedZone?.tags?.length ? (
-        <View className="mb-4">
-          <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">თეგი</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {selectedZone.tags.map((tag: ZoneTag) => {
-              const active = tag.id === selectedTagId;
-              return (
-                <Pressable
-                  key={tag.id}
-                  onPress={() => setSelectedTagId((prev) => (prev === tag.id ? null : tag.id))}
-                  style={active ? { backgroundColor: tag.color, borderColor: tag.color } : undefined}
-                  className={`px-3 py-1.5 rounded-full border ${active ? '' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700'
-                    }`}
-                >
-                  <Text
-                    className={`text-xs font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}
-                  >
-                    {tag.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
+      {isTwoPane ? (
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+          <View style={{ flex: 1 }}>{photoBlock}</View>
+          <View style={{ flex: 1 }}>
+            {fieldsBlock}
+            {submitBlock}
           </View>
         </View>
-      ) : null}
-
-      {/* ── Image section ────────────────────────────────── */}
-      {!image ? (
-        processing ? (
-          <View className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4">
-            <ActivityIndicator size="large" color="#14B8A6" />
-            <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">ფოტოს დამუშავება...</Text>
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">GPS და თარიღის ამოღება EXIF-იდან</Text>
-          </View>
-        ) : (
-          <Pressable
-            onPress={handlePickOptions}
-            className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-10 items-center mb-4 active:opacity-70"
-          >
-            <Feather name="camera" size={28} color={theme.icon} />
-            <Text className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
-              ფოტოს არჩევა ან გადაღება
-            </Text>
-            <Text className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">JPEG / WebP / PNG · მაქს 15 MB</Text>
-          </Pressable>
-        )
       ) : (
         <>
-          {/* Map coord picker */}
-          <View className="mb-3">
-            <View className="flex-row items-center justify-between mb-1.5">
-              <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                ლოკაცია <Text className="text-rose-500">*</Text>
-              </Text>
-              {gpsAutoDetected && coords ? (
-                <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800">
-                  <Feather name="check-circle" size={11} color="#14B8A6" />
-                  <Text className="text-xs text-teal-700 dark:text-teal-300">GPS ფოტოდან</Text>
-                </View>
-              ) : !coords ? (
-                <Text className="text-xs text-zinc-500 dark:text-zinc-400">შეეხე რუკას პინის დასაყენებლად</Text>
-              ) : null}
-            </View>
-            <MapCoordPicker
-              coords={coords}
-              onChange={(c) => { setCoords(c); setGpsAutoDetected(false); }}
-              onScrollLock={setScrollEnabled}
-              animateToCoordsKey={coordsAnimKey}
-            />
-          </View>
-
-          {/* Image thumbnail + replace */}
-          <View className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-950 overflow-hidden mb-4">
-            <Image
-              source={{ uri: image.uri }}
-              style={{ width: '100%', height: 240 }}
-              resizeMode="contain"
-            />
-            <View className="px-3 py-2.5 flex-row items-center justify-between bg-zinc-900 border-t border-zinc-800">
-              <Text className="text-xs text-zinc-400 flex-1 mr-3" numberOfLines={1}>
-                {image.name}
-              </Text>
-              <Pressable
-                onPress={() => {
-                  setImage(null);
-                  setCoords(null);
-                  setGpsAutoDetected(false);
-                  setDateTaken(null);
-                }}
-                hitSlop={8}
-              >
-                <Text className="text-xs text-rose-400">ფოტოს ცვლილება</Text>
-              </Pressable>
-            </View>
-          </View>
+          {fieldsBlock}
+          {photoBlock}
+          {submitBlock}
         </>
       )}
-
-      {/* ── Zone rules ──────────────────────────────────── */}
-      {selectedZone?.settings?.upload_rules?.length ? (
-        <View className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 mb-5">
-          <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-2">წესები</Text>
-          {selectedZone.settings.upload_rules.map((rule, idx) => (
-            <Text key={idx} className="text-sm text-zinc-600 dark:text-zinc-300 leading-5 mb-1">
-              {idx + 1}. {rule}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-
-      {/* ── Submit progress ──────────────────────────────── */}
-      {progress ? (
-        <View
-          className="mb-4"
-          accessibilityRole="progressbar"
-          accessibilityLabel={PHASE_LABEL[progress.phase]}
-          accessibilityValue={{ min: 0, max: 100, now: progress.pct }}
-        >
-          <View className="flex-row items-center justify-between mb-1.5">
-            <View className="flex-row items-center gap-2">
-              {progress.phase === 'done' ? (
-                <Feather name="check-circle" size={13} color={Colors.brand} />
-              ) : (
-                <ActivityIndicator size="small" color={Colors.brand} />
-              )}
-              <Text className="text-xs text-zinc-600 dark:text-zinc-300">
-                {PHASE_LABEL[progress.phase]}
-              </Text>
-            </View>
-            <Text className="text-xs font-semibold text-teal-600 dark:text-teal-400">
-              {progress.pct}%
-            </Text>
-          </View>
-
-          <View className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
-            <Animated.View
-              style={{
-                height: 8,
-                borderRadius: 9999,
-                backgroundColor: Colors.brand,
-                width: barAnim.interpolate({
-                  inputRange: [0, 100],
-                  outputRange: ['0%', '100%'],
-                  extrapolate: 'clamp',
-                }),
-              }}
-            />
-          </View>
-
-          {progress.phase !== 'done' ? (
-            <View className="flex-row items-center justify-between mt-1.5">
-              <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                ნაბიჯი {SUBMIT_PHASES.indexOf(progress.phase) + 1} / {SUBMIT_PHASES.length}
-              </Text>
-              {progress.phase === 'uploading' && progress.total > 0 ? (
-                <Text className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                  {formatMb(progress.loaded)} / {formatMb(progress.total)}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-
-      {/* ── Inline error ─────────────────────────────────── */}
-      {error ? (
-        <View className="mb-4 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800">
-          <Text className="text-sm text-rose-700 dark:text-rose-300">{error}</Text>
-        </View>
-      ) : null}
-
-      {/* ── Submit button ────────────────────────────────── */}
-      <Pressable
-        onPress={() => submitMutation.mutate()}
-        disabled={!canSubmit}
-        style={{ opacity: canSubmit ? 1 : 0.45 }}
-        className="h-12 rounded-xl bg-teal-600 items-center justify-center active:opacity-80"
-      >
-        {isPending ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-base font-semibold text-white">ატვირთვა</Text>
-        )}
-      </Pressable>
     </KeyboardScrollView>
 
     {sourceDialogOpen && (
@@ -1014,6 +1047,7 @@ const TABS: { key: SubmitTab; label: string; icon: 'camera' | 'eye' }[] = [
 export default function SubmitScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const [tab, setTab] = useState<SubmitTab>('photo');
 
   return (
@@ -1047,7 +1081,7 @@ export default function SubmitScreen() {
       ) : (
         <KeyboardScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
+          contentContainerStyle={{ padding: 16, paddingHorizontal: 16 + gutter, paddingBottom: insets.bottom + 32 }}
         >
           <CreateHideAndSeek />
         </KeyboardScrollView>

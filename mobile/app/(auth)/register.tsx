@@ -111,6 +111,7 @@ export default function RegisterScreen() {
           </Text>
           <View className="relative">
             <TextInput
+              disableFullscreenUI
               value={alias}
               onChangeText={(t) => setAlias(t.toLowerCase())}
               placeholder="უნიკალური სახელი"
@@ -161,6 +162,7 @@ export default function RegisterScreen() {
           </Text>
           <View className="relative">
             <TextInput
+              disableFullscreenUI
               value={email}
               onChangeText={(t) => setEmail(t.toLowerCase())}
               placeholder="you@example.com"
@@ -207,6 +209,7 @@ export default function RegisterScreen() {
           </Text>
           <View className="relative">
             <TextInput
+              disableFullscreenUI
               value={password}
               onChangeText={setPassword}
               placeholder="123456 არა"

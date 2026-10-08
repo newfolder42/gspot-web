@@ -24,6 +24,7 @@ import {
   mapResultPadding,
 } from '@/lib/map';
 import { postsApi } from '@/lib/posts';
+import { useLayout } from '@/lib/layout';
 import type { MobilePostType } from '@/types/post';
 import type { GuessResult } from '@/types/post-guess';
 
@@ -38,7 +39,12 @@ type Phase = 'placing' | 'submitting' | 'result' | 'error';
  */
 type ImageMode = 'hidden' | 'band' | 'full';
 
+/** Upright the photo band is this tall, above the map. */
 const IMAGE_BAND_HEIGHT = 260;
+/** Sideways the photo gets this share of the width, beside the map. */
+const IMAGE_PANE_WIDTH = '40%';
+/** Sideways the actions sit in the header, in a slot this wide. */
+const HEADER_ACTIONS_WIDTH = 220;
 
 type Props = {
   post: MobilePostType;
@@ -51,6 +57,10 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
   // Full-screen modal draws under the system bars on edge-to-edge Android,
   // so header/action bar have to clear the status and navigation bars themselves.
   const insets = useSafeAreaInsets();
+  // Sideways the screen is barely 360dp tall, so a header + photo band + action bar
+  // stacked upright would leave the map a sliver. Instead the photo goes beside the
+  // map and the actions move up into the header.
+  const { isTwoPane } = useLayout();
 
   const [phase, setPhase] = useState<Phase>('placing');
   // No pin until the player taps the map: nothing to submit by accident, and the
@@ -102,6 +112,67 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
 
   const imageShown = imageMode !== 'hidden';
 
+  // The image toggle and the actions for the current phase. Upright they sit in the
+  // bottom bar; sideways they move into the header, where a 40dp button row costs
+  // far less of the 360dp height than a bar of their own.
+  const buttonH = isTwoPane ? 'h-10' : 'h-12';
+
+  // A checkbox, not a swap: the icon stays, the lit state says the photo is up.
+  const imageToggle = post.image ? (
+    <Pressable
+      onPress={() => setImageMode((m) => (m === 'hidden' ? 'band' : 'hidden'))}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: imageShown }}
+      accessibilityLabel="სურათი"
+      className={`${isTwoPane ? 'h-10 w-10' : 'h-12 w-12'} rounded-xl items-center justify-center border active:opacity-80 ${
+        imageShown ? 'bg-teal-500/20 border-teal-400' : 'bg-zinc-800 border-zinc-800'
+      }`}
+    >
+      <Feather name="image" size={20} color={imageShown ? '#5EEAD4' : Colors.onImageMuted} />
+    </Pressable>
+  ) : null;
+
+  const actions = phase === 'placing' ? (
+    <Pressable
+      onPress={handleSubmit}
+      disabled={!guessCoords}
+      className={`${buttonH} rounded-xl flex-row items-center justify-center gap-2 active:opacity-80 ${
+        guessCoords ? 'bg-teal-600' : 'bg-teal-900'
+      }`}
+    >
+      <Feather name="map-pin" size={18} color={guessCoords ? '#fff' : 'rgba(153,246,228,0.5)'} />
+      <Text className={`text-base font-semibold ${guessCoords ? 'text-white' : 'text-teal-200/50'}`}>
+        ცდა
+      </Text>
+    </Pressable>
+  ) : phase === 'submitting' ? (
+    <View className={`${buttonH} rounded-xl bg-teal-800 items-center justify-center`}>
+      <ActivityIndicator color="#fff" />
+    </View>
+  ) : phase === 'result' ? (
+    <Pressable
+      onPress={onClose}
+      className={`${buttonH} rounded-xl bg-zinc-700 items-center justify-center active:opacity-80`}
+    >
+      <Text className="text-base font-semibold text-zinc-100">დახურვა</Text>
+    </Pressable>
+  ) : (
+    <View className="flex-row gap-3">
+      <Pressable
+        onPress={() => setPhase('placing')}
+        className={`flex-1 ${buttonH} rounded-xl bg-teal-700 items-center justify-center active:opacity-80`}
+      >
+        <Text className="text-base font-semibold text-white">ხელახლა ცდა</Text>
+      </Pressable>
+      <Pressable
+        onPress={onClose}
+        className={`flex-1 ${buttonH} rounded-xl bg-zinc-700 items-center justify-center active:opacity-80`}
+      >
+        <Text className="text-base font-semibold text-zinc-400">დახურვა</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
     // Android back closes the guess and lands on the card/post underneath; the
     // answer is already on its way once submitting, so back waits it out.
@@ -113,161 +184,52 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
     >
       <View className="flex-1 bg-zinc-950">
 
-        {/* Header */}
+        {/* Header — sideways it also carries the image toggle and the actions */}
         <View
-          className="flex-row items-center justify-between px-4 pb-3 bg-zinc-900 border-b border-zinc-800"
-          style={{ paddingTop: insets.top + 12 }}
+          className={`flex-row items-center bg-zinc-900 border-b border-zinc-800 ${
+            isTwoPane ? 'gap-3 pb-2' : 'justify-between pb-3'
+          }`}
+          style={{
+            paddingTop: insets.top + (isTwoPane ? 6 : 12),
+            paddingLeft: 16 + insets.left,
+            paddingRight: 16 + insets.right,
+          }}
         >
           <Text className="text-base font-semibold text-zinc-100 flex-1 mr-2" numberOfLines={1}>
             {post.title || 'გამოიცანი'}
           </Text>
+          {isTwoPane ? (
+            <>
+              {imageToggle}
+              <View style={{ width: HEADER_ACTIONS_WIDTH }}>{actions}</View>
+            </>
+          ) : null}
           <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
             <Feather name="x" size={18} color={Colors.onImageMuted} />
           </Pressable>
         </View>
 
-        {/* Image panel — toggleable, pinch and double-tap to zoom */}
-        {imageMode === 'band' && post.image ? (
-          <View className="w-full bg-black" style={{ height: IMAGE_BAND_HEIGHT }}>
-            {/* Guessing wants every pixel of the master, but the feed rendition is
-                already cached from the list — show that rather than black while the
-                several MB come down. */}
-            <PinchZoomImage
-              uri={post.image}
-              placeholderUri={post.imageVariants?.feed}
-              style={{ flex: 1 }}
-              resizeMode="contain"
-            />
-            <Pressable
-              onPress={() => setImageMode('full')}
-              className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
-              hitSlop={8}
-            >
-              <Feather name="maximize-2" size={16} color={Colors.onImageMuted} />
-            </Pressable>
-          </View>
-        ) : null}
-
-        {/* Map */}
+        {/* Photo + map: stacked upright, side by side sideways. The map stays the
+            same child either way, so turning the phone does not rebuild it. */}
         <View
-          className="flex-1 relative"
-          onLayout={(e) => {
-            const { width, height } = e.nativeEvent.layout;
-            mapSizeRef.current = { width, height };
+          style={{
+            flex: 1,
+            flexDirection: isTwoPane ? 'row' : 'column',
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+            // Sideways there is no bottom bar to clear the navigation bar for us.
+            paddingBottom: isTwoPane ? insets.bottom : 0,
           }}
         >
-          <MapboxGL.MapView
-            style={{ flex: 1 }}
-            styleURL="mapbox://styles/mapbox/standard-satellite"
-            onPress={handleMapPress}
-            scrollEnabled
-            pitchEnabled={false}
-            rotateEnabled={false}
-            attributionEnabled={false}
-            logoEnabled={false}
-          >
-            {/* Uncontrolled camera: `defaultSettings` places the initial view without
-                the fly-in a controlled centerCoordinate/zoomLevel would animate. */}
-            <MapboxGL.Camera
-              ref={cameraRef}
-              defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: mapOverviewZoom }}
-              maxBounds={mapMaxBounds}
-              maxZoomLevel={mapMaxZoom}
-            />
-
-            {/* Guess marker — teal, only once the player has placed it; draggable until submitted */}
-            {guessCoords ? (
-              <MapboxGL.PointAnnotation
-                id="guess-marker"
-                coordinate={guessCoords}
-                anchor={MAP_PIN_ANCHOR}
-                draggable={phase === 'placing'}
-                onDragEnd={handleDragEnd}
-              >
-                <MapPin color={mapPinColors.pick} />
-              </MapboxGL.PointAnnotation>
-            ) : null}
-
-            {/* Photo marker — red, shown after result */}
-            {photoCoords ? (
-              <MapboxGL.PointAnnotation
-                id="photo-marker"
-                coordinate={photoCoords}
-                anchor={MAP_PIN_ANCHOR}
-              >
-                <MapPin color={mapPinColors.truth} />
-              </MapboxGL.PointAnnotation>
-            ) : null}
-
-            {/* Distance line — yellow dashed */}
-            {photoCoords && guessCoords ? (
-              <MapboxGL.ShapeSource
-                id="distance-line-source"
-                shape={{
-                  type: 'Feature',
-                  geometry: {
-                    type: 'LineString',
-                    coordinates: [guessCoords, photoCoords],
-                  },
-                  properties: {},
-                }}
-              >
-                <MapboxGL.LineLayer
-                  id="distance-line-layer"
-                  style={{
-                    lineColor: mapPinColors.line,
-                    lineWidth: 2,
-                    lineDasharray: [4, 4],
-                  }}
-                />
-              </MapboxGL.ShapeSource>
-            ) : null}
-          </MapboxGL.MapView>
-
-          {/* Coordinates — top right overlay */}
-          <View className="absolute top-3 right-3 pointer-events-none">
-            <View className="px-3 py-1.5 rounded-lg bg-zinc-900/90">
-              <Text className="text-xs text-zinc-300" style={{ fontVariant: ['tabular-nums'] }}>
-                {guessCoords
-                  ? `${guessCoords[1].toFixed(4)}, ${guessCoords[0].toFixed(4)}`
-                  : 'მონიშნე ადგილი რუკაზე'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Result card — shown after submit */}
-          {phase === 'result' && result ? (
-            <View className="absolute bottom-4 left-4 right-4">
-              <View className="rounded-xl bg-zinc-900/95 px-6 py-4 flex-row items-center justify-center gap-8">
-                <View className="items-center">
-                  <Text className="text-xs text-zinc-400 mb-1">ქულა</Text>
-                  <Text className="text-3xl font-bold text-teal-400">{result.guess.score}</Text>
-                </View>
-                <View style={{ width: 1, height: 40, backgroundColor: '#3f3f46' }} />
-                <View className="items-center">
-                  <Text className="text-xs text-zinc-400 mb-1">მანძილი</Text>
-                  <Text className="text-3xl font-bold text-zinc-100">
-                    {result.guess.distance != null
-                      ? `${result.guess.distance.toLocaleString('ka-GE')} მ`
-                      : '—'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ) : null}
-
-          {/* Error card */}
-          {phase === 'error' ? (
-            <View className="absolute bottom-4 left-4 right-4">
-              <View className="rounded-xl bg-rose-950 px-4 py-3">
-                <Text className="text-sm text-rose-200 text-center">შეცდომა. სცადე ხელახლა.</Text>
-              </View>
-            </View>
-          ) : null}
-
-          {/* Expanded photo - covers the map, which stays mounted underneath */}
-          {imageMode === 'full' && post.image ? (
-            <View style={StyleSheet.absoluteFill} className="bg-black">
+          {/* Image panel — toggleable, pinch and double-tap to zoom */}
+          {imageMode === 'band' && post.image ? (
+            <View
+              className="bg-black"
+              style={isTwoPane ? { width: IMAGE_PANE_WIDTH } : { width: '100%', height: IMAGE_BAND_HEIGHT }}
+            >
+              {/* Guessing wants every pixel of the master, but the feed rendition is
+                  already cached from the list — show that rather than black while the
+                  several MB come down. */}
               <PinchZoomImage
                 uri={post.image}
                 placeholderUri={post.imageVariants?.feed}
@@ -275,79 +237,167 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                 resizeMode="contain"
               />
               <Pressable
-                onPress={() => setImageMode('band')}
+                onPress={() => setImageMode('full')}
                 className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
                 hitSlop={8}
               >
-                <Feather name="minimize-2" size={16} color={Colors.onImageMuted} />
+                <Feather name="maximize-2" size={16} color={Colors.onImageMuted} />
               </Pressable>
             </View>
           ) : null}
+
+          {/* Map */}
+          <View
+            className="flex-1 relative"
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              mapSizeRef.current = { width, height };
+            }}
+          >
+            <MapboxGL.MapView
+              style={{ flex: 1 }}
+              styleURL="mapbox://styles/mapbox/standard-satellite"
+              onPress={handleMapPress}
+              scrollEnabled
+              pitchEnabled={false}
+              rotateEnabled={false}
+              attributionEnabled={false}
+              logoEnabled={false}
+            >
+              {/* Uncontrolled camera: `defaultSettings` places the initial view without
+                  the fly-in a controlled centerCoordinate/zoomLevel would animate. */}
+              <MapboxGL.Camera
+                ref={cameraRef}
+                defaultSettings={{ centerCoordinate: mapDefaultCenter, zoomLevel: mapOverviewZoom }}
+                maxBounds={mapMaxBounds}
+                maxZoomLevel={mapMaxZoom}
+              />
+
+              {/* Guess marker — teal, only once the player has placed it; draggable until submitted */}
+              {guessCoords ? (
+                <MapboxGL.PointAnnotation
+                  id="guess-marker"
+                  coordinate={guessCoords}
+                  anchor={MAP_PIN_ANCHOR}
+                  draggable={phase === 'placing'}
+                  onDragEnd={handleDragEnd}
+                >
+                  <MapPin color={mapPinColors.pick} />
+                </MapboxGL.PointAnnotation>
+              ) : null}
+
+              {/* Photo marker — red, shown after result */}
+              {photoCoords ? (
+                <MapboxGL.PointAnnotation
+                  id="photo-marker"
+                  coordinate={photoCoords}
+                  anchor={MAP_PIN_ANCHOR}
+                >
+                  <MapPin color={mapPinColors.truth} />
+                </MapboxGL.PointAnnotation>
+              ) : null}
+
+              {/* Distance line — yellow dashed */}
+              {photoCoords && guessCoords ? (
+                <MapboxGL.ShapeSource
+                  id="distance-line-source"
+                  shape={{
+                    type: 'Feature',
+                    geometry: {
+                      type: 'LineString',
+                      coordinates: [guessCoords, photoCoords],
+                    },
+                    properties: {},
+                  }}
+                >
+                  <MapboxGL.LineLayer
+                    id="distance-line-layer"
+                    style={{
+                      lineColor: mapPinColors.line,
+                      lineWidth: 2,
+                      lineDasharray: [4, 4],
+                    }}
+                  />
+                </MapboxGL.ShapeSource>
+              ) : null}
+            </MapboxGL.MapView>
+
+            {/* Coordinates — top right overlay */}
+            <View className="absolute top-3 right-3 pointer-events-none">
+              <View className="px-3 py-1.5 rounded-lg bg-zinc-900/90">
+                <Text className="text-xs text-zinc-300" style={{ fontVariant: ['tabular-nums'] }}>
+                  {guessCoords
+                    ? `${guessCoords[1].toFixed(4)}, ${guessCoords[0].toFixed(4)}`
+                    : 'მონიშნე ადგილი რუკაზე'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Result card — shown after submit */}
+            {phase === 'result' && result ? (
+              <View className="absolute bottom-4 left-4 right-4">
+                <View
+                  className={`rounded-xl bg-zinc-900/95 flex-row items-center justify-center ${
+                    isTwoPane ? 'px-4 py-2.5 gap-6' : 'px-6 py-4 gap-8'
+                  }`}
+                >
+                  <View className="items-center">
+                    <Text className="text-xs text-zinc-400 mb-1">ქულა</Text>
+                    <Text className={`${isTwoPane ? 'text-2xl' : 'text-3xl'} font-bold text-teal-400`}>{result.guess.score}</Text>
+                  </View>
+                  <View style={{ width: 1, height: 40, backgroundColor: '#3f3f46' }} />
+                  <View className="items-center">
+                    <Text className="text-xs text-zinc-400 mb-1">მანძილი</Text>
+                    <Text className={`${isTwoPane ? 'text-2xl' : 'text-3xl'} font-bold text-zinc-100`}>
+                      {result.guess.distance != null
+                        ? `${result.guess.distance.toLocaleString('ka-GE')} მ`
+                        : '—'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Error card */}
+            {phase === 'error' ? (
+              <View className="absolute bottom-4 left-4 right-4">
+                <View className="rounded-xl bg-rose-950 px-4 py-3">
+                  <Text className="text-sm text-rose-200 text-center">შეცდომა. სცადე ხელახლა.</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Expanded photo - covers the map, which stays mounted underneath */}
+            {imageMode === 'full' && post.image ? (
+              <View style={StyleSheet.absoluteFill} className="bg-black">
+                <PinchZoomImage
+                  uri={post.image}
+                  placeholderUri={post.imageVariants?.feed}
+                  style={{ flex: 1 }}
+                  resizeMode="contain"
+                />
+                <Pressable
+                  onPress={() => setImageMode('band')}
+                  className="absolute bottom-2 right-2 p-2 rounded-md bg-zinc-900/80"
+                  hitSlop={8}
+                >
+                  <Feather name="minimize-2" size={16} color={Colors.onImageMuted} />
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         {/* Bottom action bar — the image toggle sits beside the thumb-reach actions */}
-        <View
-          className="flex-row items-center gap-3 px-4 pt-3 bg-zinc-900 border-t border-zinc-800"
-          style={{ paddingBottom: insets.bottom + 12 }}
-        >
-          {/* A checkbox, not a swap: the icon stays, the lit state says the photo is up. */}
-          {post.image ? (
-            <Pressable
-              onPress={() => setImageMode((m) => (m === 'hidden' ? 'band' : 'hidden'))}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: imageShown }}
-              accessibilityLabel="სურათი"
-              className={`h-12 w-12 rounded-xl items-center justify-center border active:opacity-80 ${
-                imageShown ? 'bg-teal-500/20 border-teal-400' : 'bg-zinc-800 border-zinc-800'
-              }`}
-            >
-              <Feather name="image" size={20} color={imageShown ? '#5EEAD4' : Colors.onImageMuted} />
-            </Pressable>
-          ) : null}
-
-          <View className="flex-1">
-            {phase === 'placing' ? (
-              <Pressable
-                onPress={handleSubmit}
-                disabled={!guessCoords}
-                className={`h-12 rounded-xl flex-row items-center justify-center gap-2 active:opacity-80 ${
-                  guessCoords ? 'bg-teal-600' : 'bg-teal-900'
-                }`}
-              >
-                <Feather name="map-pin" size={18} color={guessCoords ? '#fff' : 'rgba(153,246,228,0.5)'} />
-                <Text className={`text-base font-semibold ${guessCoords ? 'text-white' : 'text-teal-200/50'}`}>
-                  ცდა
-                </Text>
-              </Pressable>
-            ) : phase === 'submitting' ? (
-              <View className="h-12 rounded-xl bg-teal-800 items-center justify-center">
-                <ActivityIndicator color="#fff" />
-              </View>
-            ) : phase === 'result' ? (
-              <Pressable
-                onPress={onClose}
-                className="h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
-              >
-                <Text className="text-base font-semibold text-zinc-100">დახურვა</Text>
-              </Pressable>
-            ) : (
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={() => setPhase('placing')}
-                  className="flex-1 h-12 rounded-xl bg-teal-700 items-center justify-center active:opacity-80"
-                >
-                  <Text className="text-base font-semibold text-white">ხელახლა ცდა</Text>
-                </Pressable>
-                <Pressable
-                  onPress={onClose}
-                  className="flex-1 h-12 rounded-xl bg-zinc-700 items-center justify-center active:opacity-80"
-                >
-                  <Text className="text-base font-semibold text-zinc-400">დახურვა</Text>
-                </Pressable>
-              </View>
-            )}
+        {!isTwoPane ? (
+          <View
+            className="flex-row items-center gap-3 pt-3 bg-zinc-900 border-t border-zinc-800"
+            style={{ paddingBottom: insets.bottom + 12, paddingLeft: 16 + insets.left, paddingRight: 16 + insets.right }}
+          >
+            {imageToggle}
+            <View className="flex-1">{actions}</View>
           </View>
-        </View>
+        ) : null}
 
       </View>
     </Modal>

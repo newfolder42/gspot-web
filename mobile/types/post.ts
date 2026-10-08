@@ -38,6 +38,18 @@ export type MobilePostType = {
   /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
   userReward?: string | null;
   userHasGuessed?: boolean;
+  /**
+   * Home feed only: where the post sorts — its creation time, or later when it drew
+   * engagement. Page cursors come from this, not `date`.
+   */
+  feedAt?: string;
+  /** Home feed only: the followed user's engagement that bumped the post; null otherwise. */
+  activity?: {
+    kind: 'guessed' | 'commented' | 'voted' | 'rewarded';
+    actorId: number;
+    actorAlias: string;
+    at: string;
+  } | null;
   tag?: { id: number; name: string; color: string } | null;
   authorLevel?: number | null;
   // quest-completion posts only

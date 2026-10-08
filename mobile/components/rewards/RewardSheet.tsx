@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { useTheme } from '@/constants/colors';
+import { useDialogScrollHeight } from '@/lib/layout';
 import { rewardsApi } from '@/lib/rewards';
 import { getSelectableRewardsForTarget } from '@/types/reward';
 import type { RewardSummaryType, RewardTarget } from '@/types/reward';
@@ -22,6 +23,8 @@ type Props = {
  */
 export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Props) {
   const theme = useTheme();
+  // 320 upright; sideways the card's header, padding and quota row leave less than that.
+  const catalogHeight = useDialogScrollHeight(120, 320);
   const [givingKey, setGivingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +90,7 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
                 ჯილდოები ამ ადგილას მიუწვდომელია.
               </Text>
             ) : (
-              <ScrollView style={{ maxHeight: 320 }}>
+              <ScrollView style={{ maxHeight: catalogHeight }}>
                 <View className="flex-row flex-wrap" style={{ marginHorizontal: -4 }}>
                   {selectable.map((def) => (
                     <View key={def.key} style={{ width: '33.333%', padding: 4 }}>

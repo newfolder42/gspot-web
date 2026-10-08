@@ -5,9 +5,11 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { questsApi } from '@/lib/quests';
+import { useLayout } from '@/lib/layout';
 
 export default function CharacterDetailScreen() {
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const { slug, characterSlug } = useLocalSearchParams<{ slug: string; characterSlug: string }>();
   const navigation = useNavigation();
 
@@ -40,7 +42,7 @@ export default function CharacterDetailScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingBottom: 16 + insets.bottom }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingHorizontal: 16 + gutter, paddingBottom: 16 + insets.bottom }}>
       <View className="flex-row items-center gap-4">
         <ProfileAvatar name={data.name} photoUrl={data.avatar_url} size={72} shape="full" />
         <View className="flex-1">

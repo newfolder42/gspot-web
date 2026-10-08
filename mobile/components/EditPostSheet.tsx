@@ -71,10 +71,12 @@ export function EditPostSheet({
         automaticOffset
         style={{ flex: 1, backgroundColor: 'rgba(24,24,27,0.7)' }}
       >
-        <Pressable style={{ flex: 1 }} className="items-center justify-center px-6" onPress={onClose}>
+        <Pressable style={{ flex: 1 }} className="items-center justify-center px-6 py-4" onPress={onClose}>
           <Pressable
             onPress={(e) => e.stopPropagation()}
             className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+            // Bounded by the space above the keyboard, so a short window scrolls the body.
+            style={{ maxHeight: '100%' }}
           >
             <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
               <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">რედაქტირება</Text>
@@ -83,83 +85,86 @@ export function EditPostSheet({
               </Pressable>
             </View>
 
-            <View className="px-4 py-4">
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="პოსტის სათაური"
-                placeholderTextColor={theme.textMuted}
-                maxLength={500}
-                className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700"
-              />
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <View className="px-4 py-4">
+                <TextInput
+                  disableFullscreenUI
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="პოსტის სათაური"
+                  placeholderTextColor={theme.textMuted}
+                  maxLength={500}
+                  className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700"
+                />
 
-              {showTags && tags.length > 0 ? (
-                <>
-                  <Text className="mt-4 mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    თეგი
-                  </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                    <Pressable
-                      onPress={() => setTagId(null)}
-                      className={`rounded-full px-3 py-1.5 border ${
-                        tagId === null ? 'bg-zinc-800 border-zinc-800 dark:bg-zinc-200 dark:border-zinc-200' : 'border-zinc-300 dark:border-zinc-700'
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-semibold ${
-                          tagId === null ? 'text-white dark:text-zinc-900' : 'text-zinc-600 dark:text-zinc-300'
+                {showTags && tags.length > 0 ? (
+                  <>
+                    <Text className="mt-4 mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      თეგი
+                    </Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                      <Pressable
+                        onPress={() => setTagId(null)}
+                        className={`rounded-full px-3 py-1.5 border ${
+                          tagId === null ? 'bg-zinc-800 border-zinc-800 dark:bg-zinc-200 dark:border-zinc-200' : 'border-zinc-300 dark:border-zinc-700'
                         }`}
                       >
-                        უთეგო
-                      </Text>
-                    </Pressable>
-                    {tags.map((tag) => {
-                      const active = tagId === tag.id;
-                      return (
-                        <Pressable
-                          key={tag.id}
-                          onPress={() => setTagId(tag.id)}
-                          className="rounded-full px-3 py-1.5"
-                          style={{
-                            borderWidth: 1.5,
-                            borderColor: tag.color,
-                            backgroundColor: active ? tag.color : 'transparent',
-                          }}
+                        <Text
+                          className={`text-xs font-semibold ${
+                            tagId === null ? 'text-white dark:text-zinc-900' : 'text-zinc-600 dark:text-zinc-300'
+                          }`}
                         >
-                          <Text className="text-xs font-semibold" style={{ color: active ? '#fff' : tag.color }}>
-                            {tag.name}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                </>
-              ) : null}
+                          უთეგო
+                        </Text>
+                      </Pressable>
+                      {tags.map((tag) => {
+                        const active = tagId === tag.id;
+                        return (
+                          <Pressable
+                            key={tag.id}
+                            onPress={() => setTagId(tag.id)}
+                            className="rounded-full px-3 py-1.5"
+                            style={{
+                              borderWidth: 1.5,
+                              borderColor: tag.color,
+                              backgroundColor: active ? tag.color : 'transparent',
+                            }}
+                          >
+                            <Text className="text-xs font-semibold" style={{ color: active ? '#fff' : tag.color }}>
+                              {tag.name}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                ) : null}
 
-              {error ? <Text className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</Text> : null}
+                {error ? <Text className="mt-3 text-sm text-rose-600 dark:text-rose-400">{error}</Text> : null}
 
-              <View className="flex-row gap-2 mt-5">
-                <Pressable
-                  onPress={onClose}
-                  disabled={saving}
-                  className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
-                >
-                  <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">გაუქმება</Text>
-                </Pressable>
-                <Pressable
-                  onPress={save}
-                  disabled={saving || !title.trim()}
-                  className="flex-1 h-11 rounded-xl bg-teal-600 items-center justify-center"
-                  style={{ opacity: saving || !title.trim() ? 0.5 : 1 }}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text className="text-sm font-semibold text-white">შენახვა</Text>
-                  )}
-                </Pressable>
+                <View className="flex-row gap-2 mt-5">
+                  <Pressable
+                    onPress={onClose}
+                    disabled={saving}
+                    className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
+                  >
+                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">გაუქმება</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={save}
+                    disabled={saving || !title.trim()}
+                    className="flex-1 h-11 rounded-xl bg-teal-600 items-center justify-center"
+                    style={{ opacity: saving || !title.trim() ? 0.5 : 1 }}
+                  >
+                    {saving ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text className="text-sm font-semibold text-white">შენახვა</Text>
+                    )}
+                  </Pressable>
+                </View>
               </View>
-            </View>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

@@ -1,6 +1,14 @@
 import type { VoteValue } from './vote';
 import type { RewardCountType } from './reward';
 
+/** The followed user's engagement that placed a post in the home feed; the "X commented" header. */
+export type PostActivityType = {
+  kind: 'guessed' | 'commented' | 'voted' | 'rewarded';
+  actorId: number;
+  actorAlias: string;
+  at: string;
+};
+
 export type PostType = {
   id: number;
   title: string;
@@ -19,6 +27,13 @@ export type PostType = {
   rewards?: RewardCountType[];
   /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
   userReward?: string | null;
+  /**
+   * Home feed only: where the post sorts, which is its creation time or later when it
+   * drew engagement. The pagination cursor is built from this, not from `date`.
+   */
+  feedAt?: string;
+  /** Home feed only: the followed user's engagement that bumped the post; null otherwise. */
+  activity?: PostActivityType | null;
 };
 
 export enum DifficultyLevel {

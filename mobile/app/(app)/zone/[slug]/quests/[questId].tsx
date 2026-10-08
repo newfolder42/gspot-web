@@ -16,6 +16,7 @@ import { formatPhotoTakenDate } from '@/lib/dates';
 import { QUEST_REPEAT_AVAILABLE_AGAIN } from '@/types/quest';
 import type { ZoneQuestObjectiveWithProgressType } from '@/types/quest';
 import { useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
   pending_review: 'განხილვაში',
@@ -43,6 +44,7 @@ function isObjectiveAttemptable(
 export default function QuestDetailScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const { slug, questId: questIdParam } = useLocalSearchParams<{ slug: string; questId: string }>();
   const questId = Number(questIdParam);
   const router = useRouter();
@@ -112,7 +114,7 @@ export default function QuestDetailScreen() {
   const captureObjective = captureObjectiveId != null ? objectives.find((o) => o.id === captureObjectiveId) ?? null : null;
 
   return (
-    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingBottom: 48 + insets.bottom }}>
+    <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950" contentContainerStyle={{ padding: 16, paddingHorizontal: 16 + gutter, paddingBottom: 48 + insets.bottom }}>
       {/* Header */}
       <View className="flex-row items-start gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
         {character ? (

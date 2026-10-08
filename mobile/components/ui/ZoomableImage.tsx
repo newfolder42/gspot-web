@@ -223,7 +223,16 @@ function createZoomController(resizeMode: ResizeMode) {
     animated,
     panResponder,
     setLayout: (size: Size) => {
+      const resized =
+        layout.width > 0 && (layout.width !== size.width || layout.height !== size.height);
       layout = { width: size.width, height: size.height };
+      // A rotation re-shapes the view under a zoom and pan measured in the old
+      // one, which would leave the photo off-centre or past its edges; start over.
+      if (resized) {
+        pinch = null;
+        pan = null;
+        commit(MIN_SCALE, 0, 0, false);
+      }
     },
     setOrigin: (point: Point) => {
       origin = point;
@@ -320,7 +329,9 @@ export function ImageZoomViewer({
             left: 0,
             right: 0,
             paddingTop: insets.top + 8,
-            paddingHorizontal: 12,
+            // Sideways, the notch / navigation bar sits where the close button would.
+            paddingLeft: 12 + insets.left,
+            paddingRight: 12 + insets.right,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,

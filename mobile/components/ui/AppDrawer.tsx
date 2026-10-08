@@ -215,6 +215,8 @@ export function AppDrawer({ open, onClose, onOpen }: Props) {
                 left: 0,
                 bottom: 0,
                 width: DRAWER_WIDTH,
+                // Sideways, a notch at the left would sit on the panel's content.
+                paddingLeft: insets.left,
                 transform: [{ translateX }],
               }}
               className="bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800"

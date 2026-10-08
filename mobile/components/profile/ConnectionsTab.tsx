@@ -7,6 +7,7 @@ import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { usersApi } from '@/lib/users';
 import { formatTimePassed } from '@/lib/dates';
+import { useLayout } from '@/lib/layout';
 import type { ClientConnection } from '@/types/connection';
 
 function ConnectionRow({ connection, canUnfollow }: { connection: ClientConnection; canUnfollow: boolean }) {
@@ -45,6 +46,7 @@ export function ConnectionsTab({
   refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['connections', alias],
     queryFn: () => usersApi.getConnections(alias),
@@ -58,7 +60,7 @@ export function ConnectionsTab({
       keyExtractor={(c) => c.alias}
       ListHeaderComponent={header}
       refreshControl={refreshControl}
-      contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+      contentContainerStyle={{ paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}
       initialNumToRender={10}
       windowSize={7}
       removeClippedSubviews

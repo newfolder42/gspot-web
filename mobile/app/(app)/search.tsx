@@ -14,6 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { searchApi, type SearchResults } from '@/lib/search';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -33,6 +34,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const debouncedQuery = useDebounce(query.trim(), 300);
 
   // Autofocus and set custom header
@@ -42,6 +44,7 @@ export default function SearchScreen() {
         <View className="flex-1 flex-row items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 py-1.5 gap-2 mx-2">
           <Feather name="search" size={16} color={theme.icon} />
           <TextInput
+            disableFullscreenUI
             ref={inputRef}
             value={query}
             onChangeText={setQuery}
@@ -193,7 +196,7 @@ export default function SearchScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.key}
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
+          contentContainerStyle={{ paddingBottom: insets.bottom, paddingHorizontal: gutter }}
           // First tap opens a result instead of only closing the keyboard.
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"

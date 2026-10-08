@@ -1,6 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import type { FoundItemType } from '@/types/item';
 import { useTheme } from '@/constants/colors';
+import { useDialogScrollHeight } from '@/lib/layout';
 import { BackpackIcon } from './BackpackIcon';
 import { ItemDetails } from './ItemDetails';
 
@@ -17,6 +18,7 @@ export function ItemFoundModal({
   onClose: () => void;
 }) {
   const theme = useTheme();
+  const maxHeight = useDialogScrollHeight(125, 400);
   if (items.length === 0) return null;
 
   return (
@@ -37,7 +39,7 @@ export function ItemFoundModal({
             </Text>
           </View>
 
-          <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
+          <ScrollView style={{ maxHeight }} contentContainerStyle={{ padding: 16, gap: 12 }}>
             {items.map((item) => (
               <ItemDetails key={item.alias} item={item} />
             ))}

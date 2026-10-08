@@ -9,6 +9,7 @@ import { hideAndSeekApi } from '@/lib/hideAndSeek';
 import { formatMinutes } from '@/types/hide-and-seek';
 import type { HideAndSeekListFilter, HideAndSeekListItemType } from '@/types/hide-and-seek';
 import { Colors, useTheme } from '@/constants/colors';
+import { useLayout } from '@/lib/layout';
 
 const FILTERS: { key: HideAndSeekListFilter; label: string }[] = [
   { key: 'all', label: 'ყველა' },
@@ -75,6 +76,7 @@ function GameRow({ game }: { game: HideAndSeekListItemType }) {
 
 export default function HideAndSeekListScreen() {
   const theme = useTheme();
+  const { gutter } = useLayout();
   const [filter, setFilter] = useState<HideAndSeekListFilter>('all');
 
   const query = useQuery({
@@ -84,7 +86,7 @@ export default function HideAndSeekListScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: theme.bg }}>
-      <View className="flex-row gap-2 px-4 py-3">
+      <View className="flex-row gap-2 px-4 py-3" style={{ paddingHorizontal: 16 + gutter }}>
         {FILTERS.map((f) => {
           const selected = filter === f.key;
           return (
@@ -118,7 +120,7 @@ export default function HideAndSeekListScreen() {
           data={query.data ?? []}
           keyExtractor={(item) => String(item.gameId)}
           renderItem={({ item }) => <GameRow game={item} />}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 16 + gutter, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl refreshing={query.isFetching} onRefresh={() => query.refetch()} tintColor={Colors.brand} />
           }

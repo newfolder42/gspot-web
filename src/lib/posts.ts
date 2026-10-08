@@ -21,6 +21,7 @@ import {
   recordPostLocation,
 } from '@/lib/postLocations';
 import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
+import { FEED_ACTIVITY_WINDOW_DAYS, FEED_STRANGER_BUMP_DELAY_HOURS } from '@/lib/feedRanking';
 import type { FoundItemType } from '@/types/item';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
@@ -513,6 +514,155 @@ limit $1`,
     return await enrichPosts(res.rows, userId);
   } catch (err) {
     await logerror('getGlobalPosts error', [err]);
+    return [];
+  }
+}
+
+/**
+ * The home feed: the same posts as `getGlobalPosts`, ordered by activity instead of age.
+ *
+ * A post sorts by `feed_at` — its creation time, or the latest engagement on it (guess,
+ * comment, upvote, reward) when that is later. Engagement by someone the viewer follows
+ * counts in full; anyone's is held back FEED_STRANGER_BUMP_DELAY_HOURS (a new post still
+ * beats an old one that got a vote), and is ignored on posts with a negative score.
+ * Engagement older than the window is ignored. The viewer's own engagement is not
+ * discounted: the feed is the same for everyone apart from followed users' bumps.
+ *
+ * Followed users' engagement is read from the activity tables (it also supplies
+ * `activity`, the "X commented" header data); everyone's comes from
+ * `posts.last_activity_at`, which triggers keep current (see the post-last-activity
+ * migration). `feed_at` is cut to milliseconds so the cursor survives a JS Date round trip.
+ * Engagement only moves a post up, so a post already served never reappears on a later page.
+ *
+ * Paginate with `cursor = { date: <last post's feedAt>, id }`.
+ */
+export async function getHomeFeedPosts(
+  userId: number,
+  limit: number = 20,
+  cursor?: { date: string; id: number }
+): Promise<FeedPostType[]> {
+  try {
+    const windowSql = `interval '${Number(FEED_ACTIVITY_WINDOW_DAYS)} days'`;
+    const strangerDelaySql = `interval '${Number(FEED_STRANGER_BUMP_DELAY_HOURS)} hours'`;
+
+    const cursorCondition = cursor
+      ? `where (scored.feed_at, scored.id) < ($3::timestamptz, $4::bigint)`
+      : '';
+
+    const params = cursor
+      ? [limit, userId, cursor.date, cursor.id]
+      : [limit, userId];
+
+    const res = await query(
+      `with followed as (
+          select connection_id as id from user_connections where user_id = $2 and connection_id <> $2
+       ),
+       social as (
+          select distinct on (post_id) post_id, at, kind, user_id
+          from (
+            select pg.post_id, pg.created_at as at, 'guessed' as kind, pg.user_id
+              from post_guesses pg
+              where pg.user_id in (select id from followed) and pg.created_at > now() - ${windowSql}
+            union all
+            select c.post_id, c.created_at, 'commented', c.user_id
+              from post_comments c
+              where c.user_id in (select id from followed) and c.type = 'comment' and c.deleted_at is null
+                and c.created_at > now() - ${windowSql}
+            union all
+            select v.post_id, v.created_at, 'voted', v.user_id
+              from post_votes v
+              where v.user_id in (select id from followed) and v.value = 1 and v.deleted_at is null
+                and v.created_at > now() - ${windowSql}
+            union all
+            select r.post_id, r.created_at, 'rewarded', r.user_id
+              from post_rewards r
+              where r.user_id in (select id from followed) and r.deleted_at is null
+                and r.created_at > now() - ${windowSql}
+          ) a
+          order by post_id, at desc
+       ),
+       visible as (
+          select p.id, p.created_at, p.last_activity_at,
+                 (select coalesce(sum(pv2.value), 0) from post_votes pv2 where pv2.post_id = p.id and pv2.comment_id is null and pv2.deleted_at is null) as vote_score
+          from posts p
+          join zones z on z.id = p.zone_id
+          where p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek')
+            and ${zoneMemberSql('$2')}
+       ),
+       scored as (
+          select v.id, v.created_at, v.vote_score,
+                 s.at as social_at, s.kind as social_kind, s.user_id as social_user_id,
+                 case when v.last_activity_at > now() - ${windowSql} and v.vote_score >= 0
+                      then v.last_activity_at - ${strangerDelaySql}
+                 end as stranger_at,
+                 date_trunc('milliseconds', greatest(
+                   v.created_at,
+                   s.at,
+                   case when v.last_activity_at > now() - ${windowSql} and v.vote_score >= 0
+                        then v.last_activity_at - ${strangerDelaySql}
+                   end
+                 )) as feed_at
+          from visible v
+          left join social s on s.post_id = v.id
+       ),
+       page as (
+          select * from scored
+          ${cursorCondition}
+          order by feed_at desc, id desc
+          limit $1
+       )
+       select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias, zcp.public_url as zone_profile_photo_url,
+         (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count,
+         (select count(*) from post_comments pc where pc.post_id = p.id and pc.type = 'comment') as comment_count,
+         page.vote_score,
+         exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $2) as user_has_guessed,
+         ux.level as author_level,
+         page.feed_at,
+         -- A header only when a followed user's engagement is what placed the post.
+         case when page.social_at > page.created_at and (page.stranger_at is null or page.social_at >= page.stranger_at)
+              then page.social_kind end as activity_kind,
+         case when page.social_at > page.created_at and (page.stranger_at is null or page.social_at >= page.stranger_at)
+              then page.social_user_id end as activity_user_id,
+         case when page.social_at > page.created_at and (page.stranger_at is null or page.social_at >= page.stranger_at)
+              then page.social_at end as activity_at
+       from page
+       join posts p on p.id = page.id
+       join zones z on z.id = p.zone_id
+       join users u on u.id = p.user_id
+       left join user_xp ux on ux.user_id = u.id
+       left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
+       order by page.feed_at desc, page.id desc`,
+      params
+    );
+
+    const posts = await enrichPosts(res.rows, userId);
+
+    // enrichPosts keeps row order, so the ranking fields can be laid back on by index.
+    const actorIds = [...new Set(res.rows.filter(r => r.activity_kind).map(r => Number(r.activity_user_id)))];
+    const aliasById = new Map<number, string>();
+    if (actorIds.length > 0) {
+      const actors = await query(`select id, alias from users where id = any($1::bigint[])`, [actorIds]);
+      for (const a of actors.rows) aliasById.set(Number(a.id), a.alias);
+    }
+
+    return posts.map((post, i) => {
+      const r = res.rows[i];
+      const actorId = Number(r.activity_user_id);
+      return {
+        ...post,
+        feedAt: new Date(r.feed_at).toISOString(),
+        activity: r.activity_kind && aliasById.has(actorId)
+          ? {
+              kind: r.activity_kind,
+              actorId,
+              actorAlias: aliasById.get(actorId)!,
+              at: new Date(r.activity_at).toISOString(),
+            }
+          : null,
+      };
+    });
+  } catch (err) {
+    await logerror('getHomeFeedPosts error', [err]);
     return [];
   }
 }

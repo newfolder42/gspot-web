@@ -62,7 +62,8 @@ export default function FeedClient({
     const currentPosts = postsRef.current;
     const lastPost = currentPosts[currentPosts.length - 1];
     const cursor = {
-      date: lastPost.date,
+      // The home feed sorts by activity, so it pages by `feedAt`; other feeds have none.
+      date: lastPost.feedAt ?? lastPost.date,
       id: +lastPost.id,
       ids: currentPosts.map(p => +p.id),
     };

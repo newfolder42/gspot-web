@@ -1,5 +1,6 @@
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useDialogScrollHeight } from '@/lib/layout';
 import type { InventoryItemType, ItemDefinition } from '@/types/item';
 import { ItemDetails } from './ItemDetails';
 
@@ -11,6 +12,8 @@ export function ItemDetailsModal({
   item: ItemDefinition | InventoryItemType;
   onClose: () => void;
 }) {
+  const maxHeight = useDialogScrollHeight(40, 400);
+
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
       <Pressable
@@ -24,7 +27,7 @@ export function ItemDetailsModal({
               <Feather name="x" size={20} color="#d4d4d8" />
             </Pressable>
           </View>
-          <ScrollView style={{ maxHeight: 400 }}>
+          <ScrollView style={{ maxHeight }}>
             <ItemDetails item={item} />
           </ScrollView>
         </Pressable>

@@ -132,6 +132,7 @@ export default function ForgotPasswordScreen() {
           <View className="flex-row justify-center gap-2 mb-6">
             {code.map((digit, i) => (
               <TextInput
+                disableFullscreenUI
                 key={i}
                 ref={(el) => { inputRefs.current[i] = el; }}
                 value={digit}
@@ -190,6 +191,7 @@ export default function ForgotPasswordScreen() {
             </Text>
             <View className="relative">
               <TextInput
+                disableFullscreenUI
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="მინ. 6 სიმბოლო"

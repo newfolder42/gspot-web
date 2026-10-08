@@ -167,6 +167,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
       <View className="gap-1.5">
         <Text className="text-sm font-semibold" style={{ color: theme.text }}>სათაური</Text>
         <TextInput
+          disableFullscreenUI
           value={title}
           onChangeText={setTitle}
           maxLength={200}
@@ -261,6 +262,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
       <View className="gap-1.5">
         <Text className="text-sm font-semibold" style={{ color: theme.text }}>მოთამაში მცდელობების რაოდენობა</Text>
         <TextInput
+          disableFullscreenUI
           value={maxChecks}
           onChangeText={setMaxChecks}
           keyboardType="number-pad"
@@ -354,6 +356,7 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
             <Text className="text-sm" style={{ color: theme.textMuted }}>მოსაწვევები</Text>
             <View className="flex-row gap-2">
               <TextInput
+                disableFullscreenUI
                 value={inviteInput}
                 onChangeText={setInviteInput}
                 onSubmitEditing={addInvitee}

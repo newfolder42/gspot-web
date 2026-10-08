@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Feather } from '@expo/vector-icons';
 import { reportsApi, REPORT_REASON_LABELS, type ReportReason, type ReportTargetType } from '@/lib/reports';
@@ -43,10 +43,12 @@ export function ReportSheet({ targetType, targetId, onClose }: Props) {
         automaticOffset
         style={{ flex: 1, backgroundColor: 'rgba(24,24,27,0.7)' }}
       >
-        <Pressable style={{ flex: 1 }} className="items-center justify-center px-6" onPress={onClose}>
+        <Pressable style={{ flex: 1 }} className="items-center justify-center px-6 py-4" onPress={onClose}>
           <Pressable
             onPress={(e) => e.stopPropagation()}
             className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+            // Bounded by the space above the keyboard, so a short window scrolls the body.
+            style={{ maxHeight: '100%' }}
           >
             <View className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex-row items-center justify-between">
               <Text className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">რეპორტი</Text>
@@ -55,59 +57,62 @@ export function ReportSheet({ targetType, targetId, onClose }: Props) {
               </Pressable>
             </View>
 
-            {done ? (
-              <View className="px-4 py-5">
-                <Text className="text-sm text-zinc-700 dark:text-zinc-300">
-                  შენი რეპორტი მიღებულია და განიხილება.
-                </Text>
-                <Pressable onPress={onClose} className="mt-4 rounded-xl bg-zinc-900 dark:bg-zinc-100 py-2.5 items-center">
-                  <Text className="text-sm font-semibold text-white dark:text-zinc-900">დახურვა</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View className="px-4 py-4">
-                {REASON_OPTIONS.map(([value, label]) => {
-                  const active = reason === value;
-                  return (
-                    <Pressable
-                      key={value}
-                      onPress={() => setReason(value)}
-                      className="flex-row items-center gap-2.5 py-2"
-                    >
-                      <View
-                        className={`w-4 h-4 rounded-full border-2 items-center justify-center ${
-                          active ? 'border-red-600' : 'border-zinc-300 dark:border-zinc-700'
-                        }`}
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {done ? (
+                <View className="px-4 py-5">
+                  <Text className="text-sm text-zinc-700 dark:text-zinc-300">
+                    შენი რეპორტი მიღებულია და განიხილება.
+                  </Text>
+                  <Pressable onPress={onClose} className="mt-4 rounded-xl bg-zinc-900 dark:bg-zinc-100 py-2.5 items-center">
+                    <Text className="text-sm font-semibold text-white dark:text-zinc-900">დახურვა</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <View className="px-4 py-4">
+                  {REASON_OPTIONS.map(([value, label]) => {
+                    const active = reason === value;
+                    return (
+                      <Pressable
+                        key={value}
+                        onPress={() => setReason(value)}
+                        className="flex-row items-center gap-2.5 py-2"
                       >
-                        {active ? <View className="w-2 h-2 rounded-full bg-red-600" /> : null}
-                      </View>
-                      <Text className="text-sm text-zinc-700 dark:text-zinc-300">{label}</Text>
-                    </Pressable>
-                  );
-                })}
+                        <View
+                          className={`w-4 h-4 rounded-full border-2 items-center justify-center ${
+                            active ? 'border-red-600' : 'border-zinc-300 dark:border-zinc-700'
+                          }`}
+                        >
+                          {active ? <View className="w-2 h-2 rounded-full bg-red-600" /> : null}
+                        </View>
+                        <Text className="text-sm text-zinc-700 dark:text-zinc-300">{label}</Text>
+                      </Pressable>
+                    );
+                  })}
 
-                <TextInput
-                  value={details}
-                  onChangeText={setDetails}
-                  placeholder="დამატებითი დეტალები (არასავალდებულო)"
-                  placeholderTextColor={theme.textMuted}
-                  multiline
-                  maxLength={1000}
-                  className="mt-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-sm border border-zinc-200 dark:border-zinc-700"
-                  style={{ minHeight: 72, textAlignVertical: 'top' }}
-                />
+                  <TextInput
+                    disableFullscreenUI
+                    value={details}
+                    onChangeText={setDetails}
+                    placeholder="დამატებითი დეტალები (არასავალდებულო)"
+                    placeholderTextColor={theme.textMuted}
+                    multiline
+                    maxLength={1000}
+                    className="mt-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-sm border border-zinc-200 dark:border-zinc-700"
+                    style={{ minHeight: 72, textAlignVertical: 'top' }}
+                  />
 
-                {error ? <Text className="mt-2 text-xs text-red-500">{error}</Text> : null}
+                  {error ? <Text className="mt-2 text-xs text-red-500">{error}</Text> : null}
 
-                <Pressable
-                  onPress={submit}
-                  disabled={!reason || submitting}
-                  className={`mt-4 rounded-xl py-2.5 items-center ${!reason || submitting ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-red-600'}`}
-                >
-                  {submitting ? <ActivityIndicator color="#fff" /> : <Text className="text-sm font-semibold text-white">გაგზავნა</Text>}
-                </Pressable>
-              </View>
-            )}
+                  <Pressable
+                    onPress={submit}
+                    disabled={!reason || submitting}
+                    className={`mt-4 rounded-xl py-2.5 items-center ${!reason || submitting ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-red-600'}`}
+                  >
+                    {submitting ? <ActivityIndicator color="#fff" /> : <Text className="text-sm font-semibold text-white">გაგზავნა</Text>}
+                  </Pressable>
+                </View>
+              )}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

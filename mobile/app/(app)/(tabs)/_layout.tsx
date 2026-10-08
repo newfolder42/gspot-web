@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
@@ -5,6 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { BackpackIcon } from '@/components/inventory/BackpackIcon';
+import { SideInsets } from '@/components/ui/SideInsets';
+import { useLayout } from '@/lib/layout';
 import { Colors, useTheme } from '@/constants/colors';
 
 /**
@@ -15,6 +18,10 @@ export default function TabsLayout() {
   const router = useRouter();
   const { user } = useAuth();
   const theme = useTheme();
+  // Sideways, a bottom bar would cost 49dp of a ~360dp-tall window. The bar turns
+  // into an icon rail down the left edge instead; it pads for the notch itself, so
+  // the screens beside it only inset the right.
+  const { isLandscape } = useLayout();
 
   const { data: unreadData } = useQuery({
     queryKey: ['notifications-unread-count'],
@@ -54,19 +61,34 @@ export default function TabsLayout() {
     </View>
   );
 
+  // `to-guess` is the full-bleed shuffle reel: it insets its own overlays.
+  const screenLayout = ({ route, children }: { route: { name: string }; children: ReactElement }) =>
+    route.name === 'to-guess' ? children : <SideInsets left={!isLandscape}>{children}</SideInsets>;
+
   return (
     <Tabs
+      screenLayout={screenLayout}
       screenOptions={{
         headerStyle: { backgroundColor: theme.headerBg },
         headerTintColor: theme.headerTint,
         headerTitleStyle: { fontWeight: '700', fontSize: 17 },
         headerShadowVisible: false,
         sceneStyle: { backgroundColor: theme.bg },
-        tabBarStyle: {
-          backgroundColor: theme.tabBarBg,
-          borderTopColor: theme.tabBarBorder,
-          borderTopWidth: 1,
-        },
+        tabBarPosition: isLandscape ? 'left' : 'bottom',
+        tabBarStyle: isLandscape
+          ? {
+              backgroundColor: theme.tabBarBg,
+              borderRightColor: theme.tabBarBorder,
+              borderRightWidth: 1,
+              // A wide window makes the library size a sidebar like a 360dp drawer;
+              // with icon-only tabs it should be as narrow as its icons.
+              minWidth: 0,
+            }
+          : {
+              backgroundColor: theme.tabBarBg,
+              borderTopColor: theme.tabBarBorder,
+              borderTopWidth: 1,
+            },
         tabBarActiveTintColor: Colors.brand,
         tabBarInactiveTintColor: theme.textMuted,
         // Icons only — the labels are kept as `tabBarLabel` for accessibility.

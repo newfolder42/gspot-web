@@ -4,6 +4,7 @@ import { useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { HeatmapMap } from '@/components/HeatmapMap';
 import { heatmapApi } from '@/lib/heatmap';
+import { useLayout } from '@/lib/layout';
 
 type Scope = 'global' | 'me';
 
@@ -18,6 +19,7 @@ const SCOPES: { id: Scope; label: string }[] = [
  */
 export default function HeatmapScreen() {
   const navigation = useNavigation();
+  const { isLandscape } = useLayout();
   const [scope, setScope] = useState<Scope>('global');
 
   useEffect(() => {
@@ -30,36 +32,47 @@ export default function HeatmapScreen() {
     staleTime: 5 * 60_000,
   });
 
+  const scopeChips = SCOPES.map((s) => {
+    const active = s.id === scope;
+    return (
+      <Pressable
+        key={s.id}
+        onPress={() => setScope(s.id)}
+        className={`px-4 py-1.5 rounded-full border ${
+          active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+        }`}
+      >
+        <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
+          {s.label}
+        </Text>
+      </Pressable>
+    );
+  });
+
+  const counts = (
+    <Text className="text-xs text-zinc-400 dark:text-zinc-500">
+      {data
+        ? `${data.totalPosts} პოსტი · ${data.points.length} ლოკაცია (${data.gridMeters}მ)`
+        : ' '}
+    </Text>
+  );
+
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      {/* Scope switch */}
-      <View className="flex-row gap-2 px-4 pt-3 pb-2">
-        {SCOPES.map((s) => {
-          const active = s.id === scope;
-          return (
-            <Pressable
-              key={s.id}
-              onPress={() => setScope(s.id)}
-              className={`px-4 py-1.5 rounded-full border ${
-                active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-              }`}
-            >
-              <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                {s.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* Scope switch + counts line – mirrors the web header. Sideways they share
+          one row, since a 360dp-tall window cannot spare two. */}
+      {isLandscape ? (
+        <View className="flex-row items-center gap-2 px-4 pt-2 pb-2">
+          {scopeChips}
+          <View className="flex-1 items-end">{counts}</View>
+        </View>
+      ) : (
+        <>
+          <View className="flex-row gap-2 px-4 pt-3 pb-2">{scopeChips}</View>
 
-      {/* Counts line – mirrors the web header */}
-      <View className="px-4 pb-2">
-        <Text className="text-xs text-zinc-400 dark:text-zinc-500">
-          {data
-            ? `${data.totalPosts} პოსტი · ${data.points.length} ლოკაცია (${data.gridMeters}მ)`
-            : ' '}
-        </Text>
-      </View>
+          <View className="px-4 pb-2">{counts}</View>
+        </>
+      )}
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">

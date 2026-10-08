@@ -102,6 +102,7 @@ export function InventoryBag({ pageSize = INVENTORY_PAGE_SIZE }: Props) {
       <View className="flex-row items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-3 mb-3">
         <Feather name="search" size={15} color={theme.icon} />
         <TextInput
+          disableFullscreenUI
           value={nameInput}
           onChangeText={setNameInput}
           placeholder="ძებნა"

@@ -11,6 +11,7 @@ import { ManageTab } from '@/components/zone/ManageTab';
 import { QuestsTab } from '@/components/zone/QuestsTab';
 import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { zonesApi } from '@/lib/zones';
+import { useLayout } from '@/lib/layout';
 
 type Tab = ZoneTabId;
 
@@ -18,6 +19,7 @@ export default function ZoneScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const [tab, setTab] = useState<Tab>('feed');
 
   const { data: meta, isLoading, isError, refetch } = useQuery({
@@ -94,7 +96,7 @@ export default function ZoneScreen() {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      <KeyboardScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
+      <KeyboardScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 16, paddingHorizontal: gutter }}>
         {header}
         {tab === 'leaderboard' ? <LeaderboardTab slug={slug} /> : null}
         {tab === 'quests' ? <QuestsTab slug={slug} /> : null}

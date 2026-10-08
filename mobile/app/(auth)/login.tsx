@@ -88,6 +88,7 @@ export default function LoginScreen() {
                 </View>
                 <View className="relative">
                   <TextInput
+                    disableFullscreenUI
                     ref={ref}
                     value={value}
                     onChangeText={onChange}

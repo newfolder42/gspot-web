@@ -7,6 +7,7 @@ import { useTheme } from '@/constants/colors';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { HideAndSeekCard } from '@/components/hideandseek/HideAndSeekCard';
 import { zonesApi, type MobileZoneFeedFilter, type ZoneTag } from '@/lib/zones';
+import { useLayout } from '@/lib/layout';
 import { FEED_STATUS_FILTERS, FeedOptionsSheet } from '@/components/zone/FeedOptionsSheet';
 
 const PAGE_SIZE = 4;
@@ -56,6 +57,7 @@ function FeedOptionsBar({
 
 export function ZoneFeedTab({ slug, header }: { slug: string; header?: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const { gutter } = useLayout();
   const [filter, setFilter] = useState<MobileZoneFeedFilter>('all');
   const [activeTagId, setActiveTagId] = useState<number | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -135,7 +137,7 @@ export function ZoneFeedTab({ slug, header }: { slug: string; header?: ReactNode
               {optionsBar}
             </>
           }
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 16, paddingHorizontal: gutter }}
           onEndReachedThreshold={0.5}
           onEndReached={() => {
             if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();

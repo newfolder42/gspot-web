@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { Stack, Redirect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -15,6 +15,15 @@ import { prefetchPushImages } from '@/lib/imagePrefetch';
 import { Colors, useTheme } from '@/constants/colors';
 import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
 import { PortalHost } from '@/components/ui/Portal';
+import { SideInsets } from '@/components/ui/SideInsets';
+
+/**
+ * Keeps each screen's content clear of the notch / navigation bar in landscape.
+ * `(tabs)` is a navigator of its own: its tab bar and screens inset themselves.
+ */
+function screenLayout({ route, children }: { route: { name: string }; children: ReactElement }) {
+  return route.name === '(tabs)' ? children : <SideInsets>{children}</SideInsets>;
+}
 
 /**
  * A cold start replays the tap that launched the app. Remembering which one we
@@ -95,6 +104,7 @@ export default function AppLayout() {
     <View className="flex-1">
     <PortalHost>
     <Stack
+      screenLayout={screenLayout}
       screenOptions={{
         headerStyle: { backgroundColor: theme.headerBg },
         headerTintColor: theme.headerTint,

@@ -55,8 +55,8 @@ function loadFeed(path: string, params?: FeedPageParams): Promise<MobilePostType
 }
 
 export const feedApi = {
-  /** Global feed – every published post in zones the user can see. */
-  loadGlobal: (params?: FeedPageParams) => loadFeed('/feed/global', params),
+  /** Home feed – the global feed ranked by activity; page with each post's `feedAt`. */
+  loadHome: (params?: FeedPageParams) => loadFeed('/feed/home', params),
   /** To-guess feed – gps-photo posts the user hasn't guessed yet. */
   loadToGuess: (params?: FeedPageParams) => loadFeed('/feed/to-guess', params),
 };

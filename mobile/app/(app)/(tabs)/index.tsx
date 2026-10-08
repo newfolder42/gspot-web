@@ -36,7 +36,7 @@ export default function HomeScreen() {
     <ScreenLayout edges={[]}>
       <FeedList
         queryKey={['global-feed']}
-        loader={feedApi.loadGlobal}
+        loader={feedApi.loadHome}
         header={<FeedEventsStrip />}
         onRefresh={refreshStrip}
       />

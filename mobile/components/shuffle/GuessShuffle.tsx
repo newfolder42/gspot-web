@@ -6,9 +6,11 @@ import {
   Pressable,
   Text,
   View,
+  type LayoutChangeEvent,
   type ViewToken,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { NewGuess } from '@/components/NewGuess';
@@ -72,6 +74,9 @@ type CardProps = {
  */
 const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: CardProps) {
   const router = useRouter();
+  // The card runs edge to edge, so in landscape the overlays clear the notch /
+  // navigation bar at the right themselves (the tab rail already covers the left).
+  const { right: insetRight } = useSafeAreaInsets();
 
   return (
     <View style={{ height }} className="bg-black">
@@ -90,7 +95,7 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: 
       <View
         pointerEvents="box-none"
         className="absolute inset-x-0 top-0 px-3 pt-3 pb-6"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        style={{ backgroundColor: 'rgba(0,0,0,0.45)', paddingRight: 12 + insetRight }}
       >
         <View pointerEvents="box-none" className="flex-row items-center gap-1.5">
           <Pressable
@@ -118,7 +123,7 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: 
       </View>
 
       {/* Reels-style action rail. Skipping is the scroll itself, so there is no button for it. */}
-      <View pointerEvents="box-none" className="absolute right-3 items-center gap-4" style={{ bottom: 28 }}>
+      <View pointerEvents="box-none" className="absolute right-3 items-center gap-4" style={{ bottom: 28, right: 12 + insetRight }}>
         <RailButton icon="map-pin" label="გამოცნობა" onPress={() => onGuess(item)} />
         <RailButton
           icon="message-circle"
@@ -145,6 +150,13 @@ export function GuessShuffle() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [guessPost, setGuessPost] = useState<MobilePostType | null>(null);
 
+  const cardHeightRef = useRef(0);
+  // Rotating re-measures every card under a scroll offset that is still counted in
+  // the old height. While `holdViewability` is set the list is being put back on
+  // the active card, and its own "what is on screen now" reports (which see the
+  // stale offset) are not read as the player scrolling on and skipping cards.
+  const holdViewability = useRef(false);
+  const releaseHold = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeIndexRef = useRef(0);
   const postsRef = useRef<MobilePostType[]>([]);
   const shownAt = useRef(0);
@@ -228,8 +240,33 @@ export function GuessShuffle() {
     }
   }, [posts, activeIndex]);
 
+  /**
+   * Puts the active card back under the viewport. Runs when the content resizes
+   * after a rotation (and once more as a fallback), and lets viewability reports
+   * through again a beat after the last jump.
+   */
+  const realign = useCallback(() => {
+    if (!holdViewability.current) return;
+    listRef.current?.scrollToOffset({ offset: activeIndexRef.current * cardHeightRef.current, animated: false });
+    if (releaseHold.current) clearTimeout(releaseHold.current);
+    releaseHold.current = setTimeout(() => { holdViewability.current = false; }, 300);
+  }, []);
+
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    const next = e.nativeEvent.layout.height;
+    if (cardHeightRef.current !== 0 && next !== cardHeightRef.current) {
+      holdViewability.current = true;
+      // Normally the content-size change does the realigning; this covers a
+      // rotation that somehow leaves the content the same size.
+      setTimeout(realign, 400);
+    }
+    cardHeightRef.current = next;
+    setCardHeight(next);
+  }, [realign]);
+
   // FlatList refuses a changing onViewableItemsChanged, so this identity is fixed.
   const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (holdViewability.current) return;
     const first = viewableItems[0];
     if (!first || first.index == null || first.index === activeIndexRef.current) return;
 
@@ -260,7 +297,7 @@ export function GuessShuffle() {
   );
 
   return (
-    <View className="flex-1 bg-black" onLayout={(e) => setCardHeight(e.nativeEvent.layout.height)}>
+    <View className="flex-1 bg-black" onLayout={handleLayout}>
       {query.isLoading || cardHeight === 0 ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={Colors.brand} />
@@ -286,6 +323,8 @@ export function GuessShuffle() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderCard}
           getItemLayout={(_, index) => ({ length: cardHeight, offset: cardHeight * index, index })}
+          // After a rotation the cards change height; this puts the active one back in view.
+          onContentSizeChange={realign}
           // Reels feel: any flick settles on the adjacent card (momentum can't carry
           // past it), and the fast rate makes the settle snappy instead of drifting.
           snapToInterval={cardHeight}

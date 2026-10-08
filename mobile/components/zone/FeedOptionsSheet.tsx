@@ -39,7 +39,8 @@ export function FeedOptionsSheet({
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="rounded-t-2xl bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800"
-          style={{ paddingBottom: insets.bottom + 16, maxHeight: '80%' }}
+          // Full width on a phone; centred at 560dp once the window is wider than that.
+          style={{ paddingBottom: insets.bottom + 16, maxHeight: '80%', width: '100%', maxWidth: 560, alignSelf: 'center' }}
         >
           <View className="items-center pt-2">
             <View className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700" />

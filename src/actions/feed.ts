@@ -1,6 +1,6 @@
 'use server';
 
-import { getAccountPosts, getConnectionsPosts, getGlobalPosts, getPublicPosts, getShufflePosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
+import { getAccountPosts, getConnectionsPosts, getHomeFeedPosts, getPublicPosts, getShufflePosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
 import { recordGuessSkips } from '@/lib/guessSkips';
 import { getCurrentUser } from '@/lib/session';
 import { POSTS_PER_PAGE, SHUFFLE_DECK_SIZE } from '@/types/constants';
@@ -56,7 +56,8 @@ export async function loadPosts(params: LoadPostsParams): Promise<FeedPostType[]
     case 'account':
       return await getAccountPosts(params.accountUserId!, params.userId, limit, params.cursor, params.filter);
     case 'global':
-      return await getGlobalPosts(params.userId, limit, params.cursor, params.filter);
+      // The home feed is activity-ranked; its cursor `date` is the last post's `feedAt`.
+      return params.userId ? await getHomeFeedPosts(params.userId, limit, params.cursor) : [];
     case 'to-guess':
       return await getToGuessPosts(params.userId!, limit, params.cursor);
     default:

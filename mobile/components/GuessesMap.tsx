@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { postsApi } from '@/lib/posts';
+import { useLayout } from '@/lib/layout';
+import { useRefitCamera } from '@/lib/useRefitCamera';
 import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
 import {
   fitCamera,
@@ -25,6 +27,7 @@ MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
  */
 export function GuessesMap({ postId, onClose }: { postId: number; onClose: () => void }) {
   const insets = useSafeAreaInsets();
+  const { isLandscape } = useLayout();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post-guess-map', postId],
     queryFn: () => postsApi.getGuessMap(postId),
@@ -52,12 +55,21 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
     );
   }, [mapSize, legendHeight, legendBottom, points, photo]);
 
+  // The camera opens fitted through `defaultSettings`; a rotation needs a fresh fit.
+  const cameraRef = useRefitCamera(camera);
+
   return (
     <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
       <View className="flex-1 bg-zinc-950">
         <View
-          className="flex-row items-center justify-between px-4 pb-3 bg-zinc-900 border-b border-zinc-800"
-          style={{ paddingTop: insets.top + 12 }}
+          className={`flex-row items-center justify-between px-4 bg-zinc-900 border-b border-zinc-800 ${
+            isLandscape ? 'pb-2' : 'pb-3'
+          }`}
+          style={{
+            paddingTop: insets.top + (isLandscape ? 6 : 12),
+            paddingLeft: 16 + insets.left,
+            paddingRight: 16 + insets.right,
+          }}
         >
           <Text className="text-base font-semibold text-zinc-100">გამოცნობები რუკაზე</Text>
           <Pressable onPress={onClose} className="p-2 rounded-md bg-zinc-800" hitSlop={8}>
@@ -96,6 +108,7 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
                 {/* Uncontrolled camera: the guesses are already loaded by the time this
                     renders, so `defaultSettings` opens fitted to them, with no fly-in. */}
                 <MapboxGL.Camera
+                  ref={cameraRef}
                   defaultSettings={camera}
                   maxBounds={mapMaxBounds}
                   maxZoomLevel={mapMaxZoom}
@@ -127,10 +140,14 @@ export function GuessesMap({ postId, onClose }: { postId: number; onClose: () =>
               </MapboxGL.MapView>
             ) : null}
 
-            {/* Legend */}
+            {/* Legend — a full-width bar upright, a compact corner chip sideways */}
             <View
-              className="absolute left-4 right-4 rounded-xl bg-zinc-900/90 px-4 py-3 flex-row items-center justify-center gap-6"
-              style={{ bottom: legendBottom }}
+              className="absolute rounded-xl bg-zinc-900/90 px-4 py-3 flex-row items-center justify-center gap-6"
+              style={{
+                bottom: legendBottom,
+                left: 16 + insets.left,
+                ...(isLandscape ? null : { right: 16 + insets.right }),
+              }}
               onLayout={(e) => setLegendHeight(e.nativeEvent.layout.height)}
             >
               <View className="flex-row items-center gap-2">

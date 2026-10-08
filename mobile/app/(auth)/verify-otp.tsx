@@ -93,6 +93,7 @@ export default function VerifyOTPScreen() {
         <View className="flex-row justify-center gap-2 mb-6">
           {code.map((digit, i) => (
             <TextInput
+              disableFullscreenUI
               key={i}
               ref={(el) => { inputRefs.current[i] = el; }}
               value={digit}
