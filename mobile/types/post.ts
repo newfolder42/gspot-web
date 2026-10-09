@@ -2,6 +2,7 @@ import type { PostCommentType } from '@/types/post-comment';
 import type { RewardCountType, RewardSummaryType } from '@/types/reward';
 import type { VoteSummaryType, VoteValue } from '@/types/vote';
 import type { HideAndSeekGameType, HideAndSeekPlayerType } from '@/types/hide-and-seek';
+import type { PostLocationReviewType } from '@/types/post-location';
 
 export type PostImageVariants = {
   thumb: string;
@@ -21,7 +22,7 @@ export type MobilePostType = {
   userId: number;
   author: string;
   date: string;
-  status: 'processing' | 'published' | 'failed' | 'deleted';
+  status: 'processing' | 'published' | 'failed' | 'deleted' | 'suspended';
   zoneId: number;
   zoneSlug?: string;
   zoneProfilePhoto?: string | null;
@@ -76,6 +77,8 @@ export type MobilePostDetailType = MobilePostType & {
   game?: HideAndSeekGameType;
   players?: HideAndSeekPlayerType[];
   alreadyGuessed?: boolean;
+  /** gps-photo only: where the post stands in a location dispute, and what the viewer may do. */
+  locationReview?: PostLocationReviewType | null;
 };
 
 export type PostDetailResponse = {

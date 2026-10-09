@@ -7,7 +7,7 @@ import { ShareButton } from '@/components/ui/ShareButton';
 import { syncPostInCaches } from '@/lib/postCache';
 import type { RewardCountType } from '@/types/reward';
 import type { VoteValue } from '@/types/vote';
-import { useTheme } from '@/constants/colors';
+import { Colors, useTheme } from '@/constants/colors';
 
 type Props = {
   postId: number;
@@ -17,6 +17,8 @@ type Props = {
   userReward: string | null;
   /** gps posts only; leave out for quest completions and hide-and-seek, matching web. */
   guessCount?: number | null;
+  /** The viewer already guessed this post; the guess stat lights up. */
+  userHasGuessed?: boolean;
   commentCount: number;
   /** Feed cards open the post from the counts; the post page leaves them inert. */
   onOpenPost?: () => void;
@@ -34,6 +36,7 @@ export function PostActionBar({
   rewards,
   userReward,
   guessCount,
+  userHasGuessed = false,
   commentCount,
   onOpenPost,
   className = '',
@@ -45,8 +48,12 @@ export function PostActionBar({
     <>
       {guessCount != null ? (
         <View className="flex-row items-center gap-1">
-          <Feather name="map-pin" size={15} color={theme.icon} />
-          <Text className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{guessCount}</Text>
+          <Feather name="map-pin" size={15} color={userHasGuessed ? Colors.brand : theme.icon} />
+          <Text
+            className={`text-sm font-semibold ${userHasGuessed ? 'text-teal-600 dark:text-teal-400' : 'text-zinc-500 dark:text-zinc-400'}`}
+          >
+            {guessCount}
+          </Text>
         </View>
       ) : null}
       <View className="flex-row items-center gap-1">

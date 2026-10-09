@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { notificationsApi } from '@/lib/notifications';
 import { openNotificationRoute } from '@/lib/notificationRouting';
 import {
@@ -74,6 +74,14 @@ function iconNameByType(type: NotificationType['type']): keyof typeof Feather.gl
     case 'hide-and-seek-found':
     case 'hide-and-seek-ended':
       return 'eye';
+    case 'post-location-disputed':
+    case 'post-location-flagged':
+    case 'post-location-correction-needed':
+    case 'post-suspended':
+    case 'post-discarded':
+      return 'alert-triangle';
+    case 'post-location-corrected':
+      return 'check-circle';
     default:
       return 'bell';
   }
@@ -162,6 +170,7 @@ function NotificationRow({
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const theme = useTheme();
   const { gutter } = useLayout();
   const queryClient = useQueryClient();
@@ -201,7 +210,7 @@ export default function NotificationsScreen() {
     },
   });
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     if (unseenCount === 0) return;
     try {
       setMarkingAll(true);
@@ -221,7 +230,33 @@ export default function NotificationsScreen() {
     } finally {
       setMarkingAll(false);
     }
-  };
+  }, [unseenCount, queryClient]);
+
+  // A bar under the header cost a whole extra row; the action lives in the header,
+  // icon only, and is only there while there is something to mark.
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight:
+        unseenCount > 0
+          ? () => (
+              <Pressable
+                onPress={markAllAsRead}
+                disabled={markingAll}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="ყველას წაკითხულად მონიშვნა"
+                style={{ marginRight: 14 }}
+              >
+                <MaterialCommunityIcons
+                  name="email-open-multiple-outline"
+                  size={22}
+                  color={markingAll ? theme.icon : Colors.brand}
+                />
+              </Pressable>
+            )
+          : undefined,
+    });
+  }, [navigation, unseenCount, markingAll, markAllAsRead, theme.icon]);
 
   const onPressItem = async (item: NotificationType) => {
     if (!item.seen) {
@@ -255,24 +290,6 @@ export default function NotificationsScreen() {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
-      {unseenCount > 0 ? (
-        <View
-          className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-row items-center justify-end"
-          style={{ paddingHorizontal: 16 + gutter }}
-        >
-          <Pressable onPress={markAllAsRead} disabled={markingAll} hitSlop={6} className="flex-row items-center gap-1.5">
-            <MaterialCommunityIcons
-              name="email-open-multiple-outline"
-              size={16}
-              color={markingAll ? theme.icon : Colors.brand}
-            />
-            <Text className={`text-xs ${markingAll ? 'text-zinc-500 dark:text-zinc-400' : 'text-teal-600 dark:text-teal-400'}`}>
-              ყველას წაკითხულად მონიშვნა
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
       <FlatList
         data={allNotifications}
         contentContainerStyle={{ paddingHorizontal: gutter }}

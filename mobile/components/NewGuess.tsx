@@ -23,14 +23,14 @@ import {
   mapResultMaxZoom,
   mapResultPadding,
 } from '@/lib/map';
-import { postsApi } from '@/lib/posts';
+import { isAlreadyGuessedError, postsApi } from '@/lib/posts';
 import { useLayout } from '@/lib/layout';
 import type { MobilePostType } from '@/types/post';
 import type { GuessResult } from '@/types/post-guess';
 
 MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
 
-type Phase = 'placing' | 'submitting' | 'result' | 'error';
+type Phase = 'placing' | 'submitting' | 'result' | 'already' | 'error';
 
 /**
  * The photo is either hidden, sharing the screen with the map as a band, or
@@ -50,9 +50,11 @@ type Props = {
   post: MobilePostType;
   onClose: () => void;
   onSubmitted: (result: GuessResult) => void;
+  /** The server says this post was guessed already (elsewhere, since the caller loaded it). */
+  onAlreadyGuessed?: () => void;
 };
 
-export function NewGuess({ post, onClose, onSubmitted }: Props) {
+export function NewGuess({ post, onClose, onSubmitted, onAlreadyGuessed }: Props) {
   const cameraRef = useRef<MapboxGL.Camera>(null);
   // Full-screen modal draws under the system bars on edge-to-edge Android,
   // so header/action bar have to clear the status and navigation bars themselves.
@@ -101,8 +103,14 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
         ...fitCamera([coords, photo], mapSizeRef.current, mapResultPadding, mapResultMaxZoom),
         animationDuration: 800,
       });
-    } catch {
-      setPhase('error');
+    } catch (err) {
+      // Retrying can't help here, so say what happened instead of offering to.
+      if (isAlreadyGuessedError(err)) {
+        setPhase('already');
+        onAlreadyGuessed?.();
+      } else {
+        setPhase('error');
+      }
     }
   };
 
@@ -149,7 +157,7 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
     <View className={`${buttonH} rounded-xl bg-teal-800 items-center justify-center`}>
       <ActivityIndicator color="#fff" />
     </View>
-  ) : phase === 'result' ? (
+  ) : phase === 'result' || phase === 'already' ? (
     <Pressable
       onPress={onClose}
       className={`${buttonH} rounded-xl bg-zinc-700 items-center justify-center active:opacity-80`}
@@ -354,6 +362,15 @@ export function NewGuess({ post, onClose, onSubmitted }: Props) {
                         : '—'}
                     </Text>
                   </View>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Guessed already — no score to show, just the reason nothing was saved */}
+            {phase === 'already' ? (
+              <View className="absolute bottom-4 left-4 right-4">
+                <View className="rounded-xl bg-zinc-900/95 px-4 py-3">
+                  <Text className="text-sm text-zinc-100 text-center">ეს უკვე გამოცნობილი გაქვს</Text>
                 </View>
               </View>
             ) : null}

@@ -16,6 +16,11 @@ export async function canUserAccessPost(
        left join hide_and_seek_games hs on hs.post_id = p.id
        where p.id = $1 and (
          p.user_id = $2
+         -- staff can open a suspended post, to review it
+         or (p.status = 'suspended' and exists (
+           select 1 from zone_members zm
+           where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active' and zm.role in ('owner', 'admin')
+         ))
          or (
            p.status = 'published' and (
              z.visibility = 'public'

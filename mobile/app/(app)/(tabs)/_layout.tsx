@@ -1,7 +1,7 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsApi } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,42 @@ import { BackpackIcon } from '@/components/inventory/BackpackIcon';
 import { SideInsets } from '@/components/ui/SideInsets';
 import { useLayout } from '@/lib/layout';
 import { Colors, useTheme } from '@/constants/colors';
+
+/**
+ * The library's default tab button hard-codes an Android ripple (a circle growing
+ * from behind the icon). Same button, plain press, no feedback animation.
+ */
+function TabButton({
+  children,
+  style,
+  onPress,
+  onLongPress,
+  testID,
+  'aria-label': ariaLabel,
+  'aria-selected': selected,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  onPress?: (e: GestureResponderEvent) => void;
+  onLongPress?: ((e: GestureResponderEvent) => void) | null;
+  testID?: string;
+  'aria-label'?: string;
+  'aria-selected'?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      testID={testID}
+      accessibilityLabel={ariaLabel}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: !!selected }}
+      style={style}
+    >
+      {children}
+    </Pressable>
+  );
+}
 
 /**
  * Tabs navigator for the main (tabs) group.
@@ -89,7 +125,11 @@ export default function TabsLayout() {
               borderTopColor: theme.tabBarBorder,
               borderTopWidth: 1,
             },
+        tabBarButton: (props) => <TabButton {...props} />,
         tabBarActiveTintColor: Colors.brand,
+        // The sidebar variant paints the active tab in the nav theme's primary (a
+        // blue pill); the brand-coloured icon already says which tab is active.
+        tabBarActiveBackgroundColor: 'transparent',
         tabBarInactiveTintColor: theme.textMuted,
         // Icons only — the labels are kept as `tabBarLabel` for accessibility.
         tabBarShowLabel: false,

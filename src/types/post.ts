@@ -15,7 +15,7 @@ export type PostType = {
   userId: number;
   author: string;
   date: string;
-  status: 'processing' | 'published' | 'failed' | 'deleted';
+  status: 'processing' | 'published' | 'failed' | 'deleted' | 'suspended';
   zoneId: number;
   zoneSlug: string;
   zoneProfilePhoto?: string | null;

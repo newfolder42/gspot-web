@@ -17,13 +17,15 @@ type PostActionBarProps = {
   isLoggedIn: boolean;
   /** gps posts only; leave out for quest completions. */
   guessCount?: number | null;
+  /** The viewer already guessed this post; the guess stat lights up. */
+  userHasGuessed?: boolean;
   commentCount: number;
   /** Feed cards link the counts through to the post; the post page shows them plain. */
   href?: string;
 };
 
-function Stat({ href, title, children }: { href?: string; title: string; children: ReactNode }) {
-  const className = 'inline-flex items-center gap-1';
+function Stat({ href, title, active, children }: { href?: string; title: string; active?: boolean; children: ReactNode }) {
+  const className = `inline-flex items-center gap-1 ${active ? 'text-teal-600 dark:text-teal-400' : ''}`;
   return href ? (
     <Link href={href} title={title} className={`${className} hover:text-teal-600 dark:hover:text-teal-400 transition-colors`}>
       {children}
@@ -42,6 +44,7 @@ export default function PostActionBar({
   userReward,
   isLoggedIn,
   guessCount,
+  userHasGuessed,
   commentCount,
   href,
 }: PostActionBarProps) {
@@ -66,8 +69,12 @@ export default function PostActionBar({
       />
       <span className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
         {guessCount != null && (
-          <Stat href={href} title="გამოცნობები">
-            <MapPinIcon className="w-4 h-4" />
+          <Stat
+            href={href}
+            title={userHasGuessed ? 'გამოცნობები · უკვე გამოცნობილი გაქვს' : 'გამოცნობები'}
+            active={userHasGuessed}
+          >
+            <MapPinIcon className={`w-4 h-4 ${userHasGuessed ? 'fill-teal-500/25' : ''}`} />
             <span className="font-semibold">{guessCount}</span>
           </Stat>
         )}

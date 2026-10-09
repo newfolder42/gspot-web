@@ -1,5 +1,14 @@
 import type { ReactElement } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type RefreshControlProps,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -39,11 +48,13 @@ export function ConnectionsTab({
   isOwn,
   header,
   refreshControl,
+  onScroll,
 }: {
   alias: string;
   isOwn: boolean;
   header: ReactElement;
   refreshControl?: ReactElement<RefreshControlProps>;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }) {
   const insets = useSafeAreaInsets();
   const { gutter } = useLayout();
@@ -60,6 +71,8 @@ export function ConnectionsTab({
       keyExtractor={(c) => c.alias}
       ListHeaderComponent={header}
       refreshControl={refreshControl}
+      onScroll={onScroll}
+      scrollEventThrottle={32}
       contentContainerStyle={{ paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}
       initialNumToRender={10}
       windowSize={7}

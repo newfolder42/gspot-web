@@ -103,6 +103,7 @@ export function GpsPost({ post, showZone, isLoggedIn }: { post: GpsPostType, sho
           userReward={post.userReward ?? null}
           isLoggedIn={isLoggedIn}
           guessCount={post.guessCount ?? 0}
+          userHasGuessed={post.userHasGuessed ?? false}
           commentCount={post.commentCount ?? 0}
           href={`/post/${post.id}#comments`}
         />

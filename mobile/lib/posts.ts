@@ -2,6 +2,11 @@ import { apiClient } from '@/lib/api';
 import { uploadToSignedUrl } from '@/lib/upload';
 import type { PostCommentType } from '@/types/post-comment';
 import type { PostDetailResponse } from '@/types/post';
+import type {
+  LocationDisputeReason,
+  PostLocationReviewAction,
+  PostLocationState,
+} from '@/types/post-location';
 import type { GuessResult, PhotoGuessResult, PostGuessMapDataType } from '@/types/post-guess';
 
 type ApiErrorBody = { error?: string };
@@ -16,15 +21,30 @@ const ERROR_MESSAGES: Record<string, string> = {
   UPDATE_FAILED: 'პოსტის განახლება ვერ მოხერხდა.',
   INVALID_TAG: 'თეგი ამ საბზონას არ ეკუთვნის.',
   FORBIDDEN: 'ამ მოქმედების უფლება არ გაქვს.',
+  ALREADY_GUESSED: 'ეს უკვე გამოცნობილი გაქვს.',
+  INVALID_STATE: 'ეს მოქმედება ამ პოსტზე ახლა შეუძლებელია.',
+  NO_GUESS: 'გასაჩივრება მხოლოდ საკუთარ გამოცნობაზე შეგიძლია.',
+  SCORE_TOO_HIGH: 'სრულყოფილი გამოცნობის გასაჩივრება შეუძლებელია.',
+  ALREADY_DISPUTED: 'ეს უკვე გასაჩივრებული გაქვს.',
+  LOCATION_UNCHANGED: 'ახალი ლოკაცია ძველთან ძალიან ახლოსაა. მონიშნე სხვა ადგილი.',
   SERVER_ERROR: 'სერვერის შეცდომა. სცადე მოგვიანებით.',
 };
+
+type CodedError = Error & { code?: string };
 
 function toUserFacingError(err: unknown): Error {
   const body = (err as any)?.response?.data as ApiErrorBody | undefined;
   if (body?.error) {
-    return new Error(ERROR_MESSAGES[body.error] ?? body.error);
+    const coded: CodedError = new Error(ERROR_MESSAGES[body.error] ?? body.error);
+    coded.code = body.error;
+    return coded;
   }
   return new Error('ქსელური შეცდომა. შეამოწმე ინტერნეტი.');
+}
+
+/** The post was already guessed, e.g. on the web or another device since this screen loaded it. */
+export function isAlreadyGuessedError(err: unknown): boolean {
+  return (err as CodedError | undefined)?.code === 'ALREADY_GUESSED';
 }
 
 async function call<T>(fn: () => Promise<T>): Promise<T> {
@@ -89,5 +109,39 @@ export const postsApi = {
   getGuessMap: (postId: number): Promise<PostGuessMapDataType> =>
     call(() =>
       apiClient.get<PostGuessMapDataType>(`/posts/${postId}/guesses`).then((r) => r.data)
+    ),
+
+  /**
+   * A guesser contests the post's location; only a guess scored under 100 qualifies. A reason
+   * is required, and "other" needs the guesser's own words in `note`.
+   */
+  disputeLocation: (
+    postId: number,
+    dispute: { reason: LocationDisputeReason; note?: string }
+  ): Promise<void> =>
+    call(() => apiClient.post(`/posts/${postId}/location-dispute`, dispute).then(() => undefined)),
+
+  /**
+   * Zone owner/admin decision on a disputed or suspended post. `note` is only used by
+   * "suspend": it is what the author is told to fix.
+   */
+  reviewLocation: (
+    postId: number,
+    action: PostLocationReviewAction,
+    note?: string
+  ): Promise<PostLocationState> =>
+    call(() =>
+      apiClient
+        .post<{ state: PostLocationState }>(`/posts/${postId}/location-review`, { action, note })
+        .then((r) => r.data.state)
+    ),
+
+  /** Author of a suspended post: the real location. The post returns and guesses are re-scored. */
+  correctLocation: (
+    postId: number,
+    coordinates: { latitude: number; longitude: number }
+  ): Promise<void> =>
+    call(() =>
+      apiClient.post(`/posts/${postId}/location-correction`, { coordinates }).then(() => undefined)
     ),
 };

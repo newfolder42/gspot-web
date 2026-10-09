@@ -39,6 +39,12 @@ export function NotificationIcon({ type, details, className }: { type: Notificat
     case 'hide-and-seek-found':
     case 'hide-and-seek-ended': return <EyeIcon className={cls} />;
     case 'item-found': return <BackpackIcon className={cls} />;
+    case 'post-location-disputed':
+    case 'post-location-flagged':
+    case 'post-location-correction-needed':
+    case 'post-suspended':
+    case 'post-discarded': return <AlertTriangleIcon className={cls} />;
+    case 'post-location-corrected': return <CheckmarkCircleIcon className={cls} />;
     default: return <InfoIcon className={cls} />;
   }
 }

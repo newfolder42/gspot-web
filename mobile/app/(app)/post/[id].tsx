@@ -16,6 +16,8 @@ import { getInitials } from '@/lib/getInitials';
 import { NewGuess } from '@/components/NewGuess';
 import { NewPhotoGuess } from '@/components/NewPhotoGuess';
 import { GuessesMap } from '@/components/GuessesMap';
+import { LocationReviewPanel } from '@/components/LocationReviewPanel';
+import { CorrectLocationSheet } from '@/components/CorrectLocationSheet';
 import { EditPostSheet } from '@/components/EditPostSheet';
 import { ReportSheet } from '@/components/ReportSheet';
 import { VoteButtons } from '@/components/votes/VoteButtons';
@@ -330,6 +332,8 @@ export default function PostPageScreen() {
   const [showGuess, setShowGuess] = useState(false);
   const [showPhotoGuess, setShowPhotoGuess] = useState(false);
   const [showGuessMap, setShowGuessMap] = useState(false);
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [showDispute, setShowDispute] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -355,6 +359,23 @@ export default function PostPageScreen() {
   };
 
   const queryKey = useMemo(() => ['post-detail', postId] as const, [postId]);
+
+  const handleLocationCorrected = () => {
+    // The post is back in the feeds, with every guess re-scored against the new spot.
+    queryClient.invalidateQueries({ queryKey: ['post-detail', postId] });
+    queryClient.invalidateQueries({ queryKey: ['post-guess-map', postId] });
+    for (const key of ['global-feed', 'to-guess-feed', 'zone-feed', 'account-posts']) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
+  };
+
+  const handleAlreadyGuessed = () => {
+    // Guessed elsewhere since this page loaded: no new guess to count, but the
+    // page and the feed card behind it should stop offering the guess button.
+    syncPostInCaches(queryClient, postId, { userHasGuessed: true });
+    queryClient.setQueryData(queryKey, (old: any) => (old ? { ...old, alreadyGuessed: true } : old));
+    queryClient.invalidateQueries({ queryKey });
+  };
 
   const query = useQuery({
     queryKey,
@@ -452,21 +473,28 @@ export default function PostPageScreen() {
   };
 
   const handleReportOptions = () => {
+    // "გასაჩივრება" (contest the location) is only offered to a guesser whose guess can be
+    // contested; the server decides that and rides it along on the post detail.
+    const canDispute = query.data?.post.locationReview?.canReport === true;
+
     if (Platform.OS === 'ios') {
+      const options = canDispute ? ['გაუქმება', 'გასაჩივრება', 'რეპორტი'] : ['გაუქმება', 'რეპორტი'];
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['გაუქმება', 'რეპორტი'],
+          options,
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 1,
+          destructiveButtonIndex: options.length - 1,
         },
         (index) => {
-          if (index === 1) setShowReport(true);
+          if (options[index] === 'გასაჩივრება') setShowDispute(true);
+          if (options[index] === 'რეპორტი') setShowReport(true);
         }
       );
     } else {
       Alert.alert('პოსტი', undefined, [
         { text: 'გაუქმება', style: 'cancel' },
-        { text: 'რეპორტი', style: 'destructive', onPress: () => setShowReport(true) },
+        ...(canDispute ? [{ text: 'გასაჩივრება', onPress: () => setShowDispute(true) }] : []),
+        { text: 'რეპორტი', style: 'destructive' as const, onPress: () => setShowReport(true) },
       ]);
     }
   };
@@ -501,7 +529,11 @@ export default function PostPageScreen() {
   const { post, comments, alreadyGuessed, votes, rewards } = query.data;
   const commentsCount = countComments(comments);
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
-  const canGuess = post.type === 'gps-photo' && !alreadyGuessed && !isOwner;
+  // a suspended post (staff and the author can still open it) takes no new guesses
+  const canGuess = post.type === 'gps-photo' && post.status === 'published' && !alreadyGuessed && !isOwner;
+  const locationReview = post.type === 'gps-photo' ? post.locationReview ?? null : null;
+  // the guess map shows the true location: the author's, and staff's while a post is disputed
+  const canSeeGuessMap = isOwner || !!locationReview?.canReview;
   const isQuest = post.type === 'quest-completion';
   const game = post.type === 'hide-and-seek' ? post.game ?? null : null;
   const gamePlayers = post.type === 'hide-and-seek' ? post.players ?? [] : [];
@@ -649,6 +681,7 @@ export default function PostPageScreen() {
         rewards={rewards.rewards}
         userReward={rewards.userReward}
         guessCount={post.type === 'gps-photo' ? (post.guessCount ?? 0) : null}
+        userHasGuessed={post.userHasGuessed ?? false}
         commentCount={commentsCount}
         className="px-4 pt-3"
       />
@@ -691,6 +724,20 @@ export default function PostPageScreen() {
             <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">რუკაზე ნახვა</Text>
           </Pressable>
         </View>
+      ) : null}
+
+      {/* ── Contested location: review for zone staff, correction for the author of a
+           suspended post. A guesser contests from the post's ⋯ menu. ── */}
+      {locationReview ? (
+        <LocationReviewPanel
+          postId={post.id}
+          review={locationReview}
+          hasGuesses={canSeeGuessMap && (post.guessCount ?? 0) > 0}
+          onOpenGuessMap={() => setShowGuessMap(true)}
+          onOpenCorrection={() => setShowCorrection(true)}
+          disputeOpen={showDispute}
+          onDisputeClose={() => setShowDispute(false)}
+        />
       ) : null}
 
       {game ? (
@@ -819,6 +866,7 @@ export default function PostPageScreen() {
           post={post}
           onClose={() => setShowGuess(false)}
           onSubmitted={handleGuessSubmitted}
+          onAlreadyGuessed={handleAlreadyGuessed}
         />
       ) : null}
       {showPhotoGuess ? (
@@ -830,6 +878,14 @@ export default function PostPageScreen() {
       ) : null}
       {showGuessMap ? (
         <GuessesMap postId={post.id} onClose={() => setShowGuessMap(false)} />
+      ) : null}
+      {showCorrection ? (
+        <CorrectLocationSheet
+          post={post}
+          onClose={() => setShowCorrection(false)}
+          onCorrected={handleLocationCorrected}
+          rules={locationReview?.rules}
+        />
       ) : null}
       {showEdit ? (
         <EditPostSheet

@@ -15,6 +15,11 @@ declare global {
 type Props = {
   value: { latitude: number; longitude: number } | null;
   onChange: (coords: { latitude: number; longitude: number }) => void;
+  /**
+   * A fixed, non-draggable red pin for a place the picked one is measured against or replaces
+   * (a post's current location being corrected). The map opens on it when nothing is picked.
+   */
+  reference?: { latitude: number; longitude: number } | null;
 };
 
 /**
@@ -24,7 +29,7 @@ type Props = {
  * There is no pin until the host places one, so a form can never be submitted with a
  * spot nobody chose. The map opens on Tbilisi in that case.
  */
-export default function LocationPicker({ value, onChange }: Props) {
+export default function LocationPicker({ value, onChange, reference = null }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -78,14 +83,24 @@ export default function LocationPicker({ value, onChange }: Props) {
       const map = new window.mapboxgl.Map({
         container: mapRef.current,
         style: 'mapbox://styles/mapbox/standard-satellite',
-        center: value ? [value.longitude, value.latitude] : mapDefaultCenter,
-        zoom: value ? mapPickedZoom : mapOverviewZoom,
+        center: value
+          ? [value.longitude, value.latitude]
+          : reference
+          ? [reference.longitude, reference.latitude]
+          : mapDefaultCenter,
+        zoom: value || reference ? mapPickedZoom : mapOverviewZoom,
         renderWorldCopies: false,
         maxBounds: mapMaxBounds,
         maxZoom: mapMaxZoom,
       });
 
       mapInstanceRef.current = map;
+
+      if (reference) {
+        new window.mapboxgl.Marker({ draggable: false, color: mapPinColors.truth })
+          .setLngLat([reference.longitude, reference.latitude])
+          .addTo(map);
+      }
 
       if (value) placeMarker(value.longitude, value.latitude);
 

@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   Image,
   Pressable,
@@ -12,10 +13,11 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { NewGuess } from '@/components/NewGuess';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
+import { PinchZoomImage } from '@/components/ui/ZoomableImage';
 import { SHUFFLE_DECK_SIZE, SHUFFLE_EXCLUDE_LIMIT, shuffleApi } from '@/lib/shuffle';
 import { shareLink } from '@/lib/share';
 import { Colors } from '@/constants/colors';
@@ -25,6 +27,16 @@ const SHUFFLE_QUERY_KEY = ['guess-shuffle'];
 
 /** Deal the next deck once this few cards are left, so it lands before it's needed. */
 const REFILL_AT = 3;
+
+/**
+ * Coming back after this long, the cards still ahead of the one on screen are
+ * swapped for a fresh deal — they may have been guessed, hidden or deleted
+ * meanwhile (on the web, say) — while the card being looked at stays put.
+ */
+const REFRESH_AFTER_AWAY_MS = 2 * 60 * 1000;
+
+/** Away this long, nothing of the old deck is worth keeping: start over from card 1. */
+const RELOAD_AFTER_AWAY_MS = 2 * 60 * 60 * 1000;
 
 /** Below this, scrolling on is a flick past the card rather than a considered skip. */
 const SKIP_AFTER_MS = 2000;
@@ -77,17 +89,22 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: 
   // The card runs edge to edge, so in landscape the overlays clear the notch /
   // navigation bar at the right themselves (the tab rail already covers the left).
   const { right: insetRight } = useSafeAreaInsets();
+  // The card shows the 1280px feed rendition; the master is only worth fetching
+  // once the player actually pinches in.
+  const [sharp, setSharp] = useState(false);
+  const feedUri = item.imageVariants?.feed ?? item.image;
 
   return (
     <View style={{ height }} className="bg-black">
-      {/* The photo itself is a guess button — the whole card is the target. */}
+      {/* The photo itself is a guess button — the whole card is the target. Pinching it zooms instead. */}
       <Pressable className="flex-1" onPress={() => onGuess(item)}>
-        <Image
-          source={{ uri: item.imageVariants?.feed ?? item.image }}
-          className="w-full h-full"
+        <PinchZoomImage
+          uri={sharp ? item.image : feedUri}
+          placeholderUri={sharp ? feedUri : null}
+          style={{ flex: 1 }}
           resizeMode="contain"
-          // Android fades a photo in over 300ms by default, which reads as the card arriving slowly.
-          fadeDuration={0}
+          embedded
+          onZoom={() => setSharp(true)}
         />
       </Pressable>
 
@@ -163,6 +180,13 @@ export function GuessShuffle() {
   const guessedIds = useRef(new Set<number>());
   const pendingSkips = useRef<number[]>([]);
   const dealtIds = useRef<number[]>([]);
+  // Whether the screen is the tab in front, and since when the player stopped
+  // looking at it (leaving the tab, or the app going to the background).
+  const focused = useRef(false);
+  const awayFrom = useRef<number | null>(null);
+  // The server's last deal came back short. Tracked apart from the page contents
+  // because a refresh may drop duplicates from a full deal.
+  const poolUsedUp = useRef(false);
 
   const flushSkips = useCallback(async () => {
     if (pendingSkips.current.length === 0) return;
@@ -178,13 +202,13 @@ export function GuessShuffle() {
       await flushSkips();
       const posts = await shuffleApi.loadDeck(dealtIds.current.slice(-SHUFFLE_EXCLUDE_LIMIT));
       dealtIds.current = [...dealtIds.current, ...posts.map((p) => Number(p.id))];
+      poolUsedUp.current = posts.length < SHUFFLE_DECK_SIZE;
       return posts;
     },
     initialPageParam: 0,
     // The server excludes what it already dealt, so the page param carries
     // nothing; a short deck means the pool is used up.
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length < SHUFFLE_DECK_SIZE ? undefined : allPages.length,
+    getNextPageParam: (_lastPage, allPages) => (poolUsedUp.current ? undefined : allPages.length),
     // The deck is a session, not a cache: a refetch replays every page with the
     // dealt ids excluded, which comes back empty and wipes the deck. Only
     // `reload` below starts a new one.
@@ -196,34 +220,115 @@ export function GuessShuffle() {
 
   const posts = useMemo(() => query.data?.pages.flat() ?? [], [query.data]);
 
+  const deckIsEmpty = query.isSuccess && posts.length === 0;
+  const deckIsEmptyRef = useRef(false);
+  useEffect(() => { deckIsEmptyRef.current = deckIsEmpty; }, [deckIsEmpty]);
+
   /** Throws the deck away and deals a fresh one from scratch. */
   const reload = useCallback(() => {
     pendingSkips.current = [];
     dealtIds.current = [];
+    poolUsedUp.current = false;
     activeIndexRef.current = 0;
     postsRef.current = [];
     setActiveIndex(0);
     queryClient.resetQueries({ queryKey: SHUFFLE_QUERY_KEY });
   }, [queryClient]);
 
+  /**
+   * Swaps the cards after the one on screen for a fresh deal, silently. The old
+   * ones may have been guessed or hidden since they were dealt, and the server
+   * only drops those when it deals. The deck is left alone if the deal fails or
+   * races another fetch.
+   */
+  const refreshAhead = useCallback(async () => {
+    const deckKey = { queryKey: SHUFFLE_QUERY_KEY };
+    const before = queryClient.getQueryData<InfiniteData<MobilePostType[]>>(SHUFFLE_QUERY_KEY);
+    if (!before) {
+      // Nothing to refresh: the first deal failed, so try it again.
+      if (queryClient.isFetching(deckKey) === 0) reload();
+      return;
+    }
+    if (queryClient.isFetching(deckKey) > 0) return;
+
+    const dealt = before.pages.flat();
+    const aheadIds = new Set(dealt.slice(activeIndexRef.current + 1).map((p) => Number(p.id)));
+    if (aheadIds.size === 0 && poolUsedUp.current) return;
+
+    try {
+      const fresh = await shuffleApi.loadDeck(
+        dealtIds.current.filter((id) => !aheadIds.has(id)).slice(-SHUFFLE_EXCLUDE_LIMIT),
+      );
+
+      // The player may have scrolled on, or a refill started, while the deal was in flight.
+      if (queryClient.isFetching(deckKey) > 0) return;
+      const now = queryClient.getQueryData<InfiniteData<MobilePostType[]>>(SHUFFLE_QUERY_KEY);
+      if (!now) return;
+      const kept = now.pages.flat().slice(0, activeIndexRef.current + 1);
+      const keptIds = new Set(kept.map((p) => Number(p.id)));
+      const added = fresh.filter((p) => !keptIds.has(Number(p.id)));
+
+      dealtIds.current = [
+        ...dealtIds.current.filter((id) => keptIds.has(id) || !aheadIds.has(id)),
+        ...added.map((p) => Number(p.id)),
+      ];
+      poolUsedUp.current = fresh.length < SHUFFLE_DECK_SIZE;
+      queryClient.setQueryData<InfiniteData<MobilePostType[]>>(SHUFFLE_QUERY_KEY, {
+        pages: [kept, added],
+        pageParams: [0, 1],
+      });
+    } catch {
+      // Keep playing the deck we have.
+    }
+  }, [queryClient, reload]);
+
+  /**
+   * The player is looking at the screen again. Short absences change nothing; a
+   * longer one refreshes the cards ahead, and a very long one starts a new deck.
+   * An empty deck gets another try regardless, since new posts may have arrived.
+   */
+  const onReturn = useCallback(() => {
+    const away = awayFrom.current == null ? 0 : Date.now() - awayFrom.current;
+    awayFrom.current = null;
+    shownAt.current = Date.now();
+
+    if (deckIsEmptyRef.current || away >= RELOAD_AFTER_AWAY_MS) reload();
+    else if (away >= REFRESH_AFTER_AWAY_MS) refreshAhead();
+  }, [reload, refreshAhead]);
+
   // The viewability callback keeps one identity for the list's whole life, so
   // it reads the current deck through a ref rather than a closure.
   useEffect(() => { postsRef.current = posts; }, [posts]);
 
-  const deckIsEmpty = query.isSuccess && posts.length === 0;
-  const deckIsEmptyRef = useRef(false);
-  useEffect(() => { deckIsEmptyRef.current = deckIsEmpty; }, [deckIsEmpty]);
-
   // A tab stays mounted when the player leaves it: hand the skips over then, and
-  // restart the card's clock on return so time away doesn't count as time spent looking.
-  // An empty deck gets another try on return, since new posts may have arrived meanwhile.
+  // on return restart the card's clock (time away isn't time spent looking) and
+  // see whether the deck has gone stale.
   useFocusEffect(
     useCallback(() => {
-      shownAt.current = Date.now();
-      if (deckIsEmptyRef.current) reload();
-      return () => { flushSkips(); };
-    }, [flushSkips, reload]),
+      focused.current = true;
+      onReturn();
+      return () => {
+        focused.current = false;
+        awayFrom.current ??= Date.now();
+        flushSkips();
+      };
+    }, [flushSkips, onReturn]),
   );
+
+  // Leaving the tab is caught above; leaving the app is not. An unfocused tab
+  // is handled when it regains focus, from the time it was left.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (!focused.current) return;
+      if (state === 'active') {
+        onReturn();
+      } else {
+        awayFrom.current ??= Date.now();
+        flushSkips();
+      }
+    });
+    return () => sub.remove();
+  }, [flushSkips, onReturn]);
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
@@ -355,6 +460,8 @@ export function GuessShuffle() {
         <NewGuess
           post={guessPost}
           onSubmitted={() => guessedIds.current.add(Number(guessPost.id))}
+          // Guessed elsewhere meanwhile: same as having just guessed it, so close moves on.
+          onAlreadyGuessed={() => guessedIds.current.add(Number(guessPost.id))}
           onClose={() => {
             setGuessPost(null);
             if (guessedIds.current.has(Number(guessPost.id))) goToNext();

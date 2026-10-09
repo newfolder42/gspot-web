@@ -30,7 +30,8 @@ import { ProgressiveImage } from './ProgressiveImage';
  * Expo 56 does not bundle, so relying on it would mean a native rebuild.
  *
  * PinchZoomImage claims the touch responder, so keep it out of scrollable
- * containers — use ZoomableImage there and zoom inside the viewer instead.
+ * containers — use ZoomableImage there and zoom inside the viewer instead —
+ * unless it is `embedded`, which claims only pinches and zoomed-in drags.
  */
 
 /** Matches the web's ZOOM_SCALE, so a double-tap lands where a click would. */
@@ -50,7 +51,11 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
  * All gesture bookkeeping lives in one closure created once per mounted image:
  * every value here is written from touch handlers, never from rendering.
  */
-function createZoomController(resizeMode: ResizeMode) {
+function createZoomController(
+  resizeMode: ResizeMode,
+  embedded: boolean,
+  onZoom?: () => void
+) {
   const animated = {
     scale: new Animated.Value(MIN_SCALE),
     translateX: new Animated.Value(0),
@@ -103,6 +108,7 @@ function createZoomController(resizeMode: ResizeMode) {
     const cx = clamp(x, -bounds.x, bounds.x);
     const cy = clamp(y, -bounds.y, bounds.y);
     current = { scale, x: cx, y: cy };
+    if (scale > MIN_SCALE) onZoom?.();
 
     if (!animate) {
       animated.scale.setValue(scale);
@@ -119,7 +125,10 @@ function createZoomController(resizeMode: ResizeMode) {
   };
 
   const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
+    // Embedded in a scrolling list, a single finger at rest belongs to the list
+    // (swipes) and to whatever sits under the photo (taps); only a pinch, or a
+    // photo that is already zoomed and so needs dragging, takes the touch.
+    onStartShouldSetPanResponder: () => !embedded || current.scale > MIN_SCALE,
     onStartShouldSetPanResponderCapture: (e) => e.nativeEvent.touches.length >= 2,
     onMoveShouldSetPanResponder: (e) =>
       e.nativeEvent.touches.length >= 2 || current.scale > MIN_SCALE,
@@ -249,14 +258,20 @@ export function PinchZoomImage({
   style,
   /** Fixed for the lifetime of the image — the controller captures it. */
   resizeMode = 'contain',
+  /** Fixed too. For use inside a scrolling list — see createZoomController. */
+  embedded = false,
+  onZoom,
 }: {
   uri: string;
   /** Smaller rendition to show while `uri` downloads — see ProgressiveImage. */
   placeholderUri?: string | null;
   style?: StyleProp<ViewStyle>;
   resizeMode?: ResizeMode;
+  embedded?: boolean;
+  /** Fires whenever the photo is zoomed in, so the caller can swap in a sharper rendition. Fixed like `embedded`. */
+  onZoom?: () => void;
 }) {
-  const [zoom] = useState(() => createZoomController(resizeMode));
+  const [zoom] = useState(() => createZoomController(resizeMode, embedded, onZoom));
   const containerRef = useRef<View>(null);
 
   return (

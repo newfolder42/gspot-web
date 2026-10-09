@@ -8,7 +8,7 @@ import type { ZoneTag } from '@/types/tag';
 import TagPicker from '@/components/common/tag-picker';
 import ReportModal from '@/components/report-modal';
 
-export default function PostActions({ postAuthor, postId, currentTitle, currentTagId = null, zoneTags = [] }: { postAuthor: string; postId: number; currentTitle: string; currentTagId?: number | null; zoneTags?: ZoneTag[] }) {
+export default function PostActions({ postAuthor, postId, currentTitle, currentTagId = null, zoneTags = [], onDisputeLocation }: { postAuthor: string; postId: number; currentTitle: string; currentTagId?: number | null; zoneTags?: ZoneTag[]; onDisputeLocation?: () => void }) {
   const [open, setOpen] = useState(false);
   const [isOwnPost, setIsOwnPost] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -94,6 +94,18 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
 
           {open && (
             <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+              {/* Only offered to a guesser whose guess can be contested (see PostLocationReview). */}
+              {onDisputeLocation && (
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    onDisputeLocation();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-amber-700 dark:text-amber-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                >
+                  გასაჩივრება
+                </button>
+              )}
               <button
                 onClick={() => {
                   setOpen(false);

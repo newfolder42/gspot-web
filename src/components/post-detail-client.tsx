@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PostActions from './post-actions';
 import PostComments from './post-comments';
 import ProfileAvatar from './common/profileAvatar';
@@ -19,6 +20,7 @@ import type { VoteSummaryType } from '@/types/vote';
 import type { RewardSummaryType } from '@/types/reward';
 import type { ZoneTag } from '@/types/tag';
 import HideAndSeekPanel from './hide-and-seek/hide-and-seek-panel';
+import PostLocationReview from './post-location-review';
 
 type PostDetailClientProps = {
   post: PostDetailType;
@@ -31,19 +33,29 @@ type PostDetailClientProps = {
 };
 
 export default function PostDetailClient({ post, comments, currentUser, currentUserId, zoneTags, postVotes, postRewards }: PostDetailClientProps) {
+  const router = useRouter();
   const isAuthor = currentUser === post.author;
   const questPost = post.type === 'quest-completion' ? post : null;
   const gpsPost = post.type === 'gps-photo' ? post : null;
   const gamePost = post.type === 'hide-and-seek' ? post : null;
   const isHideAndSeekHost = !!gamePost && currentUserId === gamePost.game.hostId;
-  const userCanGuess = !!gpsPost && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
+  const isSuspended = post.status === 'suspended';
+  const locationReview = gpsPost?.locationReview ?? null;
+  // the guess map shows the true location: the author's, and staff's while a post is disputed
+  const canViewGuessMap = isAuthor || !!locationReview?.canReview;
+  const userCanGuess = !!gpsPost && !isSuspended && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
 
   const [canGuess, setCanGuess] = useState(userCanGuess);
+  const [disputeOpen, setDisputeOpen] = useState(false);
   const [guessCount, setGuessCount] = useState(Number(gpsPost?.guessCount) || 0);
 
   const handleGuessSubmitted = (_: PostGuessType) => {
     setCanGuess(false);
     setGuessCount(prev => prev + 1);
+    // Whether the guess can be contested ("გასაჩივრება") depends on its score, which the
+    // server worked out; re-render the page from the server so the button can appear. Client
+    // state, the open result modal included, survives a refresh.
+    router.refresh();
   };
 
   const countComments = (items: PostCommentType[]): number =>
@@ -97,7 +109,14 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
             )}
           </div>
           <div className="flex-shrink-0">
-            <PostActions postAuthor={post.author} postId={post.id} currentTitle={post.title} currentTagId={gpsPost?.tag?.id ?? null} zoneTags={zoneTags} />
+            <PostActions
+              postAuthor={post.author}
+              postId={post.id}
+              currentTitle={post.title}
+              currentTagId={gpsPost?.tag?.id ?? null}
+              zoneTags={zoneTags}
+              onDisputeLocation={locationReview?.canReport ? () => setDisputeOpen(true) : undefined}
+            />
           </div>
         </div>
 
@@ -127,6 +146,26 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
         )}
       </article>
 
+      {/* Contested location: review for zone staff, correction for the author of a suspended
+          post. A guesser contests from the post's ⋯ menu. */}
+      {gpsPost && locationReview ? (
+        <PostLocationReview
+          postId={post.id}
+          review={locationReview}
+          disputeOpen={disputeOpen}
+          onDisputeClose={() => setDisputeOpen(false)}
+        />
+      ) : (
+        isSuspended && (
+          <div className="mx-2 mb-2 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 px-3 py-2.5">
+            <div className="text-sm font-semibold text-rose-800 dark:text-rose-200">პოსტი შეჩერებულია</div>
+            <div className="mt-0.5 text-xs text-rose-700 dark:text-rose-300">
+              ლოკაციის გასწორებამდე პოსტი დამალულია და ახალი გამოცნობები გამორთულია.
+            </div>
+          </div>
+        )
+      )}
+
       {gamePost && (
         <div className="px-2 pb-2">
           <HideAndSeekPanel
@@ -143,6 +182,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
           postId={post.id}
           postAuthorAlias={post.author}
           isAuthor={isAuthor}
+          canViewGuessMap={canViewGuessMap}
           canGuess={canGuess}
           currentUser={currentUser}
           postImage={gpsPost?.image}

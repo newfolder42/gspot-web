@@ -1,9 +1,16 @@
+import { LOCATION_DISPUTE_REASON_LABELS, type LocationDisputeReason } from './post-location';
 import type { ItemQuality } from './item';
 import type { RewardTargetKind } from './reward';
 
 export type NotificationType = {
   id: string;
-  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest' | 'hide-and-seek-created' | 'hide-and-seek-joined' | 'hide-and-seek-checked' | 'hide-and-seek-found' | 'hide-and-seek-ended' | 'item-found';
+  type: 'gps-guess' | 'gps-photo-guess' | 'connection-created-gps-post' | 'connection-created-quest-post' | 'gps-post-failed' | 'user-started-following' | 'user-achievement-achieved' | 'post-comment-created' | 'post-vote-created' | 'comment-vote-created' | 'post-reward-created' | 'comment-reward-created' | 'feed-event-reaction' | 'zone-member-invitation' | 'zone-quest-created' | 'zone-quest-completed' | 'zone-quest-objective-rejected' | 'zone-quest-objective-accepted' | 'zone-quest-objective-submitted' | 'connection-completed-zone-quest' | 'hide-and-seek-created' | 'hide-and-seek-joined' | 'hide-and-seek-checked' | 'hide-and-seek-found' | 'hide-and-seek-ended' | 'item-found'
+    | 'post-location-disputed'
+    | 'post-location-flagged'
+    | 'post-location-correction-needed'
+    | 'post-suspended'
+    | 'post-location-corrected'
+    | 'post-discarded';
   user: {
     userId: number;
     alias: string;
@@ -19,7 +26,8 @@ export type NotificationType = {
   | NotificationZoneQuestObjectiveAcceptedDetailsType | NotificationZoneQuestObjectiveSubmittedDetailsType
   | NotificationConnectionCompletedZoneQuestDetailsType
   | NotificationHideAndSeekDetailsType
-  | NotificationItemFoundDetailsType;
+  | NotificationItemFoundDetailsType
+  | NotificationPostLocationDetailsType;
   timestamp: string | null;
   seen: boolean;
 }
@@ -188,6 +196,21 @@ export type NotificationHideAndSeekDetailsType = {
   reason?: 'expired' | 'host_ended' | 'first_found',
 }
 
+export type NotificationPostLocationDetailsType = {
+  postId: number,
+  postTitle?: string,
+  zoneSlug: string,
+  // who disputed it (post-location-disputed), suspended / discarded it, or corrected it
+  reporterAlias?: string,
+  actorAlias?: string,
+  authorAlias?: string,
+  disputeCount?: number,
+  // why it was contested (a LocationDisputeReason key) and the guesser's own words
+  reason?: string | null,
+  // post-location-disputed / -flagged: the guesser's words; -correction-needed: the admin's
+  note?: string | null,
+}
+
 export type NotificationItemFoundDetailsType = {
   postId: number,
   itemAlias: string,
@@ -219,6 +242,21 @@ export function normalizeDetails(value: unknown): NotificationType['details'] {
     return (value ?? {}) as NotificationType['details'];
   }
   return {} as NotificationType['details'];
+}
+
+function locationReasonSuffix(d: { reason?: string | null }): string {
+  const label = d.reason ? LOCATION_DISPUTE_REASON_LABELS[d.reason as LocationDisputeReason] : undefined;
+  return label ? ` (${label})` : '';
+}
+
+function locationNoteSuffix(d: { note?: string | null }): string {
+  const note = d.note?.trim();
+  return note ? ` — ${note}` : '';
+}
+
+function postTitleSuffix(d: { postTitle?: string }): string {
+  const title = d.postTitle?.trim();
+  return title ? `: ${title}` : '';
 }
 
 export function getNotificationContentMessage(type: NotificationType['type'], details: NotificationType['details']): string {
@@ -349,6 +387,30 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
       const d = details as NotificationItemFoundDetailsType;
       return `შენს ინვენტარში მატებაა - ${d.itemName}`;
     }
+    case 'post-location-disputed': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `${d.reporterAlias}-მა გაასაჩივრა პოსტის ლოკაცია${locationReasonSuffix(d)}${postTitleSuffix(d)}`;
+    }
+    case 'post-location-flagged': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `შენი პოსტის ლოკაცია გასაჩივრდა${locationReasonSuffix(d)}${postTitleSuffix(d)}`;
+    }
+    case 'post-location-correction-needed': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `შენი პოსტი შეჩერდა, გაასწორე ლოკაცია${postTitleSuffix(d)}${locationNoteSuffix(d)}`;
+    }
+    case 'post-suspended': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `${d.actorAlias}-მა შეაჩერა პოსტი ლოკაციის გამო${postTitleSuffix(d)}`;
+    }
+    case 'post-location-corrected': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `${d.authorAlias}-მა გაასწორა პოსტის ლოკაცია, პოსტი აღდგა${postTitleSuffix(d)}`;
+    }
+    case 'post-discarded': {
+      const d = details as NotificationPostLocationDetailsType;
+      return `შენი პოსტი სამუდამოდ შეჩერებულია${postTitleSuffix(d)}`;
+    }
     default:
       return "ახალი შეტყობინება";
   }
@@ -445,6 +507,15 @@ export function getNotificationRoute(notification: NotificationType): string | n
     }
     case 'item-found': {
       return '/inventory';
+    }
+    case 'post-location-disputed':
+    case 'post-location-flagged':
+    case 'post-location-correction-needed':
+    case 'post-suspended':
+    case 'post-location-corrected':
+    case 'post-discarded': {
+      const d = notification.details as NotificationPostLocationDetailsType;
+      return `/post/${d.postId}`;
     }
     default:
       return null;

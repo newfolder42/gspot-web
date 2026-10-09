@@ -20,8 +20,9 @@ const BodySchema = z.object({
 type Context = { params: Promise<{ id: string }> };
 
 // GET /api/v1/posts/:id/guesses — every guess placed on the post plus the real
-// photo location, for the author's "guesses on a map" view. Author-only:
-// getPostGuessMapPointsForUser returns empty for anyone else.
+// photo location, for the author's "guesses on a map" view. Author-only, plus the zone's
+// owners/admins while the post is under dispute: getPostGuessMapPointsForUser returns empty
+// for anyone else.
 export async function GET(req: NextRequest, context: Context) {
   try {
     const auth = await requireMobileUser(req);

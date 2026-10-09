@@ -27,6 +27,8 @@ type PostCommentsProps = {
   postId: number;
   postAuthorAlias: string;
   isAuthor: boolean;
+  /** May open the guess map: the author, and a zone owner/admin while the post is disputed. */
+  canViewGuessMap?: boolean;
   canGuess: boolean;
   currentUser: string;
   postImage?: string;
@@ -68,6 +70,7 @@ export default function PostComments({
   postId,
   postAuthorAlias,
   isAuthor,
+  canViewGuessMap = isAuthor,
   canGuess,
   currentUser,
   postImage,
@@ -337,7 +340,7 @@ export default function PostComments({
 
   const handleOpenMap = async () => {
     setShowMap(true);
-    if (!isAuthor || mapData !== null || loadingMapPoints) return;
+    if (!canViewGuessMap || mapData !== null || loadingMapPoints) return;
 
     setLoadingMapPoints(true);
     setMapPointsError(null);
@@ -372,7 +375,7 @@ export default function PostComments({
         />
 
         <div className="flex items-center gap-2">
-          {isAuthor && guessCount2 > 0 && (
+          {canViewGuessMap && guessCount2 > 0 && (
             <button
               type="button"
               onClick={handleOpenMap}

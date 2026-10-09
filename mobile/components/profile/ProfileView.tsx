@@ -1,10 +1,12 @@
-import { useCallback, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
   Pressable,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   RefreshControl,
   ScrollView,
   Text,
@@ -47,6 +49,8 @@ const WIDE_MIN_WIDTH = 560;
 const POSTS_PAGE_SIZE = 18;
 const GAP = 2;
 const PROFILE_PHOTO_MAX = 5 * 1024 * 1024;
+/** Scroll offset past which the alias in the header card is (mostly) off screen. */
+const SCROLLED_OFFSET = 50;
 
 type Tab = 'posts' | 'guesses' | 'achievements' | 'connections';
 
@@ -108,6 +112,7 @@ function PostsTab({
   posts,
   header,
   refreshControl,
+  onScroll,
   isLoading,
   hasNextPage,
   isFetchingNextPage,
@@ -116,6 +121,7 @@ function PostsTab({
   posts: MobilePostType[];
   header: ReactElement;
   refreshControl: ReactElement<RefreshControlProps>;
+  onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   isLoading: boolean;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
@@ -142,6 +148,8 @@ function PostsTab({
       keyExtractor={(row) => String(row[0].id)}
       ListHeaderComponent={<View style={{ paddingHorizontal: gutter }}>{header}</View>}
       refreshControl={refreshControl}
+      onScroll={onScroll}
+      scrollEventThrottle={32}
       contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
       initialNumToRender={6}
       windowSize={7}
@@ -228,11 +236,37 @@ function PostsTab({
   );
 }
 
-export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean }) {
+export function ProfileView({
+  alias,
+  isOwn,
+  onScrolledChange,
+}: {
+  alias: string;
+  isOwn: boolean;
+  /** Fires when the identity row (alias) scrolls out of view, and back. */
+  onScrolledChange?: (scrolled: boolean) => void;
+}) {
   const queryClient = useQueryClient();
+  const scrolledRef = useRef(false);
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!onScrolledChange) return;
+      const scrolled = e.nativeEvent.contentOffset.y > SCROLLED_OFFSET;
+      if (scrolled === scrolledRef.current) return;
+      scrolledRef.current = scrolled;
+      onScrolledChange(scrolled);
+    },
+    [onScrolledChange],
+  );
   const insets = useSafeAreaInsets();
   const { gutter } = useLayout();
   const [tab, setTab] = useState<Tab>('posts');
+  // Switching tabs remounts the list at offset 0, so the title swap must reset too.
+  useEffect(() => {
+    if (!scrolledRef.current) return;
+    scrolledRef.current = false;
+    onScrolledChange?.(false);
+  }, [tab, onScrolledChange]);
   const [uploading, setUploading] = useState(false);
   const [showReport, setShowReport] = useState(false);
 
@@ -386,34 +420,40 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
             ) : null}
           </Pressable>
           <View className="flex-1" style={{ minWidth: 0 }}>
+            {/* Alias gets the whole column width; the follow/report/share buttons sit
+                on the row below so they can never truncate it. */}
             <Text numberOfLines={1} className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               &apos;{user.alias}
             </Text>
-            {user.age != null ? (
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">ასაკი: {formatAge(user.age)}</Text>
-            ) : null}
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{postsCount} პოსტი</Text>
-          </View>
-          <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
-            {!isOwn ? (
-              <>
-                <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
-                <Pressable
-                  onPress={() => setShowReport(true)}
-                  hitSlop={8}
+            <View className="flex-row items-center gap-2 mt-1">
+              <View className="flex-1" style={{ minWidth: 0 }}>
+                {user.age != null ? (
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400">ასაკი: {formatAge(user.age)}</Text>
+                ) : null}
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{postsCount} პოსტი</Text>
+              </View>
+              <View style={{ flexShrink: 0 }} className="flex-row items-center gap-2">
+                {!isOwn ? (
+                  <>
+                    <FollowButton alias={alias} initialFollowing={data.isFollowing} size="sm" />
+                    <Pressable
+                      onPress={() => setShowReport(true)}
+                      hitSlop={8}
+                      className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
+                    >
+                      <Feather name="flag" size={14} color="#71717a" />
+                    </Pressable>
+                  </>
+                ) : null}
+                <ShareButton
+                  path={`/account/${encodeURIComponent(user.alias)}`}
+                  title={`'${user.alias}`}
+                  size={14}
+                  color="#71717a"
                   className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
-                >
-                  <Feather name="flag" size={14} color="#71717a" />
-                </Pressable>
-              </>
-            ) : null}
-            <ShareButton
-              path={`/account/${encodeURIComponent(user.alias)}`}
-              title={`'${user.alias}`}
-              size={14}
-              color="#71717a"
-              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center"
-            />
+                />
+              </View>
+            </View>
           </View>
         </View>
 
@@ -460,6 +500,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
           posts={loadedPosts}
           header={header}
           refreshControl={refreshControl}
+          onScroll={handleScroll}
           isLoading={postsQuery.isLoading}
           hasNextPage={postsQuery.hasNextPage}
           isFetchingNextPage={postsQuery.isFetchingNextPage}
@@ -471,7 +512,7 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
   if (tab === 'connections')
     return (
       <>
-        <ConnectionsTab alias={alias} isOwn={isOwn} header={header} refreshControl={refreshControl} />
+        <ConnectionsTab alias={alias} isOwn={isOwn} header={header} refreshControl={refreshControl} onScroll={handleScroll} />
         {reportSheet}
       </>
     );
@@ -484,6 +525,8 @@ export function ProfileView({ alias, isOwn }: { alias: string; isOwn: boolean })
         className="flex-1 bg-zinc-50 dark:bg-zinc-950"
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom, paddingHorizontal: gutter }}
         refreshControl={refreshControl}
+        onScroll={handleScroll}
+        scrollEventThrottle={32}
       >
         {header}
         {tab === 'guesses' ? <GuessesTab alias={alias} /> : null}

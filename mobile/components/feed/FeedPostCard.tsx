@@ -73,6 +73,12 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
           {item.status === 'failed' ? (
             <View className="w-3 h-3 rounded-full bg-rose-600" />
           ) : null}
+          {/* Suspended – only the author's own profile list ever holds one */}
+          {item.status === 'suspended' ? (
+            <View className="rounded px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/20">
+              <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">შეჩერებულია</Text>
+            </View>
+          ) : null}
         </View>
 
         {isQuest ? (
@@ -148,6 +154,7 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
         rewards={item.rewards ?? []}
         userReward={item.userReward ?? null}
         guessCount={isQuest ? null : (item.guessCount ?? 0)}
+        userHasGuessed={!isQuest && (item.userHasGuessed ?? false)}
         commentCount={item.commentCount ?? 0}
         onOpenPost={openPost}
         className="px-4 pt-3"

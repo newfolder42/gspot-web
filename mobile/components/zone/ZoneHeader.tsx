@@ -15,31 +15,43 @@ export function ZoneHeader({ meta, slug }: { meta: ZoneMeta; slug: string }) {
 
   return (
     <View>
-      {/* Banner, Reddit-style: no avatar overlap. */}
+      {/* Mirrors web zone-shell-header: banner with the avatar overlapping its bottom edge. */}
       <View className="h-28 bg-zinc-200 dark:bg-zinc-800">
         {zone.bannerUrl ? (
           <Image source={{ uri: zone.bannerUrl }} className="w-full h-full" resizeMode="cover" />
         ) : null}
       </View>
 
-      <View className="px-4 pt-3 pb-4">
-        <View className="flex-row items-center gap-2.5">
-          <ProfileAvatar name={zone.slug} photoUrl={zone.profilePhotoUrl} size={40} shape="md" />
-          <Text className="flex-1 text-lg font-bold text-zinc-900 dark:text-zinc-50" numberOfLines={1}>
-            {zone.slug}
-          </Text>
-          <JoinButton
-            slug={slug}
-            status={membership?.status ?? null}
-            role={membership?.role ?? null}
-            joinPolicy={zone.joinPolicy}
+      <View className="px-4 pt-2 pb-2">
+        {/* The padded wrapper matches the screen background, acting as web's ring around the avatar. */}
+        <View className="absolute left-4 p-0.5 rounded-lg bg-zinc-50 dark:bg-zinc-950" style={{ top: -34 }}>
+          <ProfileAvatar
+            name={zone.slug}
+            photoUrl={zone.profilePhotoUrl}
+            size={64}
+            shape="md"
+            initialsClassName="text-2xl font-semibold text-white"
           />
-          <ShareButton path={`/zone/${slug}`} title={zone.name} size={18} />
+        </View>
+
+        <View style={{ paddingLeft: 80 }}>
+          <View className="flex-row items-center gap-2">
+            <Text className="flex-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50" numberOfLines={1}>
+              {zone.slug}
+            </Text>
+            <JoinButton
+              slug={slug}
+              status={membership?.status ?? null}
+              role={membership?.role ?? null}
+              joinPolicy={zone.joinPolicy}
+            />
+            <ShareButton path={`/zone/${slug}`} title={zone.name} size={18} />
+          </View>
         </View>
 
         {hasDescription ? (
-          <View className="mt-2.5">
-            <Text className="text-sm text-zinc-600 dark:text-zinc-300">{visibleDescription}</Text>
+          <View className="mt-2" style={{ paddingLeft: 80 }}>
+            <Text className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{visibleDescription}</Text>
             {shouldTruncate ? (
               <Pressable onPress={() => setExpanded((p) => !p)}>
                 <Text className="mt-1 text-xs font-semibold text-teal-600 dark:text-teal-400">

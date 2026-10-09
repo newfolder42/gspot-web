@@ -21,6 +21,7 @@ import {
   recordPostLocation,
 } from '@/lib/postLocations';
 import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
+import { canReviewPostLocation } from '@/lib/postLocationDisputes';
 import { FEED_ACTIVITY_WINDOW_DAYS, FEED_STRANGER_BUMP_DELAY_HOURS } from '@/lib/feedRanking';
 import type { FoundItemType } from '@/types/item';
 
@@ -322,7 +323,7 @@ join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
 left join user_xp ux on ux.user_id = u.id
 left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id = z.id and zcp.content_type = 'profile-photo'
-where p.user_id = $2 and p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek') and z.visibility = 'public' ${filterCondition} ${cursorCondition}
+where p.user_id = $2 and (p.status = 'published' or (p.status = 'suspended' and p.user_id = $3)) and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek') and z.visibility = 'public' ${filterCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
@@ -784,6 +785,11 @@ left join content_store zcp on zcp.reference_type = 'zone' and zcp.reference_id 
 left join hide_and_seek_games hsg on hsg.post_id = p.id
 where p.id = $1 and (
   $2 = p.user_id
+  -- a suspended post is for its author and for the zone staff who have to decide on it
+  or (p.status = 'suspended' and exists (
+    select 1 from zone_members zm
+    where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active' and zm.role in ('owner', 'admin')
+  ))
   or (
     p.status in ('published') and (
       z.visibility = 'public'
@@ -1468,8 +1474,10 @@ export async function getPostGuessMapPoints(postId: number): Promise<PostGuessMa
   return getPostGuessMapPointsForUser(user.userId, postId);
 }
 
-// Every guess placed on a post, plus the real photo location. Author-only —
-// revealing the true coordinates to anyone else would give the answer away.
+// Every guess placed on a post, plus the real photo location. Author-only — revealing the
+// true coordinates to anyone else would give the answer away. The one exception is the zone's
+// owners and admins, and only while the post is under dispute: they cannot judge a contested
+// location without seeing it.
 export async function getPostGuessMapPointsForUser(
   userId: number,
   postId: number
@@ -1481,7 +1489,12 @@ export async function getPostGuessMapPointsForUser(
     );
 
     if (ownerRes.rowCount === 0) return { guessPoints: [], photoCoordinates: null };
-    if (Number(ownerRes.rows[0].user_id) !== Number(userId)) return { guessPoints: [], photoCoordinates: null };
+    if (
+      Number(ownerRes.rows[0].user_id) !== Number(userId) &&
+      !(await canReviewPostLocation(userId, postId))
+    ) {
+      return { guessPoints: [], photoCoordinates: null };
+    }
 
     const data = await query(
       `select pg.details, u.alias as author_alias

@@ -1,6 +1,7 @@
 "use server";
 
 import { getPostForView, postIsGuessedByUser } from '@/lib/posts';
+import { getPostLocationReview } from '@/lib/postLocationDisputes';
 import { getHideAndSeekGameForUser, getHideAndSeekPlayersForUser } from '@/lib/hideAndSeek';
 import { logerror } from '@/lib/logger';
 import type { PostDetailType } from '@/types/post-detail';
@@ -25,8 +26,11 @@ export async function getPostDetail(
 
   switch (post.type) {
     case 'gps-photo': {
-      const alreadyGuessed = userId ? await postIsGuessedByUser(postId, userId) : false;
-      return { ...post, alreadyGuessed };
+      const [alreadyGuessed, locationReview] = await Promise.all([
+        userId ? postIsGuessedByUser(postId, userId) : false,
+        getPostLocationReview(userId, postId),
+      ]);
+      return { ...post, alreadyGuessed, locationReview };
     }
 
     case 'hide-and-seek': {

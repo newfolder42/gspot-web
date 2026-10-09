@@ -1,5 +1,6 @@
 import type { GpsPostType, HideAndSeekPostType, QuestCompletionPostType } from './post';
 import type { HideAndSeekGameType, HideAndSeekPlayerType } from './hide-and-seek';
+import type { PostLocationReviewType } from './post-location';
 
 /**
  * A post as its detail view needs it: the feed shape plus whatever that particular type
@@ -10,6 +11,8 @@ import type { HideAndSeekGameType, HideAndSeekPlayerType } from './hide-and-seek
 export type GpsPostDetail = GpsPostType & {
   /** Whether the viewer has already guessed. Meaningless on the other types. */
   alreadyGuessed: boolean;
+  /** The location-dispute state of the post and what the viewer may do about it. */
+  locationReview: PostLocationReviewType | null;
 };
 
 export type QuestPostDetail = QuestCompletionPostType;

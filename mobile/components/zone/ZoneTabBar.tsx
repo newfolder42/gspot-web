@@ -2,6 +2,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 export type ZoneTabId = 'feed' | 'leaderboard' | 'quests' | 'manage';
 
+/** Underline tabs mirroring web `AccountTabs`: no background, teal bar under the active tab. */
 export function ZoneTabBar({
   tabs,
   tab,
@@ -12,11 +13,11 @@ export function ZoneTabBar({
   onChange: (id: ZoneTabId) => void;
 }) {
   return (
-    <View className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+    <View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10 }}
+        contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16 }}
       >
         {tabs.map((t) => {
           const active = t.id === tab;
@@ -24,13 +25,18 @@ export function ZoneTabBar({
             <Pressable
               key={t.id}
               onPress={() => onChange(t.id)}
-              className={`px-4 py-1.5 rounded-full border ${
-                active ? 'bg-teal-600 border-teal-600' : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-              }`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className="items-center px-1 py-3"
             >
-              <Text className={`text-sm font-medium ${active ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>
+              <Text
+                className={`text-sm font-medium ${
+                  active ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'
+                }`}
+              >
                 {t.label}
               </Text>
+              <View className={`mt-1 h-0.5 self-stretch rounded ${active ? 'bg-teal-600' : 'bg-transparent'}`} />
             </Pressable>
           );
         })}
