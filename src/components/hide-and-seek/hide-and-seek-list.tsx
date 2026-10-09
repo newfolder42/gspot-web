@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Countdown from './countdown';
 import TimePassed from '../common/time-passed';
 import UserLink from '../common/user-link';
+import InfoButton from '../common/info-button';
 import { formatMinutes } from '@/types/hide-and-seek';
 import type { HideAndSeekListFilter, HideAndSeekListItemType } from '@/types/hide-and-seek';
 import { EyeIcon, LockIcon, PlusIcon, UsersIcon } from '../icons';
@@ -104,6 +105,7 @@ export default function HideAndSeekList({
         <h1 className="flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-zinc-50">
           <EyeIcon className="w-6 h-6 text-teal-600 dark:text-teal-400" />
           დამალობანა
+          <InfoButton topic="hide-and-seek" iconClassName="w-5 h-5" />
         </h1>
         <Link
           href="/submit?tab=hide-and-seek"

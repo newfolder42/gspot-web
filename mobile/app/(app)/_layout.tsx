@@ -14,8 +14,10 @@ import { openPushNotification } from '@/lib/notificationRouting';
 import { prefetchPushImages } from '@/lib/imagePrefetch';
 import { Colors, useTheme } from '@/constants/colors';
 import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
+import { InfoButton } from '@/components/ui/InfoButton';
 import { PortalHost } from '@/components/ui/Portal';
 import { SideInsets } from '@/components/ui/SideInsets';
+import type { InfoTopicKey } from '@/constants/infoTopics';
 
 /**
  * Keeps each screen's content clear of the notch / navigation bar in landscape.
@@ -100,6 +102,20 @@ export default function AppLayout() {
 
   if (!user) return <Redirect href="/(auth)/login" />;
 
+  const searchButton = (
+    <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 4 }}>
+      <Feather name="search" size={20} color={theme.icon} />
+    </Pressable>
+  );
+
+  // Header for screens that explain themselves: the (?) button, then the default search icon.
+  const infoAndSearch = (topic: InfoTopicKey) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+      <InfoButton topic={topic} size={20} />
+      {searchButton}
+    </View>
+  );
+
   return (
     <View className="flex-1">
     <PortalHost>
@@ -111,11 +127,7 @@ export default function AppLayout() {
         headerTitleStyle: { fontWeight: '700', fontSize: 17 },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: theme.bg },
-        headerRight: () => (
-          <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 4 }}>
-            <Feather name="search" size={20} color={theme.icon} />
-          </Pressable>
-        ),
+        headerRight: () => searchButton,
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -125,13 +137,16 @@ export default function AppLayout() {
       <Stack.Screen name="zone/[slug]/quests/[questId]" options={{ title: 'მისია' }} />
       <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />
       <Stack.Screen name="user/[alias]" options={{ title: 'პროფილი' }} />
-      <Stack.Screen name="zones" options={{ title: 'საბზონები' }} />
+      <Stack.Screen name="zones" options={{ title: 'საბზონები', headerRight: () => infoAndSearch('zones') }} />
       <Stack.Screen name="new-users" options={{ title: 'ახალი მომხმარებლები' }} />
       <Stack.Screen name="heatmap" options={{ title: 'პოსტების რუკა' }} />
       <Stack.Screen name="about" options={{ title: 'ჩვენ შესახებ', headerRight: () => null }} />
       <Stack.Screen name="quest-log" options={{ title: 'მისიების ჟურნალი', headerRight: () => null }} />
-      <Stack.Screen name="inventory" options={{ title: 'ინვენტარი', headerRight: () => null }} />
-      <Stack.Screen name="hide-and-seek/index" options={{ title: 'დამალობანა' }} />
+      <Stack.Screen
+        name="inventory"
+        options={{ title: 'ინვენტარი', headerRight: () => <InfoButton topic="inventory" size={20} style={{ marginRight: 4 }} /> }}
+      />
+      <Stack.Screen name="hide-and-seek/index" options={{ title: 'დამალობანა', headerRight: () => infoAndSearch('hide-and-seek') }} />
       <Stack.Screen name="hide-and-seek/new" options={{ title: 'ახალი დამალობანა', headerRight: () => null }} />
       <Stack.Screen name="search" options={{ headerTitle: 'ძებნა', headerRight: () => null }} />
       <Stack.Screen name="settings" options={{ title: 'პარამეტრები', headerRight: () => null }} />

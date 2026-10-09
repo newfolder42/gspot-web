@@ -7,6 +7,7 @@ import { getUserLevel } from "@/lib/users";
 import type { ZoneBaseType } from "@/types/zone";
 import { getProfileColors } from "@/lib/profileColors";
 import ProfileAvatar from "@/components/common/profileAvatar";
+import InfoButton from "@/components/common/info-button";
 import { MIN_LEVEL_CREATE_ZONE } from "@/lib/permissions";
 
 export const metadata: Metadata = {
@@ -114,7 +115,10 @@ export default async function ExploreZonesPage() {
     <div className="mx-auto max-w-5xl px-2 py-4 md:px-4 md:py-8">
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">აღმოაჩინე საბზონები</h1>
+          <h1 className="flex items-center gap-2 text-xl font-bold text-zinc-950 dark:text-zinc-50">
+            აღმოაჩინე საბზონები
+            <InfoButton topic="zones" iconClassName="w-5 h-5" />
+          </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             გაწევრიანდი შენი ინტერესის მიხედვით
           </p>

@@ -1,5 +1,6 @@
 import { XPInfo } from '@/lib/xp';
 import { getLevelColor } from '@/lib/level-color';
+import InfoButton from '@/components/common/info-button';
 
 type Props = {
   xp: XPInfo;
@@ -14,6 +15,7 @@ export default function XPBar({ xp }: Props) {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
         {/* Level with max level tooltip */}
         <span className="text-xs font-semibold relative group/level cursor-help" style={{ color: levelColor }}>
           დონე {xp.level}{isMaxLevel && ' (მაქს)'}
@@ -22,6 +24,8 @@ export default function XPBar({ xp }: Props) {
             <span className="absolute -bottom-1 left-3 w-2 h-2 bg-zinc-900 dark:bg-zinc-800 transform rotate-45"></span>
           </span>
         </span>
+        <InfoButton topic="level" iconClassName="w-3.5 h-3.5" />
+        </div>
         <span className="text-xs text-zinc-500 dark:text-zinc-400">
           {isMaxLevel ? (
             `${xp.totalXP.toLocaleString()} გმ`

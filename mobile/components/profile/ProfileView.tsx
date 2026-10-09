@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { PostStatsBadge } from '@/components/ui/PostStatsBadge';
 import { getLevelColor } from '@/components/ui/LevelBadge';
+import { InfoButton } from '@/components/ui/InfoButton';
 import { StreakBadge } from '@/components/ui/StreakBadge';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { ShareButton } from '@/components/ui/ShareButton';
@@ -82,10 +83,13 @@ function XPBar({ info }: { info: XPInfo }) {
   return (
     <View className="w-full">
       <View className="flex-row justify-between items-center gap-2 mb-2">
-        <Text numberOfLines={1} className="text-xs font-semibold" style={{ color: getLevelColor(info.level) }}>
-          დონე {info.level}
-          {isMaxLevel ? ' (მაქს)' : ''}
-        </Text>
+        <View className="flex-row items-center gap-1.5" style={{ flexShrink: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} className="text-xs font-semibold" style={{ color: getLevelColor(info.level) }}>
+            დონე {info.level}
+            {isMaxLevel ? ' (მაქს)' : ''}
+          </Text>
+          <InfoButton topic="level" size={13} />
+        </View>
         <Text numberOfLines={1} className="text-xs text-zinc-500 dark:text-zinc-400">
           {isMaxLevel
             ? `${formatXp(info.totalXP)} გმ`

@@ -5,6 +5,7 @@ import { loadInventoryAction } from '@/actions/inventory';
 import { INVENTORY_DEFAULT_PAGE_SIZE } from '@/types/item';
 import type { InventoryItemType, InventoryPageType } from '@/types/item';
 import { BackpackIcon, XIcon } from '@/components/icons';
+import InfoButton from '@/components/common/info-button';
 import ItemSlot, { EmptySlot } from './item-slot';
 import ItemDetails from './item-details';
 
@@ -63,6 +64,7 @@ export default function InventoryBag({ initial, pageSize = INVENTORY_DEFAULT_PAG
         <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
           <BackpackIcon className="w-5 h-5" />
           <span className="text-sm font-semibold">ინვენტარი</span>
+          <InfoButton topic="inventory" />
           <span className="text-xs text-zinc-500 dark:text-zinc-400">{data.totalOwned} ნივთი</span>
         </div>
 

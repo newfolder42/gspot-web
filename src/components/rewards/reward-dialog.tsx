@@ -6,6 +6,7 @@ import { getSelectableRewardsForTarget } from '@/types/reward';
 import type { RewardGivingStatusType, RewardSummaryType, RewardTarget } from '@/types/reward';
 import RewardIcon from './reward-icons';
 import { XIcon } from '@/components/icons';
+import InfoButton from '@/components/common/info-button';
 
 type RewardDialogProps = {
   postId: number;
@@ -116,8 +117,9 @@ export default function RewardDialog({ postId, commentId, target, onClose, onGiv
         </div>
 
         {status && countsAgainstQuota && (
-          <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400">
-            დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}
+          <div className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
+            <span>დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}</span>
+            <InfoButton topic="reward-limits" iconClassName="w-3.5 h-3.5" />
           </div>
         )}
       </div>

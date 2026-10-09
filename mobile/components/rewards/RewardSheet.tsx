@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'rea
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
+import { InfoButton } from '@/components/ui/InfoButton';
 import { useTheme } from '@/constants/colors';
 import { useDialogScrollHeight } from '@/lib/layout';
 import { rewardsApi } from '@/lib/rewards';
@@ -127,10 +128,11 @@ export function RewardSheet({ postId, commentId, target, onClose, onGiven }: Pro
 
           {/* Remaining quota */}
           {status && countsAgainstQuota ? (
-            <View className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800">
+            <View className="px-4 py-2 border-t border-zinc-200 dark:border-zinc-800 flex-row items-center justify-center gap-1.5">
               <Text className="text-center text-xs text-zinc-500 dark:text-zinc-400">
                 დღეს დარჩენილია {status.remainingToday}/{status.dailyLimit}
               </Text>
+              <InfoButton topic="reward-limits" size={14} />
             </View>
           ) : null}
         </Pressable>
