@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardChatScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { LocationReviewPanel } from '@/components/LocationReviewPanel';
 import { CorrectLocationSheet } from '@/components/CorrectLocationSheet';
 import { EditPostSheet } from '@/components/EditPostSheet';
 import { ReportSheet } from '@/components/ReportSheet';
+import { PostOptionsDialog, type PostOption } from '@/components/PostOptionsDialog';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import { PostActionBar } from '@/components/PostActionBar';
@@ -334,6 +335,7 @@ export default function PostPageScreen() {
   const [showGuessMap, setShowGuessMap] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
   const [showDispute, setShowDispute] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -450,55 +452,6 @@ export default function PostPageScreen() {
     );
   };
 
-  const handlePostOptions = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['გაუქმება', 'რედაქტირება', 'პოსტის წაშლა'],
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: 2,
-        },
-        (index) => {
-          if (index === 1) setShowEdit(true);
-          if (index === 2) handleDeletePress();
-        }
-      );
-    } else {
-      Alert.alert('პოსტი', undefined, [
-        { text: 'გაუქმება', style: 'cancel' },
-        { text: 'რედაქტირება', onPress: () => setShowEdit(true) },
-        { text: 'წაშლა', style: 'destructive', onPress: handleDeletePress },
-      ]);
-    }
-  };
-
-  const handleReportOptions = () => {
-    // "გასაჩივრება" (contest the location) is only offered to a guesser whose guess can be
-    // contested; the server decides that and rides it along on the post detail.
-    const canDispute = query.data?.post.locationReview?.canReport === true;
-
-    if (Platform.OS === 'ios') {
-      const options = canDispute ? ['გაუქმება', 'გასაჩივრება', 'რეპორტი'] : ['გაუქმება', 'რეპორტი'];
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: options.length - 1,
-        },
-        (index) => {
-          if (options[index] === 'გასაჩივრება') setShowDispute(true);
-          if (options[index] === 'რეპორტი') setShowReport(true);
-        }
-      );
-    } else {
-      Alert.alert('პოსტი', undefined, [
-        { text: 'გაუქმება', style: 'cancel' },
-        ...(canDispute ? [{ text: 'გასაჩივრება', onPress: () => setShowDispute(true) }] : []),
-        { text: 'რეპორტი', style: 'destructive' as const, onPress: () => setShowReport(true) },
-      ]);
-    }
-  };
-
   if (!Number.isFinite(postId) || postId <= 0) {
     return (
       <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-8">
@@ -546,6 +499,21 @@ export default function PostPageScreen() {
   const paneWidth = isTwoPane ? availableWidth / 2 : availableWidth;
   const lonePhotoSide = isLandscape && questPhotos.length === 1 ? Math.min(photoMaxHeight, paneWidth) : null;
 
+  // The ⋯ menu. The owner edits or deletes; everyone else reports, and a guesser whose guess
+  // scored under 100 may also contest the location ("გასაჩივრება" — the server decides that
+  // and rides it along on the detail).
+  const postOptions: PostOption[] = isOwner
+    ? [
+        { key: 'edit', label: 'რედაქტირება', icon: 'edit-2', onPress: () => setShowEdit(true) },
+        { key: 'delete', label: 'პოსტის წაშლა', icon: 'trash-2', tone: 'danger', onPress: handleDeletePress },
+      ]
+    : [
+        ...(locationReview?.canReport
+          ? [{ key: 'dispute', label: 'გასაჩივრება', icon: 'flag' as const, tone: 'amber' as const, onPress: () => setShowDispute(true) }]
+          : []),
+        { key: 'report', label: 'რეპორტი', icon: 'alert-octagon', tone: 'danger', onPress: () => setShowReport(true) },
+      ];
+
   const refreshControl = (
     <RefreshControl
       refreshing={refreshing}
@@ -588,7 +556,7 @@ export default function PostPageScreen() {
           {/* Three-dots options menu – edit/delete for the owner, report otherwise */}
           {isOwner ? (
             <Pressable
-              onPress={handlePostOptions}
+              onPress={() => setShowOptions(true)}
               disabled={deletePostMutation.isPending}
               hitSlop={10}
               className="ml-2 p-1"
@@ -596,7 +564,7 @@ export default function PostPageScreen() {
               <Feather name="more-horizontal" size={18} color={theme.icon} />
             </Pressable>
           ) : user ? (
-            <Pressable onPress={handleReportOptions} hitSlop={10} className="ml-2 p-1">
+            <Pressable onPress={() => setShowOptions(true)} hitSlop={10} className="ml-2 p-1">
               <Feather name="more-horizontal" size={18} color={theme.icon} />
             </Pressable>
           ) : null}
@@ -681,13 +649,15 @@ export default function PostPageScreen() {
         rewards={rewards.rewards}
         userReward={rewards.userReward}
         guessCount={post.type === 'gps-photo' ? (post.guessCount ?? 0) : null}
-        userHasGuessed={post.userHasGuessed ?? false}
+        // the detail carries `alreadyGuessed`; the feed cards' `userHasGuessed` is not on it
+        userHasGuessed={alreadyGuessed || (post.userHasGuessed ?? false)}
         commentCount={commentsCount}
         className="px-4 pt-3"
       />
 
-      {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers,
-           "რუკაზე ნახვა" for the author once guesses exist. ── */}
+      {/* ── Guess actions – mirrors web: "რუკაზე" + "ადგილზე" for guessers who have not
+           guessed yet (afterwards the lit pin in the bar above says so), "რუკაზე ნახვა"
+           for the author once guesses exist. ── */}
       {canGuess ? (
         <View className="flex-row gap-2 px-4 pt-3">
           <Pressable
@@ -704,13 +674,6 @@ export default function PostPageScreen() {
             <Feather name="camera" size={16} color={theme.icon} />
             <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">ადგილზე</Text>
           </Pressable>
-        </View>
-      ) : alreadyGuessed ? (
-        <View className="px-4 pt-3">
-          <View className="h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex-row items-center justify-center gap-2">
-            <Feather name="check-circle" size={16} color="#14B8A6" />
-            <Text className="text-sm font-semibold text-teal-600 dark:text-teal-400">გამოცნობილია</Text>
-          </View>
         </View>
       ) : null}
 
@@ -897,6 +860,9 @@ export default function PostPageScreen() {
           onClose={() => setShowEdit(false)}
           onSaved={() => queryClient.invalidateQueries({ queryKey })}
         />
+      ) : null}
+      {showOptions ? (
+        <PostOptionsDialog options={postOptions} onClose={() => setShowOptions(false)} />
       ) : null}
       {showReport ? (
         <ReportSheet targetType="post" targetId={post.id} onClose={() => setShowReport(false)} />

@@ -6,6 +6,7 @@ import {
   Pressable,
   Text,
   View,
+  type NativeTouchEvent,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -25,13 +26,14 @@ import { ProgressiveImage } from './ProgressiveImage';
  *                    web uses `<ZoomableImage>`: renders the thumbnail and
  *                    opens the viewer on tap
  *
- * Gestures are built on PanResponder rather than react-native-gesture-handler:
- * the latter is only present transitively (an expo-router peer) at a version
- * Expo 56 does not bundle, so relying on it would mean a native rebuild.
+ * Gestures are built on PanResponder rather than react-native-gesture-handler,
+ * which is only present transitively and would mean a native rebuild.
  *
- * PinchZoomImage claims the touch responder, so keep it out of scrollable
- * containers — use ZoomableImage there and zoom inside the viewer instead —
- * unless it is `embedded`, which claims only pinches and zoomed-in drags.
+ * PinchZoomImage takes every touch that lands on it, so put no Pressable around
+ * it (a child can't win the responder back from an ancestor that holds it) and
+ * pass the tap as `onTap` instead. Inside a scrolling list a swipe at rest is
+ * still the list's; `onLockScroll` tells it to stand still while the photo is
+ * pinched or zoomed in.
  */
 
 /** Matches the web's ZOOM_SCALE, so a double-tap lands where a click would. */
@@ -43,7 +45,17 @@ const TAP_SLOP = 10;
 
 type Size = { width: number; height: number };
 type Point = { x: number; y: number };
-type ResizeMode = 'contain' | 'cover';
+type Touches = readonly NativeTouchEvent[];
+
+/** Fixed for the lifetime of the image — the controller captures them once. */
+type ZoomHandlers = {
+  /** Fires whenever the photo is zoomed in, so the caller can swap in a sharper rendition. */
+  onZoom?: () => void;
+  /** A plain tap while not zoomed in. Without it, a double-tap zooms in. */
+  onTap?: () => void;
+  /** True while the photo is pinched or zoomed in, so a list around it should stop scrolling. */
+  onLockScroll?: (locked: boolean) => void;
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
@@ -51,11 +63,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
  * All gesture bookkeeping lives in one closure created once per mounted image:
  * every value here is written from touch handlers, never from rendering.
  */
-function createZoomController(
-  resizeMode: ResizeMode,
-  embedded: boolean,
-  onZoom?: () => void
-) {
+function createZoomController({ onZoom, onTap, onLockScroll }: ZoomHandlers) {
   const animated = {
     scale: new Animated.Value(MIN_SCALE),
     translateX: new Animated.Value(0),
@@ -70,10 +78,13 @@ function createZoomController(
 
   // Mirror of the animated values, since Animated.Value has no sync getter.
   let current = { scale: MIN_SCALE, x: 0, y: 0 };
+  /** Where a two-finger gesture started, so it can be measured against. */
   let pinch: { dist: number; focal: Point; scale: number; x: number; y: number } | null = null;
-  let pan: { x: number; y: number; tx: number; ty: number } | null = null;
+  /** The previous position of a single finger dragging a zoomed photo. */
+  let lastTouch: Point | null = null;
   let moved = false;
   let lastTap = 0;
+  let locked = false;
 
   /** Touch position relative to the centre of the view, in screen units. */
   const toLocal = (pageX: number, pageY: number): Point => ({
@@ -81,19 +92,22 @@ function createZoomController(
     y: pageY - origin.y - layout.height / 2,
   });
 
+  /** Distance and midpoint of the first two fingers. */
+  const readFingers = ([a, b]: Touches) => ({
+    dist: Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY) || 1,
+    focal: toLocal((a.pageX + b.pageX) / 2, (a.pageY + b.pageY) / 2),
+  });
+
   /**
-   * How far the photo may be dragged at a given scale. The image is laid out by
-   * resizeMode, so letterboxed margins must not become draggable slack.
+   * How far the photo may be dragged at a given scale. The image is letterboxed
+   * (resizeMode contain), so the margins must not become draggable slack.
    */
   const boundsFor = (scale: number): Point => {
     const { width: W, height: H } = layout;
     let w = W;
     let h = H;
     if (natural && natural.width > 0 && natural.height > 0 && W > 0 && H > 0) {
-      const fit =
-        resizeMode === 'cover'
-          ? Math.max(W / natural.width, H / natural.height)
-          : Math.min(W / natural.width, H / natural.height);
+      const fit = Math.min(W / natural.width, H / natural.height);
       w = natural.width * fit;
       h = natural.height * fit;
     }
@@ -103,129 +117,124 @@ function createZoomController(
     };
   };
 
-  const commit = (scale: number, x: number, y: number, animate: boolean) => {
+  /** A list around the photo must not scroll under a pinch or a zoomed-in drag. */
+  const syncLock = () => {
+    const next = pinch !== null || current.scale > MIN_SCALE;
+    if (next === locked) return;
+    locked = next;
+    onLockScroll?.(next);
+  };
+
+  const commit = (scale: number, x: number, y: number) => {
     const bounds = boundsFor(scale);
-    const cx = clamp(x, -bounds.x, bounds.x);
-    const cy = clamp(y, -bounds.y, bounds.y);
-    current = { scale, x: cx, y: cy };
+    current = {
+      scale,
+      x: clamp(x, -bounds.x, bounds.x),
+      y: clamp(y, -bounds.y, bounds.y),
+    };
+    animated.scale.setValue(current.scale);
+    animated.translateX.setValue(current.x);
+    animated.translateY.setValue(current.y);
     if (scale > MIN_SCALE) onZoom?.();
+    syncLock();
+  };
 
-    if (!animate) {
-      animated.scale.setValue(scale);
-      animated.translateX.setValue(cx);
-      animated.translateY.setValue(cy);
-      return;
-    }
+  const beginPinch = (touches: Touches) => {
+    pinch = { ...readFingers(touches), scale: current.scale, x: current.x, y: current.y };
+    lastTouch = null;
+    // Two fingers are never a tap, even if they lift without moving.
+    moved = true;
+    // Locked from the second finger down, before the first one's drift can
+    // tip the list into scrolling.
+    syncLock();
+  };
 
-    Animated.parallel([
-      Animated.timing(animated.scale, { toValue: scale, duration: 180, useNativeDriver: false }),
-      Animated.timing(animated.translateX, { toValue: cx, duration: 180, useNativeDriver: false }),
-      Animated.timing(animated.translateY, { toValue: cy, duration: 180, useNativeDriver: false }),
-    ]).start();
+  const endGesture = () => {
+    pinch = null;
+    lastTouch = null;
+    syncLock();
   };
 
   const panResponder = PanResponder.create({
-    // Embedded in a scrolling list, a single finger at rest belongs to the list
-    // (swipes) and to whatever sits under the photo (taps); only a pinch, or a
-    // photo that is already zoomed and so needs dragging, takes the touch.
-    onStartShouldSetPanResponder: () => !embedded || current.scale > MIN_SCALE,
-    onStartShouldSetPanResponderCapture: (e) => e.nativeEvent.touches.length >= 2,
-    onMoveShouldSetPanResponder: (e) =>
-      e.nativeEvent.touches.length >= 2 || current.scale > MIN_SCALE,
-    onMoveShouldSetPanResponderCapture: (e) => e.nativeEvent.touches.length >= 2,
+    onStartShouldSetPanResponder: () => true,
     // Nothing else should take over mid-pinch; this view owns its own area.
     onPanResponderTerminationRequest: () => false,
+    // At rest a list's native scroll must stay free to take a swipe; zoomed in,
+    // the touch is a drag of the photo.
+    onShouldBlockNativeResponder: () => current.scale > MIN_SCALE,
 
     onPanResponderGrant: () => {
       moved = false;
       pinch = null;
-      pan = null;
-      // A double-tap animation may still be in flight; freeze it where it is so
-      // the next gesture starts from what is on screen rather than the target.
-      animated.scale.stopAnimation((value) => {
-        current.scale = value;
-      });
-      animated.translateX.stopAnimation((value) => {
-        current.x = value;
-      });
-      animated.translateY.stopAnimation((value) => {
-        current.y = value;
-      });
+      lastTouch = null;
     },
 
-    onPanResponderMove: (e) => {
-      const touches = e.nativeEvent.touches;
+    onPanResponderStart: (e) => {
+      if (e.nativeEvent.touches.length >= 2) beginPinch(e.nativeEvent.touches);
+    },
+
+    onPanResponderMove: (e, gesture) => {
+      const { touches } = e.nativeEvent;
+      if (Math.hypot(gesture.dx, gesture.dy) > TAP_SLOP) moved = true;
 
       if (touches.length >= 2) {
-        pan = null;
-        const [a, b] = touches;
-        const dist = Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
-        const focal = toLocal((a.pageX + b.pageX) / 2, (a.pageY + b.pageY) / 2);
-
         if (!pinch) {
-          pinch = { dist: dist || 1, focal, scale: current.scale, x: current.x, y: current.y };
+          beginPinch(touches);
           return;
         }
-
+        const { dist, focal } = readFingers(touches);
         const next = clamp((pinch.scale * dist) / pinch.dist, MIN_SCALE, MAX_SCALE);
         const ratio = next / pinch.scale;
         // Whatever sat under the fingers stays under them as they spread and drift.
         commit(
           next,
           focal.x - ratio * (pinch.focal.x - pinch.x),
-          focal.y - ratio * (pinch.focal.y - pinch.y),
-          false
+          focal.y - ratio * (pinch.focal.y - pinch.y)
         );
-        moved = true;
         return;
       }
 
       pinch = null;
-      if (current.scale <= MIN_SCALE) return;
-
       const touch = touches[0];
-      if (!touch) return;
-      if (!pan) {
-        pan = { x: touch.pageX, y: touch.pageY, tx: current.x, ty: current.y };
-        return;
+      if (!touch || current.scale <= MIN_SCALE) return;
+      if (lastTouch) {
+        commit(
+          current.scale,
+          current.x + touch.pageX - lastTouch.x,
+          current.y + touch.pageY - lastTouch.y
+        );
       }
-      const dx = touch.pageX - pan.x;
-      const dy = touch.pageY - pan.y;
-      if (Math.abs(dx) > TAP_SLOP || Math.abs(dy) > TAP_SLOP) moved = true;
-      commit(current.scale, pan.tx + dx, pan.ty + dy, false);
+      lastTouch = { x: touch.pageX, y: touch.pageY };
     },
 
     onPanResponderRelease: (e) => {
       const wasTap = !moved;
-      pinch = null;
-      pan = null;
+      endGesture();
       if (!wasTap) return;
+
+      // A tap at rest belongs to the caller; a double-tap only undoes a zoom then.
+      if (onTap && current.scale <= MIN_SCALE) {
+        onTap();
+        return;
+      }
 
       // The event's own clock, so nothing impure is called from a handler the
       // React Compiler cannot tell apart from render.
       const now = e.nativeEvent.timestamp;
-      if (now - lastTap < DOUBLE_TAP_MS) {
-        lastTap = 0;
-        if (current.scale > MIN_SCALE) {
-          commit(MIN_SCALE, 0, 0, true);
-        } else {
-          const focal = toLocal(e.nativeEvent.pageX, e.nativeEvent.pageY);
-          commit(
-            DOUBLE_TAP_SCALE,
-            focal.x * (1 - DOUBLE_TAP_SCALE),
-            focal.y * (1 - DOUBLE_TAP_SCALE),
-            true
-          );
-        }
-      } else {
+      if (now - lastTap >= DOUBLE_TAP_MS) {
         lastTap = now;
+        return;
+      }
+      lastTap = 0;
+      if (current.scale > MIN_SCALE) {
+        commit(MIN_SCALE, 0, 0);
+      } else {
+        const focal = toLocal(e.nativeEvent.pageX, e.nativeEvent.pageY);
+        commit(DOUBLE_TAP_SCALE, focal.x * (1 - DOUBLE_TAP_SCALE), focal.y * (1 - DOUBLE_TAP_SCALE));
       }
     },
 
-    onPanResponderTerminate: () => {
-      pinch = null;
-      pan = null;
-    },
+    onPanResponderTerminate: endGesture,
   });
 
   return {
@@ -234,13 +243,13 @@ function createZoomController(
     setLayout: (size: Size) => {
       const resized =
         layout.width > 0 && (layout.width !== size.width || layout.height !== size.height);
-      layout = { width: size.width, height: size.height };
+      layout = size;
       // A rotation re-shapes the view under a zoom and pan measured in the old
       // one, which would leave the photo off-centre or past its edges; start over.
       if (resized) {
         pinch = null;
-        pan = null;
-        commit(MIN_SCALE, 0, 0, false);
+        lastTouch = null;
+        commit(MIN_SCALE, 0, 0);
       }
     },
     setOrigin: (point: Point) => {
@@ -256,22 +265,16 @@ export function PinchZoomImage({
   uri,
   placeholderUri,
   style,
-  /** Fixed for the lifetime of the image — the controller captures it. */
-  resizeMode = 'contain',
-  /** Fixed too. For use inside a scrolling list — see createZoomController. */
-  embedded = false,
   onZoom,
-}: {
+  onTap,
+  onLockScroll,
+}: ZoomHandlers & {
   uri: string;
   /** Smaller rendition to show while `uri` downloads — see ProgressiveImage. */
   placeholderUri?: string | null;
   style?: StyleProp<ViewStyle>;
-  resizeMode?: ResizeMode;
-  embedded?: boolean;
-  /** Fires whenever the photo is zoomed in, so the caller can swap in a sharper rendition. Fixed like `embedded`. */
-  onZoom?: () => void;
 }) {
-  const [zoom] = useState(() => createZoomController(resizeMode, embedded, onZoom));
+  const [zoom] = useState(() => createZoomController({ onZoom, onTap, onLockScroll }));
   const containerRef = useRef<View>(null);
 
   return (
@@ -280,12 +283,11 @@ export function PinchZoomImage({
       // Android drops layout-only views, which would break measureInWindow.
       collapsable={false}
       style={[{ overflow: 'hidden' }, style]}
-      onLayout={(e) => {
-        zoom.setLayout(e.nativeEvent.layout);
-        // Touches arrive in window coordinates, so the gestures need to know
-        // where this view sits. It only moves when it re-lays out.
-        containerRef.current?.measureInWindow((x, y) => zoom.setOrigin({ x, y }));
-      }}
+      onLayout={(e) => zoom.setLayout(e.nativeEvent.layout)}
+      // Touches arrive in window coordinates, so the gestures need to know where
+      // this view sits right now — inside a scrolling list that is not where it
+      // was laid out.
+      onTouchStart={() => containerRef.current?.measureInWindow((x, y) => zoom.setOrigin({ x, y }))}
       {...zoom.panResponder.panHandlers}
     >
       <Animated.View
@@ -302,7 +304,7 @@ export function PinchZoomImage({
           uri={uri}
           placeholderUri={placeholderUri}
           style={{ width: '100%', height: '100%' }}
-          resizeMode={resizeMode}
+          resizeMode="contain"
           // The renditions share an aspect ratio, so the placeholder's size is
           // already the right answer — pan bounds work before the master lands.
           onSize={zoom.setNatural}
@@ -327,14 +329,9 @@ export function ImageZoomViewer({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible animationType="fade" presentationStyle="fullScreen" onRequestClose={onClose}>
+    <Modal visible animationType="fade" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: '#000' }}>
-        <PinchZoomImage
-          uri={uri}
-          placeholderUri={placeholderUri}
-          style={{ flex: 1 }}
-          resizeMode="contain"
-        />
+        <PinchZoomImage uri={uri} placeholderUri={placeholderUri} style={{ flex: 1 }} />
 
         <View
           pointerEvents="box-none"
@@ -389,7 +386,7 @@ export function ZoomableImage({
   title?: string | null;
   className?: string;
   style?: StyleProp<ViewStyle>;
-  resizeMode?: ResizeMode;
+  resizeMode?: 'contain' | 'cover';
   /** Pixel size of the inline photo once it decodes — see ProgressiveImage. */
   onSize?: (size: Size) => void;
   /** Overlays drawn on top of the thumbnail; give them pointerEvents="none". */

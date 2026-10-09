@@ -209,7 +209,6 @@ export function CorrectLocationSheet({ post, onClose, onCorrected, rules = [] }:
                 uri={post.image}
                 placeholderUri={post.imageVariants?.feed}
                 style={{ flex: 1 }}
-                resizeMode="contain"
               />
             </View>
           ) : null}

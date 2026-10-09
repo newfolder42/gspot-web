@@ -242,7 +242,6 @@ export function NewGuess({ post, onClose, onSubmitted, onAlreadyGuessed }: Props
                 uri={post.image}
                 placeholderUri={post.imageVariants?.feed}
                 style={{ flex: 1 }}
-                resizeMode="contain"
               />
               <Pressable
                 onPress={() => setImageMode('full')}
@@ -391,7 +390,6 @@ export function NewGuess({ post, onClose, onSubmitted, onAlreadyGuessed }: Props
                   uri={post.image}
                   placeholderUri={post.imageVariants?.feed}
                   style={{ flex: 1 }}
-                  resizeMode="contain"
                 />
                 <Pressable
                   onPress={() => setImageMode('band')}

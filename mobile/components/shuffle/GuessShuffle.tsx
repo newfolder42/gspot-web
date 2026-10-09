@@ -78,13 +78,15 @@ type CardProps = {
   index: number;
   height: number;
   onGuess: (post: MobilePostType) => void;
+  /** True while the photo is pinched or zoomed in and so must not scroll the deck. */
+  onLockScroll: (locked: boolean) => void;
 };
 
 /**
  * Memoised so the active-card bookkeeping re-renders the screen without
  * repainting every photo in the window mid-scroll.
  */
-const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: CardProps) {
+const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess, onLockScroll }: CardProps) {
   const router = useRouter();
   // The card runs edge to edge, so in landscape the overlays clear the notch /
   // navigation bar at the right themselves (the tab rail already covers the left).
@@ -96,17 +98,17 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess }: 
 
   return (
     <View style={{ height }} className="bg-black">
-      {/* The photo itself is a guess button — the whole card is the target. Pinching it zooms instead. */}
-      <Pressable className="flex-1" onPress={() => onGuess(item)}>
-        <PinchZoomImage
-          uri={sharp ? item.image : feedUri}
-          placeholderUri={sharp ? feedUri : null}
-          style={{ flex: 1 }}
-          resizeMode="contain"
-          embedded
-          onZoom={() => setSharp(true)}
-        />
-      </Pressable>
+      {/* The photo itself is a guess button — the whole card is the target. Pinching it zooms instead.
+          The tap is the image's own (not a Pressable around it): a Pressable would hold the touch
+          and the pinch could never take it over. */}
+      <PinchZoomImage
+        uri={sharp ? item.image : feedUri}
+        placeholderUri={sharp ? feedUri : null}
+        style={{ flex: 1 }}
+        onZoom={() => setSharp(true)}
+        onTap={() => onGuess(item)}
+        onLockScroll={onLockScroll}
+      />
 
       {/* Who and where, over the top of the photo; empty areas pass taps through to the guess. */}
       <View
@@ -166,6 +168,8 @@ export function GuessShuffle() {
   const [cardHeight, setCardHeight] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [guessPost, setGuessPost] = useState<MobilePostType | null>(null);
+  // Set while the photo on screen is pinched or zoomed in, so the deck doesn't scroll under the fingers.
+  const [scrollLocked, setScrollLocked] = useState(false);
 
   const cardHeightRef = useRef(0);
   // Rotating re-measures every card under a scroll offset that is still counted in
@@ -232,6 +236,8 @@ export function GuessShuffle() {
     activeIndexRef.current = 0;
     postsRef.current = [];
     setActiveIndex(0);
+    // The zoomed card that held the lock is about to unmount.
+    setScrollLocked(false);
     queryClient.resetQueries({ queryKey: SHUFFLE_QUERY_KEY });
   }, [queryClient]);
 
@@ -396,7 +402,13 @@ export function GuessShuffle() {
 
   const renderCard = useCallback(
     ({ item, index }: { item: MobilePostType; index: number }) => (
-      <ShuffleCard item={item} index={index} height={cardHeight} onGuess={setGuessPost} />
+      <ShuffleCard
+        item={item}
+        index={index}
+        height={cardHeight}
+        onGuess={setGuessPost}
+        onLockScroll={setScrollLocked}
+      />
     ),
     [cardHeight],
   );
@@ -437,6 +449,7 @@ export function GuessShuffle() {
           decelerationRate="fast"
           disableIntervalMomentum
           showsVerticalScrollIndicator={false}
+          scrollEnabled={!scrollLocked}
           windowSize={3}
           initialNumToRender={2}
           maxToRenderPerBatch={2}
