@@ -32,15 +32,6 @@ import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
 import { formatDistance } from '@/types/hide-and-seek';
 import { useLayout } from '@/lib/layout';
 
-/** Matches web DEPTH_COLORS cycle */
-const DEPTH_BORDER_COLORS = [
-  '#14B8A6', // teal-500
-  '#60A5FA', // blue-400
-  '#A78BFA', // violet-400
-  '#F87171', // rose-400
-  '#FBBF24', // amber-400
-];
-
 function formatTimeAgo(timestamp: string): string {
   const date = new Date(timestamp);
   const diffMs = Date.now() - date.getTime();
@@ -100,6 +91,7 @@ function CommentItem({
   depth = 0,
   postId,
   isHideAndSeekHost = false,
+  highlightId = null,
   onReply,
 }: {
   item: PostCommentType;
@@ -107,6 +99,8 @@ function CommentItem({
   postId: number;
   /** The viewer hosts this game — only they can give ცხელა/თბილა/ცივა on a check. */
   isHideAndSeekHost?: boolean;
+  /** The comment a link points at (?commentId=); its thread line is brand-coloured. */
+  highlightId?: number | null;
   onReply: (comment: PostCommentType) => void;
 }) {
   const router = useRouter();
@@ -121,7 +115,7 @@ function CommentItem({
     queryClient.setQueryData(['post-detail', postId], (old: any) =>
       old ? { ...old, comments: patchCommentInTree(old.comments, item.id, patch) } : old
     );
-  const borderColor = DEPTH_BORDER_COLORS[depth % DEPTH_BORDER_COLORS.length];
+  const isTarget = highlightId === item.id;
   const initials = getInitials(item.author) || (item.author || '?').slice(0, 2).toUpperCase();
 
   const isGuess = item.type === 'gps-guess-comment' || item.type === 'gps-photo-guess-comment';
@@ -144,9 +138,10 @@ function CommentItem({
 
   // Mirrors web `pl-3 border-l-2`: nesting alone supplies the indent, so each
   // level adds just 12px + the 2px line instead of a growing marginLeft.
-  const wrapper = depth > 0
-    ? { borderLeftWidth: 2, borderLeftColor: borderColor, paddingLeft: 12 }
-    : {};
+  // A top-level comment has no line; when it is the linked one it gets one in the
+  // screen gutter (negative margin cancels the 14px) so the text does not shift.
+  const line = { borderLeftWidth: 2, borderLeftColor: isTarget ? Colors.brand : theme.borderStrong, paddingLeft: 12 };
+  const wrapper = depth > 0 ? line : isTarget ? { ...line, marginLeft: -14 } : {};
 
   const openAuthor = () =>
     router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } });
@@ -310,7 +305,7 @@ function CommentItem({
       {!collapsed && item.children.length > 0 ? (
         <View className="mt-1.5">
           {item.children.map((child) => (
-            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={onReply} />
+            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} highlightId={highlightId} onReply={onReply} />
           ))}
         </View>
       ) : null}
@@ -321,8 +316,9 @@ function CommentItem({
 
 export default function PostPageScreen() {
   const theme = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, commentId } = useLocalSearchParams<{ id: string; commentId?: string }>();
   const postId = Number(id);
+  const highlightId = commentId && /^\d+$/.test(commentId) ? Number(commentId) : null;
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuth();
@@ -726,7 +722,7 @@ export default function PostPageScreen() {
           <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
         ) : (
           comments.map((comment) => (
-            <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} onReply={handleReply} />
+            <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} highlightId={highlightId} onReply={handleReply} />
           ))
         )}
       </View>

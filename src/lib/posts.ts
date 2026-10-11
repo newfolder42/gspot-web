@@ -1,6 +1,6 @@
 "use server";
 
-import { query } from '@/lib/db';
+import { query, withTransaction } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { canUserAccessPost } from './post-access';
 import { isInGeorgia } from './geo';
@@ -1149,35 +1149,38 @@ export async function createQuestCompletionPost({
 
     const title = ``;
 
-    const postRes = await query(
-      `INSERT INTO posts (user_id, type, title, status, zone_id)
-       VALUES ($1, 'quest-completion', $2, 'published', $3)
-       RETURNING id`,
-      [userId, title, zoneId]
-    );
-    if ((postRes.rowCount ?? 0) === 0) {
-      return null;
-    }
-    const postId = postRes.rows[0].id;
-
-    await query(
-      `INSERT INTO post_quest_completions (post_id, quest_id) VALUES ($1, $2)`,
-      [postId, questId]
-    );
-
     const photosWithTitles = objectives.filter((o): o is { objectiveTitle: string | null; photoUrl: string; photoVariants: PostImageVariants | null } => !!o.photoUrl);
-    for (let i = 0; i < photosWithTitles.length; i++) {
-      const { photoUrl, objectiveTitle, photoVariants } = photosWithTitles[i];
-      const contentRes = await query(
-        `INSERT INTO user_content (user_id, type, public_url, details) VALUES ($1, 'quest-photo', $2, $3::jsonb) RETURNING id`,
-        [userId, photoUrl, JSON.stringify({ objectiveTitle, variants: photoVariants })]
+
+    // One transaction: the post, its quest link and its photos land together or not at
+    // all, so a failing insert can't leave behind a published post nothing can render.
+    const postId = await withTransaction(async (client) => {
+      const postRes = await client.query(
+        `INSERT INTO posts (user_id, type, title, status, zone_id)
+         VALUES ($1, 'quest-completion', $2, 'published', $3)
+         RETURNING id`,
+        [userId, title, zoneId]
       );
-      const contentId = contentRes.rows[0].id;
-      await query(
-        `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
-        [postId, contentId, i]
+      const id = postRes.rows[0].id;
+
+      await client.query(
+        `INSERT INTO post_quest_completions (post_id, quest_id) VALUES ($1, $2)`,
+        [id, questId]
       );
-    }
+
+      for (let i = 0; i < photosWithTitles.length; i++) {
+        const { photoUrl, objectiveTitle, photoVariants } = photosWithTitles[i];
+        const contentRes = await client.query(
+          `INSERT INTO user_content (user_id, type, public_url, details) VALUES ($1, 'quest-photo', $2, $3::jsonb) RETURNING id`,
+          [userId, photoUrl, JSON.stringify({ objectiveTitle, variants: photoVariants })]
+        );
+        await client.query(
+          `INSERT INTO post_content (post_id, content_id, sort) VALUES ($1, $2, $3)`,
+          [id, contentRes.rows[0].id, i]
+        );
+      }
+
+      return id;
+    });
 
     await eventBus.publish('post', 'published', {
       postId: +postId,

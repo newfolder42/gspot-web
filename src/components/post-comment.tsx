@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import type { PostCommentType } from '@/types/post-comment';
 import TimePassed from '@/components/common/time-passed';
 import { addCommentAction } from '@/actions/comments';
@@ -25,15 +26,15 @@ type PostCommentProps = {
   onCommentAdded: (comment: PostCommentType) => void;
 };
 
-const DEPTH_COLORS = [
-  'border-teal-500',
-  'border-blue-400',
-  'border-violet-400',
-  'border-rose-400',
-  'border-amber-400',
-];
-
 const MAX_EXPANDED_DEPTH = 5;
+
+/** The thread line is neutral; only the comment a link points at (?commentId=) gets the brand colour. */
+const LINE_COLOR = 'border-zinc-300 dark:border-zinc-700';
+const LINE_COLOR_TARGET = 'border-teal-500';
+
+function containsComment(comment: PostCommentType, id: number): boolean {
+  return comment.id === id || comment.children.some((child) => containsComment(child, id));
+}
 
 export default function PostComment({
   comment,
@@ -47,16 +48,29 @@ export default function PostComment({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyBody, setReplyBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const rawTargetId = useSearchParams().get('commentId');
+  const targetId = rawTargetId && /^\d+$/.test(rawTargetId) ? Number(rawTargetId) : null;
+  const isTarget = targetId === comment.id;
   const [collapsed, setCollapsed] = useState(false);
-  const [showReplies, setShowReplies] = useState(depth < MAX_EXPANDED_DEPTH);
+  // deep replies start folded; fold open the ones on the way down to the linked comment
+  const [showReplies, setShowReplies] = useState(
+    depth < MAX_EXPANDED_DEPTH || (targetId !== null && comment.children.some((child) => containsComment(child, targetId)))
+  );
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (showReplyForm) {
       textareaRef.current?.focus();
     }
   }, [showReplyForm]);
+
+  useEffect(() => {
+    if (isTarget) {
+      headerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isTarget]);
 
   const handleReply = async () => {
     const trimmed = replyBody.trim();
@@ -84,7 +98,14 @@ export default function PostComment({
   const checkPhotoHidden = isCheck && !comment.metadata?.imageUrl;
   const isPostAuthor = comment.author === postAuthorAlias;
   const hasChildren = comment.children.length > 0;
-  const borderColor = DEPTH_COLORS[depth % DEPTH_COLORS.length];
+  const lineColor = isTarget ? LINE_COLOR_TARGET : LINE_COLOR;
+  // A top-level comment has no thread line; when it is the linked one it gets one in the
+  // page gutter (negative margin cancels the padding) so the text does not shift.
+  const wrapperClass = depth > 0
+    ? `pl-3 border-l-2 ${lineColor} ${collapsed ? `rounded-b-lg` : ''}`
+    : isTarget
+      ? `-ml-3.5 pl-3 border-l-2 ${lineColor}`
+      : '';
   const initials = getInitials(comment.author);
   const collapsedPreview = isDeleted
     ? 'კომენტარი წაიშალა'
@@ -100,10 +121,10 @@ export default function PostComment({
       : comment.body.replace(/\s+/g, ' ').trim() || 'კომენტარი';
 
   return (
-    <div className={depth > 0 ? `pl-3 border-l-2 ${borderColor} ${collapsed ? `rounded-b-lg` : ''}` : ''}>
+    <div className={wrapperClass}>
       <div className="py-2">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-1">
+        <div ref={headerRef} className="flex items-center gap-2 mb-1">
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}

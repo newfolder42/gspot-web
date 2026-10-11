@@ -48,7 +48,7 @@ export default function GuessIndexPanel({ guesses }: { guesses: GuessLike[] }) {
           <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
             <Stat label="გამოცნობები" value={stats.total.toLocaleString('ka-GE')} />
             <Stat
-              label="საუკეთესო მანძილი"
+              label="ყველაზე ზუსტი მანძილი"
               value={stats.bestDistance === null ? '—' : formatGuessDistance(stats.bestDistance)}
             />
             <Stat

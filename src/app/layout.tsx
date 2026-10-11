@@ -28,15 +28,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "G'Spot | გამოიცანი სადაა გადაღებული!",
   description:
-    "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
+    "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცოდნაში. შემოუერთდი gspot.ge-ს!",
   metadataBase: new URL("https://gspot.ge"),
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Gspot | გამოიცანი სადაა გადაღებული!",
+    title: "G'Spot | გამოიცანი სადაა გადაღებული!",
     description:
-      "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცონაში. შემოუერთდი gspot.ge-ს!",
+      "გამოიცანი სადაა გადაღებული ფოტო-სურათები საქართველოდან. გამოავლინე შენი უნარჩვევი საქართველოს გეოგრაფიული ლოკაციების ცოდნაში. შემოუერთდი gspot.ge-ს!",
     url: "https://gspot.ge",
     siteName: "G'Spot.ge",
     images: [
@@ -76,7 +76,7 @@ export default async function RootLayout({
   const account = user ? await getOwnAccount(user.userId) : null;
 
   return (
-    <html lang="en">
+    <html lang="ka">
       <body
         className={`${notoGeorgian.variable} ${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >

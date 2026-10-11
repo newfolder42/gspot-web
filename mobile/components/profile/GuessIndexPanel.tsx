@@ -60,7 +60,7 @@ export function GuessIndexPanel({ guesses }: { guesses: GuessLike[] }) {
           <View className="mt-3 flex-row flex-wrap gap-y-2">
             <Stat label="გამოცნობები" value={formatGuessCount(stats.total)} />
             <Stat
-              label="საუკეთესო მანძილი"
+              label="ყველაზე ზუსტი მანძილი"
               value={stats.bestDistance === null ? '—' : formatGuessDistance(stats.bestDistance)}
             />
             <Stat
