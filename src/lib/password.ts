@@ -36,6 +36,11 @@ export async function changePassword(
   }
 }
 
+export async function userExistsByEmail(email: string): Promise<boolean> {
+  const result = await query('SELECT 1 FROM users WHERE LOWER(email) = $1', [email.toLowerCase()]);
+  return result.rows.length > 0;
+}
+
 export async function resetPassword(email: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
   try {
     const normalizedEmail = email.toLowerCase();

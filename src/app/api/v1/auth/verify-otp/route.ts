@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/otp';
-import { completePendingRegistration } from '@/lib/auth';
+import { verifyAndCompleteRegistration } from '@/lib/auth';
+import { userExistsByEmail } from '@/lib/password';
 import { logerror } from '@/lib/logger';
 
 const VerifyOTPSchema = z.object({
@@ -21,18 +22,24 @@ export async function POST(req: NextRequest) {
 
     const { email, code, type } = parsed.data;
 
-    const otpResult = await verifyOTP(email, code);
+    if (type === 'registration') {
+      const result = await verifyAndCompleteRegistration(email, code);
+      if (!result.success) {
+        const status = result.error === 'EXPIRED' ? 410 : 400;
+        return NextResponse.json({ error: result.error }, { status });
+      }
+      return NextResponse.json({ success: true });
+    }
 
+    // Password-reset codes only exist for existing users; don't spend a signup code here.
+    if (!(await userExistsByEmail(email))) {
+      return NextResponse.json({ error: 'INVALID_CODE' }, { status: 400 });
+    }
+
+    const otpResult = await verifyOTP(email, code);
     if (!otpResult.success) {
       const status = otpResult.error === 'EXPIRED' ? 410 : 400;
       return NextResponse.json({ error: otpResult.error }, { status });
-    }
-
-    if (type === 'registration') {
-      const result = await completePendingRegistration(email);
-      if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 400 });
-      }
     }
 
     return NextResponse.json({ success: true });

@@ -8,11 +8,11 @@
 import {
   signup as signupUser,
   userAliasTaken as isUserAliasTaken,
-  completePendingRegistration,
+  verifyAndCompleteRegistration,
   initiatePasswordReset as startPasswordReset,
 } from "@/lib/auth";
 import { verifyOTP, resendOTP } from "@/lib/otp";
-import { resetPassword } from "@/lib/password";
+import { resetPassword, userExistsByEmail } from "@/lib/password";
 import type { UserToRegister } from "@/types/user";
 import type { OTPVerificationResult } from "@/types/otp";
 
@@ -47,13 +47,12 @@ export async function verifyRegistrationCode(
 ): Promise<{ success: boolean; error?: OTPError | 'REGISTRATION_FAILED' }> {
   if (!isString(email) || !isString(code)) return { success: false, error: 'INVALID_CODE' };
 
-  const otpResult = await verifyOTP(email, code);
-  if (!otpResult.success) return { success: false, error: otpResult.error };
+  const result = await verifyAndCompleteRegistration(email, code);
+  if (result.success) return { success: true };
 
-  const result = await completePendingRegistration(email);
-  if (!result.success) return { success: false, error: 'REGISTRATION_FAILED' };
-
-  return { success: true };
+  const error = result.error;
+  if (!error || error === 'NO_PENDING_REGISTRATION') return { success: false, error: 'REGISTRATION_FAILED' };
+  return { success: false, error };
 }
 
 export async function resetPasswordWithCode(
@@ -69,6 +68,9 @@ export async function resetPasswordWithCode(
   // shouldn't cost the user their code.
   if (newPassword.length < 6) return { success: false, error: 'INVALID_PASSWORD' };
   if (newPassword.length > 128) return { success: false, error: 'INVALID_INPUT' };
+
+  // A signup code for an email without a user must not be spendable here.
+  if (!(await userExistsByEmail(email))) return { success: false, error: 'INVALID_CODE' };
 
   const otpResult = await verifyOTP(email, code);
   if (!otpResult.success) return { success: false, error: otpResult.error };

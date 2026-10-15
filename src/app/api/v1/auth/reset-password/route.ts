@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/otp';
-import { resetPassword } from '@/lib/password';
+import { resetPassword, userExistsByEmail } from '@/lib/password';
 import { logerror } from '@/lib/logger';
 
 const ResetPasswordSchema = z.object({
@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, code, newPassword } = parsed.data;
+
+    // A signup code for an email without a user must not be spendable here.
+    if (!(await userExistsByEmail(email))) {
+      return NextResponse.json({ error: 'INVALID_CODE' }, { status: 400 });
+    }
 
     const otpResult = await verifyOTP(email, code);
     if (!otpResult.success) {

@@ -3,6 +3,8 @@ import { logerror } from "./logger";
 import { sendOTPEmail } from "./email";
 import type { OTPVerificationResult } from "@/types/otp";
 
+export type QueryExecutor = (text: string, params?: any[]) => Promise<{ rows: any[] }>;
+
 const OTP_EXPIRY_MINUTES = 10;
 const MAX_OTP_ATTEMPTS = 5;
 // Guesses allowed per code. With MAX_OTP_ATTEMPTS codes an hour, that caps a
@@ -39,7 +41,15 @@ export async function createOTP(email: string): Promise<string> {
   }
 }
 
-export async function verifyOTP(email: string, code: string): Promise<OTPVerificationResult> {
+/**
+ * `exec` lets a caller run the verification inside its own transaction, so a spent
+ * code can be rolled back if what the code was for (e.g. creating the user) fails.
+ */
+export async function verifyOTP(
+  email: string,
+  code: string,
+  exec: QueryExecutor = query
+): Promise<OTPVerificationResult> {
   try {
     const normalizedEmail = email.toLowerCase();
     const normalizedCode = code.trim();
@@ -48,7 +58,7 @@ export async function verifyOTP(email: string, code: string): Promise<OTPVerific
       return { success: false, error: 'INVALID_CODE' };
     }
 
-    const recentAttempts = await query(
+    const recentAttempts = await exec(
       `SELECT COUNT(*) as count FROM email_verification_otps 
 WHERE email = $1
 AND created_at > NOW() - INTERVAL '1 hour'`,
@@ -62,7 +72,7 @@ AND created_at > NOW() - INTERVAL '1 hour'`,
     // Spend one guess on the email's live code before comparing. Doing it in one
     // UPDATE means concurrent guesses can't all slip in under the limit: Postgres
     // re-checks `attempts < $2` against the row each waiting UPDATE ends up seeing.
-    const guess = await query(
+    const guess = await exec(
       `UPDATE email_verification_otps
 SET attempts = attempts + 1
 WHERE id = (
@@ -80,7 +90,7 @@ RETURNING id, code, attempts`,
     if (guess.rows.length === 0) {
       // Either no code was sent, or the live one has expired or run out of guesses.
       // EXPIRED tells both clients to ask for a new code.
-      const live = await query(
+      const live = await exec(
         'SELECT 1 FROM email_verification_otps WHERE email = $1 AND verified = false LIMIT 1',
         [normalizedEmail]
       );
@@ -97,7 +107,7 @@ RETURNING id, code, attempts`,
     }
 
     // `verified = false` guard: the same code can't be spent by two requests at once.
-    const spent = await query(
+    const spent = await exec(
       'UPDATE email_verification_otps SET verified = true WHERE id = $1 AND verified = false RETURNING id',
       [otp.id]
     );
@@ -162,6 +172,14 @@ export async function resendOTP(email: string): Promise<{ success: boolean; erro
     }
 
     const code = await createOTP(normalizedEmail);
+
+    // The pending row is purged 10 minutes after creation; without this a code
+    // resent near the end would outlive the registration it belongs to.
+    await query(
+      'UPDATE pending_registrations SET created_at = NOW() WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
     await sendOTPEmail(normalizedEmail, code);
 
     return { success: true };

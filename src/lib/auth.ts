@@ -1,8 +1,10 @@
 import bcrypt from 'bcrypt';
-import { query } from "@/lib/db";
+import { query, withTransaction } from "@/lib/db";
 import type { UserToRegister } from '@/types/user';
+import type { OTPVerificationResult } from '@/types/otp';
 import { logerror } from './logger';
-import { createOTP, isOTPOnCooldown } from './otp';
+import { createOTP, isOTPOnCooldown, verifyOTP } from './otp';
+import { recordPendingRegistrationHistory, type PendingRegistrationSnapshot } from './pendingRegistrationHistory';
 import { sendOTPEmail, sendWelcomeEmail } from './email';
 
 function isEmail(s: string) {
@@ -38,7 +40,11 @@ async function createOrUpdatePendingRegistration(
       throw new Error('ALIAS_EXISTS');
     }
 
-    await query('DELETE FROM pending_registrations WHERE LOWER(email) = $1', [email.toLowerCase()]);
+    const replaced = await query(
+      'DELETE FROM pending_registrations WHERE LOWER(email) = $1 RETURNING id, email, alias, name, created_at',
+      [email.toLowerCase()]
+    );
+    await recordPendingRegistrationHistory(replaced.rows, 'replaced');
 
     const result = await query(
       'INSERT INTO pending_registrations (email, alias, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, email',
@@ -100,47 +106,95 @@ export async function userAliasTaken(userAlias: string) {
   }
 }
 
-export async function completePendingRegistration(email: string): Promise<{ success: boolean; error?: string }> {
+class MissingPendingRegistrationError extends Error {}
+
+export type RegistrationCompletionError =
+  | NonNullable<OTPVerificationResult['error']>
+  | 'NO_PENDING_REGISTRATION';
+
+/**
+ * Spends the emailed code and creates the user in one transaction, so a failure to
+ * create the user (no pending row, unique violation, ...) leaves the code unspent
+ * and the user can try again instead of ending up verified-but-without-an-account.
+ */
+export async function verifyAndCompleteRegistration(
+  email: string,
+  code: string
+): Promise<{ success: boolean; error?: RegistrationCompletionError }> {
+  const normalizedEmail = email.toLowerCase();
+  // Held in an object: TS doesn't see assignments made inside the transaction callback.
+  const ctx: { pending: PendingRegistrationSnapshot | null; alias: string } = { pending: null, alias: '' };
+
   try {
-    const normalizedEmail = email.toLowerCase();
+    const otpFailure = await withTransaction(async (client) => {
+      const exec = (text: string, params?: any[]) => client.query(text, params);
 
-    const pendingResult = await query(
-      'SELECT id, name, alias, password_hash FROM pending_registrations WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
+      const otpResult = await verifyOTP(normalizedEmail, code, exec);
+      // Committed on purpose: a wrong guess must still count against the code.
+      if (!otpResult.success) return otpResult.error ?? 'INVALID_CODE';
 
-    if (pendingResult.rows.length === 0) {
+      // FOR UPDATE: two concurrent completions can't both create the user.
+      const pendingResult = await exec(
+        'SELECT id, name, alias, password_hash, created_at FROM pending_registrations WHERE LOWER(email) = $1 FOR UPDATE',
+        [normalizedEmail]
+      );
+
+      if (pendingResult.rows.length === 0) {
+        throw new MissingPendingRegistrationError();
+      }
+
+      const row = pendingResult.rows[0];
+      ctx.pending = { id: row.id, email: normalizedEmail, alias: row.alias, name: row.name, created_at: row.created_at };
+      ctx.alias = row.alias;
+
+      const createdUser = await exec(
+        'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id',
+        [row.name, row.alias, normalizedEmail, row.password_hash]
+      );
+
+      const userId = createdUser.rows[0]?.id;
+      if (userId) {
+        await exec('INSERT INTO user_options (user_id) VALUES ($1)', [userId]);
+        await exec('INSERT INTO zone_members (zone_id, user_id) VALUES (1, $1)', [userId]);
+      }
+
+      await exec('DELETE FROM pending_registrations WHERE id = $1', [row.id]);
+
+      return null;
+    });
+
+    if (otpFailure) return { success: false, error: otpFailure };
+  } catch (err) {
+    if (err instanceof MissingPendingRegistrationError) {
+      await logerror('verifyAndCompleteRegistration: correct code but no pending registration', [normalizedEmail]);
+      await recordPendingRegistrationHistory(
+        [{ id: null, email: normalizedEmail, alias: null, name: null, created_at: null }],
+        'missing',
+        'correct code, pending registration already gone (expired or replaced); code left unspent'
+      );
       return { success: false, error: 'NO_PENDING_REGISTRATION' };
     }
 
-    const pending = pendingResult.rows[0];
-
-    const createdUser = await query(
-      'INSERT INTO users (name, alias, email, password_hash, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id',
-      [pending.name, pending.alias, normalizedEmail, pending.password_hash]
+    await logerror('verifyAndCompleteRegistration error', [err]);
+    await recordPendingRegistrationHistory(
+      [ctx.pending ?? { id: null, email: normalizedEmail, alias: null, name: null, created_at: null }],
+      'failed',
+      err instanceof Error ? err.message : String(err)
     );
-
-    if (createdUser.rows[0]?.id) {
-      await query('INSERT INTO user_options (user_id) VALUES ($1)', [createdUser.rows[0].id]);
-      await query('INSERT INTO zone_members (zone_id, user_id) VALUES (1, $1)', [createdUser.rows[0].id]);
-    }
-
-    await query(
-      'DELETE FROM pending_registrations WHERE id = $1',
-      [pending.id]
-    );
-
-    try {
-      await sendWelcomeEmail(normalizedEmail, pending.alias);
-    } catch (err) {
-      await logerror('Welcome email error', [err]);
-    }
-
-    return { success: true };
-  } catch (err) {
-    await logerror('completePendingRegistration error', [err]);
     return { success: false, error: 'SERVER_ERROR' };
   }
+
+  if (ctx.pending) {
+    await recordPendingRegistrationHistory([ctx.pending], 'completed');
+  }
+
+  try {
+    await sendWelcomeEmail(normalizedEmail, ctx.alias);
+  } catch (err) {
+    await logerror('Welcome email error', [err]);
+  }
+
+  return { success: true };
 }
 
 export async function initiatePasswordReset(email: string): Promise<{ success: boolean; error?: string }> {
