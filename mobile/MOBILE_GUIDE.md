@@ -249,6 +249,8 @@ A `<Stack>` navigator for the authenticated area.
 **Guard:** if no user → `<Redirect href="/(auth)/login" />`.  
 Also registers the push notification token on first load.
 
+**Welcome flow:** until the account has finished onboarding, this layout renders `<OnboardingFlow>` (`components/onboarding/`) *in place of* the stack, so there is no route to back out into or deep-link past. The server decides: `GET /onboarding` is asked on every sign-in and every cold start (the layout mounts once per session) and nothing about it is stored on the device. The query is never refetched mid-session (the flow's zone list shrinks as zones are joined) and is dropped on logout (`gcTime: 0`), so the next sign-in asks again. A failed check lets the user through and asks again next time. Finishing calls `POST /onboarding/complete` and flips the cached answer in place. Joining a zone in the flow uses the ordinary `POST /zones/{slug}/membership`. To add a page, append a step to the `steps` array in `OnboardingFlow.tsx` (and mirror it in web `components/onboarding/onboarding-flow.tsx`).
+
 ### `app/(app)/(tabs)/_layout.tsx` — Bottom tabs
 
 A `<Tabs>` navigator — this is what renders the bottom navigation bar. Each tab maps to a file in the `(tabs)/` directory. The unread notification count is polled every 20s here and displayed as a badge on the notifications tab.

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { getRewardUsers, giveRewardForUser } from '@/lib/rewards';
-import { canUserAccessPost } from '@/lib/post-access';
+import { canUserAccessPost, getPostInteractionBlock } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 
 const ParamsSchema = z.object({
@@ -76,8 +76,12 @@ export async function POST(req: NextRequest, context: Context) {
     );
 
     // null covers every rejection path: unknown/disabled reward, wrong target,
-    // not unlocked, no access, already rewarded here, or daily quota spent.
+    // not unlocked, no access, not a member, already rewarded here, or daily quota spent.
     if (!summary) {
+      // Only asked after the reward said no, so a successful one pays nothing for it.
+      if ((await getPostInteractionBlock(auth.user.userId, parsedParams.data.id)) === 'not_member') {
+        return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'REWARD_FAILED' }, { status: 403 });
     }
 

@@ -230,7 +230,46 @@ export async function getZoneMembers(zoneId: number):
   }
 }
 
+/**
+ * Whether the user may put something into the zone — a post, a hide-and-seek game. Only an
+ * active member may, in a public zone as much as in a private one: a pending applicant has
+ * not been let in yet, and a public zone is open for reading, not for taking part.
+ */
+export async function canUserPostInZone(userId: number, zoneId: number): Promise<boolean> {
+  try {
+    const res = await query(
+      `select 1
+       from zones z
+       where z.id = $1 and z.state = 'active'
+         and exists (
+           select 1 from zone_members zm
+           where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
+         )
+       limit 1`,
+      [zoneId, userId]
+    );
+    return (res.rowCount ?? 0) > 0;
+  } catch (err) {
+    await logerror('canUserPostInZone error', [err]);
+    return false;
+  }
+}
+
+/** The zones the user can post into — the submit form's zone picker and its server-side guard. */
 export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> {
+  return listUserZones(userId, ['active']);
+}
+
+/**
+ * The zones the user is listed under in the navigation: the ones they belong to, plus the
+ * ones that have invited them or are waiting on them — a pending zone has to stay reachable,
+ * its page carries the accept/decline banner. Not a posting list; use getUserPostZones.
+ */
+export async function getUserNavZones(userId: number): Promise<ZoneBaseType[]> {
+  return listUserZones(userId, ['active', 'pending']);
+}
+
+async function listUserZones(userId: number, statuses: string[]): Promise<ZoneBaseType[]> {
   try {
     const res = await query(
       `select z.id, z.slug, z.name, z.description, z.visibility, z.join_policy, z.state, z.created_at, z.updated_at,
@@ -242,10 +281,10 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
          and exists (
              select 1
              from zone_members zm
-             where zm.zone_id = z.id and zm.user_id = $1 and zm.status in ('active', 'pending')
+             where zm.zone_id = z.id and zm.user_id = $1 and zm.status = any($2::text[])
            )
        order by case when z.slug = 'public' then 0 else 1 end, z.name asc`,
-      [userId]
+      [userId, statuses]
     );
 
     return res.rows.map(r => ({
@@ -263,7 +302,7 @@ export async function getUserPostZones(userId: number): Promise<ZoneBaseType[]> 
       updated_at: r.updated_at,
     }));
   } catch (err) {
-    await logerror('getUserPostZones error', [err]);
+    await logerror('listUserZones error', [err]);
     return [];
   }
 }

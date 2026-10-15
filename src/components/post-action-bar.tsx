@@ -22,6 +22,8 @@ type PostActionBarProps = {
   commentCount: number;
   /** Feed cards link the counts through to the post; the post page shows them plain. */
   href?: string;
+  /** False when the viewer is not a member of the post's zone: votes and rewards are read-only. */
+  canInteract?: boolean;
 };
 
 function Stat({ href, title, active, children }: { href?: string; title: string; active?: boolean; children: ReactNode }) {
@@ -47,6 +49,7 @@ export default function PostActionBar({
   userHasGuessed,
   commentCount,
   href,
+  canInteract = true,
 }: PostActionBarProps) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -56,6 +59,7 @@ export default function PostActionBar({
         score={voteScore}
         userVote={userVote}
         isLoggedIn={isLoggedIn}
+        canInteract={canInteract}
         size="md"
       />
       <RewardButton
@@ -65,6 +69,7 @@ export default function PostActionBar({
         rewards={rewards}
         userReward={userReward}
         isLoggedIn={isLoggedIn}
+        canGive={isLoggedIn ? canInteract : true}
         size="md"
       />
       <span className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">

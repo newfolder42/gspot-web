@@ -88,10 +88,10 @@ export const hideAndSeekApi = {
     visibility: 'public' | 'private';
     endOnFirstFind?: boolean;
     inviteeAliases?: string[];
-  }): Promise<{ postId: number; gameId: number }> =>
+  }): Promise<{ postId: number; gameId: number; skippedInvitees?: string[] }> =>
     call(() =>
       apiClient
-        .post<{ postId: number; gameId: number }>('/hide-and-seek', input)
+        .post<{ postId: number; gameId: number; skippedInvitees?: string[] }>('/hide-and-seek', input)
         .then((r) => r.data)
     ),
 

@@ -19,6 +19,12 @@ type Props = {
   game: HideAndSeekGameType;
   players: HideAndSeekPlayerType[];
   currentUserId: number | null;
+  /**
+   * False for a signed-in viewer who is not an active member of the game's zone: they can
+   * watch, but joining and checking are withdrawn (the post page's join prompt sits right
+   * below). An invite opens the game to see, not the zone to play in.
+   */
+  canInteract?: boolean;
 };
 
 function PlayerRow({ player, isSelf }: { player: HideAndSeekPlayerType; isSelf: boolean }) {
@@ -48,7 +54,12 @@ function PlayerRow({ player, isSelf }: { player: HideAndSeekPlayerType; isSelf: 
   );
 }
 
-export default function HideAndSeekPanel({ game, players, currentUserId }: Props) {
+export default function HideAndSeekPanel({
+  game,
+  players,
+  currentUserId,
+  canInteract = true,
+}: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +88,9 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
           ? 'უკვე სხვა დამალობანაში ხარ, ჯერ ის დაასრულე.'
           : result.reason === 'game_ended'
             ? 'თამაში დასრულდა.'
-            : 'ვერ ჩაერთე. სცადე თავიდან.'
+            : result.reason === 'not_a_member'
+              ? 'ჩასართავად ჯერ საბზონაში უნდა გაწევრიანდე.'
+              : 'ვერ ჩაერთე. სცადე თავიდან.'
       );
       return;
     }
@@ -166,7 +179,7 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
       </div>
 
       <div className="p-4 space-y-4">
-        {live && !isHost && !viewer && currentUserId != null && (
+        {live && !isHost && !viewer && currentUserId != null && canInteract && (
           <button
             type="button"
             onClick={join}
@@ -177,7 +190,7 @@ export default function HideAndSeekPanel({ game, players, currentUserId }: Props
           </button>
         )}
 
-        {live && viewer?.role === 'seeker' && viewer.status === 'active' && (
+        {live && viewer?.role === 'seeker' && viewer.status === 'active' && canInteract && (
           <NewCheck
             postId={game.postId}
             checksRemaining={viewer.checksRemaining}

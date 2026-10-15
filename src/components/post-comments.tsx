@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { PostCommentType } from '@/types/post-comment';
 import type { PostGuessMapDataType, PostGuessType } from '@/types/post-guess';
 import { addCommentAction, loadPostCommentsAction } from '@/actions/comments';
@@ -44,6 +45,12 @@ type PostCommentsProps = {
   userPostReward: string | null;
   onGuessSubmitted?: (guess: PostGuessType) => void;
   onCommentAdded?: (comment: PostCommentType) => void;
+  /**
+   * False for a signed-in viewer who is not an active member of the zone: they can read, but
+   * the comment box, guess buttons, votes and rewards give way to `joinPrompt`.
+   */
+  canInteract?: boolean;
+  joinPrompt?: ReactNode;
 };
 
 function insertComment(
@@ -84,6 +91,8 @@ export default function PostComments({
   userPostReward,
   onGuessSubmitted,
   onCommentAdded,
+  canInteract = true,
+  joinPrompt = null,
 }: PostCommentsProps) {
   const [comments, setComments] = useState<PostCommentType[]>(initialComments);
   const [body, setBody] = useState('');
@@ -370,6 +379,7 @@ export default function PostComments({
           rewards={postRewards}
           userReward={userPostReward}
           isLoggedIn={!!currentUser}
+          canInteract={canInteract}
           guessCount={showGuessStat ? guessCount2 : null}
           commentCount={commentCount}
         />
@@ -388,7 +398,7 @@ export default function PostComments({
           )}
 
           {/* Non-author: guess buttons */}
-          {!isAuthor && (canGuess2 || !currentUser) && (
+          {canInteract && !isAuthor && (canGuess2 || !currentUser) && (
             <>
               <button
                 type="button"
@@ -423,8 +433,13 @@ export default function PostComments({
         </div>
       </div>
 
+      {/* A signed-in viewer outside the zone reads; joining is what lets them take part */}
+      {currentUser && !canInteract && joinPrompt && (
+        <div className="px-4 py-3">{joinPrompt}</div>
+      )}
+
       {/* New top-level comment form */}
-      {currentUser && (
+      {currentUser && canInteract && (
         <div className="px-4 py-3">
           <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-shadow focus-within:ring-1 focus-within:ring-teal-500">
             <textarea
@@ -473,6 +488,7 @@ export default function PostComments({
               postId={postId}
               postAuthorAlias={postAuthorAlias}
               isHideAndSeekHost={isHideAndSeekHost}
+              canInteract={canInteract}
               onCommentAdded={handleCommentAdded}
             />
           ))}

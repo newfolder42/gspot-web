@@ -9,10 +9,12 @@ type Props = {
   status: ZoneMembershipStatus | null;
   role: ZoneMemberRole | null;
   joinPolicy: string;
+  /** Called once the join/leave went through and the zone caches were refreshed. */
+  onChanged?: () => void;
 };
 
 /** Join / request / leave control, mirroring web `become-zone-member-button`. */
-export function JoinButton({ slug, status, role, joinPolicy }: Props) {
+export function JoinButton({ slug, status, role, joinPolicy, onChanged }: Props) {
   const queryClient = useQueryClient();
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,7 @@ export function JoinButton({ slug, status, role, joinPolicy }: Props) {
       else await zonesApi.join(slug);
       await queryClient.invalidateQueries({ queryKey: ['zone-meta', slug] });
       await queryClient.invalidateQueries({ queryKey: ['zone-members', slug] });
+      onChanged?.();
     } catch {
       // surfaced by refetch state; keep silent for parity with web
     } finally {

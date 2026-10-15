@@ -133,6 +133,14 @@ export function CreateHideAndSeek({ onCreated }: { onCreated?: () => void } = {}
         inviteeAliases: visibility === 'private' ? invitees : [],
       });
 
+      // Only members of the zone can play, so the server drops any other invitee; say who.
+      if (result.skippedInvitees && result.skippedInvitees.length > 0) {
+        Alert.alert(
+          'მოწვევა',
+          `ამ საბზონის წევრები არ არიან და ვერ მოიწვივნენ: ${result.skippedInvitees.join(', ')}`
+        );
+      }
+
       onCreated?.();
       router.replace({ pathname: '/(app)/post/[id]', params: { id: String(result.postId) } });
     } catch (err) {

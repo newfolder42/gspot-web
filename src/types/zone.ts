@@ -1,3 +1,9 @@
+/**
+ * What a post attempt in a zone the user is not an active member of is answered with, on the
+ * web submit form and from the mobile API alike. Only members may take part in a zone.
+ */
+export const NOT_A_MEMBER_POST_MESSAGE = 'ამ საბზონაში პოსტის დასამატებლად ჯერ გაწევრიანდი.';
+
 export type ZoneBaseType = {
   id: number;
   slug: string;

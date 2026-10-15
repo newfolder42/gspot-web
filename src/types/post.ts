@@ -28,6 +28,17 @@ export type PostType = {
   /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
   userReward?: string | null;
   /**
+   * Whether the viewer is an active member of the post's zone, which is what taking part in
+   * it (guess, comment, vote, reward, play) takes. False for a signed-out viewer. Absent from
+   * servers that predate the rule, so a client treats `undefined` as "unknown, show the
+   * controls" and lets the server's NOT_A_MEMBER answer be the guard.
+   */
+  viewerCanInteract?: boolean;
+  /** Detail only: the viewer's membership of the post's zone, null when they never joined. */
+  viewerMembership?: 'active' | 'pending' | 'left' | 'banned' | null;
+  /** Detail only: how the post's zone takes members, for the "join to take part" prompt. */
+  zoneJoinPolicy?: 'open' | 'request' | 'invite_only';
+  /**
    * Home feed only: where the post sorts, which is its creation time or later when it
    * drew engagement. The pagination cursor is built from this, not from `date`.
    */

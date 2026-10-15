@@ -29,6 +29,7 @@ import { syncPostInCaches } from '@/lib/postCache';
 import type { GuessResult } from '@/types/post-guess';
 import { Colors, useTheme } from '@/constants/colors';
 import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
+import { ZoneJoinPrompt } from '@/components/zone/ZoneJoinPrompt';
 import { formatDistance } from '@/types/hide-and-seek';
 import { useLayout } from '@/lib/layout';
 
@@ -91,6 +92,7 @@ function CommentItem({
   depth = 0,
   postId,
   isHideAndSeekHost = false,
+  canInteract = true,
   highlightId = null,
   onReply,
 }: {
@@ -99,6 +101,8 @@ function CommentItem({
   postId: number;
   /** The viewer hosts this game — only they can give ცხელა/თბილა/ცივა on a check. */
   isHideAndSeekHost?: boolean;
+  /** False for a viewer outside the zone: read-only, no reply, vote or reward. */
+  canInteract?: boolean;
   /** The comment a link points at (?commentId=); its thread line is brand-coloured. */
   highlightId?: number | null;
   onReply: (comment: PostCommentType) => void;
@@ -270,6 +274,7 @@ function CommentItem({
             score={item.voteScore ?? 0}
             userVote={item.userVote ?? null}
             size="sm"
+            canInteract={canInteract}
             onChange={(next) => patchComment({ voteScore: next.score, userVote: next.userVote })}
           />
           {isGuess ? (
@@ -279,6 +284,7 @@ function CommentItem({
               target="comment"
               rewards={item.rewards ?? []}
               userReward={item.userReward ?? null}
+              canGive={canInteract}
               size="sm"
               onChange={(next) => patchComment({ rewards: next.rewards, userReward: next.userReward })}
             />
@@ -290,14 +296,16 @@ function CommentItem({
               target="hide-and-seek-check"
               rewards={item.rewards ?? []}
               userReward={item.userReward ?? null}
-              canGive={isHideAndSeekHost}
+              canGive={isHideAndSeekHost && canInteract}
               size="sm"
               onChange={(next) => patchComment({ rewards: next.rewards, userReward: next.userReward })}
             />
           ) : null}
-          <Pressable onPress={() => onReply(item)} hitSlop={6}>
-            <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
-          </Pressable>
+          {canInteract ? (
+            <Pressable onPress={() => onReply(item)} hitSlop={6}>
+              <Text className="text-xs text-zinc-500 dark:text-zinc-400">↩ პასუხი</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -305,7 +313,7 @@ function CommentItem({
       {!collapsed && item.children.length > 0 ? (
         <View className="mt-1.5">
           {item.children.map((child) => (
-            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} highlightId={highlightId} onReply={onReply} />
+            <CommentItem key={child.id} item={child} depth={depth + 1} postId={postId} isHideAndSeekHost={isHideAndSeekHost} canInteract={canInteract} highlightId={highlightId} onReply={onReply} />
           ))}
         </View>
       ) : null}
@@ -478,8 +486,12 @@ export default function PostPageScreen() {
   const { post, comments, alreadyGuessed, votes, rewards } = query.data;
   const commentsCount = countComments(comments);
   const isOwner = user?.id != null && Number(post.userId) === Number(user.id);
+  // A public zone can be read without joining, but only its members take part in it: a
+  // viewer outside it gets a join prompt where the controls would be. `undefined` (an older
+  // server) shows the controls and leaves the server's NOT_A_MEMBER answer as the guard.
+  const canInteract = post.viewerCanInteract !== false;
   // a suspended post (staff and the author can still open it) takes no new guesses
-  const canGuess = post.type === 'gps-photo' && post.status === 'published' && !alreadyGuessed && !isOwner;
+  const canGuess = canInteract && post.type === 'gps-photo' && post.status === 'published' && !alreadyGuessed && !isOwner;
   const locationReview = post.type === 'gps-photo' ? post.locationReview ?? null : null;
   // the guess map shows the true location: the author's, and staff's while a post is disputed
   const canSeeGuessMap = isOwner || !!locationReview?.canReview;
@@ -648,6 +660,7 @@ export default function PostPageScreen() {
         // the detail carries `alreadyGuessed`; the feed cards' `userHasGuessed` is not on it
         userHasGuessed={alreadyGuessed || (post.userHasGuessed ?? false)}
         commentCount={commentsCount}
+        canInteract={canInteract}
         className="px-4 pt-3"
       />
 
@@ -706,6 +719,7 @@ export default function PostPageScreen() {
             players={gamePlayers}
             currentUserId={user?.id != null ? Number(user.id) : null}
             onChanged={refreshGame}
+            canInteract={canInteract}
           />
         </View>
       ) : null}
@@ -722,15 +736,31 @@ export default function PostPageScreen() {
           <Text className="text-sm text-zinc-500 dark:text-zinc-400">ჯერ კომენტარი არ არის</Text>
         ) : (
           comments.map((comment) => (
-            <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} highlightId={highlightId} onReply={handleReply} />
+            <CommentItem key={comment.id} item={comment} postId={postId} isHideAndSeekHost={isHideAndSeekHost} canInteract={canInteract} highlightId={highlightId} onReply={handleReply} />
           ))
         )}
       </View>
     </>
   );
 
-  // The comment box, sticking to the top of the keyboard when it is up.
-  const composer = (
+  // The comment box, sticking to the top of the keyboard when it is up — or, for a viewer
+  // who is not a member of the zone, the way in: joining is what lets them comment.
+  const composer = !canInteract ? (
+    <View
+      className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 px-3 pt-3"
+      style={{ paddingBottom: insets.bottom + 12 }}
+    >
+      <ZoneJoinPrompt
+        slug={post.zoneSlug ?? ''}
+        status={post.viewerMembership ?? null}
+        joinPolicy={post.zoneJoinPolicy ?? 'open'}
+        onJoined={() => {
+          // the server decides what a freshly joined viewer may do — ask it again
+          query.refetch();
+        }}
+      />
+    </View>
+  ) : (
     <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
       <View className="bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800" style={{ paddingBottom: insets.bottom }}>
       {replyTo ? (

@@ -13,6 +13,8 @@ type VoteButtonsProps = {
   userVote?: VoteValue | null;
   isLoggedIn: boolean;
   size?: 'md' | 'sm';
+  /** False for a signed-in viewer who is not a member of the zone: the score shows, voting does not. */
+  canInteract?: boolean;
 };
 
 export default function VoteButtons({
@@ -22,14 +24,18 @@ export default function VoteButtons({
   userVote = null,
   isLoggedIn,
   size = 'md',
+  canInteract = true,
 }: VoteButtonsProps) {
   const [summary, setSummary] = useState<VoteSummaryType>({ score, userVote });
   const [pending, setPending] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  const blocked = isLoggedIn && !canInteract;
+  const blockedTitle = blocked ? 'ხმის მისაცემად საბზონაში უნდა გაწევრიანდე' : undefined;
+
   const handleVote = async (value: VoteValue) => {
-    if (pending) return;
+    if (pending || blocked) return;
     if (!isLoggedIn) {
       router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
       return;
@@ -55,7 +61,8 @@ export default function VoteButtons({
       <button
         type="button"
         onClick={() => handleVote(1)}
-        disabled={pending}
+        disabled={pending || blocked}
+        title={blockedTitle}
         className={`inline-flex p-0.5 rounded transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           upActive
             ? 'text-teal-600 dark:text-teal-400'
@@ -75,7 +82,8 @@ export default function VoteButtons({
       <button
         type="button"
         onClick={() => handleVote(-1)}
-        disabled={pending}
+        disabled={pending || blocked}
+        title={blockedTitle}
         className={`inline-flex p-0.5 rounded transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           downActive
             ? 'text-rose-600 dark:text-rose-400'

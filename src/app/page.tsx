@@ -3,12 +3,14 @@ import FeedEvents from "@/components/feed-events";
 import PublicFeed from "@/components/public-feed";
 import LandingRedirectCapture from "@/components/common/landing-redirect-capture";
 import { getCurrentUser } from "@/lib/session";
+import { isOnboardingCompleted } from "@/lib/onboarding";
 import { buildLandingPath, getLandingAttribution, type LandingAttributionSearchParams } from '@/lib/landing-attribution';
 import { APP_NAME } from "@/types/constants";
 import { FlagIcon, ImageIcon, MapPinIcon, TrophyIcon } from "@/components/icons";
 import { isIOSUserAgent } from "@/lib/device";
 import { playStoreUrl } from "@/lib/play-store";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,6 +20,10 @@ type Props = {
 
 export default async function Page({ searchParams }: Props) {
   const [user, resolvedSearchParams, requestHeaders] = await Promise.all([getCurrentUser(), searchParams, headers()]);
+
+  // A new account lands here after signing in; it has the welcome flow to get through first.
+  if (user && !(await isOnboardingCompleted(user.userId))) redirect("/welcome");
+
   const showAppPromo = !user && !isIOSUserAgent(requestHeaders.get("user-agent"));
 
   const landing = user ? null : getLandingAttribution(resolvedSearchParams);

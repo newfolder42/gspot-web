@@ -22,6 +22,8 @@ type Props = {
   commentCount: number;
   /** Feed cards open the post from the counts; the post page leaves them inert. */
   onOpenPost?: () => void;
+  /** False when the viewer is not a member of the post's zone: votes and rewards are read-only. */
+  canInteract?: boolean;
   className?: string;
 };
 
@@ -39,6 +41,7 @@ export function PostActionBar({
   userHasGuessed = false,
   commentCount,
   onOpenPost,
+  canInteract = true,
   className = '',
 }: Props) {
   const theme = useTheme();
@@ -69,6 +72,7 @@ export function PostActionBar({
         postId={postId}
         score={voteScore}
         userVote={userVote}
+        canInteract={canInteract}
         onChange={(next) => syncPostInCaches(queryClient, postId, { voteScore: next.score, userVote: next.userVote })}
       />
       <RewardButton
@@ -76,6 +80,7 @@ export function PostActionBar({
         target="post"
         rewards={rewards}
         userReward={userReward}
+        canGive={canInteract}
         onChange={(next) => syncPostInCaches(queryClient, postId, { rewards: next.rewards, userReward: next.userReward })}
       />
       {onOpenPost ? (

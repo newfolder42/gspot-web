@@ -157,6 +157,7 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
         userHasGuessed={!isQuest && (item.userHasGuessed ?? false)}
         commentCount={item.commentCount ?? 0}
         onOpenPost={openPost}
+        canInteract={item.viewerCanInteract !== false}
         className="px-4 pt-3"
       />
     </View>

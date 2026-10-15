@@ -2,7 +2,12 @@
 
 import { query, withTransaction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
-import { canUserAccessPost } from '@/lib/post-access';
+import {
+  canUserAccessPost,
+  canUserInteractWithPost,
+  getPostInteractionBlock,
+} from '@/lib/post-access';
+import { canUserPostInZone } from '@/lib/zones';
 import { logerror } from '@/lib/logger';
 import { isInGeorgia } from '@/lib/geo';
 import { haversineMeters } from '@/lib/gpsPhotoGuessScore';
@@ -40,6 +45,8 @@ import type {
 export type HideAndSeekErrorReason =
   | 'not_authenticated'
   | 'no_access'
+  /** Can see the game, but is not an active member of its zone — joining the zone is the fix. */
+  | 'not_a_member'
   | 'already_in_game'
   | 'game_not_found'
   | 'game_ended'
@@ -56,6 +63,19 @@ export type HideAndSeekResult<T> = { ok: true; data: T } | { ok: false; reason: 
 
 function fail<T>(reason: HideAndSeekErrorReason): HideAndSeekResult<T> {
   return { ok: false, reason };
+}
+
+/**
+ * Why a player action on a game's post is refused, or null when it is allowed. Taking part
+ * (joining, checking) takes an active membership of the zone, even for a private game's
+ * invitee: an invite opens the game to see, not the zone to play in.
+ */
+async function interactionRefusal(
+  userId: number,
+  postId: number
+): Promise<HideAndSeekErrorReason | null> {
+  if (await canUserInteractWithPost(userId, postId)) return null;
+  return (await getPostInteractionBlock(userId, postId)) === 'not_member' ? 'not_a_member' : 'no_access';
 }
 
 /**
@@ -474,15 +494,21 @@ export type CreateHideAndSeekInput = {
   visibility: 'public' | 'private';
   /** Stop the game for everybody as soon as the first seeker finds the host. */
   endOnFirstFind?: boolean;
-  /** User ids to grant access to, for a private game. */
+  /**
+   * User ids to grant access to, for a private game. Only active members of the zone are
+   * invited — anyone else could see the game but not play it — and the rest are skipped.
+   */
   inviteeIds?: number[];
   /** Aliases to grant access to; resolved server-side and merged with inviteeIds. */
   inviteeAliases?: string[];
 };
 
+/** `skippedInvitees` lists the aliases left out for not being members of the zone. */
+export type CreatedHideAndSeekGame = { postId: number; gameId: number; skippedInvitees?: string[] };
+
 export async function createHideAndSeekGame(
   input: CreateHideAndSeekInput
-): Promise<HideAndSeekResult<{ postId: number; gameId: number }>> {
+): Promise<HideAndSeekResult<CreatedHideAndSeekGame>> {
   const user = await getCurrentUser();
   if (!user) return fail('not_authenticated');
   return createHideAndSeekGameForUser(user.userId, user.alias, input);
@@ -492,7 +518,7 @@ export async function createHideAndSeekGameForUser(
   userId: number,
   alias: string,
   input: CreateHideAndSeekInput
-): Promise<HideAndSeekResult<{ postId: number; gameId: number }>> {
+): Promise<HideAndSeekResult<CreatedHideAndSeekGame>> {
   const { title, coordinates, durationMinutes, maxChecks, zoneId, zoneSlug, visibility } = input;
   const endOnFirstFind = input.endOnFirstFind ?? DEFAULT_END_ON_FIRST_FIND;
 
@@ -511,8 +537,12 @@ export async function createHideAndSeekGameForUser(
     if (await hasActiveHideAndSeek(userId)) return fail('already_in_game');
 
     const resolved = await resolveAliases(input.inviteeAliases ?? []);
-    const inviteeIds = Array.from(
+    const requested = Array.from(
       new Set([...(input.inviteeIds ?? []), ...resolved].filter((id) => id !== userId))
+    );
+    const { members: inviteeIds, skippedAliases: skippedInvitees } = await splitInviteesByMembership(
+      zoneId,
+      requested
     );
 
     const created = await withTransaction(async (client) => {
@@ -579,7 +609,15 @@ export async function createHideAndSeekGameForUser(
       inviteeIds,
     } as HideAndSeekCreatedEvent);
 
-    return { ok: true, data: { postId: created.postId, gameId: created.gameId } };
+    return {
+      ok: true,
+      data: {
+        postId: created.postId,
+        gameId: created.gameId,
+        // only present when someone was left out, so the common response is unchanged
+        ...(skippedInvitees.length > 0 ? { skippedInvitees } : {}),
+      },
+    };
   } catch (err: any) {
     if (err?.code === '23505') return fail('already_in_game');
     await logerror('createHideAndSeekGameForUser error', [err]);
@@ -605,7 +643,8 @@ export async function joinHideAndSeekGameForUser(
   postId: number
 ): Promise<HideAndSeekResult<{ playerId: number; commentId: number }>> {
   try {
-    if (!(await canUserAccessPost(userId, postId))) return fail('no_access');
+    const refused = await interactionRefusal(userId, postId);
+    if (refused) return fail(refused);
 
     const gameRes = await query(
       `select g.id, g.user_id as host_id, g.status, g.ends_at, u.alias as host_alias
@@ -712,7 +751,8 @@ export async function submitHideAndSeekCheckForUser(
   if (!imageUrl) return fail('invalid_input');
 
   try {
-    if (!(await canUserAccessPost(userId, postId))) return fail('no_access');
+    const refused = await interactionRefusal(userId, postId);
+    if (refused) return fail(refused);
 
     const gameRes = await query(
       `select g.id, g.user_id as host_id, g.status, g.ends_at, g.config,
@@ -1031,20 +1071,30 @@ async function resolveAliases(aliases: string[]): Promise<number[]> {
   return res.rows.map((r) => Number(r.id));
 }
 
-/** Same rule the feed uses: a public zone, or one the user is an active member of. */
-async function canUserPostInZone(userId: number, zoneId: number): Promise<boolean> {
+/**
+ * Splits the wanted invitees into those who are active members of the zone — the only ones
+ * who can actually play — and the aliases of those who are not. Ids that match no user are
+ * dropped without a word, as unknown aliases already are.
+ */
+async function splitInviteesByMembership(
+  zoneId: number,
+  userIds: number[]
+): Promise<{ members: number[]; skippedAliases: string[] }> {
+  if (userIds.length === 0) return { members: [], skippedAliases: [] };
+
   const res = await query(
-    `select 1
-       from zones z
-      where z.id = $1 and z.state = 'active' and (
-        z.visibility = 'public'
-        or exists (
-          select 1 from zone_members zm
-           where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
-        )
-      )
-      limit 1`,
-    [zoneId, userId]
+    `select u.id, u.alias,
+            exists (
+              select 1 from zone_members zm
+               where zm.zone_id = $2 and zm.user_id = u.id and zm.status = 'active'
+            ) as is_member
+       from users u
+      where u.id = any($1::bigint[])`,
+    [userIds, zoneId]
   );
-  return (res.rowCount ?? 0) > 0;
+
+  return {
+    members: res.rows.filter((r) => r.is_member).map((r) => Number(r.id)),
+    skippedAliases: res.rows.filter((r) => !r.is_member).map((r) => String(r.alias)),
+  };
 }

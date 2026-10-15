@@ -192,9 +192,11 @@ export async function getPostLocationReview(
     if (state === 'reported' && !isAuthor && !isReviewer) state = 'none';
 
     const myScore = Number(r.my_guess?.score);
+    // `viewer_role` is only filled for an active member, so non-members are never offered it.
     const canReport =
       r.status === 'published' &&
       !isAuthor &&
+      r.viewer_role != null &&
       r.my_guess != null &&
       !r.reported &&
       !(Number.isFinite(myScore) && myScore >= PERFECT_SCORE);
@@ -300,7 +302,11 @@ export async function fileLocationDispute(
     const res = await query(
       `select p.id, p.user_id, p.type, p.status, p.title, p.zone_id,
               z.slug as zone_slug, u.alias as author_alias,
-              pg.id as guess_id, pg.details as guess_details
+              pg.id as guess_id, pg.details as guess_details,
+              exists (
+                select 1 from zone_members zm
+                where zm.zone_id = p.zone_id and zm.user_id = $2 and zm.status = 'active'
+              ) as viewer_is_member
        from posts p
        join zones z on z.id = p.zone_id
        join users u on u.id = p.user_id
@@ -312,6 +318,9 @@ export async function fileLocationDispute(
     if ((res.rowCount ?? 0) === 0) return { ok: false, error: 'NOT_FOUND' };
     const row = res.rows[0];
     const post = mapPostRow(row);
+
+    // A guess made before the user left the zone does not keep a voice in it.
+    if (!row.viewer_is_member) return { ok: false, error: 'FORBIDDEN' };
 
     if (post.type !== 'gps-photo' || post.status !== 'published') {
       return { ok: false, error: 'INVALID_STATE' };

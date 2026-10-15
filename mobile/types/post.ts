@@ -38,6 +38,16 @@ export type MobilePostType = {
   rewards?: RewardCountType[];
   /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
   userReward?: string | null;
+  /**
+   * Whether the viewer is an active member of the post's zone — what taking part in it
+   * (guess, comment, vote, reward, play) takes. A public zone can be read without joining.
+   * Absent from servers that predate the rule: treat `undefined` as "show the controls".
+   */
+  viewerCanInteract?: boolean;
+  /** Detail only: the viewer's membership of the post's zone, null when they never joined. */
+  viewerMembership?: 'active' | 'pending' | 'left' | 'banned' | null;
+  /** Detail only: how the post's zone takes members, for the "join to take part" prompt. */
+  zoneJoinPolicy?: 'open' | 'request' | 'invite_only';
   userHasGuessed?: boolean;
   /**
    * Home feed only: where the post sorts — its creation time, or later when it drew

@@ -2,7 +2,7 @@
 
 import { query } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
-import { canUserAccessPost } from '@/lib/post-access';
+import { canUserInteractWithPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
 import {
@@ -317,7 +317,7 @@ export async function giveRewardForUser(
       if (!unlocked.includes(def.key)) return null;
     }
 
-    if (!(await canUserAccessPost(userId, postId))) return null;
+    if (!(await canUserInteractWithPost(userId, postId))) return null;
 
     const isGameReward = isHideAndSeekReward(rewardKey);
     if (isGameReward && !(await isHideAndSeekHost(userId, postId))) return null;

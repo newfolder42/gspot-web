@@ -67,7 +67,11 @@ export async function POST(req: NextRequest, context: Context) {
 
     const postRow = await query(
       `select p.id, p.user_id, p.type, z.id as zone_id, z.slug as zone_slug,
-              u.alias as author_alias, uc.details as content_details
+              u.alias as author_alias, uc.details as content_details,
+              exists (
+                select 1 from zone_members zm
+                where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
+              ) as viewer_is_member
        from posts p
        join zones z on z.id = p.zone_id
        join users u on u.id = p.user_id
@@ -90,6 +94,11 @@ export async function POST(req: NextRequest, context: Context) {
     }
 
     const post = postRow.rows[0];
+
+    // A public zone is readable by anyone, but only its members may take part in it.
+    if (!post.viewer_is_member) {
+      return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+    }
 
     if (post.type !== 'gps-photo') {
       return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });

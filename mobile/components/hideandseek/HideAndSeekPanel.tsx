@@ -20,9 +20,15 @@ type Props = {
   players: HideAndSeekPlayerType[];
   currentUserId: number | null;
   onChanged?: () => void;
+  /**
+   * False for a viewer who is not an active member of the game's zone: they can watch, but
+   * joining and checking are withdrawn (the post screen's join prompt sits in the comment
+   * bar). An invite opens the game to see, not the zone to play in.
+   */
+  canInteract?: boolean;
 };
 
-export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Props) {
+export function HideAndSeekPanel({ game, players, currentUserId, onChanged, canInteract = true }: Props) {
   const theme = useTheme();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -131,7 +137,7 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
       </View>
 
       <View className="p-4 gap-4" style={{ backgroundColor: theme.surface }}>
-        {live && !isHost && !viewer && currentUserId != null && (
+        {live && !isHost && !viewer && currentUserId != null && canInteract && (
           <Pressable
             onPress={join}
             disabled={busy}
@@ -143,7 +149,7 @@ export function HideAndSeekPanel({ game, players, currentUserId, onChanged }: Pr
           </Pressable>
         )}
 
-        {live && viewer?.role === 'seeker' && viewer.status === 'active' && (
+        {live && viewer?.role === 'seeker' && viewer.status === 'active' && canInteract && (
           <NewCheck postId={game.postId} checksRemaining={viewer.checksRemaining} onSubmitted={handleChecked} />
         )}
 

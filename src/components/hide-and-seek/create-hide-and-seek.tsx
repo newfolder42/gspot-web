@@ -21,6 +21,7 @@ type ZoneOption = { id: number; slug: string; name: string };
 const ERROR_MESSAGES: Record<HideAndSeekErrorReason, string> = {
   not_authenticated: 'ჯერ გაიარე ავტორიზაცია.',
   no_access: 'ამ საბზონაში პოსტის დამატება არ შეგიძლია.',
+  not_a_member: 'ამ საბზონაში ჩასართავად ჯერ გაწევრიანდი.',
   already_in_game: 'უკვე ერთ დამალობანაში ხარ, ჯერ ის დაასრულე.',
   game_not_found: 'დამალობანა ვერ მოიძებნა.',
   game_ended: 'დამალობანა დასრულებულია.',
@@ -64,15 +65,19 @@ export default function CreateHideAndSeek({ zones }: { zones: ZoneOption[] }) {
 
     setResolving(true);
     setInviteError(null);
-    const resolved = await resolveInviteeAliasAction(candidate);
+    const resolved = await resolveInviteeAliasAction(candidate, zoneId);
     setResolving(false);
 
-    if (!resolved) {
-      setInviteError(`'${candidate} ვერ მოიძებნა.`);
+    if (!resolved.ok) {
+      setInviteError(
+        resolved.reason === 'not_member'
+          ? `'${candidate} ამ საბზონის წევრი არ არის.`
+          : `'${candidate} ვერ მოიძებნა.`
+      );
       return;
     }
 
-    setInvitees((prev) => [...prev, resolved]);
+    setInvitees((prev) => [...prev, resolved.alias]);
     setInviteInput('');
   };
 

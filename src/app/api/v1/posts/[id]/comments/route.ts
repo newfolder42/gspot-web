@@ -50,7 +50,11 @@ export async function POST(req: NextRequest, context: Context) {
     const { body: commentBody, parentId = null } = parsedBody.data;
 
     const postCheck = await query(
-      `select p.id, p.user_id as post_author_id, u.alias as post_author_alias, p.zone_id, z.slug as zone_slug
+      `select p.id, p.user_id as post_author_id, u.alias as post_author_alias, p.zone_id, z.slug as zone_slug,
+              exists (
+                select 1 from zone_members zm
+                where zm.zone_id = z.id and zm.user_id = $2 and zm.status = 'active'
+              ) as viewer_is_member
        from posts p
        join users u on u.id = p.user_id
        join zones z on z.id = p.zone_id
@@ -73,6 +77,12 @@ export async function POST(req: NextRequest, context: Context) {
       return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
     }
     const postRow = postCheck.rows[0];
+
+    // Seeing the post is not enough: a public zone is open for reading, and only its members
+    // may comment. The author is no exception — someone who left or was banned has no say.
+    if (!postRow.viewer_is_member) {
+      return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+    }
 
     // If replying, verify parent comment belongs to the same post
     let parent: PostCommentCreatedEvent['parent'] = null;

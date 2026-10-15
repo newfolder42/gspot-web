@@ -266,7 +266,7 @@ export function LocationReviewPanel({
           tone="amber"
           icon="alert-triangle"
           title={`პოსტის ლოკაცია გასაჩივრებულია (${review.disputeCount})`}
-          text="ზონის ადმინისტრაცია განიხილავს. თუ ლოკაცია არასწორია, პოსტი შეჩერდება და გასწორება მოგიწევს."
+          text="ზონის ადმინისტრატორები განიხილავენ. თუ ლოკაცია არასწორია, პოსტი შეჩერდება და გასწორება მოგიწევს."
         >
           <DisputeReasons disputes={review.disputes} tone="amber" />
           <View className="mt-3">

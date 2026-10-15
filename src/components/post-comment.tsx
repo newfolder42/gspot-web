@@ -23,6 +23,8 @@ type PostCommentProps = {
   postAuthorAlias: string;
   /** The viewer hosts this game — only they can give ცხელა/თბილა/ცივა on a check. */
   isHideAndSeekHost?: boolean;
+  /** False for a signed-in viewer who is not a member of the zone: read-only, no reply/vote/reward. */
+  canInteract?: boolean;
   onCommentAdded: (comment: PostCommentType) => void;
 };
 
@@ -43,6 +45,7 @@ export default function PostComment({
   postId,
   postAuthorAlias,
   isHideAndSeekHost = false,
+  canInteract = true,
   onCommentAdded,
 }: PostCommentProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -261,6 +264,7 @@ export default function PostComment({
                     score={comment.voteScore ?? 0}
                     userVote={comment.userVote ?? null}
                     isLoggedIn={!!currentUser}
+                    canInteract={canInteract}
                     size="sm"
                   />
                   {isGuess && (
@@ -271,6 +275,7 @@ export default function PostComment({
                       rewards={comment.rewards ?? []}
                       userReward={comment.userReward ?? null}
                       isLoggedIn={!!currentUser}
+                      canGive={canInteract}
                       size="sm"
                     />
                   )}
@@ -282,13 +287,13 @@ export default function PostComment({
                       rewards={comment.rewards ?? []}
                       userReward={comment.userReward ?? null}
                       isLoggedIn={!!currentUser}
-                      canGive={isHideAndSeekHost}
+                      canGive={isHideAndSeekHost && canInteract}
                       size="sm"
                     />
                   )}
                 </>
               )}
-              {currentUser && !isDeleted && (
+              {currentUser && canInteract && !isDeleted && (
                 <button
                   type="button"
                   onClick={() => setShowReplyForm((v) => !v)}
@@ -355,6 +360,7 @@ export default function PostComment({
                         postId={postId}
                         postAuthorAlias={postAuthorAlias}
                         isHideAndSeekHost={isHideAndSeekHost}
+                        canInteract={canInteract}
                         onCommentAdded={onCommentAdded}
                       />
                     ))}

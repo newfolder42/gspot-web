@@ -137,7 +137,7 @@ export function LocationDisputeSheet({
   return (
     <SheetFrame title="გასაჩივრება" onClose={onClose} busy={submitting}>
       <Text className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
-        რატომ ფიქრობ, რომ პოსტის ლოკაცია არასწორია? ზონის ადმინისტრაცია განიხილავს და საჭიროების შემთხვევაში პოსტი შეჩერდება.
+        დააზუსტე პოსტის გასაჩივრების დეტალები. ზონის ადმინისტრატორები განიხილავენ და საჭიროების შემთხვევაში პოსტი შეჩერდება.
       </Text>
 
       <ZoneRulesList rules={rules} />
@@ -223,13 +223,13 @@ export function SuspendPostSheet({
   return (
     <SheetFrame title="პოსტის შეჩერება" onClose={onClose} busy={submitting}>
       <Text className="text-sm text-zinc-700 dark:text-zinc-300">
-        პოსტი გაქრება ლენტებიდან და ახალი გამოცნობები შეჩერდება, სანამ ავტორი ლოკაციას არ გაასწორებს.
+        პოსტი გაქრება ფიდიდან და ახალი გამოცნობები შეჩერდება, სანამ ავტორი ლოკაციას არ გაასწორებს.
       </Text>
 
       <NoteInput
         value={note}
         onChange={setNote}
-        placeholder="შეტყობინება ავტორისთვის, რა უნდა გასწორდეს (არასავალდებულო)"
+        placeholder="შეტყობინება ავტორისთვის (არასავალდებულო)"
       />
 
       {error ? <Text className="mt-2 text-xs text-red-500">{error}</Text> : null}

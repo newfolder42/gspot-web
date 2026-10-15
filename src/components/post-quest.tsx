@@ -107,6 +107,7 @@ export function QuestCompletionPost({ post, showZone, isLoggedIn }: { post: Ques
           isLoggedIn={isLoggedIn}
           commentCount={post.commentCount ?? 0}
           href={`/post/${post.id}#comments`}
+          canInteract={post.viewerCanInteract !== false}
         />
       </div>
     </article>

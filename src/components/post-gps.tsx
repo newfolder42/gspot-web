@@ -106,6 +106,7 @@ export function GpsPost({ post, showZone, isLoggedIn }: { post: GpsPostType, sho
           userHasGuessed={post.userHasGuessed ?? false}
           commentCount={post.commentCount ?? 0}
           href={`/post/${post.id}#comments`}
+          canInteract={post.viewerCanInteract !== false}
         />
       </div>
     </article>

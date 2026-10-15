@@ -5,7 +5,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import LeftPanel from "@/components/left-panel";
 import { getCurrentUser } from "@/lib/session";
-import { getUserPostZones } from "@/lib/zones";
+import { getUserNavZones } from "@/lib/zones";
 import { getOwnAccount } from "@/lib/account";
 import OngoingGameButton from "@/components/hide-and-seek/ongoing-game-button";
 import InventoryOverlay from "@/components/inventory/inventory-overlay";
@@ -72,7 +72,7 @@ export default async function RootLayout({
   modal: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
-  const zones = user ? await getUserPostZones(user.userId) : null;
+  const zones = user ? await getUserNavZones(user.userId) : null;
   const account = user ? await getOwnAccount(user.userId) : null;
 
   return (

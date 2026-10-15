@@ -14,6 +14,8 @@ type Props = {
   score?: number;
   userVote?: VoteValue | null;
   size?: 'md' | 'sm';
+  /** False for a viewer who is not a member of the zone: the score shows, voting does not. */
+  canInteract?: boolean;
   /** Lets the parent keep its own cache in sync after a successful toggle. */
   onChange?: (summary: VoteSummaryType) => void;
 };
@@ -25,6 +27,7 @@ export function VoteButtons({
   score = 0,
   userVote = null,
   size = 'md',
+  canInteract = true,
   onChange,
 }: Props) {
   const [summary, setSummary] = useState<VoteSummaryType>({ score, userVote });
@@ -40,7 +43,7 @@ export function VoteButtons({
   }
 
   const handleVote = async (value: VoteValue) => {
-    if (pending) return;
+    if (pending || !canInteract) return;
     setPending(true);
     // Optimistic: recompute locally, then reconcile with the server's summary.
     const previous = summary;
@@ -66,8 +69,8 @@ export function VoteButtons({
   const downActive = summary.userVote === -1;
 
   return (
-    <View className="flex-row items-center gap-1" style={{ opacity: pending ? 0.5 : 1 }}>
-      <Pressable onPress={() => handleVote(1)} disabled={pending} hitSlop={6} className="p-0.5">
+    <View className="flex-row items-center gap-1" style={{ opacity: pending || !canInteract ? 0.5 : 1 }}>
+      <Pressable onPress={() => handleVote(1)} disabled={pending || !canInteract} hitSlop={6} className="p-0.5">
         <MaterialCommunityIcons name="arrow-up-bold" size={iconSize} color={upActive ? TEAL : theme.icon} />
       </Pressable>
 
@@ -78,7 +81,7 @@ export function VoteButtons({
         {summary.score}
       </Text>
 
-      <Pressable onPress={() => handleVote(-1)} disabled={pending} hitSlop={6} className="p-0.5">
+      <Pressable onPress={() => handleVote(-1)} disabled={pending || !canInteract} hitSlop={6} className="p-0.5">
         <MaterialCommunityIcons name="arrow-down-bold" size={iconSize} color={downActive ? ROSE : theme.icon} />
       </Pressable>
     </View>

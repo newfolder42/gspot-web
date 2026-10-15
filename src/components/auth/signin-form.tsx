@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
+import { needsOnboardingAction } from "@/actions/onboarding";
 import { APP_NAME } from "@/types/constants";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -48,7 +49,18 @@ export default function SigninForm() {
         return;
       }
 
-      window.location.href = safeRedirect;
+      // A new account goes through the welcome flow first, and on to where it was headed.
+      // Should the check itself fail, the home page asks again, so signing in still succeeds.
+      let destination = safeRedirect;
+      try {
+        if (await needsOnboardingAction()) {
+          destination = `/welcome?next=${encodeURIComponent(safeRedirect)}`;
+        }
+      } catch {
+        // keep the original destination
+      }
+
+      window.location.href = destination;
 
     } catch {
       setError("დაფიქსირდა გაურკვეველი ხარვეზი.");

@@ -2,7 +2,7 @@
 
 import { query } from '@/lib/db';
 import { getCurrentUser } from '@/lib/session';
-import { canUserAccessPost } from '@/lib/post-access';
+import { canUserInteractWithPost } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 import { eventBus } from '@/lib/eventBus';
 import type { VoteSummaryType, VoteValue } from '@/types/vote';
@@ -77,7 +77,7 @@ export async function toggleVoteForUser(
   value: VoteValue
 ): Promise<VoteSummaryType | null> {
   try {
-    if (!(await canUserAccessPost(userId, postId))) return null;
+    if (!(await canUserInteractWithPost(userId, postId))) return null;
 
     // resolve target + event payload data in one shot; also validates the comment belongs to the post
     const targetRes = await query(

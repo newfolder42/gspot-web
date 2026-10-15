@@ -11,7 +11,7 @@ import {
 import { isObjectiveAttemptable } from '@/lib/questProgress';
 import { haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { processUploadedPhoto } from '@/lib/image-pipeline';
-import { getZoneById } from '@/lib/zones';
+import { getZoneById, getZoneMember } from '@/lib/zones';
 import { eventBus } from '@/lib/eventBus';
 import type { ZoneQuestObjectiveSubmittedEvent } from '@/types/events/zone-quest-objective-submitted';
 import { logerror } from '@/lib/logger';
@@ -53,6 +53,12 @@ export async function POST(req: NextRequest) {
 
     const quest = await getQuestById(userQuest.quest_id);
     if (!quest) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+
+    // Accepting took an active membership; someone who has left since has no quest to finish.
+    const member = await getZoneMember(quest.zone_id, auth.user.userId);
+    if (member?.status !== 'active') {
+      return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+    }
 
     const objectivesWithProgress = await getQuestObjectivesWithProgress(quest.id, userQuestId);
     if (!isObjectiveAttemptable(objectivesWithProgress, quest.objective_order, objectiveId)) {

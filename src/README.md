@@ -33,6 +33,7 @@ This section is intentionally compact and explicit so both humans and LLMs can o
 - XP, achievements, and leaderboard-like progression
 - Zone exploration and zone membership features
 - S3-backed media upload flow
+- First-run welcome flow at `/welcome` (`users.onboarding_completed_at`; mobile uses `GET /api/v1/onboarding` and `POST /api/v1/onboarding/complete`)
 
 ## UI Conventions
 

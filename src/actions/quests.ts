@@ -309,6 +309,10 @@ export async function submitObjectiveCaptureAction(
     const quest = await getQuestByIdLib(userQuest.quest_id);
     if (!quest) return { success: false, error: 'მისია არ მოიძებნა' };
 
+    // Accepting took an active membership; someone who has left since has no quest to finish.
+    const member = await getZoneMemberLib(quest.zone_id, currentUser.userId);
+    if (!member || member.status !== 'active') return { success: false, error: 'საბზონის წევრი არ ხარ' };
+
     const objectivesWithProgress = await getQuestObjectivesWithProgressLib(quest.id, userQuestId);
     if (!isObjectiveAttemptable(objectivesWithProgress, quest.objective_order, objectiveId)) {
       return { success: false, error: 'ეს ამოცანა ჯერ ხელმისაწვდომი არ არია' };

@@ -2,7 +2,8 @@
 
 import { query, withTransaction } from '@/lib/db';
 import { getCurrentUser } from './session';
-import { canUserAccessPost } from './post-access';
+import { canUserInteractWithPost } from './post-access';
+import { canUserPostInZone } from './zones';
 import { isInGeorgia } from './geo';
 import { logerror } from './logger';
 import type { PostType, GpsPostType, FeedPostType, HideAndSeekPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
@@ -24,6 +25,7 @@ import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
 import { canReviewPostLocation } from '@/lib/postLocationDisputes';
 import { FEED_ACTIVITY_WINDOW_DAYS, FEED_STRANGER_BUMP_DELAY_HOURS } from '@/lib/feedRanking';
 import type { FoundItemType } from '@/types/item';
+import { NOT_A_MEMBER_POST_MESSAGE } from '@/types/zone';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
 
@@ -201,16 +203,35 @@ async function fetchVoteRewardExtras(ids: number[], viewerId?: number | null): P
   return map;
 }
 
+// Which of these zones the viewer is an active member of. A post card in a public zone they
+// have not joined is readable, but taking part in it is not, so cards carry the answer
+// (`viewerCanInteract`) and the vote/reward controls on them can say so.
+async function fetchViewerMemberZones(zoneIds: number[], viewerId?: number | null): Promise<Set<number>> {
+  const set = new Set<number>();
+  if (!viewerId || zoneIds.length === 0) return set;
+
+  const res = await query(
+    `select zone_id from zone_members
+      where user_id = $1 and status = 'active' and zone_id = any($2::bigint[])`,
+    [viewerId, zoneIds]
+  );
+
+  for (const r of res.rows) set.add(Number(r.zone_id));
+  return set;
+}
+
 async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedPostType[]> {
   const gpsIds = rows.filter(r => r.type === 'gps-photo').map(r => Number(r.id));
   const questIds = rows.filter(r => r.type === 'quest-completion').map(r => Number(r.id));
   const hideAndSeekIds = rows.filter(r => r.type === 'hide-and-seek').map(r => Number(r.id));
+  const zoneIds = [...new Set(rows.map(r => Number(r.zone_id)))];
 
-  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras] = await Promise.all([
+  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras, memberZones] = await Promise.all([
     fetchGpsExtras(gpsIds),
     fetchQuestExtras(questIds),
     fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
     fetchVoteRewardExtras(rows.map(r => Number(r.id)), viewerId),
+    fetchViewerMemberZones(zoneIds, viewerId),
   ]);
 
   return rows.map(r => {
@@ -221,6 +242,7 @@ async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedP
       userVote: voteReward?.user_vote ?? null,
       rewards: voteReward?.rewards ?? [],
       userReward: voteReward?.user_reward ?? null,
+      viewerCanInteract: memberZones.has(Number(r.zone_id)),
     };
 
     if (r.type === 'quest-completion') {
@@ -398,9 +420,11 @@ limit $1`,
 /**
  * A shuffled deck of posts to guess, for the /to-guess/shuffle screen.
  *
- * Same eligibility as `getToGuessPosts` with two differences: public zones
- * count even when the user hasn't joined them (a brand new member of nothing
- * still gets a deck), and posts they recently skipped are held back.
+ * Same eligibility as `getToGuessPosts` — only zones the user is an active member
+ * of; a public zone you have not joined is open for reading, but you cannot guess
+ * in it, so its posts would be cards you can never answer — with one difference:
+ * posts they recently skipped are held back. (A new user is joined to the public
+ * zone at registration, so even a brand new account has a deck.)
  *
  * The deck is drawn in popularity tiers rather than uniformly, so widely
  * guessed posts and forgotten ones both keep showing up. The tiers are
@@ -427,7 +451,7 @@ export async function getShufflePosts(
             select post_id, count(*) as cnt from post_guesses group by post_id
           ) g on g.post_id = p.id
           where p.status = 'published' and p.type = 'gps-photo' and p.user_id <> $1
-            and ${zoneVisibleSql('$1')}
+            and ${zoneMemberSql('$1')}
             and not exists(select 1 from post_guesses pg where pg.post_id = p.id and pg.user_id = $1)
             and not ${onSkipCooldownSql('$1')}
             and p.id <> all($2::bigint[])
@@ -776,7 +800,8 @@ export async function getPostForView(userId: number, id: number): Promise<FeedPo
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, p.user_id, p.status, p.zone_id, z.slug as zone_slug, u.alias as author_alias,
        (select count(*) from post_guesses pg where pg.post_id = p.id) as guesses_count, zcp.public_url as zone_profile_photo_url,
-       ux.level as author_level
+       ux.level as author_level, z.join_policy as zone_join_policy,
+       (select zm.status from zone_members zm where zm.zone_id = z.id and zm.user_id = $2 limit 1) as viewer_membership
 from posts p
 join zones z on z.id = p.zone_id
 join users u on u.id = p.user_id
@@ -811,7 +836,19 @@ limit 1`,
     );
 
     if (res.rowCount === 0) return null;
-    return (await enrichPosts(res.rows, userId))[0] ?? null;
+    const post = (await enrichPosts(res.rows, userId))[0] ?? null;
+    if (!post) return null;
+
+    // What the viewer may do here is a membership question, answered once for the detail so
+    // the screen can show a "join to take part" prompt instead of controls that would fail.
+    const row = res.rows[0];
+    const membership = (row.viewer_membership ?? null) as PostType['viewerMembership'];
+    return {
+      ...post,
+      viewerCanInteract: membership === 'active',
+      viewerMembership: membership,
+      zoneJoinPolicy: row.zone_join_policy as PostType['zoneJoinPolicy'],
+    };
   } catch (err) {
     await logerror('getPostForView error', [err]);
     return null;
@@ -964,7 +1001,7 @@ export type CreatePostResult = {
  * `null` still means "something broke"; this means "we understood you, and no".
  */
 export type CreatePostRefusal = {
-  refused: 'same_location';
+  refused: 'same_location' | 'not_member';
   message: string;
 };
 
@@ -991,6 +1028,12 @@ export async function createPost({
     const user = await getCurrentUser();
     if (!user) return null;
     const currentUserId = user.userId;
+
+    // This action is directly callable with any zoneId; the zone picker is only a courtesy.
+    // Checked before the idempotency claim so a refusal never spends the key.
+    if (!(await canUserPostInZone(currentUserId, zoneId))) {
+      return { refused: 'not_member', message: NOT_A_MEMBER_POST_MESSAGE };
+    }
 
     const coordinates = await getContentCoordinates(contentId);
 
@@ -1275,7 +1318,7 @@ export async function createPostGuess({ postId, coordinates, distance, score }: 
       return null;
     }
 
-    if (!(await canUserAccessPost(userId, postId))) return null;
+    if (!(await canUserInteractWithPost(userId, postId))) return null;
 
     const post = await getPostById(postId);
 
@@ -1364,7 +1407,7 @@ export async function createPhotoGuessForUser(
   }
 ): Promise<PostGuessType | null> {
   try {
-    if (!(await canUserAccessPost(userId, postId))) return null;
+    if (!(await canUserInteractWithPost(userId, postId))) return null;
 
     const post = await getPostById(postId);
     if (!post) return null;
@@ -1447,13 +1490,14 @@ export async function getPhotoCoordinates({ postId }: { postId: number }): Promi
   return getPhotoCoordinatesForUser(user.userId, postId);
 }
 
-// The post photo's true coordinates — access-gated, used to score a photo guess.
+// The post photo's true coordinates — used to score a guess, so it is gated like one: only
+// a member of the zone may ask for the answer.
 export async function getPhotoCoordinatesForUser(
   userId: number,
   postId: number
 ): Promise<{ coordinates: { latitude: number; longitude: number } } | null> {
   try {
-    if (!(await canUserAccessPost(userId, postId))) return null;
+    if (!(await canUserInteractWithPost(userId, postId))) return null;
 
     const data = await query(
       `select details from posts p

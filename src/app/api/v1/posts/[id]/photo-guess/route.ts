@@ -4,6 +4,7 @@ import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { createPhotoGuessForUser, getPhotoCoordinatesForUser } from '@/lib/posts';
 import { calculatePhotoGuessScore, haversineMeters } from '@/lib/gpsPhotoGuessScore';
 import { generateFileUrl } from '@/lib/s3';
+import { getPostInteractionBlock } from '@/lib/post-access';
 import { isInGeorgia } from '@/lib/geo';
 import { logerror } from '@/lib/logger';
 
@@ -20,7 +21,8 @@ const BodySchema = z.object({
 type Context = { params: Promise<{ id: string }> };
 
 // GET /api/v1/posts/:id/photo-guess — a signed S3 URL for the guess photo.
-// Access-gated on the post so a signed URL can't be farmed for arbitrary posts.
+// Gated like the guess itself (an active member of the post's zone) so a signed URL can't be
+// farmed for arbitrary posts.
 export async function GET(req: NextRequest, context: Context) {
   try {
     const auth = await requireMobileUser(req);
@@ -33,7 +35,12 @@ export async function GET(req: NextRequest, context: Context) {
     }
 
     const photo = await getPhotoCoordinatesForUser(auth.user.userId, parsed.data.id);
-    if (!photo) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+    if (!photo) {
+      if ((await getPostInteractionBlock(auth.user.userId, parsed.data.id)) === 'not_member') {
+        return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+      }
+      return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+    }
 
     const signedUrl = await generateFileUrl('guess-photo');
     return NextResponse.json({ signedUrl });
@@ -73,6 +80,9 @@ export async function POST(req: NextRequest, context: Context) {
 
     const photo = await getPhotoCoordinatesForUser(auth.user.userId, postId);
     if (!photo?.coordinates) {
+      if ((await getPostInteractionBlock(auth.user.userId, postId)) === 'not_member') {
+        return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
     }
 

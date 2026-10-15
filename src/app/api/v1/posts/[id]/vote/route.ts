@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireMobileUser } from '@/app/api/v1/_utils/auth';
 import { toggleVoteForUser } from '@/lib/votes';
+import { getPostInteractionBlock } from '@/lib/post-access';
 import { logerror } from '@/lib/logger';
 
 const ParamsSchema = z.object({
@@ -44,6 +45,10 @@ export async function POST(req: NextRequest, context: Context) {
     );
 
     if (!summary) {
+      // Only asked after the vote said no, so a successful vote pays nothing for it.
+      if ((await getPostInteractionBlock(auth.user.userId, parsedParams.data.id)) === 'not_member') {
+        return NextResponse.json({ error: 'NOT_A_MEMBER' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'VOTE_FAILED' }, { status: 403 });
     }
 

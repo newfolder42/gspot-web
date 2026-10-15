@@ -10,6 +10,8 @@ import {
   recordPostLocation,
 } from '@/lib/postLocations';
 import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
+import { canUserPostInZone } from '@/lib/zones';
+import { NOT_A_MEMBER_POST_MESSAGE } from '@/types/zone';
 import { type PostPublishedEvent } from '@/types/events/post-published';
 import { type UserProfilePhotoChangedEvent } from '@/types/events/user-profile-photo-changed';
 import type { FoundItemType } from '@/types/item';
@@ -22,7 +24,7 @@ export type CreateMobilePostResult = {
 
 /** Mirrors CreatePostRefusal in lib/posts.ts — a rule said no, nothing broke. */
 export type CreateMobilePostRefusal = {
-  refused: 'same_location';
+  refused: 'same_location' | 'not_member';
   message: string;
 };
 
@@ -191,6 +193,12 @@ export async function createMobilePost({
   tagId,
 }: CreateMobilePostParams): Promise<CreateMobilePostOutcome | null> {
   try {
+    // The route already checked the zone picker's list; this is the guard that holds for any
+    // other caller, and it runs before the idempotency claim so a refusal never spends the key.
+    if (!(await canUserPostInZone(userId, zoneId))) {
+      return { refused: 'not_member', message: NOT_A_MEMBER_POST_MESSAGE };
+    }
+
     const coordinates = await getContentCoordinates(contentId);
 
     if (idempotencyKey) {

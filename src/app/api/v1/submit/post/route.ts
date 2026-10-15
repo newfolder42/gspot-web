@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
     // A rule turned the post down, nothing broke — 409, and the sentence to show comes
     // from the server because it carries the numbers the rule is currently tuned to.
     if (isCreateMobilePostRefusal(created)) {
+      // Not (or no longer) a member — the same answer the zone-list guard above gives.
+      if (created.refused === 'not_member') {
+        return NextResponse.json({ error: 'ZONE_NOT_ALLOWED', message: created.message }, { status: 403 });
+      }
       return NextResponse.json(
         { error: 'SAME_LOCATION_LIMIT', message: created.message },
         { status: 409 }

@@ -141,7 +141,7 @@ function DisputeDialog({ postId, rules, onClose, onDone }: { postId: number; rul
   return (
     <Dialog title="გასაჩივრება" onClose={onClose} busy={submitting}>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        რატომ ფიქრობ, რომ პოსტის ლოკაცია არასწორია? ზონის ადმინისტრაცია განიხილავს და საჭიროების შემთხვევაში პოსტი შეჩერდება.
+        დააზუსტე პოსტის გასაჩივრების დეტალები. ზონის ადმინისტრატორები განიხილავენ და საჭიროების შემთხვევაში პოსტი შეჩერდება.
       </p>
       <ZoneRulesList rules={rules} />
       <div className="space-y-1">
@@ -220,12 +220,12 @@ function SuspendDialog({ postId, onClose, onDone }: { postId: number; onClose: (
   return (
     <Dialog title="პოსტის შეჩერება" onClose={onClose} busy={submitting}>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        პოსტი გაქრება ლენტებიდან და ახალი გამოცნობები შეჩერდება, სანამ ავტორი ლოკაციას არ გაასწორებს.
+        პოსტი გაქრება ფიდიდან და ახალი გამოცნობები შეჩერდება, სანამ ავტორი ლოკაციას არ გაასწორებს.
       </p>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="შეტყობინება ავტორისთვის, რა უნდა გასწორდეს (არასავალდებულო)"
+        placeholder="შეტყობინება ავტორისთვის (არასავალდებულო)"
         rows={3}
         maxLength={LOCATION_NOTE_MAX}
         className={noteInputClass}
@@ -398,7 +398,7 @@ export default function PostLocationReview({ postId, review, disputeOpen, onDisp
           key="flagged"
           tone="amber"
           title={`პოსტის ლოკაცია გასაჩივრებულია (${review.disputeCount})`}
-          text="ზონის ადმინისტრაცია განიხილავს. თუ ლოკაცია არასწორია, პოსტი შეჩერდება და გასწორება მოგიწევს."
+          text="ზონის ადმინისტრატორები განიხილავენ. თუ ლოკაცია არასწორია, პოსტი შეჩერდება და გასწორება მოგიწევს."
         >
           <DisputeReasons disputes={review.disputes} tone="amber" />
           <div className="mt-3">

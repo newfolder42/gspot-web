@@ -3,7 +3,7 @@ import { Stack, Redirect, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import {
   markPushNotificationRead,
@@ -12,6 +12,8 @@ import {
 } from '@/lib/pushNotifications';
 import { openPushNotification } from '@/lib/notificationRouting';
 import { prefetchPushImages } from '@/lib/imagePrefetch';
+import { onboardingApi, type OnboardingState } from '@/lib/onboarding';
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { Colors, useTheme } from '@/constants/colors';
 import { OngoingGameButton } from '@/components/hideandseek/OngoingGameButton';
 import { InfoButton } from '@/components/ui/InfoButton';
@@ -38,6 +40,20 @@ export default function AppLayout() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const theme = useTheme();
+
+  // Welcome flow: the server decides, on every sign-in and every cold start (this layout
+  // mounts once per session). Nothing is cached on the device.
+  // - staleTime Infinity: never refetched mid-session, the flow's zone list shrinks as the
+  //   user joins zones and a refetch would make those rows vanish.
+  // - gcTime 0: dropped as soon as this layout unmounts (logout), so the next sign-in
+  //   always asks again instead of replaying a stale answer.
+  const onboarding = useQuery({
+    queryKey: ['onboarding', user?.id],
+    queryFn: onboardingApi.get,
+    enabled: !!user,
+    staleTime: Infinity,
+    gcTime: 0,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -101,6 +117,35 @@ export default function AppLayout() {
   }
 
   if (!user) return <Redirect href="/(auth)/login" />;
+
+  if (onboarding.isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <ActivityIndicator size="large" color={Colors.brand} />
+      </View>
+    );
+  }
+
+  if (onboarding.data && !onboarding.data.completed) {
+    return (
+      <OnboardingFlow
+        alias={user.alias}
+        zones={onboarding.data.zones}
+        onFinish={async () => {
+          await onboardingApi.complete();
+          // Flips the gate above without another request.
+          queryClient.setQueryData<OnboardingState>(['onboarding', user.id], {
+            completed: true,
+            zones: [],
+          });
+        }}
+      />
+    );
+  }
+
+  // Reaching here with no data means the check itself failed. The app stays usable and the
+  // question is asked again at the next sign-in or start, rather than locking someone out
+  // over a flaky connection.
 
   const searchButton = (
     <Pressable onPress={() => router.push('/(app)/search')} style={{ marginRight: 4 }}>

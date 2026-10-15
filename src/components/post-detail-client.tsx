@@ -21,6 +21,7 @@ import type { RewardSummaryType } from '@/types/reward';
 import type { ZoneTag } from '@/types/tag';
 import HideAndSeekPanel from './hide-and-seek/hide-and-seek-panel';
 import PostLocationReview from './post-location-review';
+import ZoneJoinPrompt from './zone/zone-join-prompt';
 
 type PostDetailClientProps = {
   post: PostDetailType;
@@ -44,6 +45,18 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
   // the guess map shows the true location: the author's, and staff's while a post is disputed
   const canViewGuessMap = isAuthor || !!locationReview?.canReview;
   const userCanGuess = !!gpsPost && !isSuspended && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
+  // A public zone is readable by anyone, but only its members may take part in it. Signed-out
+  // viewers keep their sign-in prompts; a signed-in non-member gets the join prompt instead.
+  const canInteract = !currentUser || post.viewerCanInteract !== false;
+  const joinPrompt =
+    currentUserId != null && !canInteract ? (
+      <ZoneJoinPrompt
+        zoneId={post.zoneId}
+        userId={currentUserId}
+        status={post.viewerMembership ?? null}
+        joinPolicy={post.zoneJoinPolicy ?? 'open'}
+      />
+    ) : null;
 
   const [canGuess, setCanGuess] = useState(userCanGuess);
   const [disputeOpen, setDisputeOpen] = useState(false);
@@ -172,6 +185,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
             game={gamePost.game}
             players={gamePost.players}
             currentUserId={currentUserId}
+            canInteract={canInteract}
           />
         </div>
       )}
@@ -197,6 +211,8 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
           userPostReward={postRewards.userReward}
           onGuessSubmitted={handleGuessSubmitted}
           onCommentAdded={handleCommentAdded}
+          canInteract={canInteract}
+          joinPrompt={joinPrompt}
         />
       </div>
     </main>
