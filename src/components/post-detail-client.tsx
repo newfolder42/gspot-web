@@ -154,6 +154,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
             src={gpsPost.image}
             alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
             dateTaken={gpsPost.dateTaken}
+            items={gpsPost.items}
             zoomable
           />
         )}

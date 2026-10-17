@@ -122,3 +122,17 @@ export function normalizeInventoryPageSize(value: unknown, fallback = INVENTORY_
  * `count` is what the user holds after the grant, so a stacked find can say so.
  */
 export type FoundItemType = ItemDefinition & { count: number };
+
+/**
+ * An item a post found, as the feed and the post page carry it: the catalog row without its
+ * taxonomy, which no card or loot window shows. Read from `items` when the post is served —
+ * `post_items` stores only the reference — so a renamed item or a swapped icon shows up on
+ * every post at once. No `count`: the stack size is the finder's bag, not the post's.
+ */
+export type PostItemType = Pick<
+  ItemDefinition,
+  'alias' | 'name' | 'description' | 'iconUrl' | 'quality' | 'stackable'
+>;
+
+/** The overlay on a photo shows this many icons, then a "+N" chip for the rest. */
+export const POST_ITEMS_VISIBLE_ICONS = 4;

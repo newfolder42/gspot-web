@@ -92,6 +92,7 @@ export function GpsPost({ post, showZone, isLoggedIn }: { post: GpsPostType, sho
         src={post.imageVariants?.feed ?? post.image}
         alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
         dateTaken={post.dateTaken}
+        items={post.items}
         href={`/post/${post.id}`}
       />
       <div className="px-2 py-2">

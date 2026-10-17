@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import { itemQualityColor, itemQualityLabel, showsItemCount } from '@/types/item';
-import type { FoundItemType, InventoryItemType, ItemDefinition, ItemSource } from '@/types/item';
+import type { FoundItemType, InventoryItemType, ItemDefinition, PostItemType } from '@/types/item';
 import { ItemIcon } from './ItemIcon';
 
 /** Mirrors web src/components/inventory/item-details.tsx. */
@@ -12,7 +12,7 @@ const TOOLTIP_BORDER = '#4b5065';
 const FLAVOR_COLOR = '#ffd100';
 const MUTED_COLOR = '#9d9d9d';
 
-type AnyItem = ItemDefinition | InventoryItemType | FoundItemType;
+type AnyItem = ItemDefinition | InventoryItemType | FoundItemType | PostItemType;
 
 function isOwned(item: AnyItem): item is InventoryItemType {
   return 'acquiredAt' in item;

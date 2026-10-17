@@ -103,3 +103,15 @@ export const INVENTORY_PAGE_SIZE = 8;
  * holds after the grant, so a stacked find can say so.
  */
 export type FoundItemType = ItemDefinition & { count: number };
+
+/**
+ * An item a post found, as the feed and the post page carry it: the catalog row without its
+ * taxonomy. Mirrors web src/types/item.ts#PostItemType.
+ */
+export type PostItemType = Pick<
+  ItemDefinition,
+  'alias' | 'name' | 'description' | 'iconUrl' | 'quality' | 'stackable'
+>;
+
+/** The overlay on a photo shows this many icons, then a "+N" chip for the rest. */
+export const POST_ITEMS_VISIBLE_ICONS = 4;

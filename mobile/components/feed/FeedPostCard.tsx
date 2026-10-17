@@ -142,6 +142,7 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
         <PostPhoto
           uri={item.imageVariants?.feed ?? item.image}
           dateTaken={item.dateTaken}
+          items={item.items}
           onPress={openPost}
         />
       )}

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ZoomableImage } from '@/components/ui/ZoomableImage';
+import { PostItemsOverlay } from '@/components/inventory/PostItemsOverlay';
 import { formatPhotoTakenDate } from '@/lib/dates';
 import { useLayout } from '@/lib/layout';
+import type { PostItemType } from '@/types/item';
 
 type Size = { width: number; height: number };
 
@@ -13,6 +15,8 @@ type Props = {
   fullUri?: string;
   title?: string | null;
   dateTaken?: string | null;
+  /** What the post found; stacked over the bottom-left corner, opposite the date stamp. */
+  items?: PostItemType[];
   /** Feed cards open the post on tap. */
   onPress?: () => void;
 };
@@ -30,7 +34,7 @@ export function PostPhoto(props: Props) {
   return <PostPhotoFrame key={props.uri} {...props} />;
 }
 
-function PostPhotoFrame({ uri, fullUri, title, dateTaken, onPress }: Props) {
+function PostPhotoFrame({ uri, fullUri, title, dateTaken, items, onPress }: Props) {
   const { width: windowWidth, photoMaxHeight } = useLayout();
   const [slotWidth, setSlotWidth] = useState(windowWidth);
   const [ratio, setRatio] = useState<number | null>(null);
@@ -68,6 +72,7 @@ function PostPhotoFrame({ uri, fullUri, title, dateTaken, onPress }: Props) {
             </Text>
           </View>
         ) : null}
+        {items && items.length > 0 && ratio ? <PostItemsOverlay items={items} /> : null}
       </View>
     </View>
   );

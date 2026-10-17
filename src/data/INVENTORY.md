@@ -103,6 +103,32 @@ Each newly granted item then publishes `gspot:item:found`, which gspot-services 
 the "შენს ინვენტარში მატებაა - …" notification and a resync of the `items_collected`
 achievement (3 / 10 / 20 / 50 / 100 ნივთი).
 
+## Items on a post
+
+What a post found is kept in `post_items` (`post_id`, `item_id`, `sort`) — a **reference**,
+not a copy. `grantItemsForPost` writes it in the same request that grants the items, in one
+statement, so the overlay is there the moment the author lands on their post. It is separate
+from `user_items` on purpose: a stackable item has one `user_items` row per user, so that row
+can only remember the *first* post that found it.
+
+The name, description, quality and **icon URL are read from `items` every time a post is
+served**. Swap an item's artwork or fix its name and every post that shows it changes with
+it; there is nothing to update on the posts. A `disabled` item stays on the posts that found
+it, like it stays in a bag. Deleting a post or a catalog row cascades.
+
+Where it shows: stacked over the photo's bottom-left corner (the date stamp is bottom-right)
+in the **home feed** and on the **post page**, on web and Android. Tapping the stack opens the
+loot window — every item's details card at once. The other lists (zone, to-guess, profile,
+shuffle) do not load it, and the API simply omits `items` there; it is also omitted, not
+empty, on a post that found nothing. Everyone who can see the post sees its items.
+
+Posts that already existed were backfilled from `user_items.source_details.postId`. A
+stackable item's later finds were never recorded against a post, so those posts start
+without that item.
+
+A location correction (`postLocationDisputes`) does not touch `post_items`, same as it leaves
+the granted items in the bag.
+
 ## Seasons
 
 A loot entry can be limited to one or more windows, in `item_location_item_periods`.

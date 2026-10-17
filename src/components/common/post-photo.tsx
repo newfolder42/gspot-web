@@ -4,7 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import ZoomableImage from './zoomable-image';
+import PostItemsOverlay from '@/components/inventory/post-items-overlay';
 import { formatPhotoTakenDate } from '@/lib/dates';
+import type { PostItemType } from '@/types/item';
 
 /** Tallest a single post photo gets. */
 const MAX_HEIGHT = '60vh';
@@ -21,12 +23,15 @@ export default function PostPhoto({
   src,
   alt,
   dateTaken,
+  items,
   href,
   zoomable = false,
 }: {
   src: string;
   alt: string;
   dateTaken?: string | null;
+  /** What the post found; stacked over the bottom-left corner, opposite the date stamp. */
+  items?: PostItemType[];
   /** Feed cards open the post on click. */
   href?: string;
   /** The post page zooms on click instead. */
@@ -66,6 +71,7 @@ export default function PostPhoto({
             {formatPhotoTakenDate(dateTaken)}
           </div>
         )}
+        {items && items.length > 0 && ratio && <PostItemsOverlay items={items} />}
       </div>
     </div>
   );

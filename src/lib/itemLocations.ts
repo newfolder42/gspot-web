@@ -192,7 +192,6 @@ export async function grantItemsForPost({
         const item = await grantItemToUser(userId, alias, 'found', {
           postId,
           locationId: location.id,
-          locationName: location.name,
         });
         if (!item) continue;
 
@@ -217,6 +216,7 @@ export async function grantItemsForPost({
     }
 
     if (found.length > 0) {
+      await attachItemsToPost(postId, found);
       await loginfo('items found on post', { userId, postId, aliases: found.map((i) => i.alias) });
     }
 
@@ -224,6 +224,30 @@ export async function grantItemsForPost({
   } catch (err) {
     await logerror('grantItemsForPost error', [err]);
     return [];
+  }
+}
+
+/**
+ * Records what a post found, for the overlay on its photo (`post_items`). One statement
+ * for the whole find, in drop order — `sort` is the ordinality of the alias list.
+ *
+ * Its own try/catch: the items are already in the bag and the notifications are on their
+ * way, so a failure here costs the post its overlay but must not swallow the "you found…"
+ * announcement the submit screen is about to show.
+ */
+async function attachItemsToPost(postId: number, found: FoundItemType[]): Promise<void> {
+  try {
+    const aliases = [...new Set(found.map((i) => i.alias))];
+    await query(
+      `insert into post_items (post_id, item_id, sort)
+       select $1, i.id, (t.ord - 1)::smallint
+         from unnest($2::varchar[]) with ordinality as t(alias, ord)
+         join items i on i.alias = t.alias
+       on conflict (post_id, item_id) do nothing`,
+      [postId, aliases]
+    );
+  } catch (err) {
+    await logerror('attachItemsToPost error', [err]);
   }
 }
 

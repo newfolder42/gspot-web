@@ -3,6 +3,7 @@ import type { RewardCountType, RewardSummaryType } from '@/types/reward';
 import type { VoteSummaryType, VoteValue } from '@/types/vote';
 import type { HideAndSeekGameType, HideAndSeekPlayerType } from '@/types/hide-and-seek';
 import type { PostLocationReviewType } from '@/types/post-location';
+import type { PostItemType } from '@/types/item';
 
 export type PostImageVariants = {
   thumb: string;
@@ -30,6 +31,11 @@ export type MobilePostType = {
   /** Resized renditions; prefer `feed` in lists and `thumb` in grids. */
   imageVariants?: PostImageVariants | null;
   dateTaken?: string | null;
+  /**
+   * gps-photo, home feed and post detail only: the items the author found by posting here,
+   * in drop order. Absent when the post found nothing, and from servers that predate it.
+   */
+  items?: PostItemType[];
   guessCount?: number | null;
   commentCount?: number | null;
   voteScore?: number | null;

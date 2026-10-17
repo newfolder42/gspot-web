@@ -1,5 +1,6 @@
 import type { VoteValue } from './vote';
 import type { RewardCountType } from './reward';
+import type { PostItemType } from './item';
 
 /** The followed user's engagement that placed a post in the home feed; the "X commented" header. */
 export type PostActivityType = {
@@ -77,6 +78,11 @@ export type GpsPostType = PostType & {
   guessCount?: number | null;
   userHasGuessed?: boolean;
   tag?: { id: number; name: string; color: string } | null;
+  /**
+   * The items the author found by posting here, in the order they dropped. Home feed and
+   * post detail only, and absent (not empty) when the post found nothing.
+   */
+  items?: PostItemType[];
 }
 
 export type QuestCompletionPhotoType = {

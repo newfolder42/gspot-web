@@ -24,7 +24,7 @@ import {
 import { clearHiddenDateTaken } from '@/lib/zone-guess-posting';
 import { canReviewPostLocation } from '@/lib/postLocationDisputes';
 import { FEED_ACTIVITY_WINDOW_DAYS, FEED_STRANGER_BUMP_DELAY_HOURS } from '@/lib/feedRanking';
-import type { FoundItemType } from '@/types/item';
+import type { FoundItemType, ItemQuality, PostItemType } from '@/types/item';
 import { NOT_A_MEMBER_POST_MESSAGE } from '@/types/zone';
 
 type PhotoItem = { url: string; details?: { variants?: PostImageVariants | null; dateTaken?: string | null; objectiveTitle?: string | null } | null };
@@ -63,7 +63,7 @@ function buildBasePost(r: any): PostType {
   };
 }
 
-function enrichGpsPost(base: PostType, r: any, items: PhotoItem[]): GpsPostType {
+function enrichGpsPost(base: PostType, r: any, items: PhotoItem[], foundItems?: PostItemType[]): GpsPostType {
   const first = items[0];
   return {
     ...base,
@@ -74,6 +74,8 @@ function enrichGpsPost(base: PostType, r: any, items: PhotoItem[]): GpsPostType 
     guessCount: r.guesses_count != null ? Number(r.guesses_count) : 0,
     userHasGuessed: r.user_has_guessed ?? false,
     tag: r.tag_id ? { id: Number(r.tag_id), name: r.tag_name, color: r.tag_color } : null,
+    // Left off entirely when empty, so the many posts that found nothing add no bytes.
+    ...(foundItems && foundItems.length > 0 ? { items: foundItems } : {}),
   };
 }
 
@@ -220,18 +222,63 @@ async function fetchViewerMemberZones(zoneIds: number[], viewerId?: number | nul
   return set;
 }
 
-async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedPostType[]> {
+// The items each post found, from `post_items` joined to the live catalog row — the icon URL
+// is read here, never stored on the post, so swapping an item's artwork reaches every post.
+// Disabled items are kept on purpose: a post still shows what it found after the item retires.
+async function fetchPostItems(ids: number[]): Promise<Map<number, PostItemType[]>> {
+  const map = new Map<number, PostItemType[]>();
+  if (ids.length === 0) return map;
+
+  // The overlay is decoration: if this read fails the posts still have to come back, so the
+  // error is logged and the cards render without it instead of failing the whole page.
+  try {
+    const res = await query(
+      `select pi.post_id, i.alias, i.name, i.description, i.icon_url, i.quality, i.stackable
+         from post_items pi
+         join items i on i.id = pi.item_id
+        where pi.post_id = any($1::bigint[])
+        order by pi.post_id, pi.sort, pi.item_id`,
+      [ids]
+    );
+
+    for (const r of res.rows) {
+      const postId = Number(r.post_id);
+      const list = map.get(postId) ?? [];
+      list.push({
+        alias: r.alias,
+        name: r.name,
+        description: r.description ?? null,
+        iconUrl: r.icon_url ?? null,
+        quality: (r.quality ?? 'common') as ItemQuality,
+        stackable: Boolean(r.stackable),
+      });
+      map.set(postId, list);
+    }
+  } catch (err) {
+    await logerror('fetchPostItems error', [err]);
+  }
+  return map;
+}
+
+// `withItems` is for the surfaces that show the overlay — the home feed and the post page.
+// Every other list (zone, to-guess, profile, shuffle) skips the extra query entirely.
+async function enrichPosts(
+  rows: any[],
+  viewerId?: number | null,
+  { withItems = false }: { withItems?: boolean } = {}
+): Promise<FeedPostType[]> {
   const gpsIds = rows.filter(r => r.type === 'gps-photo').map(r => Number(r.id));
   const questIds = rows.filter(r => r.type === 'quest-completion').map(r => Number(r.id));
   const hideAndSeekIds = rows.filter(r => r.type === 'hide-and-seek').map(r => Number(r.id));
   const zoneIds = [...new Set(rows.map(r => Number(r.zone_id)))];
 
-  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras, memberZones] = await Promise.all([
+  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras, memberZones, postItems] = await Promise.all([
     fetchGpsExtras(gpsIds),
     fetchQuestExtras(questIds),
     fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
     fetchVoteRewardExtras(rows.map(r => Number(r.id)), viewerId),
     fetchViewerMemberZones(zoneIds, viewerId),
+    withItems ? fetchPostItems(gpsIds) : Promise.resolve(new Map<number, PostItemType[]>()),
   ]);
 
   return rows.map(r => {
@@ -255,7 +302,7 @@ async function enrichPosts(rows: any[], viewerId?: number | null): Promise<FeedP
     }
 
     const extra = gpsExtras.get(id) ?? {};
-    return enrichGpsPost(base, { ...r, ...extra }, extra.photo_items ?? []);
+    return enrichGpsPost(base, { ...r, ...extra }, extra.photo_items ?? [], postItems.get(id));
   });
 }
 
@@ -660,7 +707,7 @@ export async function getHomeFeedPosts(
       params
     );
 
-    const posts = await enrichPosts(res.rows, userId);
+    const posts = await enrichPosts(res.rows, userId, { withItems: true });
 
     // enrichPosts keeps row order, so the ranking fields can be laid back on by index.
     const actorIds = [...new Set(res.rows.filter(r => r.activity_kind).map(r => Number(r.activity_user_id)))];
@@ -836,7 +883,7 @@ limit 1`,
     );
 
     if (res.rowCount === 0) return null;
-    const post = (await enrichPosts(res.rows, userId))[0] ?? null;
+    const post = (await enrichPosts(res.rows, userId, { withItems: true }))[0] ?? null;
     if (!post) return null;
 
     // What the viewer may do here is a membership question, answered once for the detail so

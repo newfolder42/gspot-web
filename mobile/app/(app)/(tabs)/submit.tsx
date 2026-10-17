@@ -655,7 +655,7 @@ function PhotoSubmit() {
     return (
       <View className="flex-1 items-center justify-center px-8 bg-zinc-50 dark:bg-zinc-950">
         <Text className="text-zinc-500 dark:text-zinc-400 text-sm text-center mb-4">
-          ფორმის ჩატვირთვა ვერ მოხერხდა
+          ჩატვირთვა ვერ მოხერხდა
         </Text>
         <Pressable
           onPress={() => zonesQuery.refetch()}
