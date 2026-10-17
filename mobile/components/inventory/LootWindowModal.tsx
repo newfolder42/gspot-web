@@ -10,7 +10,6 @@ import { ItemDetails } from './ItemDetails';
  * src/components/inventory/loot-window.tsx.
  */
 const FRAME_BG = 'rgba(10, 14, 32, 0.98)';
-const FRAME_BORDER = '#7a6a3a';
 const FRAME_RULE = '#2b2412';
 const TITLE_COLOR = '#ffd100';
 
@@ -38,14 +37,14 @@ export function LootWindowModal({
         <Pressable
           onPress={(e) => e.stopPropagation()}
           className="w-full max-w-sm rounded-md overflow-hidden"
-          style={{ backgroundColor: FRAME_BG, borderWidth: 2, borderColor: FRAME_BORDER }}
+          style={{ backgroundColor: FRAME_BG }}
         >
           <View
             className="flex-row items-center justify-between px-3 py-2"
             style={{ borderBottomWidth: 1, borderBottomColor: FRAME_RULE }}
           >
             <Text className="text-sm font-semibold" style={{ color: TITLE_COLOR, letterSpacing: 0.5 }}>
-              ნადავლი
+              ნაპოვნი ნივთები
             </Text>
             <Pressable onPress={onClose} hitSlop={10} accessibilityLabel="დახურვა">
               <Feather name="x" size={18} color="#a1a1aa" />

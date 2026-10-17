@@ -11,7 +11,6 @@ import ItemDetails from './item-details';
  * colours in every theme, like the item cards inside it.
  */
 const FRAME_BG = 'linear-gradient(180deg, rgba(20, 24, 44, 0.98) 0%, rgba(7, 11, 28, 0.98) 100%)';
-const FRAME_BORDER = '#7a6a3a';
 const FRAME_RULE = '#2b2412';
 const TITLE_COLOR = '#ffd100';
 
@@ -48,7 +47,7 @@ export default function LootWindow({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="ნადავლი"
+      aria-label="ნაპოვნი ნივთები"
       className="fixed inset-0 z-layer-modal flex items-center justify-center bg-black/70 p-4"
       onClick={onClose}
     >
@@ -56,8 +55,7 @@ export default function LootWindow({
         className="w-full max-w-sm rounded-md"
         style={{
           background: FRAME_BG,
-          border: `2px solid ${FRAME_BORDER}`,
-          boxShadow: `inset 0 0 0 1px ${FRAME_RULE}, 0 12px 40px rgba(0, 0, 0, 0.6)`,
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -66,7 +64,7 @@ export default function LootWindow({
           style={{ borderBottom: `1px solid ${FRAME_RULE}` }}
         >
           <h2 className="text-sm font-semibold tracking-wide" style={{ color: TITLE_COLOR }}>
-            ნადავლი
+            ნაპოვნი ნივთები
           </h2>
           <button
             type="button"
