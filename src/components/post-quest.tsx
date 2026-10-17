@@ -5,6 +5,7 @@ import TimePassed from "./common/time-passed";
 import ProfileAvatar from "./common/profileAvatar";
 import UserLink from "./common/user-link";
 import PostActionBar from "./post-action-bar";
+import PostBookmarkMenu from "./post-bookmark-menu";
 import { FlagIcon, TrophyIcon } from "./icons";
 
 export function QuestCompletionTitle({ questTitle }: { questTitle: string | null }) {
@@ -74,6 +75,11 @@ export function QuestCompletionPost({ post, showZone, isLoggedIn }: { post: Ques
             <svg className="w-3 h-3 text-rose-600" viewBox="0 0 12 12" aria-label="Post failed" role="img">
               <circle cx="6" cy="6" r="5.5" fill="currentColor" />
             </svg>
+          )}
+          {isLoggedIn && (
+            <div className="ml-auto">
+              <PostBookmarkMenu postId={post.id} initialBookmarked={post.userBookmarked ?? false} />
+            </div>
           )}
         </div>
         <Link

@@ -8,6 +8,7 @@ import TagBadge from "./common/tag-badge";
 import UserLink from "./common/user-link";
 import PostPhoto from "./common/post-photo";
 import PostActionBar from "./post-action-bar";
+import PostBookmarkMenu from "./post-bookmark-menu";
 import RewardIcon from "./rewards/reward-icons";
 
 export function GpsPostGridItem({ post }: { post: GpsPostType }) {
@@ -83,6 +84,11 @@ export function GpsPost({ post, showZone, isLoggedIn }: { post: GpsPostType, sho
             >
               <circle cx="6" cy="6" r="5.5" fill="currentColor" />
             </svg>
+          )}
+          {isLoggedIn && (
+            <div className="ml-auto">
+              <PostBookmarkMenu postId={post.id} initialBookmarked={post.userBookmarked ?? false} />
+            </div>
           )}
         </div>
         {post.tag && <TagBadge name={post.tag.name} color={post.tag.color} />}

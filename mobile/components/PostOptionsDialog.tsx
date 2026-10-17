@@ -12,6 +12,16 @@ export type PostOption = {
   tone?: 'default' | 'amber' | 'danger';
 };
 
+/**
+ * "ჩამახსოვრება" / "დავიწყება": save the post to ჩამახსოვრებულები, or take it off again.
+ * The same row sits at the top of every ⋯ menu a post has.
+ */
+export function bookmarkOption(saved: boolean, onToggle: () => void): PostOption {
+  return saved
+    ? { key: 'bookmark', label: 'დავიწყება', icon: 'x-circle', onPress: onToggle }
+    : { key: 'bookmark', label: 'ჩამახსოვრება', icon: 'bookmark', onPress: onToggle };
+}
+
 const TONES = {
   default: { icon: null, text: 'text-zinc-700 dark:text-zinc-300' },
   amber: { icon: '#D97706', text: 'text-amber-700 dark:text-amber-300' },

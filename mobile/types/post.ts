@@ -44,6 +44,8 @@ export type MobilePostType = {
   rewards?: RewardCountType[];
   /** The reward the viewer gave the post; rewards are one-shot, so this hides the give control. */
   userReward?: string | null;
+  /** The viewer saved the post to ჩამახსოვრებულები. Absent from servers that predate it. */
+  userBookmarked?: boolean;
   /**
    * Whether the viewer is an active member of the post's zone — what taking part in it
    * (guess, comment, vote, reward, play) takes. A public zone can be read without joining.

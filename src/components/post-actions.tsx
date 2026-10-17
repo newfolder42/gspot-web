@@ -7,8 +7,11 @@ import { setPostTag } from '@/lib/tags';
 import type { ZoneTag } from '@/types/tag';
 import TagPicker from '@/components/common/tag-picker';
 import ReportModal from '@/components/report-modal';
+import { BookmarkIcon } from '@/components/icons';
+import { usePostBookmark } from './use-post-bookmark';
 
-export default function PostActions({ postAuthor, postId, currentTitle, currentTagId = null, zoneTags = [], onDisputeLocation }: { postAuthor: string; postId: number; currentTitle: string; currentTagId?: number | null; zoneTags?: ZoneTag[]; onDisputeLocation?: () => void }) {
+export default function PostActions({ postAuthor, postId, currentTitle, currentTagId = null, zoneTags = [], initialBookmarked = false, onDisputeLocation }: { postAuthor: string; postId: number; currentTitle: string; currentTagId?: number | null; zoneTags?: ZoneTag[]; initialBookmarked?: boolean; onDisputeLocation?: () => void }) {
+  const { bookmarked, toggle: toggleBookmark } = usePostBookmark(postId, initialBookmarked);
   const [open, setOpen] = useState(false);
   const [isOwnPost, setIsOwnPost] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -81,7 +84,8 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
     if (!isLoggedIn) return null;
     return (
       <>
-        <div ref={ref} className="relative inline-block">
+        <div ref={ref} className="relative inline-flex items-center gap-1">
+          {bookmarked && <BookmarkIcon filled className="h-4 w-4 text-teal-600 dark:text-teal-400" />}
           <button
             aria-label="Post options"
             onClick={() => setOpen((s) => !s)}
@@ -93,7 +97,16 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+            <div className="absolute right-0 top-full mt-2 z-layer-context w-40 overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  toggleBookmark();
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              >
+                {bookmarked ? 'დავიწყება' : 'ჩამახსოვრება'}
+              </button>
               {/* Only offered to a guesser whose guess can be contested (see PostLocationReview). */}
               {onDisputeLocation && (
                 <button
@@ -131,7 +144,8 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
 
   return (
     <>
-      <div ref={ref} className="relative inline-block">
+      <div ref={ref} className="relative inline-flex items-center gap-1">
+        {bookmarked && <BookmarkIcon filled className="h-4 w-4 text-teal-600 dark:text-teal-400" />}
         <button
           aria-label="Post options"
           onClick={() => setOpen((s) => !s)}
@@ -143,7 +157,16 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 z-layer-context w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+          <div className="absolute right-0 top-full mt-2 z-layer-context w-40 overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg">
+            <button
+              onClick={() => {
+                setOpen(false);
+                toggleBookmark();
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              {bookmarked ? 'დავიწყება' : 'ჩამახსოვრება'}
+            </button>
             <button onClick={handleEditClick} className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">რედაქტირება</button>
             <button onClick={handleDeleteClick} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800">წაშლა</button>
           </div>

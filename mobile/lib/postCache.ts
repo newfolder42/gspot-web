@@ -2,14 +2,17 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { MobilePostType, PostDetailResponse } from '@/types/post';
 
 type PostPatch = Partial<
-  Pick<MobilePostType, 'voteScore' | 'userVote' | 'rewards' | 'userReward' | 'commentCount' | 'guessCount' | 'userHasGuessed'>
+  Pick<
+    MobilePostType,
+    'voteScore' | 'userVote' | 'rewards' | 'userReward' | 'commentCount' | 'guessCount' | 'userHasGuessed' | 'userBookmarked'
+  >
 >;
 
 /**
  * Infinite queries that hold post lists. FeedList pages are plain arrays; the zone
- * feed's pages are `{ posts, tags }`.
+ * feed's pages are `{ posts, tags }`; the shuffle deck's pages are plain arrays too.
  */
-const POST_LIST_KEYS = ['global-feed', 'to-guess-feed', 'zone-feed', 'account-posts'] as const;
+const POST_LIST_KEYS = ['global-feed', 'to-guess-feed', 'zone-feed', 'account-posts', 'guess-shuffle'] as const;
 
 type Pages = { pages: unknown[]; pageParams: unknown[] };
 

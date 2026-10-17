@@ -15,11 +15,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { NewGuess } from '@/components/NewGuess';
+import { PostOptionsDialog, bookmarkOption } from '@/components/PostOptionsDialog';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { PinchZoomImage } from '@/components/ui/ZoomableImage';
 import { SHUFFLE_DECK_SIZE, SHUFFLE_EXCLUDE_LIMIT, shuffleApi } from '@/lib/shuffle';
 import { shareLink } from '@/lib/share';
+import { useBookmarkToggle } from '@/lib/bookmarks';
 import { Colors } from '@/constants/colors';
 import type { MobilePostType } from '@/types/post';
 
@@ -78,6 +80,8 @@ type CardProps = {
   index: number;
   height: number;
   onGuess: (post: MobilePostType) => void;
+  /** Opens the post's ⋯ menu. */
+  onMore: (post: MobilePostType) => void;
   /** True while the photo is pinched or zoomed in and so must not scroll the deck. */
   onLockScroll: (locked: boolean) => void;
 };
@@ -86,7 +90,7 @@ type CardProps = {
  * Memoised so the active-card bookkeeping re-renders the screen without
  * repainting every photo in the window mid-scroll.
  */
-const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess, onLockScroll }: CardProps) {
+const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess, onMore, onLockScroll }: CardProps) {
   const router = useRouter();
   // The card runs edge to edge, so in landscape the overlays clear the notch /
   // navigation bar at the right themselves (the tab rail already covers the left).
@@ -136,7 +140,10 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess, on
             <Text className="text-sm font-semibold text-zinc-100">&apos;{item.author}</Text>
             {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
           </Pressable>
-          <Text className="ml-auto text-xs text-zinc-300">{index + 1}</Text>
+          {item.userBookmarked ? (
+            <Feather name="bookmark" size={14} color={Colors.brand} style={{ marginLeft: 'auto' }} />
+          ) : null}
+          <Text className={`${item.userBookmarked ? 'ml-2' : 'ml-auto'} text-xs text-zinc-300`}>{index + 1}</Text>
         </View>
         {item.title ? <Text className="mt-1 text-sm text-zinc-200">{item.title}</Text> : null}
       </View>
@@ -152,6 +159,7 @@ const ShuffleCard = memo(function ShuffleCard({ item, index, height, onGuess, on
           }
         />
         <RailButton icon="share-2" label="გაზიარება" onPress={() => shareLink({ path: `/post/${item.id}` })} />
+        <RailButton icon="more-horizontal" label="პარამეტრები" onPress={() => onMore(item)} />
       </View>
     </View>
   );
@@ -168,6 +176,9 @@ export function GuessShuffle() {
   const [cardHeight, setCardHeight] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [guessPost, setGuessPost] = useState<MobilePostType | null>(null);
+  // The post whose ⋯ menu is open, by id (see `optionsPost`).
+  const [optionsPostId, setOptionsPostId] = useState<number | null>(null);
+  const bookmark = useBookmarkToggle();
   // Set while the photo on screen is pinched or zoomed in, so the deck doesn't scroll under the fingers.
   const [scrollLocked, setScrollLocked] = useState(false);
 
@@ -407,11 +418,15 @@ export function GuessShuffle() {
         index={index}
         height={cardHeight}
         onGuess={setGuessPost}
+        onMore={(post) => setOptionsPostId(Number(post.id))}
         onLockScroll={setScrollLocked}
       />
     ),
     [cardHeight],
   );
+
+  // Looked up from the deck, not held as a copy, so the menu follows a save made through it.
+  const optionsPost = optionsPostId == null ? null : posts.find((p) => Number(p.id) === optionsPostId) ?? null;
 
   return (
     <View className="flex-1 bg-black" onLayout={handleLayout}>
@@ -479,6 +494,17 @@ export function GuessShuffle() {
             setGuessPost(null);
             if (guessedIds.current.has(Number(guessPost.id))) goToNext();
           }}
+        />
+      ) : null}
+
+      {optionsPost ? (
+        <PostOptionsDialog
+          options={[
+            bookmarkOption(!!optionsPost.userBookmarked, () =>
+              bookmark.mutate({ postId: Number(optionsPost.id), save: !optionsPost.userBookmarked })
+            ),
+          ]}
+          onClose={() => setOptionsPostId(null)}
         />
       ) : null}
     </View>

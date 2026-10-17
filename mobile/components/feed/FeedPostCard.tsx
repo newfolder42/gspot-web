@@ -1,12 +1,17 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { PostPhoto } from '@/components/ui/PostPhoto';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { PostActionBar } from '@/components/PostActionBar';
+import { PostOptionsDialog, bookmarkOption } from '@/components/PostOptionsDialog';
+import { useBookmarkToggle } from '@/lib/bookmarks';
 import { useLayout } from '@/lib/layout';
+import { Colors, useTheme } from '@/constants/colors';
 import type { MobilePostType } from '@/types/post';
 
 function formatTimeAgo(timestamp: string): string {
@@ -33,7 +38,10 @@ function questCompletionTitle(questTitle: string | null | undefined): string {
  */
 export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; showZone?: boolean }) {
   const router = useRouter();
+  const theme = useTheme();
   const { isLandscape, availableWidth, photoMaxHeight } = useLayout();
+  const bookmark = useBookmarkToggle();
+  const [showOptions, setShowOptions] = useState(false);
   const isQuest = item.type === 'quest-completion';
   const photos = item.photos ?? [];
   // Upright a lone quest photo is a full-width square. Sideways that square is
@@ -45,40 +53,49 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
     <View className="mb-4">
       {/* ── Metadata header – mirrors web <article> p-2 block ── */}
       <View className="p-2">
-        <View className="flex-row items-center gap-1.5 flex-wrap">
-          {/* Zone avatar + slug – tappable → zone feed */}
-          {showZone ? (
-            <>
-              <Pressable
-                className="flex-row items-center gap-1.5"
-                onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })}
-              >
-                <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
-                <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.zoneSlug}</Text>
-              </Pressable>
-              <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
-            </>
+        <View className="flex-row items-start">
+          <View className="flex-1 flex-row items-center gap-1.5 flex-wrap">
+            {/* Zone avatar + slug – tappable → zone feed */}
+            {showZone ? (
+              <>
+                <Pressable
+                  className="flex-row items-center gap-1.5"
+                  onPress={() => router.push({ pathname: '/(app)/zone/[slug]', params: { slug: item.zoneSlug ?? '' } })}
+                >
+                  <ProfileAvatar name={item.zoneSlug ?? ''} photoUrl={item.zoneProfilePhoto} size={24} shape="md" />
+                  <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{item.zoneSlug}</Text>
+                </Pressable>
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+              </>
+            ) : null}
+            {/* Author + level badge – tappable → user profile */}
+            <Pressable
+              className="flex-row items-center gap-1"
+              onPress={() => router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } })}
+            >
+              <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
+              {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
+            </Pressable>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(item.date)}</Text>
+            {/* Failed dot */}
+            {item.status === 'failed' ? (
+              <View className="w-3 h-3 rounded-full bg-rose-600" />
+            ) : null}
+            {/* Suspended – only the author's own profile list ever holds one */}
+            {item.status === 'suspended' ? (
+              <View className="rounded px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/20">
+                <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">შეჩერებულია</Text>
+              </View>
+            ) : null}
+          </View>
+          {/* Saved mark, then the ⋯ menu – every post can be saved to ჩამახსოვრებულები from here */}
+          {item.userBookmarked ? (
+            <Feather name="bookmark" size={14} color={Colors.brand} style={{ marginLeft: 8, marginTop: 5 }} />
           ) : null}
-          {/* Author + level badge – tappable → user profile */}
-          <Pressable
-            className="flex-row items-center gap-1"
-            onPress={() => router.push({ pathname: '/(app)/user/[alias]', params: { alias: item.author } })}
-          >
-            <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">&apos;{item.author}</Text>
-            {item.authorLevel != null ? <LevelBadge level={item.authorLevel} /> : null}
+          <Pressable onPress={() => setShowOptions(true)} hitSlop={10} className="ml-2 p-1">
+            <Feather name="more-horizontal" size={18} color={theme.icon} />
           </Pressable>
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400">•</Text>
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400">{formatTimeAgo(item.date)}</Text>
-          {/* Failed dot */}
-          {item.status === 'failed' ? (
-            <View className="w-3 h-3 rounded-full bg-rose-600" />
-          ) : null}
-          {/* Suspended – only the author's own profile list ever holds one */}
-          {item.status === 'suspended' ? (
-            <View className="rounded px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/20">
-              <Text className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">შეჩერებულია</Text>
-            </View>
-          ) : null}
         </View>
 
         {isQuest ? (
@@ -161,6 +178,17 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
         canInteract={item.viewerCanInteract !== false}
         className="px-4 pt-3"
       />
+
+      {showOptions ? (
+        <PostOptionsDialog
+          options={[
+            bookmarkOption(!!item.userBookmarked, () =>
+              bookmark.mutate({ postId: Number(item.id), save: !item.userBookmarked })
+            ),
+          ]}
+          onClose={() => setShowOptions(false)}
+        />
+      ) : null}
     </View>
   );
 }

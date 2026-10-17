@@ -91,6 +91,9 @@ export default function TabsLayout() {
       <Pressable onPress={() => router.push('/(app)/quest-log')} style={{ marginRight: 18 }}>
         <Feather name="flag" size={20} color={theme.icon} />
       </Pressable>
+      <Pressable onPress={() => router.push('/(app)/bookmarks' as never)} style={{ marginRight: 18 }}>
+        <Feather name="bookmark" size={20} color={theme.icon} />
+      </Pressable>
       <Pressable onPress={() => router.push('/(app)/settings')} style={{ marginRight: 14 }}>
         <Feather name="settings" size={20} color={theme.icon} />
       </Pressable>

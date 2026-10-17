@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { UserIcon, SettingsIcon, LogoutIcon, FlagIcon, BackpackIcon } from "@/components/icons";
+import { UserIcon, SettingsIcon, LogoutIcon, FlagIcon, BackpackIcon, BookmarkIcon } from "@/components/icons";
 import { OwnAccountData } from "@/types/own-account";
 import ProfileAvatar from "@/components/common/profileAvatar";
 import { openInventory } from "@/components/inventory/inventory-overlay";
@@ -46,7 +46,7 @@ export default function AccountMenu({ account }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-48 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-100 dark:ring-zinc-800 z-50">
+        <div className="absolute right-0 mt-2 w-52 rounded-md bg-white dark:bg-zinc-900 shadow-lg ring-1 ring-zinc-100 dark:ring-zinc-800 z-50">
           <div className="py-1">
             <Link
               href={`/account/${account.user.alias}`}
@@ -63,6 +63,14 @@ export default function AccountMenu({ account }: Props) {
             >
               <FlagIcon className="w-4 h-4" />
               <span>მისიების ჟურნალი</span>
+            </Link>
+            <Link
+              href="/bookmarks"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <BookmarkIcon className="w-4 h-4 flex-shrink-0" />
+              <span>ჩამახსოვრებულები</span>
             </Link>
             <button
               onClick={() => {

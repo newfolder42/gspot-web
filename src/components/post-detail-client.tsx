@@ -128,6 +128,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
               currentTitle={post.title}
               currentTagId={gpsPost?.tag?.id ?? null}
               zoneTags={zoneTags}
+              initialBookmarked={post.userBookmarked ?? false}
               onDisputeLocation={locationReview?.canReport ? () => setDisputeOpen(true) : undefined}
             />
           </div>

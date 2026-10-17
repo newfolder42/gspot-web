@@ -4,6 +4,7 @@ import { query, withTransaction } from '@/lib/db';
 import { getCurrentUser } from './session';
 import { canUserInteractWithPost } from './post-access';
 import { canUserPostInZone } from './zones';
+import { getBookmarkedPostIds } from './bookmarks';
 import { isInGeorgia } from './geo';
 import { logerror } from './logger';
 import type { PostType, GpsPostType, FeedPostType, HideAndSeekPostType, QuestCompletionPostType, PostImageVariants, PostSeoMetaType } from '@/types/post';
@@ -272,13 +273,14 @@ async function enrichPosts(
   const hideAndSeekIds = rows.filter(r => r.type === 'hide-and-seek').map(r => Number(r.id));
   const zoneIds = [...new Set(rows.map(r => Number(r.zone_id)))];
 
-  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras, memberZones, postItems] = await Promise.all([
+  const [gpsExtras, questExtras, hideAndSeekExtras, voteRewardExtras, memberZones, postItems, bookmarked] = await Promise.all([
     fetchGpsExtras(gpsIds),
     fetchQuestExtras(questIds),
     fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
     fetchVoteRewardExtras(rows.map(r => Number(r.id)), viewerId),
     fetchViewerMemberZones(zoneIds, viewerId),
     withItems ? fetchPostItems(gpsIds) : Promise.resolve(new Map<number, PostItemType[]>()),
+    getBookmarkedPostIds(viewerId, rows.map(r => Number(r.id))),
   ]);
 
   return rows.map(r => {
@@ -289,6 +291,7 @@ async function enrichPosts(
       userVote: voteReward?.user_vote ?? null,
       rewards: voteReward?.rewards ?? [],
       userReward: voteReward?.user_reward ?? null,
+      userBookmarked: bookmarked.has(id),
       viewerCanInteract: memberZones.has(Number(r.zone_id)),
     };
 

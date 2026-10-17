@@ -20,12 +20,13 @@ import { LocationReviewPanel } from '@/components/LocationReviewPanel';
 import { CorrectLocationSheet } from '@/components/CorrectLocationSheet';
 import { EditPostSheet } from '@/components/EditPostSheet';
 import { ReportSheet } from '@/components/ReportSheet';
-import { PostOptionsDialog, type PostOption } from '@/components/PostOptionsDialog';
+import { PostOptionsDialog, bookmarkOption, type PostOption } from '@/components/PostOptionsDialog';
 import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import { PostActionBar } from '@/components/PostActionBar';
 import { PostPhoto } from '@/components/ui/PostPhoto';
 import { syncPostInCaches } from '@/lib/postCache';
+import { useBookmarkToggle } from '@/lib/bookmarks';
 import type { GuessResult } from '@/types/post-guess';
 import { Colors, useTheme } from '@/constants/colors';
 import { HideAndSeekPanel } from '@/components/hideandseek/HideAndSeekPanel';
@@ -343,6 +344,7 @@ export default function PostPageScreen() {
   const [showEdit, setShowEdit] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const bookmark = useBookmarkToggle();
 
   const handleReply = (comment: PostCommentType) => {
     setReplyTo(comment);
@@ -507,15 +509,20 @@ export default function PostPageScreen() {
   const paneWidth = isTwoPane ? availableWidth / 2 : availableWidth;
   const lonePhotoSide = isLandscape && questPhotos.length === 1 ? Math.min(photoMaxHeight, paneWidth) : null;
 
-  // The ⋯ menu. The owner edits or deletes; everyone else reports, and a guesser whose guess
-  // scored under 100 may also contest the location ("გასაჩივრება" — the server decides that
-  // and rides it along on the detail).
+  // The ⋯ menu. Everyone can save the post (ჩამახსოვრება); the owner also edits or deletes, and
+  // everyone else reports, and a guesser whose guess scored under 100 may also contest the
+  // location ("გასაჩივრება" — the server decides that and rides it along on the detail).
+  const saveOption = bookmarkOption(!!post.userBookmarked, () =>
+    bookmark.mutate({ postId, save: !post.userBookmarked })
+  );
   const postOptions: PostOption[] = isOwner
     ? [
+        saveOption,
         { key: 'edit', label: 'რედაქტირება', icon: 'edit-2', onPress: () => setShowEdit(true) },
         { key: 'delete', label: 'პოსტის წაშლა', icon: 'trash-2', tone: 'danger', onPress: handleDeletePress },
       ]
     : [
+        saveOption,
         ...(locationReview?.canReport
           ? [{ key: 'dispute', label: 'გასაჩივრება', icon: 'flag' as const, tone: 'amber' as const, onPress: () => setShowDispute(true) }]
           : []),
@@ -561,7 +568,11 @@ export default function PostPageScreen() {
               <View className="w-3 h-3 rounded-full bg-rose-600" />
             ) : null}
           </View>
-          {/* Three-dots options menu – edit/delete for the owner, report otherwise */}
+          {/* Saved mark – the post is in ჩამახსოვრებულები */}
+          {post.userBookmarked ? (
+            <Feather name="bookmark" size={14} color={Colors.brand} style={{ marginLeft: 8, marginTop: 5 }} />
+          ) : null}
+          {/* Three-dots options menu – save, plus edit/delete for the owner or report otherwise */}
           {isOwner ? (
             <Pressable
               onPress={() => setShowOptions(true)}

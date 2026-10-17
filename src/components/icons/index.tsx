@@ -738,3 +738,24 @@ export function SmartphoneIcon({ className = "w-5 h-5", strokeWidth = 2 }: IconP
     </svg>
   );
 }
+
+export function BookmarkIcon({
+  className = "w-5 h-5",
+  strokeWidth = 2,
+  filled = false,
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg
+      className={className}
+      viewBox="2 2 20 20"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
