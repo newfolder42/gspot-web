@@ -33,7 +33,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScreenLayout edges={[]}>
+    <ScreenLayout edges={[]} avoidKeyboard={false}>
       <FeedList
         queryKey={['global-feed']}
         loader={feedApi.loadHome}

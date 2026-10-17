@@ -460,6 +460,7 @@ export async function reviewObjectiveAction(
         zoneSlug,
         userId: context.submitterId,
         userAlias: context.submitterAlias,
+        userQuestId: context.userQuestId,
         objectives,
       });
     }

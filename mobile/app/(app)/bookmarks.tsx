@@ -3,7 +3,7 @@ import { BookmarksList } from '@/components/bookmarks/BookmarksList';
 
 export default function BookmarksScreen() {
   return (
-    <ScreenLayout edges={[]}>
+    <ScreenLayout edges={[]} avoidKeyboard={false}>
       <BookmarksList />
     </ScreenLayout>
   );

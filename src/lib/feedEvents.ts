@@ -47,22 +47,34 @@ function mapEvent(row: any): FeedEvent {
   };
 }
 
+// quest_completed events are stored one per run (`quest:<questId>:<userQuestId>`; older rows
+// are plain `quest:<questId>`), but a bubble is the quest: bucket them by ref_id so the
+// viewer-facing group key stays `quest:<questId>`.
+const BUCKET_KEY = `(CASE WHEN fe.type = 'quest_completed' AND fe.ref_id IS NOT NULL
+                          THEN 'quest:' || fe.ref_id ELSE fe.group_key END)`;
+
 /**
  * Preview bubbles for the strip: quests/achievements completed by people the
- * user follows within the last 48h, grouped by quest/achievement. Groups with
- * any unseen event come first, then newest → oldest.
+ * user follows within the last 48h, grouped by quest/achievement. Each person
+ * counts once per bubble, with their latest run. Groups with any unseen event
+ * come first, then newest → oldest.
  */
 export async function getFeedEventBubbles(userId: number): Promise<FeedEventBubble[]> {
   try {
     const res = await query(
-      `WITH visible AS (
-         SELECT fe.group_key, fe.type, fe.ref_id, fe.details, fe.created_at,
+      `WITH raw AS (
+         SELECT ${BUCKET_KEY} AS group_key, fe.actor_id, fe.type, fe.ref_id, fe.details, fe.created_at,
                 (fs.id IS NOT NULL) AS seen
          FROM feed_events fe
          LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
          WHERE fe.created_at > ${VISIBLE_WINDOW}
            AND fe.actor_id <> $1
            AND ${VISIBILITY_FILTER}
+       ),
+       visible AS (
+         SELECT DISTINCT ON (actor_id, group_key) *
+         FROM raw
+         ORDER BY actor_id, group_key, created_at DESC
        )
        SELECT
          group_key,
@@ -97,24 +109,28 @@ export async function getFeedEventBubbles(userId: number): Promise<FeedEventBubb
   }
 }
 
-/** All events inside one bubble (one per user), unseen first then newest. */
+/** All events inside one bubble (one per user, their latest), unseen first then newest. */
 export async function getFeedEventGroup(userId: number, groupKey: string): Promise<FeedEvent[]> {
   try {
     const res = await query(
-      `SELECT fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
-              u.alias AS actor_alias, ux.level AS actor_level,
-              (fs.id IS NOT NULL) AS seen,
-              (fr.id IS NOT NULL) AS reacted
-       FROM feed_events fe
-       JOIN users u ON u.id = fe.actor_id
-       LEFT JOIN user_xp ux ON ux.user_id = fe.actor_id
-       LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
-       LEFT JOIN feed_event_reactions fr ON fr.event_id = fe.id AND fr.user_id = $1
-       WHERE fe.group_key = $2
-         AND fe.created_at > ${VISIBLE_WINDOW}
-         AND fe.actor_id <> $1
-         AND ${VISIBILITY_FILTER}
-       ORDER BY seen ASC, fe.created_at DESC`,
+      `SELECT * FROM (
+         SELECT DISTINCT ON (fe.actor_id)
+                fe.id, fe.type, fe.group_key, fe.ref_id, fe.details, fe.created_at,
+                u.alias AS actor_alias, ux.level AS actor_level,
+                (fs.id IS NOT NULL) AS seen,
+                (fr.id IS NOT NULL) AS reacted
+         FROM feed_events fe
+         JOIN users u ON u.id = fe.actor_id
+         LEFT JOIN user_xp ux ON ux.user_id = fe.actor_id
+         LEFT JOIN feed_event_seens fs ON fs.event_id = fe.id AND fs.user_id = $1
+         LEFT JOIN feed_event_reactions fr ON fr.event_id = fe.id AND fr.user_id = $1
+         WHERE ${BUCKET_KEY} = $2
+           AND fe.created_at > ${VISIBLE_WINDOW}
+           AND fe.actor_id <> $1
+           AND ${VISIBILITY_FILTER}
+         ORDER BY fe.actor_id, fe.created_at DESC
+       ) latest
+       ORDER BY seen ASC, created_at DESC`,
       [userId, groupKey]
     );
 
