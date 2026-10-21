@@ -443,7 +443,7 @@ export async function reviewObjectiveAction(
       const questTitle = quest?.title ?? '';
       const zoneSlug = zone?.slug ?? '';
 
-      await createQuestCompletionPostLib({
+      const completionPostId = await createQuestCompletionPostLib({
         userId: context.submitterId,
         userAlias: context.submitterAlias,
         zoneId: context.zoneId,
@@ -461,6 +461,7 @@ export async function reviewObjectiveAction(
         userId: context.submitterId,
         userAlias: context.submitterAlias,
         userQuestId: context.userQuestId,
+        postId: completionPostId ?? undefined,
         objectives,
       });
     }

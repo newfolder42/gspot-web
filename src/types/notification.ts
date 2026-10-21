@@ -180,6 +180,7 @@ export type NotificationConnectionCompletedZoneQuestDetailsType = {
   zoneSlug: string,
   questId: number,
   questTitle: string,
+  postId?: number,
 }
 
 export type NotificationHideAndSeekDetailsType = {
@@ -495,7 +496,7 @@ export function getNotificationRoute(notification: NotificationType): string | n
     }
     case 'connection-completed-zone-quest': {
       const d = notification.details as NotificationConnectionCompletedZoneQuestDetailsType;
-      return `/zone/${d.zoneSlug}/quests/${d.questId}`;
+      return d.postId ? `/post/${d.postId}` : `/zone/${d.zoneSlug}/quests/${d.questId}`;
     }
     case 'hide-and-seek-created':
     case 'hide-and-seek-joined':
