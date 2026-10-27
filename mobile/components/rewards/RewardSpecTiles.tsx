@@ -1,7 +1,9 @@
-import { Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { RewardIcon } from '@/components/rewards/RewardIcon';
 import { GiftIcon, ProgressIcon } from '@/components/rewards/RewardTileIcons';
 import { ItemIcon } from '@/components/inventory/ItemIcon';
+import { ItemDetailsModal } from '@/components/inventory/ItemDetailsModal';
 import type { RewardDefinition, RewardSpec } from '@/types/reward';
 import type { ItemDefinition } from '@/types/item';
 import { itemQualityColor } from '@/types/item';
@@ -63,22 +65,30 @@ function Tile({
   label,
   variant,
   color,
+  onPress,
   children,
 }: {
   label: string;
   variant: TileVariant;
   color?: string;
+  /** Makes the whole tile tappable; the label is never clamped, so a long name stays readable. */
+  onPress?: () => void;
   children: React.ReactNode;
 }) {
-  return (
-    <View className="w-16 items-center gap-1">
+  const body = (
+    <>
       <TileFrame variant={variant} color={color}>
         {children}
       </TileFrame>
-      <Text className="text-[10px] text-center text-zinc-700 dark:text-zinc-300" numberOfLines={2}>
-        {label}
-      </Text>
-    </View>
+      <Text className="text-[10px] text-center text-zinc-700 dark:text-zinc-300">{label}</Text>
+    </>
+  );
+
+  if (!onPress) return <View className="w-16 items-center gap-1">{body}</View>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} className="w-16 items-center gap-1">
+      {body}
+    </Pressable>
   );
 }
 
@@ -92,11 +102,13 @@ export function RewardSpecTiles({
   itemDefinitions?: ItemDefinition[];
 }) {
   const ICON_COLOR = useTheme().icon;
+  const [openItem, setOpenItem] = useState<ItemDefinition | null>(null);
 
   if (rewards.length === 0) return null;
 
   return (
     <View className="flex-row flex-wrap items-start">
+      {openItem ? <ItemDetailsModal item={openItem} onClose={() => setOpenItem(null)} /> : null}
       {rewards.map((reward) => {
         if (reward.type === 'user-xp') {
           return (
@@ -118,7 +130,13 @@ export function RewardSpecTiles({
           const item = itemDefinitions.find((i) => i.alias === reward.alias);
           if (!item) return null;
           return (
-            <Tile key={`item-${item.alias}`} label={item.name} variant="item" color={itemQualityColor(item.quality)}>
+            <Tile
+              key={`item-${item.alias}`}
+              label={item.name}
+              variant="item"
+              color={itemQualityColor(item.quality)}
+              onPress={() => setOpenItem(item)}
+            >
               <ItemIcon iconUrl={item.iconUrl} size={20} />
             </Tile>
           );

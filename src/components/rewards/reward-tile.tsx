@@ -1,8 +1,13 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import type { RewardSpec, RewardDefinition } from '@/types/reward';
 import type { ItemDefinition } from '@/types/item';
 import { itemQualityColor } from '@/types/item';
 import { GiftIcon, ProgressIcon } from '@/components/icons';
 import ItemIcon from '@/components/inventory/item-icon';
+import ItemDetailsDialog from '@/components/inventory/item-details-dialog';
+import { SlotTooltip } from '@/components/inventory/item-slot';
 import RewardIcon from './reward-icons';
 
 export type RewardTileSize = 'sm' | 'md';
@@ -89,18 +94,48 @@ export function CatalogRewardTile({ definition, size = 'md' }: { definition: Rew
   );
 }
 
-/** An ინვენტარი item promised by a quest or achievement, framed in its quality colour. */
+/**
+ * An ინვენტარი item promised by a quest or achievement, framed in its quality colour.
+ * Behaves like a bag slot: hover shows the details card beside it, a click opens the
+ * same card as a dialog (the only way in on touch).
+ */
 export function ItemRewardTile({ item, size = 'md' }: { item: ItemDefinition; size?: RewardTileSize }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [open, setOpen] = useState(false);
+
+  // The tooltip is fixed-positioned, so a scroll would leave it behind — drop it instead.
+  useEffect(() => {
+    if (!anchor) return;
+    const hide = () => setAnchor(null);
+    window.addEventListener('scroll', hide, { capture: true, passive: true });
+    return () => window.removeEventListener('scroll', hide, { capture: true });
+  }, [anchor]);
+
   return (
-    <div className="flex flex-col items-center gap-1 w-16">
-      <div
-        className={`${FRAME_SIZE[size]} shrink-0 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden`}
-        style={{ border: `2px solid ${itemQualityColor(item.quality)}` }}
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setAnchor(null);
+          setOpen(true);
+        }}
+        onMouseEnter={(e) => setAnchor(e.currentTarget.getBoundingClientRect())}
+        onMouseLeave={() => setAnchor(null)}
+        aria-label={item.name}
+        className="cursor-pointer flex flex-col items-center gap-1 w-16 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
       >
-        <ItemIcon iconUrl={item.iconUrl} name={item.name} className={ICON_SIZE[size]} />
-      </div>
-      <TileLabel size={size}>{item.name}</TileLabel>
-    </div>
+        <div
+          className={`${FRAME_SIZE[size]} shrink-0 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden`}
+          style={{ border: `2px solid ${itemQualityColor(item.quality)}` }}
+        >
+          <ItemIcon iconUrl={item.iconUrl} name={item.name} className={ICON_SIZE[size]} />
+        </div>
+        <TileLabel size={size}>{item.name}</TileLabel>
+      </button>
+
+      {anchor && <SlotTooltip item={item} anchor={anchor} />}
+      {open && <ItemDetailsDialog item={item} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

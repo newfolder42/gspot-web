@@ -1237,7 +1237,7 @@ export async function createQuestCompletionPost({
       [questId, userId, userQuestId]
     );
     if ((existing.rowCount ?? 0) > 0) {
-      return existing.rows[0].id;
+      return Number(existing.rows[0].id);
     }
 
     const title = ``;
@@ -1285,7 +1285,8 @@ export async function createQuestCompletionPost({
       zoneSlug,
     } as PostPublishedEvent);
 
-    return postId;
+    // pg returns bigint ids as strings; the event schema wants a number
+    return Number(postId);
   } catch (err) {
     await logerror('createQuestCompletionPost error', [err]);
     return null;

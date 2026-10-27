@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadInventoryAction } from '@/actions/inventory';
 import { INVENTORY_DEFAULT_PAGE_SIZE } from '@/types/item';
 import type { InventoryItemType, InventoryPageType } from '@/types/item';
-import { BackpackIcon, XIcon } from '@/components/icons';
+import { BackpackIcon } from '@/components/icons';
 import InfoButton from '@/components/common/info-button';
 import ItemSlot, { EmptySlot } from './item-slot';
-import ItemDetails from './item-details';
+import ItemDetailsDialog from './item-details-dialog';
 
 type Props = {
   initial: InventoryPageType;
@@ -113,25 +113,7 @@ export default function InventoryBag({ initial, pageSize = INVENTORY_DEFAULT_PAG
         </button>
       </div>
 
-      {selected && (
-        <div
-          className="fixed inset-0 z-layer-modal flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setSelected(null)}
-          role="presentation"
-        >
-          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              aria-label="დახურვა"
-              className="absolute -top-8 right-0 p-1 rounded text-zinc-300 hover:text-white"
-            >
-              <XIcon className="w-5 h-5" />
-            </button>
-            <ItemDetails item={selected} />
-          </div>
-        </div>
-      )}
+      {selected && <ItemDetailsDialog item={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

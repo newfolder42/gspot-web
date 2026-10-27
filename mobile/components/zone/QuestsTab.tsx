@@ -42,16 +42,23 @@ function QuestRow({ quest, slug }: { quest: ZoneQuestWithStatsType; slug: string
         {quest.characterName ? (
           <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{quest.characterName}</Text>
         ) : null}
+        <View className="flex-row items-center gap-3 mt-0.5">
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">{quest.objectiveCount} ამოცანა</Text>
+          <View className="flex-row items-center gap-1">
+            <Feather name="users" size={12} color={theme.icon} />
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{quest.activeCount}</Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Feather name="flag" size={12} color={theme.icon} />
+            <Text className="text-xs text-zinc-500 dark:text-zinc-400">{quest.completedCount}</Text>
+          </View>
+        </View>
         {locked ? (
           <View className="flex-row items-center gap-1 mt-0.5">
             <Feather name="lock" size={11} color={theme.icon} />
             <Text className="text-xs text-zinc-500 dark:text-zinc-400">{quest.lockReason}</Text>
           </View>
-        ) : (
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {quest.objectiveCount} ამოცანა · {quest.completedCount} დაასრულა
-          </Text>
-        )}
+        ) : null}
       </View>
       <Feather name="chevron-right" size={18} color={theme.icon} />
     </Pressable>

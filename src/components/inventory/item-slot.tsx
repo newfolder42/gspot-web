@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { itemQualityColor, showsItemCount } from '@/types/item';
-import type { InventoryItemType } from '@/types/item';
+import type { InventoryItemType, ItemDefinition } from '@/types/item';
 import ItemIcon from './item-icon';
 import ItemDetails from './item-details';
 
@@ -26,7 +26,7 @@ const EDGE_MARGIN = 8;
  * to its right, top edges aligned, flipping to the left when it would leave the viewport.
  * Portaled to the body so the bag's overflow and stacking never clip it.
  */
-function SlotTooltip({ item, anchor }: { item: InventoryItemType; anchor: DOMRect }) {
+export function SlotTooltip({ item, anchor }: { item: ItemDefinition | InventoryItemType; anchor: DOMRect }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
