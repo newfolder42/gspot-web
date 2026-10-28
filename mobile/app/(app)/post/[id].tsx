@@ -25,6 +25,7 @@ import { VoteButtons } from '@/components/votes/VoteButtons';
 import { RewardButton } from '@/components/rewards/RewardButton';
 import { PostActionBar } from '@/components/PostActionBar';
 import { PostPhoto } from '@/components/ui/PostPhoto';
+import { PostItemsOverlay } from '@/components/inventory/PostItemsOverlay';
 import { syncPostInCaches } from '@/lib/postCache';
 import { useBookmarkToggle } from '@/lib/bookmarks';
 import type { GuessResult } from '@/types/post-guess';
@@ -642,6 +643,9 @@ export default function PostPageScreen() {
                       </View>
                     ) : null}
                   </ZoomableImage>
+                  {idx === 0 && post.items && post.items.length > 0 ? (
+                    <PostItemsOverlay items={post.items} raised={!!photo.objectiveTitle} />
+                  ) : null}
                 </View>
               ))}
             </View>

@@ -105,7 +105,7 @@ achievement (3 / 10 / 20 / 50 / 100 ნივთი).
 
 ## Items on a post
 
-What a post found is kept in `post_items` (`post_id`, `item_id`, `sort`) — a **reference**,
+What a post found (or a quest run granted) is kept in `post_items` (`post_id`, `item_id`, `sort`) — a **reference**,
 not a copy. `grantItemsForPost` writes it in the same request that grants the items, in one
 statement, so the overlay is there the moment the author lands on their post. It is separate
 from `user_items` on purpose: a stackable item has one `user_items` row per user, so that row
@@ -122,9 +122,16 @@ loot window — every item's details card at once. The other lists (zone, to-gue
 shuffle) do not load it, and the API simply omits `items` there; it is also omitted, not
 empty, on a post that found nothing. Everyone who can see the post sees its items.
 
-Posts that already existed were backfilled from `user_items.source_details.postId`. A
-stackable item's later finds were never recorded against a post, so those posts start
-without that item.
+Quest-completion posts show their items too, on the **first photo** (lifted above the
+objective caption). There the rows are written by gspot-services, not the app:
+`handleRewardsForZoneQuestCompleted` attaches whatever `applyRewardSpecs` actually granted to
+the event's `postId` — so a unique item the user already held on a repeat run is not shown,
+and the overlay appears a moment after the completion post, once the event is handled.
+
+Posts that already existed were backfilled from `user_items.source_details.postId`
+(found items) and `source_details.questId` (quest items, onto the user's earliest completion
+post of that quest). A stackable item's later finds were never recorded against a post, so
+those posts start without that item.
 
 A location correction (`postLocationDisputes`) does not touch `post_items`, same as it leaves
 the granted items in the bag.

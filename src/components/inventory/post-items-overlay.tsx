@@ -14,8 +14,17 @@ const SLOT_BG = 'rgba(7, 11, 28, 0.9)';
  * reacted. Tapping the stack opens the loot window with every item's details at once.
  *
  * It is a sibling of the photo's link, not a child, so tapping it never opens the post.
+ *
+ * `position` moves it off the default corner offset — a quest photo's objective caption
+ * sits along the bottom edge, so the stack rides above it.
  */
-export default function PostItemsOverlay({ items }: { items: PostItemType[] }) {
+export default function PostItemsOverlay({
+  items,
+  position = 'bottom-3 left-3',
+}: {
+  items: PostItemType[];
+  position?: string;
+}) {
   const [open, setOpen] = useState(false);
   if (items.length === 0) return null;
 
@@ -29,7 +38,7 @@ export default function PostItemsOverlay({ items }: { items: PostItemType[] }) {
         onClick={() => setOpen(true)}
         aria-label={`ნაპოვნი ნივთები: ${items.length}`}
         title="ნაპოვნი ნივთები"
-        className="absolute bottom-3 left-3 flex cursor-pointer items-center pl-2 drop-shadow-[0_1px_6px_rgba(0,0,0,0.7)]"
+        className={`absolute ${position} flex cursor-pointer items-center pl-2 drop-shadow-[0_1px_6px_rgba(0,0,0,0.7)]`}
       >
         {visible.map((item) => (
           <span

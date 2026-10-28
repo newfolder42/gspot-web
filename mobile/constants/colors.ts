@@ -23,7 +23,9 @@ export const Colors = {
 
 /**
  * The scheme-dependent half of the palette. Mirrors the web app's zinc scale:
- * `bg-white dark:bg-zinc-900` chrome over a `bg-zinc-50 dark:bg-zinc-950` page.
+ * `bg-zinc-50 dark:bg-zinc-950` page. On the phone the header and tab bar share
+ * the page colour (the tab bar keeps its hairline border) so the chrome does not
+ * read as a separate band; cards and sheets are what rise to `surface`.
  */
 export type Theme = {
   scheme: 'light' | 'dark';
@@ -65,9 +67,9 @@ const light: Theme = {
   textMuted: '#71717A',
   icon: '#71717A',
   iconFaint: '#D4D4D8',
-  headerBg: '#FFFFFF',
+  headerBg: '#FAFAFA',
   headerTint: '#27272A',
-  tabBarBg: '#FFFFFF',
+  tabBarBg: '#FAFAFA',
   tabBarBorder: '#E4E4E7',
   switchTrackOff: '#D4D4D8',
   overlay: 'rgba(0,0,0,0.45)',
@@ -85,9 +87,9 @@ const dark: Theme = {
   textMuted: '#A1A1AA',
   icon: '#A1A1AA',
   iconFaint: '#3F3F46',
-  headerBg: '#18181B',
+  headerBg: '#09090B',
   headerTint: '#EDEDED',
-  tabBarBg: '#18181B',
+  tabBarBg: '#09090B',
   tabBarBorder: '#27272A',
   switchTrackOff: '#3F3F46',
   overlay: 'rgba(0,0,0,0.6)',

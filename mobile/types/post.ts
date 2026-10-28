@@ -32,8 +32,9 @@ export type MobilePostType = {
   imageVariants?: PostImageVariants | null;
   dateTaken?: string | null;
   /**
-   * gps-photo, home feed and post detail only: the items the author found by posting here,
-   * in drop order. Absent when the post found nothing, and from servers that predate it.
+   * gps-photo and quest-completion, home feed and post detail only: the items the author
+   * found by posting here (or the quest run granted), in drop order. Absent when there
+   * were none, and from servers that predate it.
    */
   items?: PostItemType[];
   guessCount?: number | null;

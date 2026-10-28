@@ -98,6 +98,11 @@ export type QuestCompletionPostType = PostType & {
   photos: QuestCompletionPhotoType[];
   questId: number;
   questTitle: string | null;
+  /**
+   * The items this run of the quest granted, in drop order. Home feed and post detail
+   * only, and absent (not empty) when it granted nothing.
+   */
+  items?: PostItemType[];
 }
 
 export type HideAndSeekPostType = PostType & {

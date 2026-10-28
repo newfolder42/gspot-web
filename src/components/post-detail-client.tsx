@@ -11,6 +11,7 @@ import TagBadge from './common/tag-badge';
 import UserLink from './common/user-link';
 import ZoomableImage from './common/zoomable-image';
 import PostPhoto from './common/post-photo';
+import PostItemsOverlay from './inventory/post-items-overlay';
 import { QuestCompletionTitle } from './post-quest';
 import type { PostDetailType } from '@/types/post-detail';
 import TimePassed from './common/time-passed';
@@ -138,14 +139,19 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
           <div className="relative">
             <div className={`grid gap-0.5 ${questPost.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {questPost.photos.map((photo, idx) => (
-                <ZoomableImage key={idx} className="relative aspect-square">
-                  <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
-                  {photo.objectiveTitle && (
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5 pointer-events-none">
-                      <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
-                    </div>
+                <div key={idx} className="relative">
+                  <ZoomableImage className="relative aspect-square">
+                    <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
+                    {photo.objectiveTitle && (
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5 pointer-events-none">
+                        <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
+                      </div>
+                    )}
+                  </ZoomableImage>
+                  {idx === 0 && questPost.items && questPost.items.length > 0 && (
+                    <PostItemsOverlay items={questPost.items} position={photo.objectiveTitle ? 'bottom-11 left-3' : undefined} />
                   )}
-                </ZoomableImage>
+                </div>
               ))}
             </div>
           </div>

@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ProfileAvatar } from '@/components/ui/ProfileAvatar';
 import { PostPhoto } from '@/components/ui/PostPhoto';
+import { PostItemsOverlay } from '@/components/inventory/PostItemsOverlay';
 import { LevelBadge } from '@/components/ui/LevelBadge';
 import { TagBadge } from '@/components/ui/TagBadge';
 import { PostActionBar } from '@/components/PostActionBar';
@@ -150,6 +151,9 @@ export function FeedPostCard({ item, showZone = true }: { item: MobilePostType; 
                       </View>
                     ) : null}
                   </View>
+                  {idx === 0 && item.items && item.items.length > 0 ? (
+                    <PostItemsOverlay items={item.items} raised={!!photo.objectiveTitle} />
+                  ) : null}
                 </View>
               ))}
             </View>

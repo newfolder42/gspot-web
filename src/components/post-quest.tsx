@@ -6,6 +6,7 @@ import ProfileAvatar from "./common/profileAvatar";
 import UserLink from "./common/user-link";
 import PostActionBar from "./post-action-bar";
 import PostBookmarkMenu from "./post-bookmark-menu";
+import PostItemsOverlay from "./inventory/post-items-overlay";
 import { FlagIcon, TrophyIcon } from "./icons";
 
 export function QuestCompletionTitle({ questTitle }: { questTitle: string | null }) {
@@ -92,14 +93,19 @@ export function QuestCompletionPost({ post, showZone, isLoggedIn }: { post: Ques
       {post.photos.length > 0 && (
         <div className={`grid gap-0.5 ${post.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {post.photos.map((photo, idx) => (
-            <Link key={idx} href={`/post/${post.id}`} className="block relative aspect-square overflow-hidden">
-              <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
-              {photo.objectiveTitle && (
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5">
-                  <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
-                </div>
+            <div key={idx} className="relative">
+              <Link href={`/post/${post.id}`} className="block relative aspect-square overflow-hidden">
+                <Image src={photo.variants?.feed ?? photo.url} alt={photo.objectiveTitle || ''} fill className="object-cover" />
+                {photo.objectiveTitle && (
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5">
+                    <span className="text-xs font-medium text-white drop-shadow-sm">{photo.objectiveTitle}</span>
+                  </div>
+                )}
+              </Link>
+              {idx === 0 && post.items && post.items.length > 0 && (
+                <PostItemsOverlay items={post.items} position={photo.objectiveTitle ? 'bottom-11 left-3' : undefined} />
               )}
-            </Link>
+            </div>
           ))}
         </div>
       )}

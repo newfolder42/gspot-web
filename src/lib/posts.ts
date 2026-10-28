@@ -80,13 +80,14 @@ function enrichGpsPost(base: PostType, r: any, items: PhotoItem[], foundItems?: 
   };
 }
 
-function enrichQuestPost(base: PostType, r: any, items: PhotoItem[]): QuestCompletionPostType {
+function enrichQuestPost(base: PostType, r: any, items: PhotoItem[], grantedItems?: PostItemType[]): QuestCompletionPostType {
   return {
     ...base,
     type: 'quest-completion',
     photos: items.map(i => ({ url: i.url, objectiveTitle: i.details?.objectiveTitle ?? null, variants: i.details?.variants ?? null })),
     questId: r.quest_id != null ? Number(r.quest_id) : 0,
     questTitle: r.quest_title ?? null,
+    ...(grantedItems && grantedItems.length > 0 ? { items: grantedItems } : {}),
   };
 }
 
@@ -279,7 +280,7 @@ async function enrichPosts(
     fetchHideAndSeekExtras(hideAndSeekIds, viewerId),
     fetchVoteRewardExtras(rows.map(r => Number(r.id)), viewerId),
     fetchViewerMemberZones(zoneIds, viewerId),
-    withItems ? fetchPostItems(gpsIds) : Promise.resolve(new Map<number, PostItemType[]>()),
+    withItems ? fetchPostItems([...gpsIds, ...questIds]) : Promise.resolve(new Map<number, PostItemType[]>()),
     getBookmarkedPostIds(viewerId, rows.map(r => Number(r.id))),
   ]);
 
@@ -297,7 +298,7 @@ async function enrichPosts(
 
     if (r.type === 'quest-completion') {
       const extra = questExtras.get(id) ?? {};
-      return enrichQuestPost(base, extra, extra.photo_items ?? []);
+      return enrichQuestPost(base, extra, extra.photo_items ?? [], postItems.get(id));
     }
 
     if (r.type === 'hide-and-seek') {

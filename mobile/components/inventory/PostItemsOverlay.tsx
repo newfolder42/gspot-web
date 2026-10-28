@@ -16,9 +16,10 @@ const OVERLAP = 8;
  * reacted. Tapping the stack opens the loot window with every item's details at once.
  * Mirrors web src/components/inventory/post-items-overlay.tsx.
  *
- * Render it inside the photo's frame: it positions itself against that.
+ * Render it inside the photo's frame: it positions itself against that. `raised` lifts it
+ * clear of a quest photo's objective caption, which runs along the bottom edge.
  */
-export function PostItemsOverlay({ items }: { items: PostItemType[] }) {
+export function PostItemsOverlay({ items, raised = false }: { items: PostItemType[]; raised?: boolean }) {
   const [open, setOpen] = useState(false);
   if (items.length === 0) return null;
 
@@ -31,7 +32,7 @@ export function PostItemsOverlay({ items }: { items: PostItemType[] }) {
         onPress={() => setOpen(true)}
         hitSlop={8}
         accessibilityLabel={`ნაპოვნი ნივთები: ${items.length}`}
-        className="absolute bottom-3 left-3 flex-row items-center"
+        className={`absolute ${raised ? 'bottom-11' : 'bottom-3'} left-3 flex-row items-center`}
         style={{
           shadowColor: '#000',
           shadowOpacity: 0.6,
