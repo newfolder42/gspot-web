@@ -1,17 +1,14 @@
-import Link from 'next/link';
-import { createLocation, createLocationItem } from '@/actions/inventory';
+import { addLocationsToGroup, createLocation } from '@/actions/inventory';
 import ActionForm from '@/components/action-form';
 import CreateModal from '@/components/create-modal';
-import ItemIcon from '@/components/item-icon';
+import LocationGroupChips from '@/components/location-group-chips';
 import LocationShapeFields from '@/components/location-shape-fields';
 import LocationTester from '@/components/location-tester';
-import LootModeFields from '@/components/loot-mode-fields';
 import { DataGrid, Field, inputClass, PageHeader } from '@/components/ui';
 import { formatDateTime } from '@/lib/dates';
-import { getItemOptions, getLocationItems, getLocations, type LocationRow } from '@/lib/inventory';
+import { getGroups, getLocations, type GroupRow, type LocationRow } from '@/lib/inventory';
 import {
   ACTIVE_STATUS_LABELS,
-  itemQualityColor,
   SHAPE_LABELS,
   type ActiveStatus,
   type ShapeType,
@@ -50,20 +47,43 @@ function shapeCell(l: LocationRow) {
   );
 }
 
+/** Groups and a location's own membership: the chips, and a button to join more groups. */
+function groupsCell(l: LocationRow, groups: GroupRow[]) {
+  const joinable = groups.filter((g) => !l.groups.some((m) => m.id === g.id));
+
+  return (
+    <div className="space-y-2">
+      <LocationGroupChips locationId={l.id} locationName={l.name} groups={l.groups} />
+      {joinable.length > 0 && (
+        <CreateModal label="ჯგუფში დამატება" title={`ჯგუფში დამატება - ${l.name}`}>
+          <ActionForm action={addLocationsToGroup}>
+            <input type="hidden" name="locationIds" value={l.id} />
+            <Field label="ჯგუფი" required>
+              <select name="groupId" required defaultValue="" className={inputClass}>
+                <option value="" disabled>
+                  აირჩიე ჯგუფი
+                </option>
+                {joinable.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </ActionForm>
+        </CreateModal>
+      )}
+    </div>
+  );
+}
+
 export default async function LocationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ location?: string; x?: string; y?: string }>;
+  searchParams: Promise<{ x?: string; y?: string }>;
 }) {
-  const { location, x = '', y = '' } = await searchParams;
-  const locations = await getLocations();
-
-  // ?location=ID narrows the second grid to one location. An unknown id falls back to all.
-  const selected = locations.find((l) => String(l.id) === location) ?? null;
-  const [locationItems, itemOptions] = await Promise.all([
-    getLocationItems(selected?.id ?? null),
-    getItemOptions(),
-  ]);
+  const { x = '', y = '' } = await searchParams;
+  const [locations, groups] = await Promise.all([getLocations(), getGroups()]);
 
   return (
     <div className="space-y-8">
@@ -84,6 +104,33 @@ export default async function LocationsPage({
                   ))}
                 </select>
               </Field>
+
+              <fieldset className="space-y-3 rounded-md border border-zinc-200 dark:border-zinc-700 p-3">
+                <legend className="px-1 text-sm font-medium text-zinc-700 dark:text-zinc-200">ჯგუფები</legend>
+                <label className="flex items-start gap-2 text-sm text-zinc-900 dark:text-zinc-100">
+                  <input type="checkbox" name="ownGroup" defaultChecked className="mt-0.5" />
+                  <span>
+                    საკუთარი ჯგუფის შექმნა (იგივე სახელით)
+                    <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                      ლოკაციას ექნება თავისი ნივთები, რომლებსაც მხოლოდ ის გასცემს
+                    </span>
+                  </span>
+                </label>
+                {groups.length > 0 && (
+                  <Field label="დამატება არსებულ ჯგუფებში" hint="რამდენიმეს მისანიშნად Ctrl + დაწკაპუნება">
+                    <select name="groupIds" multiple size={Math.min(groups.length, 6)} className={inputClass}>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                          {g.status !== 'active'
+                            ? ` (${ACTIVE_STATUS_LABELS[g.status as ActiveStatus] ?? g.status})`
+                            : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+              </fieldset>
             </ActionForm>
           </CreateModal>
         </PageHeader>
@@ -91,11 +138,6 @@ export default async function LocationsPage({
         <DataGrid
           rows={locations}
           rowKey={(l) => l.id}
-          rowClassName={(l) =>
-            l.id === selected?.id
-              ? 'bg-zinc-100 dark:bg-zinc-800'
-              : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-          }
           columns={[
             { header: 'ID', cell: (l) => l.id },
             { header: 'სახელი', cell: (l) => l.name },
@@ -105,109 +147,13 @@ export default async function LocationsPage({
               cell: (l) => ACTIVE_STATUS_LABELS[l.status as ActiveStatus] ?? l.status,
             },
             { header: 'ნაპოვნია', cell: (l) => l.found_count },
-            {
-              header: 'ნივთები',
-              cell: (l) => (
-                <Link
-                  href={`/locations?location=${l.id}`}
-                  className="underline underline-offset-2 text-zinc-900 dark:text-zinc-100"
-                >
-                  {l.item_count}
-                </Link>
-              ),
-            },
+            { header: 'ჯგუფები', cell: (l) => groupsCell(l, groups) },
             { header: 'თარიღი', cell: (l) => formatDateTime(l.created_at), className: 'whitespace-nowrap' },
           ]}
         />
       </section>
 
       <LocationTester x={x} y={y} />
-
-      <section>
-        <PageHeader
-          title={selected ? `ლოკაციის ნივთები - ${selected.name}` : 'ლოკაციების ნივთები'}
-          count={locationItems.length}
-        >
-          {selected && (
-            <Link
-              href="/locations"
-              className="text-sm underline underline-offset-2 text-zinc-600 dark:text-zinc-300"
-            >
-              ყველა
-            </Link>
-          )}
-          <CreateModal label="დამატება" title="ნივთის დამატება ლოკაციაზე">
-            <ActionForm action={createLocationItem}>
-              <Field label="ლოკაცია" required>
-                <select
-                  name="locationId"
-                  required
-                  defaultValue={selected?.id ?? ''}
-                  className={inputClass}
-                >
-                  <option value="" disabled>
-                    აირჩიე ლოკაცია
-                  </option>
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="ნივთი" required>
-                <select name="itemId" required defaultValue="" className={inputClass}>
-                  <option value="" disabled>
-                    აირჩიე ნივთი
-                  </option>
-                  {itemOptions.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} ({i.alias})
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <LootModeFields />
-              <Field label="რიგითობა">
-                <input name="sortOrder" type="number" step={1} defaultValue={10} className={inputClass} />
-              </Field>
-            </ActionForm>
-          </CreateModal>
-        </PageHeader>
-
-        <DataGrid
-          rows={locationItems}
-          rowKey={(li) => li.id}
-          columns={[
-            { header: 'ID', cell: (li) => li.id },
-            { header: 'ლოკაცია', cell: (li) => li.location_name },
-            {
-              header: 'ნივთი',
-              cell: (li) => (
-                <div className="flex items-center gap-2">
-                  <ItemIcon url={li.item_icon_url} name={li.item_name} />
-                  <div>
-                    <div className="font-medium" style={{ color: itemQualityColor(li.item_quality) }}>
-                      {li.item_name}
-                    </div>
-                    <div className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{li.item_alias}</div>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              header: 'რეჟიმი',
-              cell: (li) => li.grant_mode,
-            },
-            {
-              header: 'ალბათობა',
-              cell: (li) => (li.probability_percent === null ? '-' : `${li.probability_percent}%`),
-            },
-            { header: 'რიგითობა', cell: (li) => li.sort_order },
-            { header: 'თარიღი', cell: (li) => formatDateTime(li.created_at), className: 'whitespace-nowrap' },
-          ]}
-        />
-      </section>
     </div>
   );
 }

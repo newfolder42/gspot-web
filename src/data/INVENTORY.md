@@ -1,13 +1,44 @@
 # ინვენტარი — curating items and item locations
 
-Everything in this feature is hand-curated in SQL. There is no admin UI, deliberately.
-Worked INSERTs for every case live in [`inventory-examples.sql`](./inventory-examples.sql).
+Curated by hand. The standalone admin (`admin/`, port 3100) creates items, locations, groups,
+group membership and a group's loot; anything beyond that (editing, disabling, seasons, deleting)
+is SQL. Worked INSERTs for every case live in [`inventory-examples.sql`](./inventory-examples.sql).
+
+## Locations and groups
+
+A **location** is only a shape (a circle or one polygon). The **loot** — which items, in which
+mode, at which chance, in which seasons — belongs to a **group**, and a location is attached to
+any number of groups through `item_location_group_members`:
+
+```
+item_locations ──< item_location_group_members >── item_location_groups ──< item_location_items
+ (the shape)                                          (a loot table)              └──< …_item_periods
+```
+
+- A post inside a location rolls the loot of **every active group** that location is in.
+- A group spanning many locations is a loot table they share. A location in several groups gets
+  the union: e.g. each church has its own group (its own items) and also belongs to an "all
+  churches" group (the items they share).
+- If two matched locations are in the same group, that group is rolled **once**.
+- An item offered by several rolled groups is granted **once per find** — a stackable item goes
+  up by one, not by the number of groups that list it. The same user never gets a unique item
+  twice, whichever group it came from.
+- A location in **no group matches posts and gives nothing**. The admin marks these in red.
+- `item_location_groups.status = 'disabled'` switches that loot table off everywhere;
+  `item_locations.status = 'disabled'` switches the spot off for all its groups. A location whose
+  one group is disabled still gives the other group's loot.
+- `item_locations.found_count` counts finds per location; for a group's loot it is credited to
+  the lowest-id matched member location. The granted item's `user_items.source_details` carries
+  `locationId` and `groupId`.
+
+Hand-written SQL needs three rows for a new spot: the group, the location, and the membership
+(see the first example in `inventory-examples.sql`).
 
 ## Drawing a polygon
 
 There is no PostGIS in this database, so a polygon is stored as plain jsonb: **one closed
 outer ring, `[[lng, lat], …]`**, longitude first (GeoJSON order). Holes and multi-part
-polygons are not supported — use two locations instead.
+polygons are not supported — use two locations and put them in the same group.
 
 ### geojson.io — the one to use
 
@@ -86,12 +117,15 @@ first. Deleting a type leaves its items unfiled rather than deleting them
 ## How a find resolves
 
 When a post is published, `grantItemsForPost` runs inline — before the response goes back,
-so the poster sees the find immediately. For every location containing the photo's
-coordinates:
+so the poster sees the find immediately. It takes every location containing the photo's
+coordinates, then every active group those locations belong to, and for each group:
 
-- **every** `mandatory` row is granted;
-- `probability` rows are rolled in `sort_order`, and the **first** hit wins — so at most
-  one probability item per find. Put the rarest first.
+- **every** `mandatory` row is won;
+- each `probability` row is rolled **independently**, so one find can win several of them and
+  one row's chance never affects another's.
+
+The wins of all groups are merged by item (see *Locations and groups* above) and each item is
+granted once.
 
 Whether a repeat find gives anything is the **item's** property, not the location's — see
 *Unique vs stackable* below. A location keeps giving to new finders forever (`max_finds`
@@ -140,10 +174,10 @@ the granted items in the bag.
 
 A loot entry can be limited to one or more windows, in `item_location_item_periods`.
 
-The period hangs off the **loot entry**, not the location: one spot hands out a flower in
-spring and a snowman in winter, and those are two entries with two different seasons. To
-take a whole location out of service instead, set `item_locations.status = 'disabled'` —
-that is what it is for.
+The period hangs off the **loot entry** (a row of a group's loot), not the location: one spot
+hands out a flower in spring and a snowman in winter, and those are two entries with two
+different seasons. To take a whole loot table out of service instead, set
+`item_location_groups.status = 'disabled'`; for a single spot, `item_locations.status`.
 
 An entry with no period rows is available always. With them, it is available when **any**
 of them covers today, so several rows give you several windows (spring *and* autumn).

@@ -103,33 +103,61 @@ const IN_SEASON_SQL = `(
   )
 )`;
 
-async function getLootTable(locationIds: number[]): Promise<Map<number, LootRow[]>> {
+/**
+ * The active groups the matched locations belong to, each with the location that brought it
+ * in. A location can be in any number of groups and a group can hold several matched
+ * locations (overlapping shapes); the group is still handled once, attributed to its
+ * lowest-id matched location, which is the one `found_count` and the `item:found` event name.
+ *
+ * Groups come back in id order, which fixes the order they are rolled in.
+ */
+async function getMatchedGroups(locations: LocationRow[]): Promise<Map<number, LocationRow>> {
   const res = await query(
-    `select li.location_id, i.alias, li.grant_mode, li.probability_percent
-     from item_location_items li
-     join items i on i.id = li.item_id
-     where li.location_id = any($1::int[]) and i.status = 'active'
-       and ${IN_SEASON_SQL}
-     order by li.location_id, li.sort_order, li.id`,
-    [locationIds]
+    `select m.group_id, m.location_id
+     from item_location_group_members m
+     join item_location_groups g on g.id = m.group_id
+     where m.location_id = any($1::int[]) and g.status = 'active'
+     order by m.group_id, m.location_id`,
+    [locations.map((l) => l.id)]
   );
 
-  const byLocation = new Map<number, LootRow[]>();
+  const byId = new Map(locations.map((l) => [l.id, l]));
+  const groups = new Map<number, LocationRow>();
   for (const r of res.rows) {
-    const locationId = Number(r.location_id);
-    const list = byLocation.get(locationId) ?? [];
+    const groupId = Number(r.group_id);
+    const location = byId.get(Number(r.location_id));
+    if (location && !groups.has(groupId)) groups.set(groupId, location);
+  }
+  return groups;
+}
+
+async function getLootTable(groupIds: number[]): Promise<Map<number, LootRow[]>> {
+  const res = await query(
+    `select li.group_id, i.alias, li.grant_mode, li.probability_percent
+     from item_location_items li
+     join items i on i.id = li.item_id
+     where li.group_id = any($1::int[]) and i.status = 'active'
+       and ${IN_SEASON_SQL}
+     order by li.group_id, li.sort_order, li.id`,
+    [groupIds]
+  );
+
+  const byGroup = new Map<number, LootRow[]>();
+  for (const r of res.rows) {
+    const groupId = Number(r.group_id);
+    const list = byGroup.get(groupId) ?? [];
     list.push({
       alias: r.alias,
       grantMode: r.grant_mode,
       probabilityPercent: r.probability_percent === null ? null : Number(r.probability_percent),
     });
-    byLocation.set(locationId, list);
+    byGroup.set(groupId, list);
   }
-  return byLocation;
+  return byGroup;
 }
 
 /**
- * Which aliases this location hands out on one find: every mandatory entry, plus each
+ * Which aliases one group hands out on one find: every mandatory entry, plus each
  * probability entry whose roll hits. Every probability row is rolled independently, so
  * one find can win several of them, and one row's chance never affects another's.
  */
@@ -150,6 +178,11 @@ function rollLoot(loot: LootRow[]): string[] {
  * achievement update over to gspot-services. Items the user already holds are silently
  * skipped — a location keeps giving to new finders forever, but never twice to the same
  * person.
+ *
+ * The loot belongs to groups, not to locations: every active group any matched location is
+ * a member of is rolled, once each however many of its locations matched. An item that
+ * several rolled groups offer is still granted once per find — a stackable one goes up by
+ * one, not by the number of groups that listed it.
  *
  * Never throws: a failure here must not fail the post.
  */
@@ -177,42 +210,53 @@ export async function grantItemsForPost({
     const matched = candidates.filter((location) => containsPoint(location, coordinates));
     if (matched.length === 0) return [];
 
-    // Out-of-season entries are filtered out here, so a location whose whole loot table is
-    // out of season simply gives nothing today.
-    const loot = await getLootTable(matched.map((l) => l.id));
+    const groups = await getMatchedGroups(matched);
+    if (groups.size === 0) return [];
 
-    const found: FoundItemType[] = [];
-    for (const location of matched) {
-      const entries = loot.get(location.id);
+    // Out-of-season entries are filtered out here, so a group whose whole loot table is
+    // out of season simply gives nothing today.
+    const loot = await getLootTable([...groups.keys()]);
+
+    // Every group is rolled, but an item is won once per find: the first group (lowest id)
+    // to hand it out is the one credited, the rest are ignored for that alias.
+    const wins = new Map<string, { groupId: number; location: LocationRow }>();
+    for (const [groupId, location] of groups) {
+      const entries = loot.get(groupId);
       if (!entries || entries.length === 0) continue;
 
       for (const alias of rollLoot(entries)) {
-        // null means a unique item the user already had — the location gives nothing more.
-        // A stackable item always comes back, with its raised count.
-        const item = await grantItemToUser(userId, alias, 'found', {
-          postId,
-          locationId: location.id,
-        });
-        if (!item) continue;
-
-        found.push(item);
-        await query(`update item_locations set found_count = found_count + 1 where id = $1`, [
-          location.id,
-        ]);
-
-        await eventBus.publish('item', 'found', {
-          userId,
-          userAlias,
-          postId,
-          itemAlias: item.alias,
-          itemName: item.name,
-          itemQuality: item.quality,
-          itemIconUrl: item.iconUrl,
-          itemCount: item.count,
-          locationId: location.id,
-          locationName: location.name,
-        } as ItemFoundEvent);
+        if (!wins.has(alias)) wins.set(alias, { groupId, location });
       }
+    }
+
+    const found: FoundItemType[] = [];
+    for (const [alias, { groupId, location }] of wins) {
+      // null means a unique item the user already had — nothing more to give for it.
+      // A stackable item always comes back, with its raised count.
+      const item = await grantItemToUser(userId, alias, 'found', {
+        postId,
+        locationId: location.id,
+        groupId,
+      });
+      if (!item) continue;
+
+      found.push(item);
+      await query(`update item_locations set found_count = found_count + 1 where id = $1`, [
+        location.id,
+      ]);
+
+      await eventBus.publish('item', 'found', {
+        userId,
+        userAlias,
+        postId,
+        itemAlias: item.alias,
+        itemName: item.name,
+        itemQuality: item.quality,
+        itemIconUrl: item.iconUrl,
+        itemCount: item.count,
+        locationId: location.id,
+        locationName: location.name,
+      } as ItemFoundEvent);
     }
 
     if (found.length > 0) {

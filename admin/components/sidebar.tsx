@@ -9,6 +9,7 @@ const CARDS = [
     title: 'ინვენტარი',
     links: [
       { href: '/locations', label: 'ლოკაციები' },
+      { href: '/groups', label: 'ჯგუფები' },
       { href: '/inventory', label: 'მომხმარებლების ინვენტარი' },
       { href: '/items', label: 'ნივთები' },
       { href: '/categories', label: 'კატეგორიები' },

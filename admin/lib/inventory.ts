@@ -37,6 +37,8 @@ export type ItemRow = {
   created_at: Date;
 };
 
+export type GroupRef = { id: number; name: string; status: string };
+
 export type LocationRow = {
   id: number;
   name: string;
@@ -47,14 +49,24 @@ export type LocationRow = {
   polygon: [number, number][] | null;
   status: string;
   found_count: number;
+  created_at: Date;
+  /** the groups whose loot this location hands out; empty means it gives nothing */
+  groups: GroupRef[];
+};
+
+export type GroupRow = {
+  id: number;
+  name: string;
+  status: string;
   item_count: number;
   created_at: Date;
+  locations: { id: number; name: string; status: string }[];
 };
 
 export type LocationItemRow = {
   id: number;
-  location_id: number;
-  location_name: string;
+  group_id: number;
+  group_name: string;
   item_alias: string;
   item_name: string;
   item_icon_url: string | null;
@@ -104,30 +116,51 @@ export async function getLocations(): Promise<LocationRow[]> {
   const res = await query<LocationRow>(
     `select l.id, l.name, l.shape_type, l.latitude, l.longitude, l.radius_m, l.polygon,
             l.status, l.found_count, l.created_at,
-            (select count(*)::int from item_location_items li where li.location_id = l.id) as item_count
+            coalesce((
+              select json_agg(json_build_object('id', g.id, 'name', g.name, 'status', g.status) order by g.id)
+              from item_location_group_members m
+              join item_location_groups g on g.id = m.group_id
+              where m.location_id = l.id
+            ), '[]'::json) as groups
      from item_locations l
      order by l.id desc`
   );
   return res.rows;
 }
 
-// One location's loot in the order the app rolls it (sort_order), or every location's.
-export async function getLocationItems(locationId: number | null): Promise<LocationItemRow[]> {
-  const res = await query<LocationItemRow>(
-    `select li.id, li.location_id, l.name as location_name,
-            i.alias as item_alias, i.name as item_name, i.icon_url as item_icon_url, i.quality as item_quality,
-            li.grant_mode, li.probability_percent, li.sort_order, li.created_at
-     from item_location_items li
-     join item_locations l on l.id = li.location_id
-     join items i on i.id = li.item_id
-     where ($1::int is null or li.location_id = $1)
-     order by li.location_id desc, li.sort_order, li.id`,
-    [locationId]
+export async function getGroups(): Promise<GroupRow[]> {
+  const res = await query<GroupRow>(
+    `select g.id, g.name, g.status, g.created_at,
+            (select count(*)::int from item_location_items li where li.group_id = g.id) as item_count,
+            coalesce((
+              select json_agg(json_build_object('id', l.id, 'name', l.name, 'status', l.status) order by l.id)
+              from item_location_group_members m
+              join item_locations l on l.id = m.location_id
+              where m.group_id = g.id
+            ), '[]'::json) as locations
+     from item_location_groups g
+     order by g.id desc`
   );
   return res.rows;
 }
 
-/** Options for the "add item to location" form. Disabled items are left out. */
+// One group's loot in the order the app rolls it (sort_order), or every group's.
+export async function getLocationItems(groupId: number | null): Promise<LocationItemRow[]> {
+  const res = await query<LocationItemRow>(
+    `select li.id, li.group_id, g.name as group_name,
+            i.alias as item_alias, i.name as item_name, i.icon_url as item_icon_url, i.quality as item_quality,
+            li.grant_mode, li.probability_percent, li.sort_order, li.created_at
+     from item_location_items li
+     join item_location_groups g on g.id = li.group_id
+     join items i on i.id = li.item_id
+     where ($1::int is null or li.group_id = $1)
+     order by li.group_id desc, li.sort_order, li.id`,
+    [groupId]
+  );
+  return res.rows;
+}
+
+/** Options for the "add item to group" form. Disabled items are left out. */
 export async function getItemOptions(): Promise<{ id: number; alias: string; name: string }[]> {
   const res = await query<{ id: number; alias: string; name: string }>(
     `select id, alias, name from items where status = 'active' order by name`

@@ -3,7 +3,8 @@ import { query } from '@/lib/db';
 // Mirrors the main app's item-location check (src/lib/itemLocations.ts): the indexed bounding
 // box narrows the candidates, then an exact test (haversine for a circle, ray casting for a
 // polygon) decides. Production only considers active locations; all are reported here, with
-// the reason one does not count.
+// the reason one does not count. The loot belongs to groups: every active group a counting
+// location is in is rolled, and an item offered by several of them is still granted once.
 
 type Ring = [number, number][];
 
@@ -36,6 +37,20 @@ export type LootTestRow = {
   in_season: boolean;
 };
 
+export type GroupTestRow = {
+  id: number;
+  name: string;
+  status: string;
+  loot: LootTestRow[];
+};
+
+/** One item a find here can win, and every group that offers it. */
+export type EffectiveItem = {
+  item_alias: string;
+  item_name: string;
+  offers: { group_name: string; grant_mode: string; probability_percent: number | null }[];
+};
+
 export type LocationTestRow = {
   id: number;
   name: string;
@@ -47,7 +62,13 @@ export type LocationTestRow = {
   distance_m: number | null;
   /** inside and active: production would grant from this location */
   counts: boolean;
-  loot: LootTestRow[];
+  groups: GroupTestRow[];
+};
+
+export type PointTestResult = {
+  locations: LocationTestRow[];
+  /** what production could grant here: live loot of active groups of counting locations */
+  items: EffectiveItem[];
 };
 
 type DbLocation = {
@@ -86,7 +107,7 @@ const IN_SEASON_SQL = `(
   )
 )`;
 
-export async function testPoint(lng: number, lat: number): Promise<LocationTestRow[]> {
+export async function testPoint(lng: number, lat: number): Promise<PointTestResult> {
   const locations = await query<DbLocation>(
     `select id, name, shape_type, status, latitude, longitude, radius_m, polygon,
             ($1::float8 between min_lat and max_lat and $2::float8 between min_lng and max_lng) as in_bbox
@@ -117,24 +138,67 @@ export async function testPoint(lng: number, lat: number): Promise<LocationTestR
       inside,
       distance_m: distance,
       counts: inside && l.status === 'active',
-      loot: [],
+      groups: [],
     };
   });
 
   const hits = rows.filter((r) => r.inside).map((r) => r.id);
-  if (hits.length > 0) {
-    const loot = await query<LootTestRow & { location_id: number }>(
-      `select li.location_id, i.alias as item_alias, i.name as item_name, li.grant_mode,
-              li.probability_percent, li.sort_order, i.status as item_status,
-              ${IN_SEASON_SQL} as in_season
-       from item_location_items li
-       join items i on i.id = li.item_id
-       where li.location_id = any($1::int[])
-       order by li.location_id, li.sort_order, li.id`,
-      [hits]
-    );
-    for (const row of rows) row.loot = loot.rows.filter((x) => x.location_id === row.id);
+  if (hits.length === 0) return { locations: rows, items: [] };
+
+  const members = await query<{ location_id: number; id: number; name: string; status: string }>(
+    `select m.location_id, g.id, g.name, g.status
+     from item_location_group_members m
+     join item_location_groups g on g.id = m.group_id
+     where m.location_id = any($1::int[])
+     order by g.id`,
+    [hits]
+  );
+  const groupIds = [...new Set(members.rows.map((m) => m.id))];
+
+  const loot = groupIds.length
+    ? await query<LootTestRow & { group_id: number }>(
+        `select li.group_id, i.alias as item_alias, i.name as item_name, li.grant_mode,
+                li.probability_percent, li.sort_order, i.status as item_status,
+                ${IN_SEASON_SQL} as in_season
+         from item_location_items li
+         join items i on i.id = li.item_id
+         where li.group_id = any($1::int[])
+         order by li.group_id, li.sort_order, li.id`,
+        [groupIds]
+      )
+    : { rows: [] };
+
+  for (const row of rows) {
+    row.groups = members.rows
+      .filter((m) => m.location_id === row.id)
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        status: m.status,
+        loot: loot.rows.filter((x) => x.group_id === m.id),
+      }));
   }
 
-  return rows;
+  // What production would roll: each active group of a counting location once, live loot only.
+  const rolled = new Map<number, GroupTestRow>();
+  for (const row of rows) {
+    if (!row.counts) continue;
+    for (const g of row.groups) if (g.status === 'active') rolled.set(g.id, g);
+  }
+
+  const items = new Map<string, EffectiveItem>();
+  for (const g of [...rolled.values()].sort((a, b) => a.id - b.id)) {
+    for (const l of g.loot) {
+      if (!l.in_season || l.item_status !== 'active') continue;
+      const entry = items.get(l.item_alias) ?? { item_alias: l.item_alias, item_name: l.item_name, offers: [] };
+      entry.offers.push({
+        group_name: g.name,
+        grant_mode: l.grant_mode,
+        probability_percent: l.probability_percent === null ? null : Number(l.probability_percent),
+      });
+      items.set(l.item_alias, entry);
+    }
+  }
+
+  return { locations: rows, items: [...items.values()] };
 }

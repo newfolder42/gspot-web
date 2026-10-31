@@ -46,23 +46,36 @@ function dbFailure(err: unknown, uniqueMessages: Record<string, string> = {}): A
   return fail(GENERIC_ERROR);
 }
 
-type SerialTable = 'item_categories' | 'item_types' | 'items' | 'item_locations' | 'item_location_items';
+type SerialTable =
+  | 'item_categories'
+  | 'item_types'
+  | 'items'
+  | 'item_locations'
+  | 'item_location_groups'
+  | 'item_location_items';
 
 // A row inserted with an explicit id (a dump, a hand-written INSERT) leaves the table's serial
 // behind it, and the next create collides with that row on its primary key. Move the
 // sequence up to the table's highest id and try once more instead of failing until enough
-// attempts have walked past the gap.
-async function withSequenceRepair<T>(table: SerialTable, insert: () => Promise<T>): Promise<T> {
+// attempts have walked past the gap. An insert that spans several tables (a location and its
+// group) names all of them: a failed statement aborts its transaction, so the retry has to
+// rerun the whole thing, and any one of the sequences may be the one that is behind.
+async function withSequenceRepair<T>(
+  tables: SerialTable | SerialTable[],
+  insert: () => Promise<T>
+): Promise<T> {
   try {
     return await insert();
   } catch (err) {
     const { code, constraint } = err as { code?: string; constraint?: string };
     if (code !== '23505' || !constraint?.endsWith('_pkey')) throw err;
 
-    await query(
-      `select setval(pg_get_serial_sequence($1, 'id'), (select coalesce(max(id), 1) from ${table}))`,
-      [table]
-    );
+    for (const table of Array.isArray(tables) ? tables : [tables]) {
+      await query(
+        `select setval(pg_get_serial_sequence($1, 'id'), (select coalesce(max(id), 1) from ${table}))`,
+        [table]
+      );
+    }
     return insert();
   }
 }
@@ -240,7 +253,11 @@ export async function createItem(_prev: ActionState, formData: FormData): Promis
 }
 
 // ---------------------------------------------------------------------------------------
-// Item locations and their items
+// Item locations, their groups and the groups' items
+//
+// A location is only a shape. The loot belongs to a group, and a location hands out the loot of
+// every active group it is a member of — so one location can sit in several groups (its own
+// items plus the items it shares with its neighbours) and one group can span many locations.
 
 const locationBaseSchema = z.object({
   name: nameField(120),
@@ -256,6 +273,19 @@ const circleSchema = z.object({
     .int('რადიუსი უნდა იყოს მთელი რიცხვი')
     .min(1, 'რადიუსი უნდა იყოს 1 მეტრზე მეტი'),
 });
+
+const idList = (message: string) =>
+  z.array(z.coerce.number({ error: message }).int(message).positive(message));
+
+/** Every value of a repeated form field (<select multiple>), blanks dropped, duplicates merged. */
+function formIds(formData: FormData, name: string): unknown[] {
+  return [...new Set(formData.getAll(name).filter((v) => v !== ''))];
+}
+
+const INSERT_POLYGON_LOCATION = `insert into item_locations (name, shape_type, polygon, status)
+  values ($1, 'polygon', $2::jsonb, $3) returning id`;
+const INSERT_CIRCLE_LOCATION = `insert into item_locations (name, shape_type, latitude, longitude, radius_m, status)
+  values ($1, 'circle', $2, $3, $4, $5) returning id`;
 
 export async function createLocation(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const fields = Object.fromEntries(formData);
@@ -273,24 +303,121 @@ export async function createLocation(_prev: ActionState, formData: FormData): Pr
     if (parsed.error !== undefined) return fail(parsed.error);
 
     // JSON.stringify gives the single-line form; the trigger derives the bounding box.
-    statement = {
-      text: `insert into item_locations (name, shape_type, polygon, status) values ($1, 'polygon', $2::jsonb, $3)`,
-      params: [name, JSON.stringify(parsed.ring), status],
-    };
+    statement = { text: INSERT_POLYGON_LOCATION, params: [name, JSON.stringify(parsed.ring), status] };
   } else {
     const circle = circleSchema.safeParse(fields);
     if (!circle.success) return fail(firstError(circle.error));
     if (!inGeorgia(circle.data.longitude, circle.data.latitude)) return fail(OUTSIDE_GEORGIA_ERROR);
 
     statement = {
-      text: `insert into item_locations (name, shape_type, latitude, longitude, radius_m, status)
-             values ($1, 'circle', $2, $3, $4, $5)`,
+      text: INSERT_CIRCLE_LOCATION,
       params: [name, circle.data.latitude, circle.data.longitude, circle.data.radiusM, status],
     };
   }
 
+  // A location in no group would be saved and then never give anything, with nothing on
+  // screen to say why — so it has to start in at least one.
+  const ownGroup = formData.get('ownGroup') === 'on';
+  const picked = idList('აირჩიე სწორი ჯგუფი').safeParse(formIds(formData, 'groupIds'));
+  if (!picked.success) return fail(firstError(picked.error));
+  if (!ownGroup && picked.data.length === 0) {
+    return fail('აირჩიე ჯგუფი ან დატოვე ჩართული საკუთარი ჯგუფის შექმნა');
+  }
+
   try {
-    await withSequenceRepair('item_locations', () => query(statement.text, statement.params));
+    // One transaction: the location, its own group (if asked) and the memberships appear
+    // together or not at all.
+    await withSequenceRepair(['item_locations', 'item_location_groups'], () =>
+      withTransaction(async (client) => {
+        const location = await client.query<{ id: number }>(statement.text, statement.params);
+        const locationId = location.rows[0].id;
+
+        const memberOf = [...picked.data];
+        if (ownGroup) {
+          const group = await client.query<{ id: number }>(
+            `insert into item_location_groups (name, status) values ($1, $2) returning id`,
+            [name, status]
+          );
+          memberOf.push(group.rows[0].id);
+        }
+
+        await client.query(
+          `insert into item_location_group_members (group_id, location_id)
+           select g, $1 from unnest($2::int[]) as g
+           on conflict do nothing`,
+          [locationId, memberOf]
+        );
+      })
+    );
+  } catch (err) {
+    // includes 23503: a picked group was removed from the database in the meantime
+    return dbFailure(err);
+  }
+
+  refresh();
+  return DONE;
+}
+
+const groupSchema = z.object({
+  name: nameField(120),
+  status: z.enum(ACTIVE_STATUSES, { error: 'აირჩიე სტატუსი' }),
+});
+
+export async function createLocationGroup(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = groupSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fail(firstError(parsed.error));
+
+  const { name, status } = parsed.data;
+  try {
+    await withSequenceRepair('item_location_groups', () =>
+      query(`insert into item_location_groups (name, status) values ($1, $2)`, [name, status])
+    );
+  } catch (err) {
+    return dbFailure(err);
+  }
+
+  refresh();
+  return DONE;
+}
+
+const membershipSchema = z.object({
+  groupId: requiredInt('აირჩიე ჯგუფი'),
+  locationIds: idList('აირჩიე ლოკაცია').min(1, 'აირჩიე ლოკაცია'),
+});
+
+/** Puts one or more locations into a group. Already-members are skipped, not an error. */
+export async function addLocationsToGroup(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = membershipSchema.safeParse({
+    groupId: formData.get('groupId'),
+    locationIds: formIds(formData, 'locationIds'),
+  });
+  if (!parsed.success) return fail(firstError(parsed.error));
+
+  const { groupId, locationIds } = parsed.data;
+  try {
+    await query(
+      `insert into item_location_group_members (group_id, location_id)
+       select $1, l from unnest($2::int[]) as l
+       on conflict do nothing`,
+      [groupId, locationIds]
+    );
+  } catch (err) {
+    return dbFailure(err);
+  }
+
+  refresh();
+  return DONE;
+}
+
+/** Takes a location out of a group. The group, its loot and the location itself stay. */
+export async function removeLocationFromGroup(locationId: number, groupId: number): Promise<ActionState> {
+  if (!Number.isInteger(locationId) || !Number.isInteger(groupId)) return fail(GENERIC_ERROR);
+
+  try {
+    await query(`delete from item_location_group_members where group_id = $1 and location_id = $2`, [
+      groupId,
+      locationId,
+    ]);
   } catch (err) {
     return dbFailure(err);
   }
@@ -301,7 +428,7 @@ export async function createLocation(_prev: ActionState, formData: FormData): Pr
 
 const locationItemSchema = z
   .object({
-    locationId: requiredInt('აირჩიე ლოკაცია'),
+    groupId: requiredInt('აირჩიე ჯგუფი'),
     itemId: requiredInt('აირჩიე ნივთი'),
     grantMode: z.enum(GRANT_MODES, { error: 'აირჩიე რეჟიმი' }),
     probabilityPercent: optionalInt,
@@ -322,17 +449,17 @@ export async function createLocationItem(_prev: ActionState, formData: FormData)
   const parsed = locationItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(firstError(parsed.error));
 
-  const { locationId, itemId, grantMode, probabilityPercent, sortOrder } = parsed.data;
+  const { groupId, itemId, grantMode, probabilityPercent, sortOrder } = parsed.data;
   try {
     await withSequenceRepair('item_location_items', () =>
       query(
-        `insert into item_location_items (location_id, item_id, grant_mode, probability_percent, sort_order)
+        `insert into item_location_items (group_id, item_id, grant_mode, probability_percent, sort_order)
          values ($1, $2, $3, $4, $5)`,
-        [locationId, itemId, grantMode, grantMode === 'probability' ? probabilityPercent : null, sortOrder]
+        [groupId, itemId, grantMode, grantMode === 'probability' ? probabilityPercent : null, sortOrder]
       )
     );
   } catch (err) {
-    return dbFailure(err, { item_location_items_unique: 'ეს ნივთი ამ ლოკაციაზე უკვე დამატებულია' });
+    return dbFailure(err, { item_location_items_group_item_unique: 'ეს ნივთი ამ ჯგუფში უკვე დამატებულია' });
   }
 
   refresh();
