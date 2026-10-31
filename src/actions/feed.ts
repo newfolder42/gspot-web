@@ -1,9 +1,10 @@
 'use server';
 
 import { getAccountPosts, getConnectionsPosts, getHomeFeedPosts, getPublicPosts, getShufflePosts, getToGuessPosts, getZonePosts } from '@/lib/posts';
+import { getQuestById, getQuestCompletionSummary } from '@/lib/quests';
 import { recordGuessSkips } from '@/lib/guessSkips';
 import { getCurrentUser } from '@/lib/session';
-import { POSTS_PER_PAGE, SHUFFLE_DECK_SIZE } from '@/types/constants';
+import { POSTS_PER_PAGE, POSTS_PER_PAGE_GRID, SHUFFLE_DECK_SIZE } from '@/types/constants';
 import { FeedFilter, FeedType, FeedPostType, GpsPostType } from '@/types/post';
 
 type LoadPostsParams = {
@@ -68,6 +69,20 @@ export async function loadPosts(params: LoadPostsParams): Promise<FeedPostType[]
 export async function loadZonePosts(params: LoadZonePostsParams): Promise<FeedPostType[]> {
   const limit = params.limit ? params.limit : POSTS_PER_PAGE;
   return await getZonePosts(params.zoneId!, params.userId, limit, params.cursor, params.filter, params.tagId);
+}
+
+/** A quest's completion list; empty for anyone `getQuestCompletionSummary` doesn't let view it. */
+export async function loadQuestCompletionPosts(params: {
+  questId: number;
+  cursor?: { date: string; id: number };
+  limit?: number;
+}): Promise<FeedPostType[]> {
+  const quest = await getQuestById(params.questId);
+  if (!quest) return [];
+  const user = await getCurrentUser();
+  const { canView } = await getQuestCompletionSummary(quest.id, quest.zone_id, user?.userId);
+  if (!canView) return [];
+  return await getZonePosts(quest.zone_id, user?.userId, Math.min(params.limit ?? POSTS_PER_PAGE, POSTS_PER_PAGE_GRID), params.cursor, 'all', null, quest.id);
 }
 
 export async function loadPublicPosts(params: LoadPublicPostsParams = {}): Promise<GpsPostType[]> {

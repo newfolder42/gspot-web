@@ -91,7 +91,7 @@ export async function toggleVoteForUser(
            where p.id = $1
            limit 1`
         : `select p.user_id as post_author_id, u.alias as post_author_alias,
-                  c.user_id as comment_author_id, cu.alias as comment_author_alias,
+                  c.user_id as comment_author_id, cu.alias as comment_author_alias, c.type as comment_type,
                   p.zone_id, z.slug as zone_slug
            from posts p
            join users u on u.id = p.user_id
@@ -139,6 +139,7 @@ export async function toggleVoteForUser(
         postAuthorAlias: target.post_author_alias,
         commentAuthorId: target.comment_author_id !== null ? Number(target.comment_author_id) : null,
         commentAuthorAlias: target.comment_author_alias ?? null,
+        commentType: target.comment_type ?? null,
         zoneId: Number(target.zone_id),
         zoneSlug: target.zone_slug,
       } as PostVoteCreatedEvent);

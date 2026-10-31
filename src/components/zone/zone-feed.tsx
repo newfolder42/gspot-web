@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { GpsPost } from '../post-gps';
-import { QuestCompletionPost } from '../post-quest';
+import { QuestCompletionPost, QuestCompletionGridItem } from '../post-quest';
 import { HideAndSeekPost } from '../hide-and-seek/hide-and-seek-post';
 import { FeedPostType } from '@/types/post';
-import { loadZonePosts } from '@/actions/feed';
-import { POSTS_PER_PAGE } from '@/types/constants';
+import { loadZonePosts, loadQuestCompletionPosts } from '@/actions/feed';
+import { POSTS_PER_PAGE, POSTS_PER_PAGE_GRID } from '@/types/constants';
 import type { ZoneTag } from '@/types/tag';
 import TagFilterPicker from '@/components/common/tag-filter-picker';
 
@@ -14,26 +14,32 @@ type ZoneFeedProps = {
   userId?: number | null;
   zoneId: number;
   tags: ZoneTag[];
+  /** Lists only this quest's completion posts (the quest's "completed quests" page). */
+  questId?: number;
 };
 
-export default function ZoneFeed({ userId, zoneId, tags }: ZoneFeedProps) {
+export default function ZoneFeed({ userId, zoneId, tags, questId }: ZoneFeedProps) {
   const [tagId, setTagId] = useState<number | null>(null);
   const [posts, setPosts] = useState<FeedPostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const prevTagIdRef = useRef(tagId);
+  // A quest's completions are a grid of thumbnails, so a page is a whole number of rows.
+  const pageSize = questId ? POSTS_PER_PAGE_GRID : POSTS_PER_PAGE;
 
   const fetchPosts = async (t: number | null, append = false, cursor?: { date: string; id: number }) => {
     setLoading(true);
     try {
-      const fetched = await loadZonePosts({ zoneId, userId, tagId: t, cursor });
+      const fetched = questId
+        ? await loadQuestCompletionPosts({ questId, cursor, limit: pageSize })
+        : await loadZonePosts({ zoneId, userId, tagId: t, cursor });
       if (append) {
         setPosts(prev => [...prev, ...fetched]);
       } else {
         setPosts(fetched);
       }
-      setHasMore(fetched.length === POSTS_PER_PAGE);
+      setHasMore(fetched.length === pageSize);
     } catch (err) {
       console.error('ZoneFeed load error:', err);
     } finally {
@@ -87,6 +93,13 @@ export default function ZoneFeed({ userId, zoneId, tags }: ZoneFeedProps) {
         </div>
       ) : posts.length === 0 ? (
         <p className="py-12 text-center text-sm text-zinc-500">პოსტები არ მოიძებნა</p>
+      ) : questId ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '4px' }}>
+          {posts.map(post => post.type === 'quest-completion'
+            ? <QuestCompletionGridItem key={post.id} post={post} caption="author" />
+            : null
+          )}
+        </div>
       ) : (
         <div className="space-y-4">
           {posts.map(post => post.type === 'quest-completion'

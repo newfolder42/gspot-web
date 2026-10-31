@@ -8,6 +8,7 @@ export interface PostVoteCreatedEvent {
   postAuthorAlias: string;
   commentAuthorId: number | null;
   commentAuthorAlias: string | null;
+  commentType: string | null;
   zoneId: number;
   zoneSlug: string;
 }

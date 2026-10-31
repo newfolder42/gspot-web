@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api';
 import { uploadToSignedUrl } from '@/lib/upload';
+import type { MobilePostType } from '@/types/post';
 import type {
   ZoneQuestWithStatsType,
   ZoneQuestCharacterType,
@@ -17,6 +18,15 @@ export const questsApi = {
 
   getQuest: (slug: string, questId: number): Promise<QuestDetailResponse> =>
     apiClient.get<QuestDetailResponse>(`/zones/${enc(slug)}/quests/${questId}`).then((r) => r.data),
+
+  getQuestCompletions: (
+    slug: string,
+    questId: number,
+    params: { limit?: number; cursorDate?: string; cursorId?: number }
+  ): Promise<MobilePostType[]> =>
+    apiClient
+      .get<{ posts: MobilePostType[] }>(`/zones/${enc(slug)}/quests/${questId}/completions`, { params })
+      .then((r) => r.data.posts),
 
   acceptQuest: (slug: string, questId: number): Promise<{ success: boolean }> =>
     apiClient.post(`/zones/${enc(slug)}/quests/${questId}/accept`).then((r) => r.data),

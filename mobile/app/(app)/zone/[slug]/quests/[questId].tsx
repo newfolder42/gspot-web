@@ -24,6 +24,9 @@ const OBJECTIVE_STATUS_LABELS: Record<string, string> = {
   completed: 'შესრულებულია',
 };
 
+// A preview only: the full list is on the quest's completions screen.
+const GALLERY_PREVIEW_COUNT = 6;
+
 function isObjectiveAttemptable(
   objectives: ZoneQuestObjectiveWithProgressType[],
   objectiveOrder: string,
@@ -105,6 +108,8 @@ export default function QuestDetailScreen() {
     canAccept,
     canModerate,
     gallery,
+    completionCount = 0,
+    canViewCompletions = false,
     rewardDefinitions = [],
     itemDefinitions = [],
   } = data;
@@ -263,7 +268,7 @@ export default function QuestDetailScreen() {
         <View className="mt-6">
           <Text className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">სხვების ნამუშევრები</Text>
           <View className="flex-row flex-wrap gap-2">
-            {gallery.map((photo) => (
+            {gallery.slice(0, GALLERY_PREVIEW_COUNT).map((photo) => (
               <ZoomableImage
                 key={`${photo.userId}-${photo.objectiveId}`}
                 uri={photo.photoUrl}
@@ -274,6 +279,24 @@ export default function QuestDetailScreen() {
             ))}
           </View>
         </View>
+      ) : null}
+
+      {completionCount > 0 ? (
+        canViewCompletions ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/(app)/zone/[slug]/quests/[questId]/completions', params: { slug, questId: String(questId) } })}
+            className="mt-4 flex-row items-center justify-between rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-3"
+          >
+            <View className="flex-row items-center gap-2">
+              <Feather name="check-circle" size={16} color="#14B8A6" />
+              <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-100">შესრულებული მისიები</Text>
+              <Text className="text-sm text-zinc-400 dark:text-zinc-500">{completionCount}</Text>
+            </View>
+            <Feather name="chevron-right" size={16} color={theme.icon} />
+          </Pressable>
+        ) : (
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-4">შესრულებულია {completionCount}-ჯერ</Text>
+        )
       ) : null}
 
       {captureObjective && userQuest ? (

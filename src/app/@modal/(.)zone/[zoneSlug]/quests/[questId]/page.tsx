@@ -7,6 +7,7 @@ import {
   getUserQuest,
   getCompletedQuestPhotos,
   getQuestCharacter,
+  getQuestCompletionSummary,
 } from '@/lib/quests';
 import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
@@ -58,6 +59,7 @@ export default async function QuestDetailModal({ params }: Props) {
   const gallery = userQuest?.status === 'completed' && currentUser
     ? await getCompletedQuestPhotos(questId, currentUser.userId)
     : [];
+  const completions = await getQuestCompletionSummary(questId, zone.id, currentUser?.userId);
 
   const isMobile = isMobileUserAgent((await headers()).get('user-agent'));
 
@@ -74,6 +76,8 @@ export default async function QuestDetailModal({ params }: Props) {
         canAccept={canAccept}
         canModerate={canModerate}
         gallery={gallery}
+        completionCount={completions.count}
+        canViewCompletions={completions.canView}
         isMobile={isMobile}
         rewardDefinitions={rewardDefinitions}
         itemDefinitions={itemDefinitions}

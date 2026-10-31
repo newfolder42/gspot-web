@@ -181,6 +181,7 @@ export default function AppLayout() {
       <Stack.Screen name="bookmarks" options={{ title: 'ჩამახსოვრებულები' }} />
       <Stack.Screen name="zone/[slug]/index" options={{ title: 'ზონა' }} />
       <Stack.Screen name="zone/[slug]/quests/[questId]" options={{ title: 'მისია' }} />
+      <Stack.Screen name="zone/[slug]/quests/[questId]/completions" options={{ title: 'შესრულებული მისიები' }} />
       <Stack.Screen name="zone/[slug]/characters/[characterSlug]" options={{ title: 'პერსონაჟი' }} />
       <Stack.Screen name="user/[alias]" options={{ title: 'პროფილი' }} />
       <Stack.Screen name="zones" options={{ title: 'საბზონები', headerRight: () => infoAndSearch('zones') }} />

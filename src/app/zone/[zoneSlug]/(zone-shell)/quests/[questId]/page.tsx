@@ -10,6 +10,7 @@ import {
   getCompletedQuestPhotos,
   getQuestPhotosByAuthorAlias,
   getQuestCharacter,
+  getQuestCompletionSummary,
 } from '@/lib/quests';
 import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
@@ -119,6 +120,7 @@ export default async function QuestDetailPage({ params, searchParams }: Props) {
     : [];
 
   const authorGallery = authorAlias ? await getQuestPhotosByAuthorAlias(questId, authorAlias) : [];
+  const completions = await getQuestCompletionSummary(questId, zone.id, currentUser?.userId);
 
   const galleryByKey = new Map<string, typeof baseGallery[number]>();
   [...authorGallery, ...baseGallery].forEach(p => galleryByKey.set(`${p.userId}-${p.objectiveId}`, p));
@@ -138,6 +140,8 @@ export default async function QuestDetailPage({ params, searchParams }: Props) {
       canAccept={canAccept}
       canModerate={canModerate}
       gallery={gallery}
+      completionCount={completions.count}
+      canViewCompletions={completions.canView}
       isMobile={isMobile}
       highlightAuthorAlias={authorAlias}
       rewardDefinitions={rewardDefinitions}

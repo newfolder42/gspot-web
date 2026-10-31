@@ -97,6 +97,7 @@ export type NotificationPostCommentCreatedDetailsType = {
 export type NotificationPostVoteCreatedDetailsType = {
   postId: number,
   commentId?: number | null,
+  targetType?: RewardTargetKind,
   value: 1 | -1,
   voterId: number,
   voterAlias: string,
@@ -314,9 +315,10 @@ export function getNotificationContentMessage(type: NotificationType['type'], de
     }
     case 'comment-vote-created': {
       const d = details as NotificationPostVoteCreatedDetailsType;
+      const what = d.targetType === 'guess-comment' ? 'გამოცნობა' : 'კომენტარი';
       return d.value === 1
-        ? `${d.voterAlias}-მა მოიწონა შენი კომენტარი`
-        : `${d.voterAlias}-მა არ მოიწონა შენი კომენტარი`;
+        ? `${d.voterAlias}-მა მოიწონა შენი ${what}`
+        : `${d.voterAlias}-მა არ მოიწონა შენი ${what}`;
     }
     case 'post-reward-created': {
       const d = details as NotificationPostRewardCreatedDetailsType;

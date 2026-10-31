@@ -800,6 +800,7 @@ export async function getZonePosts(
   cursor?: { date: string; id: number },
   filter: 'all' | 'guessed' | 'not-guessed' = 'all',
   tagId?: number | null,
+  questId?: number | null,
 ): Promise<FeedPostType[]> {
   try {
     const cursorCondition = cursor
@@ -814,6 +815,7 @@ export async function getZonePosts(
     }
 
     const tagCondition = tagId ? `and exists(select 1 from post_tags pt where pt.post_id = p.id and pt.tag_id = ${Number(tagId)})` : '';
+    const questCondition = questId ? `and exists(select 1 from post_quest_completions pqc where pqc.post_id = p.id and pqc.quest_id = ${Number(questId)})` : '';
 
     const params = cursor
       ? [limit, zoneId, userId, cursor.date, cursor.id]
@@ -833,13 +835,13 @@ left join user_xp ux on ux.user_id = u.id
 where p.status = 'published' and p.type in ('gps-photo', 'quest-completion', 'hide-and-seek')
   and z.id = $2
   and ${zoneVisibleSql('$3')}
-  ${filterCondition} ${tagCondition} ${cursorCondition}
+  ${filterCondition} ${tagCondition} ${questCondition} ${cursorCondition}
 order by p.created_at desc, p.id desc
 limit $1`,
       params
     );
 
-    return await enrichPosts(res.rows, userId);
+    return await enrichPosts(res.rows, userId, { withItems: Boolean(questId) });
   } catch (err) {
     await logerror('getZonePosts error', [err]);
     return [];

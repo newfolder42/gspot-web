@@ -131,6 +131,8 @@ export type QuestDetailResponse = {
   canAccept: boolean;
   canModerate: boolean;
   gallery: CompletedQuestPhotoType[];
+  completionCount: number;
+  canViewCompletions: boolean;
   rewardDefinitions: RewardDefinition[];
   itemDefinitions: ItemDefinition[];
 };

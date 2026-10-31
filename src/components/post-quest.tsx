@@ -13,7 +13,7 @@ export function QuestCompletionTitle({ questTitle }: { questTitle: string | null
   return <>{questTitle ? `შეასრულა მისია "${questTitle}"` : 'შეასრულა მისია'}</>;
 }
 
-export function QuestCompletionGridItem({ post }: { post: QuestCompletionPostType }) {
+export function QuestCompletionGridItem({ post, caption = 'quest' }: { post: QuestCompletionPostType; caption?: 'quest' | 'author' }) {
   const cover = post.photos[0];
 
   return (
@@ -40,7 +40,7 @@ export function QuestCompletionGridItem({ post }: { post: QuestCompletionPostTyp
         </div>
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5 pointer-events-none">
           <span className="text-xs font-medium text-white drop-shadow-sm line-clamp-1">
-            <QuestCompletionTitle questTitle={post.questTitle} />
+            {caption === 'author' ? `'${post.author}` : <QuestCompletionTitle questTitle={post.questTitle} />}
           </span>
         </div>
       </div>

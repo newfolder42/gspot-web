@@ -617,6 +617,35 @@ export async function getZoneQuestsPendingModeration(zoneId: number): Promise<Qu
   }
 }
 
+// Completion posts of a quest, counted for everyone; the list behind them (the quest's
+// "completed quests" page) is for members who have finished it themselves and zone staff,
+// the same people the photo gallery is shown to.
+export async function getQuestCompletionSummary(
+  questId: number,
+  zoneId: number,
+  userId: number | null | undefined
+): Promise<{ count: number; canView: boolean }> {
+  try {
+    const res = await query(
+      `select
+         (select count(*) from post_quest_completions pqc
+          join posts p on p.id = pqc.post_id
+          where pqc.quest_id = $1 and p.status = 'published') as count,
+         exists(select 1 from user_quests uq
+                where uq.quest_id = $1 and uq.user_id = $3 and uq.status = 'completed') as completed,
+         exists(select 1 from zone_members zm
+                where zm.zone_id = $2 and zm.user_id = $3 and zm.status = 'active'
+                  and zm.role in ('owner', 'admin', 'moderator')) as staff`,
+      [questId, zoneId, userId ?? null]
+    );
+    const row = res.rows[0];
+    return { count: Number(row.count), canView: Boolean(row.completed) || Boolean(row.staff) };
+  } catch (err) {
+    await logerror('getQuestCompletionSummary error', [err]);
+    return { count: 0, canView: false };
+  }
+}
+
 // Galleries show one photo per member per objective; a member who repeated the quest
 // shows with their latest one.
 export async function getCompletedQuestPhotos(questId: number, excludingUserId: number): Promise<CompletedQuestPhotoType[]> {

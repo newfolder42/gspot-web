@@ -126,6 +126,8 @@ export default function QuestDetail({
   canAccept,
   canModerate,
   gallery,
+  completionCount,
+  canViewCompletions,
   isMobile,
   highlightAuthorAlias,
   rewardDefinitions = [],
@@ -141,6 +143,8 @@ export default function QuestDetail({
   canAccept: boolean;
   canModerate: boolean;
   gallery: CompletedQuestPhotoType[];
+  completionCount: number;
+  canViewCompletions: boolean;
   isMobile: boolean;
   highlightAuthorAlias?: string | null;
   rewardDefinitions?: RewardDefinition[];
@@ -309,6 +313,24 @@ export default function QuestDetail({
 
       {(userQuest?.status === 'completed' || Boolean(highlightAuthorAlias)) && (
         <QuestCompletedGallery photos={gallery} highlightAlias={highlightAuthorAlias} />
+      )}
+
+      {completionCount > 0 && (
+        canViewCompletions ? (
+          <Link
+            href={`/zone/${zoneSlug}/quests/${quest.id}/completions`}
+            className="flex items-center justify-between rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition"
+          >
+            <span className="flex items-center gap-2">
+              <CheckmarkCircleIcon className="w-4 h-4 text-teal-600" />
+              შესრულებული მისიები
+              <span className="text-zinc-400 dark:text-zinc-500 font-normal">{completionCount}</span>
+            </span>
+            <span aria-hidden className="text-zinc-400 dark:text-zinc-500">→</span>
+          </Link>
+        ) : (
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">შესრულებულია {completionCount}-ჯერ</p>
+        )
       )}
 
       {captureObjective && userQuest && (

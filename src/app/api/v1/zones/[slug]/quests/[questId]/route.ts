@@ -6,6 +6,7 @@ import {
   getUserQuest,
   getQuestCharacter,
   getCompletedQuestPhotos,
+  getQuestCompletionSummary,
 } from '@/lib/quests';
 import { getQuestLockReason } from '@/lib/questProgress';
 import { getUserLevel } from '@/lib/users';
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest, context: Context) {
         ? await getCompletedQuestPhotos(questId, ctx.user.userId)
         : [];
 
+    const completions = await getQuestCompletionSummary(questId, ctx.zone.id, ctx.user.userId);
+
     return NextResponse.json({
       quest,
       character,
@@ -70,6 +73,8 @@ export async function GET(req: NextRequest, context: Context) {
       canAccept,
       canModerate: canModerate(ctx.member?.role),
       gallery,
+      completionCount: completions.count,
+      canViewCompletions: completions.canView,
       rewardDefinitions,
       itemDefinitions,
     });
