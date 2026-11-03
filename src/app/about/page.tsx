@@ -1,6 +1,32 @@
-import { APP_NAME } from "@/types/constants";
+import type { Metadata } from "next";
+import { APP_NAME, PUBLIC_SITE_URL } from "@/types/constants";
 import ChangelogList from "@/components/about/changelog-list";
 import { aboutFeatures, aboutRoadmap } from "@/lib/about";
+
+const ABOUT_TITLE = `${APP_NAME}-ის შესახებ | შესაძლებლობები, გეგმები და ცვლილებები`;
+const ABOUT_DESCRIPTION = `${APP_NAME} არის ქართული გასართობი პორტალი, სადაც ატვირთავ ფოტო-სურათს გეო ლოკაციით და სხვები გამოიცნობენ სადაა გადაღებული. გაეცანი შესაძლებლობებს, განვითარების გეგმებსა და უახლეს ცვლილებებს.`;
+
+export const metadata: Metadata = {
+  title: ABOUT_TITLE,
+  description: ABOUT_DESCRIPTION,
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: ABOUT_TITLE,
+    description: ABOUT_DESCRIPTION,
+    type: "website",
+    url: `https://${PUBLIC_SITE_URL}/about`,
+    siteName: APP_NAME,
+    locale: "ka_GE",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: `${APP_NAME}-ის შესახებ`,
+      },
+    ],
+  },
+};
 
 export default function AboutPage() {
   const features = aboutFeatures;

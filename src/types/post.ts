@@ -128,6 +128,8 @@ export type PostSeoMetaType = {
   date: string;
   images: string[];
   questTitle?: string | null;
+  zoneName: string;
+  tagName: string | null;
 };
 
 export type FeedFilter = 'all' | 'guessed' | 'not-guessed';

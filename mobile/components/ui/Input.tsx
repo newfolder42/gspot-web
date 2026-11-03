@@ -5,10 +5,14 @@ import { useTheme } from '@/constants/colors';
 type InputProps = TextInputProps & {
   label?: string;
   error?: string;
+  /** Marks the label with a red asterisk. Only a marker: validating is up to the caller. */
+  required?: boolean;
+  /** A muted line under the field, replaced by `error` when there is one. */
+  hint?: string;
 };
 
 export const Input = forwardRef<TextInput, InputProps>(
-  ({ label, error, ...props }, ref) => {
+  ({ label, error, required, hint, ...props }, ref) => {
     const theme = useTheme();
 
     return (
@@ -16,6 +20,7 @@ export const Input = forwardRef<TextInput, InputProps>(
         {label ? (
           <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
             {label}
+            {required ? <Text className="text-rose-500"> *</Text> : null}
           </Text>
         ) : null}
 
@@ -37,6 +42,8 @@ export const Input = forwardRef<TextInput, InputProps>(
 
         {error ? (
           <Text className="text-red-500 text-xs mt-1">{error}</Text>
+        ) : hint ? (
+          <Text className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">{hint}</Text>
         ) : null}
       </View>
     );

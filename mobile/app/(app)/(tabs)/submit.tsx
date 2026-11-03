@@ -22,6 +22,7 @@ import { KeyboardScrollView } from '@/components/ui/KeyboardScrollView';
 import { submitApi, type ZoneDateTakenMode, type ZoneSubmitType, type ZoneTag } from '@/lib/submit';
 import { uploadToSignedUrl } from '@/lib/upload';
 import { processPostPhoto } from '@/lib/image';
+import { MIN_POST_TITLE_LENGTH, isValidPostTitle, postTitleError, postTitleLength } from '@/lib/postTitle';
 import { requestLibraryAccess } from '@/lib/photoAccess';
 import { MapPin, MAP_PIN_ANCHOR } from '@/components/map/MapPin';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
@@ -471,6 +472,9 @@ function PhotoSubmit() {
       if (!selectedZone) throw new Error('საბზონა სავალდებულოა');
       if (!image) throw new Error('ფოტო-სურათი სავალდებულოა');
 
+      const titleErr = postTitleError(title);
+      if (titleErr) throw new Error(titleErr);
+
       const dateErr = validateDate(dateTaken, dateTakenMode);
       if (dateErr) throw new Error(dateErr);
 
@@ -639,7 +643,10 @@ function PhotoSubmit() {
   const dateErr = validateDate(dateTaken, dateTakenMode);
   const hasCoords = coords != null && isFinite(coords.latitude) && isFinite(coords.longitude);
   const inGeorgia = hasCoords && isInGeorgia(coords!.latitude, coords!.longitude);
-  const canSubmit = !isPending && selectedZone != null && image != null && dateErr == null && hasCoords && inGeorgia;
+  const titleValid = isValidPostTitle(title);
+  // Flagged once something is typed: an empty field is just "not filled in yet".
+  const titleTooShort = postTitleLength(title) > 0 && !titleValid;
+  const canSubmit = !isPending && selectedZone != null && image != null && titleValid && dateErr == null && hasCoords && inGeorgia;
 
   // ── Loading / Error states ─────────────────────────────────────────────────
 
@@ -728,6 +735,9 @@ function PhotoSubmit() {
     {/* ── Title ───────────────────────────────────────── */}
     <Input
       label="სათაური"
+      required
+      hint={`მინიმუმ ${MIN_POST_TITLE_LENGTH} სიმბოლო`}
+      error={titleTooShort ? (postTitleError(title) ?? undefined) : undefined}
       placeholder="მაგ: ძველი ეკლესია კახეთში"
       value={title}
       onChangeText={setTitle}

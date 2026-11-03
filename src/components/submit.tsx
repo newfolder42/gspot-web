@@ -12,6 +12,7 @@ import { formatCoordinates } from '@/lib/utils';
 import type { ZoneSubmitType } from '@/actions/zones';
 import { mapDefaultCenter, mapMaxBounds, mapMaxZoom, mapOverviewZoom, mapPickedZoom, mapPinColors } from '@/lib/map';
 import { isInGeorgia } from '@/lib/geo';
+import { MIN_POST_TITLE_LENGTH, isValidPostTitle, postTitleError, postTitleLength } from '@/lib/post-title';
 import TagPicker from '@/components/common/tag-picker';
 import ItemFoundPanel from '@/components/inventory/item-found-panel';
 import type { FoundItemType } from '@/types/item';
@@ -559,6 +560,12 @@ export default function Submit({
       return null;
     }
 
+    const titleErr = postTitleError(title);
+    if (titleErr) {
+      setError(titleErr);
+      return null;
+    }
+
     if (dateTakenMode === 'mandatory' && !dateTaken) {
       setError('გადაღების თარიღი სავალდებულოა');
       return null;
@@ -586,6 +593,9 @@ export default function Submit({
   };
 
   const selectedZoneRules = selectedZone!.settings.upload_rules;
+
+  // Flagged once something is typed: an empty field is just "not filled in yet".
+  const titleTooShort = postTitleLength(title) > 0 && !isValidPostTitle(title);
 
   return (
     <>
@@ -615,13 +625,21 @@ export default function Submit({
                   </div>
                   <div className={`grid grid-cols-1 gap-3 ${dateTakenMode !== 'hidden' ? 'md:grid-cols-2' : ''}`}>
                     <label className="block text-sm">
-                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">სათაური</span>
+                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
+                        სათაური
+                        <span className="ml-1 text-rose-500" aria-hidden="true">*</span>
+                      </span>
                       <input
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                        className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30 ${titleTooShort ? 'border-rose-400 dark:border-rose-500' : 'border-zinc-300 dark:border-zinc-700'}`}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="მაგ: ძველი ეკლესია კახეთში"
+                        required
+                        aria-invalid={titleTooShort}
                       />
+                      <span className={`mt-1 block text-xs ${titleTooShort ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                        მინიმუმ {MIN_POST_TITLE_LENGTH} სიმბოლო
+                      </span>
                     </label>
 
                     {dateTakenMode !== 'hidden' && (
@@ -774,7 +792,7 @@ export default function Submit({
                 const final = coords ?? photo?.coordinates ?? null;
                 const hasCoords = final && final.latitude != null && final.longitude != null;
                 const inGeorgia = hasCoords ? isInGeorgia(final.latitude!, final.longitude!) : false;
-                const disabled = submitLocked || uploading || processing || !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || (dateTakenMode === 'mandatory' && !dateTaken);
+                const disabled = submitLocked || uploading || processing || !hasPhoto || !hasCoords || !inGeorgia || !selectedZone || !isValidPostTitle(title) || (dateTakenMode === 'mandatory' && !dateTaken);
                 return (
                   <button
                     className={`px-3 py-1 text-white rounded-md ${disabled ? 'bg-teal-300 cursor-not-allowed opacity-60' : 'bg-teal-600 cursor-pointer'}`}

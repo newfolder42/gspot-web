@@ -912,17 +912,20 @@ export async function getPostSeoMeta(id: number): Promise<PostSeoMetaType | null
   try {
     const res = await query(
       `select p.id, p.type, p.title, p.created_at, u.alias as author_alias,
+         z.slug as zone_slug, z.name as zone_name, zt.name as tag_name,
          ph.items as photo_items,
          zq.title as quest_title
        from posts p
        join zones z on z.id = p.zone_id
        join users u on u.id = p.user_id
        left join lateral (
-         select json_agg(json_build_object('url', uc2.public_url) order by pc2.sort) as items
+         select json_agg(json_build_object('url', uc2.public_url, 'feed', uc2.details->'variants'->>'feed') order by pc2.sort) as items
          from post_content pc2
          join user_content uc2 on uc2.id = pc2.content_id
          where pc2.post_id = p.id
        ) ph on true
+       left join post_tags ptt on ptt.post_id = p.id
+       left join zone_tags zt on zt.id = ptt.tag_id
        left join post_quest_completions pqc on pqc.post_id = p.id
        left join zone_quests zq on zq.id = pqc.quest_id
        where p.id = $1 and p.status = 'published' and z.visibility = 'public'
@@ -932,7 +935,7 @@ export async function getPostSeoMeta(id: number): Promise<PostSeoMetaType | null
 
     if (res.rowCount === 0) return null;
     const r = res.rows[0];
-    const items: { url: string }[] = r.photo_items ?? [];
+    const items: { url: string; feed: string | null }[] = r.photo_items ?? [];
 
     return {
       id: r.id,
@@ -940,8 +943,12 @@ export async function getPostSeoMeta(id: number): Promise<PostSeoMetaType | null
       title: r.title,
       date: r.created_at,
       author: r.author_alias,
-      images: items.map(i => i.url),
+      // The master upload is the original file, often over 10 MB; link previews skip
+      // images that large, so previews get the downscaled variant when there is one.
+      images: items.map(i => i.feed || i.url),
       questTitle: r.quest_title ?? null,
+      zoneName: r.zone_name?.trim() || r.zone_slug,
+      tagName: r.tag_name ?? null,
     };
   } catch (err) {
     await logerror('getPostSeoMeta error', [err]);

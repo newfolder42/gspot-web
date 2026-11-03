@@ -7,25 +7,28 @@ import type { Metadata } from 'next';
 import { APP_NAME, PUBLIC_SITE_URL } from '@/types/constants';
 import LevelBadge from '@/components/common/level-badge';
 
-export const metadata: Metadata = {
-  title: `ლიდერბორდი | ${APP_NAME}`,
-  description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
-  alternates: {
-    canonical: `https://${PUBLIC_SITE_URL}/leaderboard`,
-  },
-  openGraph: {
-    title: `ლიდერბორდი - საუკეთესო მოთამაშეები | ${APP_NAME}`,
-    description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
-    type: 'website',
-    url: `https://${PUBLIC_SITE_URL}/leaderboard`,
-    siteName: APP_NAME,
-  },
-};
-
 type Props = {
   params: Promise<{ zoneSlug: string }>;
   searchParams: Promise<{ period?: string }>;
 };
+
+export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
+  const { zoneSlug } = await params;
+  const canonical = `https://${PUBLIC_SITE_URL}/zone/${zoneSlug}/leaderboard`;
+
+  return {
+    title: `ლიდერბორდი | ${APP_NAME}`,
+    description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
+    alternates: { canonical },
+    openGraph: {
+      title: `ლიდერბორდი - საუკეთესო მოთამაშეები | ${APP_NAME}`,
+      description: `${APP_NAME}-ის საუკეთესო მოთამაშეები და რეიტინგები. იხილე ტოპ გეოგრაფიული გამოცნობის ექსპერტები, მათი ქულები და შედეგები. შემოუერთდი!`,
+      type: 'website',
+      url: canonical,
+      siteName: APP_NAME,
+    },
+  };
+}
 
 export default async function LeaderboardsPage({ params, searchParams }: Props) {
   const [{ zoneSlug }, { period: rawPeriod }] = await Promise.all([params, searchParams]);

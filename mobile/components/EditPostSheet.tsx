@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { postsApi } from '@/lib/posts';
 import { submitApi, type ZoneTag } from '@/lib/submit';
+import { MIN_POST_TITLE_LENGTH, isValidPostTitle, postTitleError, postTitleLength } from '@/lib/postTitle';
 import { useTheme } from '@/constants/colors';
 
 type Props = {
@@ -45,9 +46,13 @@ export function EditPostSheet({
 
   const tags: ZoneTag[] = zones?.find((z) => z.slug === zoneSlug)?.tags ?? [];
 
+  const titleValid = isValidPostTitle(title);
+  // Flagged once something is typed: an empty field is just "not filled in yet".
+  const titleTooShort = postTitleLength(title) > 0 && !titleValid;
+
   const save = async () => {
     const trimmed = title.trim();
-    if (!trimmed || saving) return;
+    if (!titleValid || saving) return;
     setSaving(true);
     setError(null);
     try {
@@ -94,8 +99,13 @@ export function EditPostSheet({
                   placeholder="პოსტის სათაური"
                   placeholderTextColor={theme.textMuted}
                   maxLength={500}
-                  className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700"
+                  className={`bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-4 py-3 text-base border ${
+                    titleTooShort ? 'border-red-400 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-700'
+                  }`}
                 />
+                <Text className={`mt-1 text-xs ${titleTooShort ? 'text-red-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                  {titleTooShort ? postTitleError(title) : `მინიმუმ ${MIN_POST_TITLE_LENGTH} სიმბოლო`}
+                </Text>
 
                 {showTags && tags.length > 0 ? (
                   <>
@@ -152,9 +162,9 @@ export function EditPostSheet({
                   </Pressable>
                   <Pressable
                     onPress={save}
-                    disabled={saving || !title.trim()}
+                    disabled={saving || !titleValid}
                     className="flex-1 h-11 rounded-xl bg-teal-600 items-center justify-center"
-                    style={{ opacity: saving || !title.trim() ? 0.5 : 1 }}
+                    style={{ opacity: saving || !titleValid ? 0.5 : 1 }}
                   >
                     {saving ? (
                       <ActivityIndicator size="small" color="#fff" />

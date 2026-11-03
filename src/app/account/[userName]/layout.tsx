@@ -1,4 +1,5 @@
 import React from 'react';
+import { notFound } from 'next/navigation';
 import AccountTabs from '@/components/account/account-tabs';
 import FollowButton from '@/components/account/follow-button';
 import XPBar from '@/components/xp-bar';
@@ -20,19 +21,13 @@ type Props = {
 export default async function UserLayout({ children, params }: Props) {
   const [{ userName }, currentUser] = await Promise.all([params, getCurrentUser()]);
   const account = await getAccountByAlias(userName, currentUser?.userId ?? null);
+  
+  if (!account) notFound();
+  
   const [xpInfo, streak] = await Promise.all([
-    getLevelFromXp(account?.level?.xp ?? 0),
-    account ? getUserStreakInfo(account.user.id) : null,
+    getLevelFromXp(account.level?.xp ?? 0),
+    getUserStreakInfo(account.user.id),
   ]);
-  if (!account) {
-    return (
-      <div className="max-w-5xl mx-auto">
-        <div className="bg-white dark:bg-zinc-900 rounded-md p-4 border border-zinc-200 dark:border-zinc-800 flex gap-4">
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">მომხმარებელი არ მოიძებნა</h1>
-        </div>
-      </div>
-    );
-  }
 
   const { user, profilePhoto, connection, isOwnProfile } = account;
   const tabs = [

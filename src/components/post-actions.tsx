@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { getCurrentUser } from '@/lib/session';
 import { updatePostTitle, deletePost } from '@/lib/posts';
 import { setPostTag } from '@/lib/tags';
+import { MIN_POST_TITLE_LENGTH, isValidPostTitle, postTitleLength } from '@/lib/post-title';
 import type { ZoneTag } from '@/types/tag';
 import TagPicker from '@/components/common/tag-picker';
 import ReportModal from '@/components/report-modal';
@@ -22,6 +23,8 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
   const [editTagId, setEditTagId] = useState<number | null>(currentTagId);
   const [isLoading, setIsLoading] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  
+  const editTitleTooShort = postTitleLength(editTitle) > 0 && !isValidPostTitle(editTitle);
 
   useEffect(() => {
     async function checkUser() {
@@ -54,7 +57,7 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
   };
 
   const handleSaveEdit = async () => {
-    if (!editTitle.trim()) return;
+    if (!isValidPostTitle(editTitle)) return;
 
     setIsLoading(true);
     const [titleOk] = await Promise.all([
@@ -181,9 +184,13 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
+              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 ${editTitleTooShort ? 'border-rose-400 dark:border-rose-500' : 'border-zinc-200 dark:border-zinc-800'}`}
               placeholder="პოსტის სათაური"
+              aria-invalid={editTitleTooShort}
             />
+            <p className={`-mt-2 text-xs ${editTitleTooShort ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+              მინიმუმ {MIN_POST_TITLE_LENGTH} სიმბოლო
+            </p>
             {zoneTags.length > 0 && (
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">თეგი</p>
@@ -201,7 +208,7 @@ export default function PostActions({ postAuthor, postId, currentTitle, currentT
               <button
                 onClick={handleSaveEdit}
                 className="flex-1 px-3 py-2 text-sm bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:opacity-50"
-                disabled={isLoading}
+                disabled={isLoading || !isValidPostTitle(editTitle)}
               >
                 {isLoading ? 'შენახვა...' : 'შენახვა'}
               </button>

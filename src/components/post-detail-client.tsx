@@ -23,6 +23,7 @@ import type { ZoneTag } from '@/types/tag';
 import HideAndSeekPanel from './hide-and-seek/hide-and-seek-panel';
 import PostLocationReview from './post-location-review';
 import ZoneJoinPrompt from './zone/zone-join-prompt';
+import { gpsPostHeadline } from '@/lib/post-seo';
 
 type PostDetailClientProps = {
   post: PostDetailType;
@@ -43,6 +44,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
   const isHideAndSeekHost = !!gamePost && currentUserId === gamePost.game.hostId;
   const isSuspended = post.status === 'suspended';
   const locationReview = gpsPost?.locationReview ?? null;
+  const headline = gpsPostHeadline({ title: post.title, author: post.author, zoneLabel: post.zoneSlug, tagName: gpsPost?.tag?.name });
   // the guess map shows the true location: the author's, and staff's while a post is disputed
   const canViewGuessMap = isAuthor || !!locationReview?.canReview;
   const userCanGuess = !!gpsPost && !isSuspended && !!currentUser && !isAuthor && !gpsPost.alreadyGuessed;
@@ -111,15 +113,17 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
             </div>
             {gpsPost?.tag && <TagBadge name={gpsPost.tag.name} color={gpsPost.tag.color} />}
             {gpsPost && (
-              <div className="text-sm text-zinc-700 dark:text-zinc-300">{post.title}</div>
+              <h1 className={`text-sm text-zinc-700 dark:text-zinc-300 ${post.title?.trim() ? '' : 'sr-only'}`}>{headline}</h1>
             )}
             {questPost && (
-              <Link
-                href={`/zone/${post.zoneSlug}/quests/${questPost.questId}`}
-                className="inline-block mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:underline"
-              >
-                <QuestCompletionTitle questTitle={questPost.questTitle} />
-              </Link>
+              <h1>
+                <Link
+                  href={`/zone/${post.zoneSlug}/quests/${questPost.questId}`}
+                  className="inline-block mt-1.5 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+                >
+                  <QuestCompletionTitle questTitle={questPost.questTitle} />
+                </Link>
+              </h1>
             )}
           </div>
           <div className="flex-shrink-0">
@@ -159,7 +163,7 @@ export default function PostDetailClient({ post, comments, currentUser, currentU
         {gpsPost && gpsPost?.image && (
           <PostPhoto
             src={gpsPost.image}
-            alt={post.title || `'${post.author}-მომხმარებლის სურათი`}
+            alt={headline}
             dateTaken={gpsPost.dateTaken}
             items={gpsPost.items}
             zoomable
